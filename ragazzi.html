@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Staff Educativo – Campo dei Fiori</title>
+  <title>Ragazzi – Campo dei Fiori</title>
   <meta name="theme-color" content="#e07b39">
   <link rel="manifest" href="manifest.json">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -22,45 +22,28 @@
     }
     .top-header h1 { font-size: 1.1rem; font-weight: 800; flex: 1; text-align: center; }
 
-    .list-staff { padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+    .list-ragazzi { padding: 12px; display: flex; flex-direction: column; gap: 10px; }
 
-    .card-staff {
+    .card-minore {
       background: #fff; border-radius: 14px;
       box-shadow: 0 2px 10px rgba(0,0,0,0.08);
       display: flex; align-items: center; gap: 14px;
-      padding: 14px 16px;
+      padding: 12px 14px;
       text-decoration: none; color: #222;
-      cursor: pointer;
-      transition: transform 0.15s, box-shadow 0.15s;
+      transition: transform 0.15s;
     }
-    .card-staff:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 18px rgba(0,0,0,0.13);
-    }
-    .card-avatar {
-      width: 66px; height: 66px; border-radius: 50%;
-      overflow: hidden; flex-shrink: 0;
-      background: #fdebd0;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 1.9rem;
-      box-shadow: 0 2px 8px rgba(224,123,57,0.2);
-    }
-    .card-avatar img { width: 100%; height: 100%; object-fit: cover; }
-    .card-info .nome { font-size: 1.05rem; font-weight: 800; }
-    .card-info .ruolo {
-      font-size: 0.8rem; color: #e07b39; font-weight: 600;
-      margin-top: 3px; text-transform: capitalize;
-    }
-    .card-info .admin-badge {
-      display: inline-block; font-size: 0.7rem; font-weight: 700;
-      background: #5a8a4a; color: #fff;
-      border-radius: 10px; padding: 1px 8px; margin-top: 4px;
-    }
+    .card-minore:hover { transform: translateX(3px); }
 
-    /* Desktop: griglia 2 colonne */
-    @media (min-width: 769px) {
-      .list-staff { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; padding: 20px; }
+    .card-avatar {
+      width: 62px; height: 62px; border-radius: 50%;
+      flex-shrink: 0; background: #e8f4e0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.8rem; overflow: hidden;
+      box-shadow: 0 2px 8px rgba(90,138,74,0.18);
     }
+    .card-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+    .card-info .nome { font-size: 1.05rem; font-weight: 800; }
+    .card-info .tag { font-size: 0.78rem; color: #e07b39; font-weight: 600; margin-top: 3px; }
 
     .bottom-nav {
       position: fixed; bottom: 0; left: 0; right: 0;
@@ -80,30 +63,30 @@
 
     .spinner {
       width: 34px; height: 34px;
-      border: 3px solid #eee; border-top-color: #e07b39;
+      border: 3px solid #eee; border-top-color: #5a8a4a;
       border-radius: 50%; animation: spin 0.7s linear infinite;
-      margin: 2rem auto; grid-column: 1/-1;
+      margin: 2rem auto;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
-    .empty-msg { color: #aaa; text-align: center; padding: 2rem; grid-column: 1/-1; }
+    .empty-msg { color: #aaa; text-align: center; padding: 2rem; }
   </style>
 </head>
 <body>
 
   <header class="top-header">
-    <h1>👤 Staff Educativo</h1>
+    <h1>🧒 Ragazzi</h1>
     <div id="nav-auth-slot"></div>
   </header>
 
-  <div id="list-staff" class="list-staff">
+  <div id="list-ragazzi" class="list-ragazzi">
     <div class="spinner"></div>
   </div>
 
   <nav class="bottom-nav">
     <a href="index.html" class="nav-item"><span class="nav-icon">🏠</span>Home</a>
     <a href="comunita.html" class="nav-item"><span class="nav-icon">🏡</span>Comunità</a>
-    <a href="ragazzi.html" class="nav-item"><span class="nav-icon">🧒</span>Ragazzi</a>
-    <a href="staff.html" class="nav-item active"><span class="nav-icon">🤡</span>Staff</a>
+    <a href="ragazzi.html" class="nav-item active"><span class="nav-icon">🧒</span>Ragazzi</a>
+    <a href="staff.html" class="nav-item"><span class="nav-icon">🤡</span>Staff</a>
     <a href="#" class="nav-item"><span class="nav-icon">📋</span>Progetti</a>
     <a href="#" class="nav-item"><span class="nav-icon">🖼️</span>Galleria</a>
   </nav>
@@ -126,26 +109,30 @@
     const db  = getFirestore(app);
     setupNavAuth();
 
-    const list = document.getElementById('list-staff');
+    const list = document.getElementById('list-ragazzi');
 
-    async function loadStaff() {
+    async function init() {
       try {
-        const snap = await getDocs(collection(db, 'staff'));
+        const snap = await getDocs(collection(db, 'utenti'));
         list.innerHTML = '';
-        if (snap.empty) { list.innerHTML = '<p class="empty-msg">Nessun membro dello staff.</p>'; return; }
-        snap.forEach(d => {
-          const data = d.data();
+        const ragazzi = [];
+        snap.forEach(d => ragazzi.push({ id: d.id, ...d.data() }));
+        ragazzi.sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'it'));
+
+        if (!ragazzi.length) {
+          list.innerHTML = '<p class="empty-msg">Nessun ragazzo/a trovato.</p>';
+          return;
+        }
+        ragazzi.forEach(data => {
           const avatar = data.fotoProfilo
             ? `<div class="card-avatar"><img src="${data.fotoProfilo}" alt="${data.nome}"></div>`
-            : `<div class="card-avatar">👤</div>`;
-          const adminBadge = data.admin ? `<span class="admin-badge">admin</span>` : '';
+            : `<div class="card-avatar">🧒</div>`;
           list.innerHTML += `
-            <a class="card-staff" href="profilo.html?uid=${d.id}">
+            <a class="card-minore" href="profilo.html?uid=${data.id}">
               ${avatar}
               <div class="card-info">
                 <div class="nome">${data.nome || '—'}</div>
-                <div class="ruolo">${data.ruolo || ''}</div>
-                ${adminBadge}
+                <div class="tag">🏡 ${data.comunitaId || ''}</div>
               </div>
             </a>`;
         });
@@ -154,7 +141,7 @@
       }
     }
 
-    loadStaff();
+    init();
   </script>
 </body>
 </html>
