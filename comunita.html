@@ -56,6 +56,21 @@
       padding: 14px;
     }
 
+    /* Desktop: 3 colonne, tutto visibile senza scroll */
+    @media (min-width: 769px) {
+      body { padding-bottom: 0; }
+      .grid-comunita {
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 10px;
+        padding: 10px;
+        height: calc(100vh - 56px - 62px); /* schermo - header - bottomnav */
+      }
+      .card-comunita { height: 100%; }
+      .card-thumb { aspect-ratio: unset; flex: 1; min-height: 0; }
+      .card-thumb img { height: 100%; }
+      .card-nome { padding: 5px 8px 7px; font-size: 0.75rem; }
+    }
+
     .card-comunita {
       text-decoration: none;
       color: #222;
@@ -220,7 +235,7 @@
 
     async function loadComunita() {
       try {
-        const snap = await getDocs(query(collection(db, 'comunita'), orderBy('nomeComunita')));
+        const snap = await getDocs(query(collection(db, 'comunita'), orderBy('ordine')));
         grid.innerHTML = '';
         if (snap.empty) {
           grid.innerHTML = '<p class="empty-msg">Nessuna comunità trovata.</p>';
