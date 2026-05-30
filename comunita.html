@@ -195,8 +195,21 @@
   </nav>
 
   <script type="module">
-    import { db } from './js/firebase-config.js';
-    import { collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getFirestore, collection, getDocs, query, orderBy }
+      from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyC18lzwqhYcW29TsEO6Oy4Bqvb2PMBUmAg",
+      authDomain: "campo-dei-fiori.firebaseapp.com",
+      projectId: "campo-dei-fiori",
+      storageBucket: "campo-dei-fiori.firebasestorage.app",
+      messagingSenderId: "928976798756",
+      appId: "1:928976798756:web:1b90027ec9f03b203e44b1"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db  = getFirestore(app);
 
     const EMOJI = {
       'bella-mbriana': '🌸', 'itaca': '⚓', 'willy-coyote': '🐺',
@@ -205,30 +218,37 @@
 
     const grid = document.getElementById('grid-comunita');
 
-    try {
-      const snap = await getDocs(query(collection(db, 'comunita'), orderBy('nomeComunita')));
-      grid.innerHTML = '';
-      if (snap.empty) { grid.innerHTML = '<p class="empty-msg">Nessuna comunità trovata.</p>'; return; }
-
-      snap.forEach(doc => {
-        const d = doc.data();
-        const thumb = d.immagineUrl
-          ? `<img src="${d.immagineUrl}" alt="${d.nomeComunita}" loading="lazy">`
-          : `<div class="card-thumb no-img">${EMOJI[doc.id] || '🏡'}</div>`;
-
-        grid.innerHTML += `
-          <a class="card-comunita" href="minori.html?comunita=${doc.id}">
-            <div class="card-thumb">
-              ${thumb}
-              <div class="card-thumb-overlay"></div>
-              <div class="card-thumb-nome">${d.nomeComunita}</div>
-            </div>
-            <div class="card-nome">${d.nomeComunita}</div>
-          </a>`;
-      });
-    } catch (err) {
-      grid.innerHTML = `<p class="empty-msg">Errore: ${err.message}</p>`;
+    async function loadComunita() {
+      try {
+        const snap = await getDocs(query(collection(db, 'comunita'), orderBy('nomeComunita')));
+        grid.innerHTML = '';
+        if (snap.empty) {
+          grid.innerHTML = '<p class="empty-msg">Nessuna comunità trovata.</p>';
+          return;
+        }
+        snap.forEach(docSnap => {
+          const d = docSnap.data();
+          const imgHtml = d.immagineUrl
+            ? `<img src="${d.immagineUrl}" alt="${d.nomeComunita}" loading="lazy">`
+            : '';
+          const emoji = !d.immagineUrl ? (EMOJI[docSnap.id] || '🏡') : '';
+          grid.innerHTML += `
+            <a class="card-comunita" href="minori.html?comunita=${docSnap.id}">
+              <div class="card-thumb${!d.immagineUrl ? ' no-img' : ''}">
+                ${imgHtml}${emoji}
+                <div class="card-thumb-overlay"></div>
+                <div class="card-thumb-nome">${d.nomeComunita}</div>
+              </div>
+              <div class="card-nome">${d.nomeComunita}</div>
+            </a>`;
+        });
+      } catch (err) {
+        grid.innerHTML = `<p class="empty-msg">Errore: ${err.message}</p>`;
+        console.error('Firestore error:', err);
+      }
     }
+
+    loadComunita();
   </script>
 </body>
 </html>
