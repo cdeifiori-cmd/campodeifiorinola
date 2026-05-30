@@ -5,26 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Campo dei Fiori Nola</title>
   <meta name="description" content="La comunità residenziale per minori di Campo dei Fiori">
-  <meta name="theme-color" content="#5a8a4a">
+  <meta name="theme-color" content="#1a2e1a">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { height: 100%; }
+    html, body { height: 100%; background: #1a2e1a; }
 
     .cover {
       display: block;
       width: 100%;
       height: 100vh;
-      background: url('https://res.cloudinary.com/dxqyprtzh/image/upload/v1780144964/logo_campo_app_fa5nbj.png') center center / cover no-repeat;
+      background: url('https://res.cloudinary.com/dxqyprtzh/image/upload/v1780144964/logo_campo_app_fa5nbj.png') center center / contain no-repeat;
       cursor: pointer;
-    }
-
-    /* Desktop: ancora in alto per mostrare volto e scritta */
-    @media (min-width: 768px) {
-      .cover {
-        background-position: center top;
-      }
     }
   </style>
 </head>
