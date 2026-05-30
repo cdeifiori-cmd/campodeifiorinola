@@ -125,7 +125,7 @@
 
   <script type="module">
     import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getFirestore, collection, collectionGroup, getDocs, query, orderBy, limit, where }
+    import { getFirestore, collection, getDocs, query, orderBy, limit }
       from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import { setupNavAuth } from './js/nav-auth.js';
 
@@ -217,21 +217,33 @@
         });
       } catch(_) {}
 
-      // 3. COMMENTI (collectionGroup)
+      // 3. COMMENTI — query separata per ogni post del diario
       try {
-        const snap = await getDocs(collectionGroup(db, 'commenti'));
-        snap.forEach(d => {
-          const data = d.data();
-          eventi.push({
-            tipo: 'commento',
-            uid: data.uidAutore,
-            nomeOverride: data.nomeAutore,
-            fotoOverride: data.fotoAutore,
-            testo: trunca(data.testo),
-            ts: data.createdAt,
-            link: `profilo.html?uid=${data.uidAutore}`,
-          });
+        const diarioSnap = await getDocs(collection(db, 'diario'));
+        const commPromises = [];
+        diarioSnap.forEach(postDoc => {
+          commPromises.push(
+            getDocs(query(
+              collection(db, 'diario', postDoc.id, 'commenti'),
+              orderBy('createdAt', 'desc'),
+              limit(5)
+            )).then(cSnap => {
+              cSnap.forEach(d => {
+                const data = d.data();
+                eventi.push({
+                  tipo: 'commento',
+                  uid: data.uidAutore,
+                  nomeOverride: data.nomeAutore,
+                  fotoOverride: data.fotoAutore,
+                  testo: trunca(data.testo),
+                  ts: data.createdAt,
+                  link: `profilo.html?uid=${postDoc.data().uidRagazzo}#diario`,
+                });
+              });
+            }).catch(() => {})
+          );
         });
+        await Promise.all(commPromises);
       } catch(_) {}
 
       // 4. MI PRESENTO aggiornati
