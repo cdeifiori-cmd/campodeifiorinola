@@ -4,23 +4,171 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ragazzi – Campo dei Fiori</title>
-  <meta name="theme-color" content="#5a8a4a">
+  <meta name="theme-color" content="#e07b39">
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Nunito', sans-serif; background: #f5f5f5; padding-bottom: 70px; }
+
+    /* HEADER */
+    .top-header {
+      background: #e07b39; color: #fff;
+      display: flex; align-items: center;
+      padding: 0 1rem; height: 56px;
+      position: sticky; top: 0; z-index: 100;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    }
+    .back-btn {
+      background: none; border: none; color: #fff;
+      font-size: 1.3rem; cursor: pointer; padding: 0 10px 0 0;
+      text-decoration: none;
+    }
+    .top-header h1 { font-size: 1.1rem; font-weight: 800; flex: 1; }
+    .top-header .subtitle { font-size: 0.78rem; opacity: 0.85; }
+
+    /* LISTA */
+    .list-minori { padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+
+    .card-minore {
+      background: #fff; border-radius: 14px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+      display: flex; align-items: center; gap: 14px;
+      padding: 12px 14px;
+      text-decoration: none; color: #222;
+      transition: transform 0.15s;
+    }
+    .card-minore:hover { transform: translateX(3px); }
+
+    .card-avatar {
+      width: 62px; height: 62px; border-radius: 50%;
+      object-fit: cover; flex-shrink: 0;
+      background: #e8f4e0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.8rem;
+      box-shadow: 0 2px 8px rgba(90,138,74,0.18);
+      overflow: hidden;
+    }
+    .card-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+
+    .card-info .nome { font-size: 1.05rem; font-weight: 800; }
+    .card-info .tag {
+      font-size: 0.78rem; color: #e07b39; font-weight: 600;
+      margin-top: 3px;
+    }
+
+    /* BOTTOM NAV */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      height: 62px; background: #fff;
+      border-top: 1px solid #e0e0e0;
+      display: flex; align-items: stretch; z-index: 100;
+      box-shadow: 0 -2px 8px rgba(0,0,0,0.07);
+    }
+    .nav-item {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-decoration: none; color: #999;
+      font-size: 0.62rem; font-weight: 600; gap: 2px;
+    }
+    .nav-item.active { color: #e07b39; }
+    .nav-item .nav-icon { font-size: 1.3rem; line-height: 1; }
+
+    .spinner {
+      width: 34px; height: 34px;
+      border: 3px solid #eee; border-top-color: #5a8a4a;
+      border-radius: 50%; animation: spin 0.7s linear infinite;
+      margin: 2rem auto;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .empty-msg { color: #aaa; text-align: center; padding: 2rem; }
+  </style>
 </head>
 <body>
-  <nav class="top-nav">
-    <a href="comunita.html" class="brand">← Le comunità</a>
-    <div class="nav-actions" id="nav-auth-slot"></div>
-  </nav>
 
-  <div class="page-header">
-    <h1 id="comunita-title">Comunità</h1>
-    <p id="page-subtitle"></p>
+  <header class="top-header">
+    <a href="comunita.html" class="back-btn">←</a>
+    <div>
+      <div class="h1" id="comunita-title" style="font-size:1.1rem;font-weight:800">Caricamento…</div>
+      <div class="subtitle" id="page-subtitle"></div>
+    </div>
+  </header>
+
+  <div id="list-minori" class="list-minori">
+    <div class="spinner"></div>
   </div>
 
-  <div id="list-minori" class="list-minori"></div>
+  <nav class="bottom-nav">
+    <a href="index.html" class="nav-item"><span class="nav-icon">🏠</span>Home</a>
+    <a href="comunita.html" class="nav-item"><span class="nav-icon">🏡</span>Comunità</a>
+    <a href="comunita.html" class="nav-item active"><span class="nav-icon">🧒</span>Ragazzi</a>
+    <a href="#" class="nav-item"><span class="nav-icon">👤</span>Operatori</a>
+    <a href="#" class="nav-item"><span class="nav-icon">📋</span>Progetti</a>
+    <a href="#" class="nav-item"><span class="nav-icon">🖼️</span>Galleria</a>
+  </nav>
 
-  <script type="module" src="js/minori.js"></script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getFirestore, doc, getDoc, collection, query, where, getDocs }
+      from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyC18lzwqhYcW29TsEO6Oy4Bqvb2PMBUmAg",
+      authDomain: "campo-dei-fiori.firebaseapp.com",
+      projectId: "campo-dei-fiori",
+      storageBucket: "campo-dei-fiori.firebasestorage.app",
+      messagingSenderId: "928976798756",
+      appId: "1:928976798756:web:1b90027ec9f03b203e44b1"
+    };
+    const app = initializeApp(firebaseConfig);
+    const db  = getFirestore(app);
+
+    const params     = new URLSearchParams(location.search);
+    const comunitaId = params.get('comunita');
+    const list       = document.getElementById('list-minori');
+
+    async function init() {
+      if (!comunitaId) { list.innerHTML = '<p class="empty-msg">Comunità non specificata.</p>'; return; }
+
+      // Carica nome comunità
+      try {
+        const snap = await getDoc(doc(db, 'comunita', comunitaId));
+        if (snap.exists()) {
+          document.getElementById('comunita-title').textContent = snap.data().nomeComunita;
+          document.getElementById('page-subtitle').textContent  = snap.data().descrizione || '';
+        }
+      } catch (_) {}
+
+      // Carica ragazzi
+      try {
+        const snap = await getDocs(query(
+          collection(db, 'utenti'),
+          where('comunitaId', '==', comunitaId)
+        ));
+        list.innerHTML = '';
+        if (snap.empty) { list.innerHTML = '<p class="empty-msg">Nessun ragazzo/a in questa comunità.</p>'; return; }
+        snap.forEach(d => {
+          const data = d.data();
+          const avatar = data.fotoProfilo
+            ? `<div class="card-avatar"><img src="${data.fotoProfilo}" alt="${data.nome}"></div>`
+            : `<div class="card-avatar">🧒</div>`;
+          list.innerHTML += `
+            <a class="card-minore" href="profilo.html?uid=${d.id}">
+              ${avatar}
+              <div class="card-info">
+                <div class="nome">${data.nome || '—'}</div>
+                <div class="tag">🏡 ${comunitaId}</div>
+              </div>
+            </a>`;
+        });
+      } catch (e) {
+        list.innerHTML = `<p class="empty-msg">Errore: ${e.message}</p>`;
+      }
+    }
+
+    init();
+  </script>
 </body>
 </html>

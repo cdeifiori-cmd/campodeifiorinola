@@ -4,115 +4,710 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Profilo – Campo dei Fiori</title>
-  <meta name="theme-color" content="#5a8a4a">
+  <meta name="theme-color" content="#e07b39">
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Caveat:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Nunito', sans-serif; background: #f5f5f5; padding-bottom: 70px; color: #222; }
+
+    /* ---- HERO FOTO ---- */
+    .hero-foto {
+      position: relative;
+      width: 100%;
+      height: 55vw;
+      max-height: 340px;
+      min-height: 220px;
+      background: #c8dfc0;
+      overflow: hidden;
+    }
+    .hero-foto img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      object-position: top center;
+      display: block;
+    }
+    .hero-foto .back-btn {
+      position: absolute; top: 14px; left: 14px;
+      background: rgba(0,0,0,0.38);
+      color: #fff; border: none; border-radius: 50%;
+      width: 38px; height: 38px;
+      font-size: 1.1rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      text-decoration: none;
+    }
+    .hero-foto .edit-foto-btn {
+      position: absolute; bottom: 10px; right: 10px;
+      background: rgba(0,0,0,0.45);
+      color: #fff; border: none; border-radius: 20px;
+      padding: 5px 12px; font-size: 0.78rem; font-family: 'Nunito',sans-serif;
+      cursor: pointer; display: none;
+    }
+    .hero-foto.is-owner .edit-foto-btn { display: block; }
+
+    /* ---- INFO NOME ---- */
+    .profilo-info {
+      background: #fff;
+      padding: 14px 16px 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid #eee;
+    }
+    .profilo-info .nome { font-size: 1.25rem; font-weight: 800; }
+    .profilo-info .comunita-tag {
+      font-size: 0.82rem; color: #e07b39; font-weight: 700;
+      background: #fdebd0; border-radius: 20px;
+      padding: 2px 10px; display: inline-block; margin-top: 3px;
+    }
+
+    /* ---- SEZIONI ---- */
+    .section { background: #fff; margin-top: 10px; border-radius: 0; }
+    .section-title {
+      font-size: 1rem; font-weight: 800; color: #222;
+      padding: 13px 16px 0;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .section-body { padding: 10px 16px 14px; }
+
+    /* ---- AUDIO ---- */
+    .audio-wrap {
+      background: #fdebd0;
+      border-radius: 12px;
+      padding: 10px 14px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .audio-wrap audio { flex: 1; }
+
+    /* ---- MI PRESENTO ---- */
+    .mi-presento-text {
+      font-size: 0.95rem; line-height: 1.7; color: #333;
+      white-space: pre-wrap;
+    }
+    .mi-presento-empty { color: #aaa; font-style: italic; }
+
+    /* ---- DIARIO ---- */
+    .diario-search {
+      display: flex; align-items: center;
+      background: #f0f0f0; border-radius: 20px;
+      padding: 7px 14px; gap: 8px;
+      margin: 10px 16px 0;
+    }
+    .diario-search input {
+      border: none; background: none; outline: none;
+      font-family: 'Nunito', sans-serif; font-size: 0.9rem;
+      flex: 1;
+    }
+
+    .diario-new-btn {
+      margin: 10px 16px 0;
+      display: flex; align-items: center; gap: 8px;
+      background: #f7f7f7; border-radius: 12px;
+      padding: 10px 14px; cursor: pointer;
+      border: 1.5px dashed #ccc; color: #aaa; font-size: 0.9rem;
+      display: none;
+    }
+    .diario-new-btn.visible { display: flex; }
+
+    .diario-list { padding: 10px 16px 0; display: flex; flex-direction: column; gap: 14px; }
+
+    .card-post {
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+      overflow: hidden;
+    }
+    .card-post .post-header {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px 6px;
+    }
+    .card-post .post-avatar {
+      width: 34px; height: 34px; border-radius: 50%;
+      object-fit: cover; background: #e0e0e0;
+    }
+    .card-post .post-meta { flex: 1; }
+    .card-post .post-autore { font-size: 0.85rem; font-weight: 700; }
+    .card-post .post-data { font-size: 0.72rem; color: #aaa; }
+    .card-post .post-testo {
+      font-family: 'Caveat', cursive;
+      font-size: 1.08rem; line-height: 1.5;
+      padding: 0 12px 8px; color: #333;
+      white-space: pre-wrap;
+    }
+    .card-post .post-img {
+      width: 100%; max-height: 280px;
+      object-fit: cover; display: block;
+    }
+    .card-post .post-audio {
+      padding: 8px 12px;
+      background: #f7f7f7;
+    }
+    .card-post .post-audio audio { width: 100%; }
+
+    /* Reazioni */
+    .card-post .post-reazioni {
+      display: flex; align-items: center; gap: 6px;
+      padding: 8px 12px 10px;
+      border-top: 1px solid #f0f0f0;
+    }
+    .btn-reazione {
+      background: #f5f5f5; border: 1.5px solid #e0e0e0;
+      border-radius: 20px; padding: 4px 11px;
+      font-size: 0.85rem; cursor: pointer;
+      display: flex; align-items: center; gap: 4px;
+      transition: background 0.15s, border-color 0.15s;
+      font-family: 'Nunito', sans-serif; font-weight: 600;
+    }
+    .btn-reazione.attiva { background: #fdebd0; border-color: #e07b39; color: #e07b39; }
+    .btn-reazione:hover { background: #f0f0f0; }
+    .post-delete-btn {
+      margin-left: auto; background: none; border: none;
+      color: #ccc; font-size: 1rem; cursor: pointer; padding: 2px;
+    }
+    .post-delete-btn:hover { color: #e74c3c; }
+
+    /* ---- BOTTIGLIA ---- */
+    .bottiglia-list { display: flex; flex-direction: column; gap: 10px; }
+    .card-bottiglia {
+      background: #fff7e6; border: 1px solid #f0d9a0;
+      border-radius: 12px; padding: 12px;
+      position: relative;
+    }
+    .card-bottiglia .bott-header {
+      font-size: 0.78rem; color: #aaa; margin-bottom: 5px;
+      display: flex; align-items: center; gap: 5px;
+    }
+    .card-bottiglia .bott-testo { font-size: 0.95rem; color: #333; }
+    .card-bottiglia .bott-delete {
+      position: absolute; top: 8px; right: 8px;
+      background: none; border: none; color: #ccc;
+      font-size: 1rem; cursor: pointer;
+    }
+    .card-bottiglia .bott-delete:hover { color: #e74c3c; }
+
+    /* ---- BUTTONS ---- */
+    .btn-primary {
+      background: #5a8a4a; color: #fff; border: none;
+      border-radius: 50px; padding: 11px 22px;
+      font-family: 'Nunito',sans-serif; font-weight: 700;
+      font-size: 0.92rem; cursor: pointer; width: 100%;
+      margin-top: 8px; transition: background 0.2s;
+    }
+    .btn-primary:hover { background: #4a7a3a; }
+    .btn-arancio {
+      background: #e07b39; color: #fff; border: none;
+      border-radius: 50px; padding: 11px 22px;
+      font-family: 'Nunito',sans-serif; font-weight: 700;
+      font-size: 0.92rem; cursor: pointer; width: 100%;
+      margin-top: 8px; transition: background 0.2s;
+    }
+    .btn-arancio:hover { background: #c96a28; }
+    .btn-secondary {
+      background: transparent; color: #5a8a4a;
+      border: 2px solid #5a8a4a; border-radius: 50px;
+      padding: 8px 18px; font-family: 'Nunito',sans-serif;
+      font-weight: 700; font-size: 0.85rem; cursor: pointer;
+    }
+
+    /* ---- MODAL ---- */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+      display: flex; align-items: flex-end; justify-content: center;
+      z-index: 200;
+    }
+    .modal-overlay.hidden { display: none; }
+    .modal-box {
+      background: #fff; border-radius: 20px 20px 0 0;
+      padding: 20px 16px 28px; width: 100%; max-width: 540px;
+      max-height: 88vh; overflow-y: auto;
+    }
+    .modal-box h3 { font-size: 1.05rem; font-weight: 800; margin-bottom: 12px; }
+    .modal-box textarea {
+      width: 100%; border: 1.5px solid #ddd; border-radius: 10px;
+      padding: 10px; font-family: 'Caveat',cursive; font-size: 1.05rem;
+      resize: vertical; min-height: 100px; outline: none;
+    }
+    .modal-box textarea.nunito { font-family: 'Nunito',sans-serif; font-size: 0.95rem; }
+    .modal-actions { display: flex; gap: 10px; margin-top: 12px; justify-content: flex-end; }
+
+    /* ---- BOTTOM NAV ---- */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      height: 62px; background: #fff;
+      border-top: 1px solid #e0e0e0;
+      display: flex; align-items: stretch; z-index: 100;
+      box-shadow: 0 -2px 8px rgba(0,0,0,0.07);
+    }
+    .nav-item {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-decoration: none; color: #999;
+      font-size: 0.62rem; font-weight: 600; gap: 2px;
+    }
+    .nav-item.active { color: #e07b39; }
+    .nav-item .nav-icon { font-size: 1.3rem; line-height: 1; }
+
+    /* ---- UTILS ---- */
+    .hidden { display: none !important; }
+    .spinner {
+      width: 34px; height: 34px;
+      border: 3px solid #eee; border-top-color: #5a8a4a;
+      border-radius: 50%; animation: spin 0.7s linear infinite;
+      margin: 2rem auto;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .empty-msg { color: #aaa; text-align: center; padding: 1.5rem; font-size: 0.9rem; }
+  </style>
 </head>
 <body>
-  <nav class="top-nav">
-    <a href="javascript:history.back()" class="brand">← Indietro</a>
-    <div class="nav-actions" id="nav-auth-slot"></div>
+
+  <!-- HERO FOTO -->
+  <div class="hero-foto" id="hero-foto">
+    <img id="hero-img" src="" alt="Foto profilo">
+    <a href="javascript:history.back()" class="back-btn">←</a>
+    <button class="edit-foto-btn" id="btn-edit-foto">📷 Cambia foto</button>
+  </div>
+
+  <!-- NOME + COMUNITA -->
+  <div class="profilo-info">
+    <div>
+      <div class="nome" id="profilo-nome">…</div>
+      <span class="comunita-tag" id="profilo-comunita"></span>
+    </div>
+  </div>
+
+  <!-- AUDIO -->
+  <div class="section" id="audio-section" style="display:none">
+    <div class="section-title">🎵 La mia canzone</div>
+    <div class="section-body">
+      <div class="audio-wrap">
+        <audio id="audio-player" controls></audio>
+      </div>
+    </div>
+  </div>
+
+  <!-- MI PRESENTO -->
+  <div class="section">
+    <div class="section-title">
+      ✨ Mi Presento ✨
+      <button class="btn-secondary hidden" id="btn-edit-presento" style="font-size:0.78rem;padding:5px 12px">Modifica</button>
+    </div>
+    <div class="section-body">
+      <p class="mi-presento-text mi-presento-empty" id="mi-presento-text">Ancora nessuna presentazione…</p>
+    </div>
+  </div>
+
+  <!-- IL MIO DIARIO -->
+  <div class="section">
+    <div class="section-title">📓 Il Mio Diario</div>
+
+    <div class="diario-search">
+      <span>🔍</span>
+      <input type="text" id="diario-search" placeholder="Cerca nel diario…">
+    </div>
+
+    <div class="diario-new-btn" id="diario-new-btn">
+      ✏️ <span>A cosa stai pensando?</span>
+    </div>
+
+    <div id="diario-list" class="diario-list">
+      <div class="spinner"></div>
+    </div>
+  </div>
+
+  <!-- MESSAGGI IN BOTTIGLIA -->
+  <div class="section">
+    <div class="section-title">🍾 Messaggi in Bottiglia</div>
+    <div class="section-body">
+      <button class="btn-arancio hidden" id="btn-manda-bottiglia">🍾 Invia un messaggio in bottiglia</button>
+      <div id="bottiglia-list" class="bottiglia-list" style="margin-top:10px">
+        <div class="spinner"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav">
+    <a href="index.html" class="nav-item"><span class="nav-icon">🏠</span>Home</a>
+    <a href="comunita.html" class="nav-item"><span class="nav-icon">🏡</span>Comunità</a>
+    <a href="comunita.html" class="nav-item"><span class="nav-icon">🧒</span>Ragazzi</a>
+    <a href="#" class="nav-item"><span class="nav-icon">👤</span>Operatori</a>
+    <a href="#" class="nav-item"><span class="nav-icon">📋</span>Progetti</a>
+    <a href="#" class="nav-item"><span class="nav-icon">🖼️</span>Galleria</a>
   </nav>
 
-  <!-- Hero profilo -->
-  <div class="profilo-hero">
-    <div class="profilo-avatar-wrap" id="avatar-wrap">
-      <span class="avatar-emoji">🧒</span>
-      <img id="avatar-img" src="" alt="Foto profilo" class="hidden">
-      <div class="profilo-avatar-overlay">📷</div>
-    </div>
-    <div class="profilo-nome" id="profilo-nome">Caricamento...</div>
-    <div class="profilo-comunita" id="profilo-comunita"></div>
-  </div>
-
-  <div class="profilo-content">
-
-    <!-- Audio -->
-    <div class="section-card hidden" id="audio-section">
-      <div class="section-title">🎵 La mia canzone</div>
-      <div class="section-body">
-        <div class="audio-player">
-          <audio id="audio-player" controls style="width:100%"></audio>
-        </div>
-      </div>
-    </div>
-
-    <!-- Mi Presento -->
-    <div class="section-card">
-      <div class="section-title">
-        👋 Mi Presento
-        <button class="btn-secondary hidden" id="btn-edit-presento" style="font-size:0.8rem;padding:0.35rem 0.9rem">Modifica ✏️</button>
-      </div>
-      <div class="section-body">
-        <p class="mi-presento-text mi-presento-empty" id="mi-presento-text">Ancora nessuna presentazione...</p>
-      </div>
-    </div>
-
-    <!-- Il Mio Diario -->
-    <div class="section-card">
-      <div class="section-title">📖 Il Mio Diario</div>
-      <div class="section-body">
-        <div class="fab-wrap hidden" id="fab-input">
-          <div class="fab-input">
-            <span>✏️</span>
-            <span>A cosa stai pensando? ✏️</span>
-          </div>
-        </div>
-        <div id="diario-list" class="diario-list mt-2"></div>
-      </div>
-    </div>
-
-    <!-- Messaggi in Bottiglia -->
-    <div class="section-card">
-      <div class="section-title">
-        🍾 Messaggi in Bottiglia
-      </div>
-      <div class="section-body">
-        <button class="btn-arancio hidden" id="btn-manda-bottiglia" style="margin-bottom:1rem;width:100%">
-          🍾 Manda un messaggio in bottiglia
-        </button>
-        <div id="bottiglia-list" class="bottiglia-list"></div>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- Modal: Nuovo diario -->
+  <!-- MODAL: nuovo post diario -->
   <div class="modal-overlay hidden" id="modal-diario">
     <div class="modal-box">
       <h3>✏️ Cosa stai pensando?</h3>
-      <textarea id="modal-diario-text" placeholder="Scrivi qualcosa..." rows="5"></textarea>
+      <textarea id="modal-diario-text" placeholder="Scrivi qualcosa…" rows="5"></textarea>
+      <div style="margin-top:8px;display:flex;gap:8px;align-items:center">
+        <label style="font-size:0.85rem;font-weight:700;color:#888">📷 Foto (URL):</label>
+        <input type="text" id="modal-diario-img" placeholder="https://…" style="flex:1;border:1.5px solid #ddd;border-radius:8px;padding:6px 10px;font-size:0.85rem;outline:none">
+      </div>
       <div class="modal-actions">
         <button class="btn-secondary" id="btn-cancel-diario">Annulla</button>
-        <button class="btn-primary" id="btn-save-diario">Salva nel diario</button>
+        <button class="btn-primary" id="btn-save-diario" style="width:auto;margin:0">Pubblica</button>
       </div>
     </div>
   </div>
 
-  <!-- Modal: Mi Presento -->
+  <!-- MODAL: modifica Mi Presento -->
   <div class="modal-overlay hidden" id="modal-presento">
     <div class="modal-box">
-      <h3>👋 La tua presentazione</h3>
-      <textarea id="modal-presento-text" class="nunito" placeholder="Raccontati..." rows="6"></textarea>
+      <h3>✨ La tua presentazione</h3>
+      <textarea id="modal-presento-text" class="nunito" placeholder="Raccontati…" rows="6"></textarea>
       <div class="modal-actions">
         <button class="btn-secondary" id="btn-cancel-presento">Annulla</button>
-        <button class="btn-primary" id="btn-save-presento">Salva</button>
+        <button class="btn-primary" id="btn-save-presento" style="width:auto;margin:0">Salva</button>
       </div>
     </div>
   </div>
 
-  <!-- Modal: Bottiglia -->
+  <!-- MODAL: messaggio in bottiglia -->
   <div class="modal-overlay hidden" id="modal-bottiglia">
     <div class="modal-box">
       <h3>🍾 Manda un messaggio in bottiglia</h3>
-      <textarea id="modal-bottiglia-text" class="nunito" placeholder="Scrivi il tuo messaggio..." rows="5"></textarea>
+      <textarea id="modal-bottiglia-text" class="nunito" placeholder="Scrivi il tuo messaggio…" rows="5"></textarea>
       <div class="modal-actions">
         <button class="btn-secondary" id="btn-cancel-bottiglia">Annulla</button>
-        <button class="btn-arancio" id="btn-save-bottiglia">Invia 🍾</button>
+        <button class="btn-arancio" id="btn-save-bottiglia" style="width:auto;margin:0">Invia 🍾</button>
       </div>
     </div>
   </div>
 
-  <script type="module" src="js/profilo.js"></script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged }
+      from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import {
+      getFirestore, doc, getDoc, collection, query, where,
+      orderBy, getDocs, addDoc, deleteDoc, updateDoc,
+      serverTimestamp, increment, setDoc
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyC18lzwqhYcW29TsEO6Oy4Bqvb2PMBUmAg",
+      authDomain: "campo-dei-fiori.firebaseapp.com",
+      projectId: "campo-dei-fiori",
+      storageBucket: "campo-dei-fiori.firebasestorage.app",
+      messagingSenderId: "928976798756",
+      appId: "1:928976798756:web:1b90027ec9f03b203e44b1"
+    };
+    const app  = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db   = getFirestore(app);
+
+    const params     = new URLSearchParams(location.search);
+    const profileUid = params.get('uid');
+    let currentUser  = null;
+    let isOwner      = false;
+    let isAdmin      = false;
+    let isAutorizzato = false;
+    let profileData  = {};
+    let allPosts     = [];   // cache per la ricerca
+
+    // ---- AUTH ----
+    onAuthStateChanged(auth, async user => {
+      currentUser = user;
+      isOwner = user && user.uid === profileUid;
+      if (user) {
+        const usnap = await getDoc(doc(db, 'utenti', user.uid));
+        if (usnap.exists()) {
+          isAdmin       = !!usnap.data().admin;
+          isAutorizzato = !!usnap.data().autorizzato;
+        }
+      }
+      renderPermissions();
+    });
+
+    function renderPermissions() {
+      // Foto edit
+      if (isOwner) document.getElementById('hero-foto').classList.add('is-owner');
+      // Mi presento edit
+      document.getElementById('btn-edit-presento').classList.toggle('hidden', !isOwner);
+      // Nuovo post diario
+      document.getElementById('diario-new-btn').classList.toggle('visible', isOwner);
+      // Bottiglia: solo loggati autorizzati NON proprietari
+      const showBottiglia = currentUser && !isOwner && (isAutorizzato || isAdmin);
+      document.getElementById('btn-manda-bottiglia').classList.toggle('hidden', !showBottiglia);
+    }
+
+    // ---- CARICA PROFILO ----
+    async function loadProfilo() {
+      if (!profileUid) { document.getElementById('profilo-nome').textContent = 'Profilo non trovato'; return; }
+      const snap = await getDoc(doc(db, 'utenti', profileUid));
+      if (!snap.exists()) { document.getElementById('profilo-nome').textContent = 'Profilo non trovato'; return; }
+      profileData = snap.data();
+
+      document.getElementById('profilo-nome').textContent = profileData.nome || '—';
+      document.getElementById('profilo-comunita').textContent = '🏡 ' + (profileData.comunitaId || '');
+
+      if (profileData.fotoProfilo) {
+        document.getElementById('hero-img').src = profileData.fotoProfilo;
+      }
+      if (profileData.audioUrl) {
+        document.getElementById('audio-player').src = profileData.audioUrl;
+        document.getElementById('audio-section').style.display = '';
+      }
+      if (profileData.miPresento) {
+        const el = document.getElementById('mi-presento-text');
+        el.textContent = profileData.miPresento;
+        el.classList.remove('mi-presento-empty');
+      }
+      document.getElementById('modal-presento-text').value = profileData.miPresento || '';
+    }
+
+    // ---- DIARIO ----
+    async function loadDiario() {
+      const list = document.getElementById('diario-list');
+      list.innerHTML = '<div class="spinner"></div>';
+      try {
+        const snap = await getDocs(query(
+          collection(db, 'diario'),
+          where('uidRagazzo', '==', profileUid),
+          orderBy('createdAt', 'desc')
+        ));
+        allPosts = [];
+        snap.forEach(d => allPosts.push({ id: d.id, ...d.data() }));
+        renderPosts(allPosts);
+      } catch (e) {
+        list.innerHTML = `<p class="empty-msg">Errore: ${e.message}</p>`;
+      }
+    }
+
+    function renderPosts(posts) {
+      const list = document.getElementById('diario-list');
+      if (!posts.length) { list.innerHTML = '<p class="empty-msg">Il diario è ancora vuoto…</p>'; return; }
+      list.innerHTML = '';
+      posts.forEach(p => list.appendChild(buildPostCard(p)));
+    }
+
+    function buildPostCard(p) {
+      const data = p.createdAt?.toDate ? formatDate(p.createdAt.toDate()) : '';
+      const canDelete = isOwner || isAdmin;
+      const avatar = profileData.fotoProfilo
+        ? `<img class="post-avatar" src="${profileData.fotoProfilo}" alt="">`
+        : '<div class="post-avatar" style="background:#ddd;display:flex;align-items:center;justify-content:center">🧒</div>';
+
+      const imgHtml  = p.immagineUrl ? `<img class="post-img" src="${p.immagineUrl}" alt="">` : '';
+      const audioHtml = p.audioUrl   ? `<div class="post-audio"><audio controls src="${p.audioUrl}" style="width:100%"></audio></div>` : '';
+
+      // Reazioni
+      const reazioni = p.reazioni || { cuore: 0, like: 0, dislike: 0 };
+      const mieReaz  = p.mieReazioni || {};
+
+      const el = document.createElement('div');
+      el.className = 'card-post';
+      el.dataset.id = p.id;
+      el.innerHTML = `
+        <div class="post-header">
+          ${avatar}
+          <div class="post-meta">
+            <div class="post-autore">${profileData.nome || ''}</div>
+            <div class="post-data">${data}</div>
+          </div>
+          ${canDelete ? `<button class="post-delete-btn" title="Elimina">🗑️</button>` : ''}
+        </div>
+        <div class="post-testo">${p.testo || ''}</div>
+        ${imgHtml}${audioHtml}
+        <div class="post-reazioni">
+          <button class="btn-reazione${mieReaz.cuore ? ' attiva' : ''}" data-tipo="cuore">❤️ <span>${reazioni.cuore || 0}</span></button>
+          <button class="btn-reazione${mieReaz.like  ? ' attiva' : ''}" data-tipo="like">👍 <span>${reazioni.like  || 0}</span></button>
+          <button class="btn-reazione${mieReaz.dislike?' attiva' : ''}" data-tipo="dislike">👎 <span>${reazioni.dislike|| 0}</span></button>
+        </div>`;
+
+      // Delete
+      if (canDelete) {
+        el.querySelector('.post-delete-btn').addEventListener('click', () => deletePost(p.id));
+      }
+      // Reazioni
+      el.querySelectorAll('.btn-reazione').forEach(btn => {
+        btn.addEventListener('click', () => toggleReazione(p.id, btn.dataset.tipo, el));
+      });
+      return el;
+    }
+
+    // ---- REAZIONI ----
+    async function toggleReazione(postId, tipo, el) {
+      if (!currentUser) return;
+      const reazRef = doc(db, 'diario', postId, 'reazioni', currentUser.uid);
+      const reazSnap = await getDoc(reazRef);
+      const aveva = reazSnap.exists() && reazSnap.data()[tipo];
+
+      const postRef = doc(db, 'diario', postId);
+      if (aveva) {
+        await updateDoc(postRef, { [`reazioni.${tipo}`]: increment(-1) });
+        await setDoc(reazRef, { [tipo]: false }, { merge: true });
+      } else {
+        await updateDoc(postRef, { [`reazioni.${tipo}`]: increment(1) });
+        await setDoc(reazRef, { [tipo]: true }, { merge: true });
+      }
+      // Aggiorna UI
+      const btn = el.querySelector(`[data-tipo="${tipo}"]`);
+      const span = btn.querySelector('span');
+      const cur = parseInt(span.textContent) || 0;
+      span.textContent = aveva ? cur - 1 : cur + 1;
+      btn.classList.toggle('attiva', !aveva);
+    }
+
+    // ---- RICERCA DIARIO ----
+    document.getElementById('diario-search').addEventListener('input', e => {
+      const q = e.target.value.trim().toLowerCase();
+      if (!q) { renderPosts(allPosts); return; }
+      renderPosts(allPosts.filter(p => (p.testo || '').toLowerCase().includes(q)));
+    });
+
+    // ---- DELETE POST ----
+    async function deletePost(id) {
+      if (!confirm('Eliminare questo post?')) return;
+      await deleteDoc(doc(db, 'diario', id));
+      document.querySelector(`.card-post[data-id="${id}"]`)?.remove();
+      if (!document.querySelector('.card-post')) {
+        document.getElementById('diario-list').innerHTML = '<p class="empty-msg">Il diario è ancora vuoto…</p>';
+      }
+    }
+
+    // ---- NUOVO POST ----
+    document.getElementById('diario-new-btn').addEventListener('click', () => {
+      document.getElementById('modal-diario-text').value = '';
+      document.getElementById('modal-diario-img').value = '';
+      document.getElementById('modal-diario').classList.remove('hidden');
+    });
+    document.getElementById('btn-cancel-diario').addEventListener('click', () =>
+      document.getElementById('modal-diario').classList.add('hidden'));
+    document.getElementById('btn-save-diario').addEventListener('click', async () => {
+      const testo = document.getElementById('modal-diario-text').value.trim();
+      const imgUrl = document.getElementById('modal-diario-img').value.trim();
+      if (!testo || !currentUser) return;
+      const btn = document.getElementById('btn-save-diario');
+      btn.disabled = true;
+      try {
+        const ref = await addDoc(collection(db, 'diario'), {
+          uidRagazzo: profileUid, testo,
+          immagineUrl: imgUrl || null,
+          audioUrl: null,
+          reazioni: { cuore: 0, like: 0, dislike: 0 },
+          createdAt: serverTimestamp()
+        });
+        document.getElementById('modal-diario').classList.add('hidden');
+        const newPost = { id: ref.id, uidRagazzo: profileUid, testo, immagineUrl: imgUrl || null, reazioni: { cuore:0, like:0, dislike:0 }, createdAt: null };
+        allPosts.unshift(newPost);
+        const list = document.getElementById('diario-list');
+        const emptyMsg = list.querySelector('.empty-msg');
+        if (emptyMsg) emptyMsg.remove();
+        list.prepend(buildPostCard(newPost));
+      } catch (e) { alert('Errore: ' + e.message); }
+      btn.disabled = false;
+    });
+
+    // ---- MI PRESENTO ----
+    document.getElementById('btn-edit-presento').addEventListener('click', () =>
+      document.getElementById('modal-presento').classList.remove('hidden'));
+    document.getElementById('btn-cancel-presento').addEventListener('click', () =>
+      document.getElementById('modal-presento').classList.add('hidden'));
+    document.getElementById('btn-save-presento').addEventListener('click', async () => {
+      const testo = document.getElementById('modal-presento-text').value.trim();
+      if (!currentUser) return;
+      await updateDoc(doc(db, 'utenti', profileUid), { miPresento: testo });
+      const el = document.getElementById('mi-presento-text');
+      el.textContent = testo || 'Ancora nessuna presentazione…';
+      el.classList.toggle('mi-presento-empty', !testo);
+      document.getElementById('modal-presento').classList.add('hidden');
+    });
+
+    // ---- FOTO PROFILO ----
+    document.getElementById('btn-edit-foto').addEventListener('click', () => {
+      const input = document.createElement('input');
+      input.type = 'file'; input.accept = 'image/*';
+      input.onchange = async () => {
+        const file = input.files[0]; if (!file) return;
+        const fd = new FormData();
+        fd.append('file', file); fd.append('upload_preset', 'campo_dei_fiori');
+        const res  = await fetch('https://api.cloudinary.com/v1_1/dxqyprtzh/image/upload', { method:'POST', body:fd });
+        const json = await res.json();
+        await updateDoc(doc(db, 'utenti', profileUid), { fotoProfilo: json.secure_url });
+        document.getElementById('hero-img').src = json.secure_url;
+      };
+      input.click();
+    });
+
+    // ---- BOTTIGLIE ----
+    async function loadBottiglie() {
+      const list = document.getElementById('bottiglia-list');
+      list.innerHTML = '<div class="spinner"></div>';
+      try {
+        const snap = await getDocs(query(
+          collection(db, 'messaggiBottiglia'),
+          where('uidDestinatario', '==', profileUid),
+          orderBy('createdAt', 'desc')
+        ));
+        list.innerHTML = '';
+        if (snap.empty) { list.innerHTML = '<p class="empty-msg">Nessun messaggio ancora 🍾</p>'; return; }
+        snap.forEach(d => list.appendChild(buildBottigliaCard(d.id, d.data())));
+      } catch (e) { list.innerHTML = `<p class="empty-msg">Errore: ${e.message}</p>`; }
+    }
+
+    function buildBottigliaCard(id, d) {
+      const canDel = isOwner || isAdmin;
+      const data   = d.createdAt?.toDate ? formatDate(d.createdAt.toDate()) : '';
+      const el = document.createElement('div');
+      el.className = 'card-bottiglia'; el.dataset.id = id;
+      el.innerHTML = `
+        ${canDel ? `<button class="bott-delete" title="Elimina">🗑️</button>` : ''}
+        <div class="bott-header">🍾 <strong>${d.nomeMittente || 'Anonimo'}</strong> · ${data}</div>
+        <div class="bott-testo">${d.testo || ''}</div>`;
+      if (canDel) el.querySelector('.bott-delete').addEventListener('click', () => deleteBottiglia(id));
+      return el;
+    }
+
+    async function deleteBottiglia(id) {
+      if (!confirm('Eliminare questo messaggio?')) return;
+      await deleteDoc(doc(db, 'messaggiBottiglia', id));
+      document.querySelector(`.card-bottiglia[data-id="${id}"]`)?.remove();
+    }
+
+    document.getElementById('btn-manda-bottiglia').addEventListener('click', () => {
+      document.getElementById('modal-bottiglia-text').value = '';
+      document.getElementById('modal-bottiglia').classList.remove('hidden');
+    });
+    document.getElementById('btn-cancel-bottiglia').addEventListener('click', () =>
+      document.getElementById('modal-bottiglia').classList.add('hidden'));
+    document.getElementById('btn-save-bottiglia').addEventListener('click', async () => {
+      const testo = document.getElementById('modal-bottiglia-text').value.trim();
+      if (!testo || !currentUser) return;
+      const btn = document.getElementById('btn-save-bottiglia');
+      btn.disabled = true;
+      try {
+        await addDoc(collection(db, 'messaggiBottiglia'), {
+          uidMittente: currentUser.uid,
+          nomeMittente: currentUser.displayName || currentUser.email || 'Anonimo',
+          uidDestinatario: profileUid,
+          testo, createdAt: serverTimestamp()
+        });
+        document.getElementById('modal-bottiglia').classList.add('hidden');
+        alert('Messaggio inviato! 🍾');
+      } catch (e) { alert('Errore: ' + e.message); }
+      btn.disabled = false;
+    });
+
+    // Chiudi modal cliccando overlay
+    ['modal-diario','modal-presento','modal-bottiglia'].forEach(id => {
+      const m = document.getElementById(id);
+      m.addEventListener('click', e => { if (e.target === m) m.classList.add('hidden'); });
+    });
+
+    // ---- HELPER ----
+    function formatDate(d) {
+      return d.toLocaleDateString('it-IT', { day:'numeric', month:'long', year:'numeric' });
+    }
+
+    // ---- INIT ----
+    await loadProfilo();
+    await loadDiario();
+    await loadBottiglie();
+  </script>
 </body>
 </html>
