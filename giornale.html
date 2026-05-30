@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Il Giornale – Campo dei Fiori</title>
+  <meta name="theme-color" content="#e07b39">
+  <link rel="manifest" href="manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Caveat:wght@600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Nunito', sans-serif; background: #f5f5f5; padding-bottom: 70px; }
+
+    .top-header {
+      background: #e07b39; color: #fff;
+      display: flex; align-items: center;
+      padding: 0 1rem; height: 56px;
+      position: sticky; top: 0; z-index: 100;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    }
+    .top-header h1 { font-size: 1.1rem; font-weight: 800; flex: 1; text-align: center; }
+
+    /* Badge novità */
+    .novita-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #fff3cd; color: #856404;
+      border: 1px solid #ffc107;
+      border-radius: 20px; padding: 8px 16px;
+      font-size: 0.88rem; font-weight: 700;
+      margin: 12px 16px 4px;
+    }
+
+    /* Feed */
+    .feed { padding: 8px 12px; display: flex; flex-direction: column; gap: 10px; }
+
+    .card-evento {
+      background: #fff; border-radius: 14px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+      padding: 12px 14px;
+      text-decoration: none; color: #222;
+      display: block;
+      transition: transform 0.12s;
+    }
+    .card-evento:hover { transform: translateY(-2px); }
+
+    .evento-header {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 6px;
+    }
+    .evento-avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      overflow: hidden; flex-shrink: 0;
+      background: #e8f4e0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem;
+    }
+    .evento-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .evento-meta { flex: 1; min-width: 0; }
+    .evento-autore { font-size: 0.88rem; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .evento-data   { font-size: 0.72rem; color: #aaa; margin-top: 1px; }
+
+    .evento-tipo {
+      font-size: 0.72rem; font-weight: 700;
+      padding: 3px 8px; border-radius: 10px;
+      white-space: nowrap;
+    }
+    .tipo-diario    { background: #e8f4e0; color: #5a8a4a; }
+    .tipo-bottiglia { background: #fff7e6; color: #b8860b; }
+    .tipo-commento  { background: #e8f0ff; color: #3a5bbd; }
+    .tipo-presento  { background: #fce8ff; color: #7a3bad; }
+
+    .evento-testo {
+      font-size: 0.9rem; color: #555; line-height: 1.5;
+      display: -webkit-box; -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical; overflow: hidden;
+    }
+
+    /* Bottom nav */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      height: 62px; background: #fff;
+      border-top: 1px solid #e0e0e0;
+      display: flex; align-items: stretch; z-index: 100;
+      box-shadow: 0 -2px 8px rgba(0,0,0,0.07);
+    }
+    .nav-item {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-decoration: none; color: #999;
+      font-size: 0.62rem; font-weight: 600; gap: 2px;
+    }
+    .nav-item.active { color: #e07b39; }
+    .nav-item .nav-icon { font-size: 1.3rem; line-height: 1; }
+
+    .spinner {
+      width: 34px; height: 34px;
+      border: 3px solid #eee; border-top-color: #e07b39;
+      border-radius: 50%; animation: spin 0.7s linear infinite;
+      margin: 2rem auto;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .empty-msg { color: #aaa; text-align: center; padding: 2rem; }
+  </style>
+</head>
+<body>
+
+  <header class="top-header">
+    <h1>📰 Il Giornale di Campo dei Fiori</h1>
+    <div id="nav-auth-slot"></div>
+  </header>
+
+  <div id="novita-wrap"></div>
+  <div id="feed" class="feed"><div class="spinner"></div></div>
+
+  <nav class="bottom-nav">
+    <a href="index.html" class="nav-item"><span class="nav-icon">🏠</span>Home</a>
+    <a href="comunita.html" class="nav-item"><span class="nav-icon">🏡</span>Comunità</a>
+    <a href="ragazzi.html" class="nav-item"><span class="nav-icon">🧒</span>Ragazzi</a>
+    <a href="staff.html" class="nav-item"><span class="nav-icon">🤡</span>Staff</a>
+    <a href="#" class="nav-item"><span class="nav-icon">📋</span>Progetti</a>
+    <a href="giornale.html" class="nav-item active"><span class="nav-icon">📰</span>Giornale</a>
+  </nav>
+
+  <script type="module">
+    import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getFirestore, collection, collectionGroup, getDocs, query, orderBy, limit, where }
+      from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { setupNavAuth } from './js/nav-auth.js';
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyC18lzwqhYcW29TsEO6Oy4Bqvb2PMBUmAg",
+      authDomain: "campo-dei-fiori.firebaseapp.com",
+      projectId: "campo-dei-fiori",
+      storageBucket: "campo-dei-fiori.firebasestorage.app",
+      messagingSenderId: "928976798756",
+      appId: "1:928976798756:web:1b90027ec9f03b203e44b1"
+    };
+    const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+    const db  = getFirestore(app);
+    setupNavAuth();
+
+    const feed   = document.getElementById('feed');
+    const ora    = Date.now();
+    const H24    = 24 * 60 * 60 * 1000;
+
+    // Cache utenti: uid -> { nome, fotoProfilo }
+    const utentiCache = {};
+
+    async function buildUtentiCache() {
+      const snap = await getDocs(collection(db, 'utenti'));
+      snap.forEach(d => { utentiCache[d.id] = d.data(); });
+      const staffSnap = await getDocs(collection(db, 'staff'));
+      staffSnap.forEach(d => { utentiCache[d.id] = d.data(); });
+    }
+
+    function getAutore(uid) {
+      return utentiCache[uid] || { nome: 'Qualcuno', fotoProfilo: null };
+    }
+
+    function avatarHtml(uid) {
+      const u = getAutore(uid);
+      return u.fotoProfilo
+        ? `<div class="evento-avatar"><img src="${u.fotoProfilo}" alt="${u.nome}"></div>`
+        : `<div class="evento-avatar">🧒</div>`;
+    }
+
+    function formatDT(ts) {
+      if (!ts?.toDate) return '';
+      const d = ts.toDate();
+      return d.toLocaleDateString('it-IT', { day:'numeric', month:'long' }) +
+             ' · ' + d.toLocaleTimeString('it-IT', { hour:'2-digit', minute:'2-digit' });
+    }
+
+    function trunca(s, n=100) {
+      if (!s) return '';
+      return s.length > n ? s.slice(0, n) + '…' : s;
+    }
+
+    function msOf(ts) {
+      return ts?.toMillis ? ts.toMillis() : 0;
+    }
+
+    async function loadFeed() {
+      await buildUtentiCache();
+      const eventi = [];
+
+      // 1. POST DIARIO
+      try {
+        const snap = await getDocs(collection(db, 'diario'));
+        snap.forEach(d => {
+          const data = d.data();
+          eventi.push({
+            tipo: 'diario',
+            uid: data.uidRagazzo,
+            testo: data.testo || (data.immagineUrl ? '📷 Foto' : data.videoUrl ? '🎥 Video' : data.audioUrl ? '🎵 Audio' : ''),
+            ts: data.createdAt,
+            link: `profilo.html?uid=${data.uidRagazzo}#diario`,
+          });
+        });
+      } catch(_) {}
+
+      // 2. MESSAGGI IN BOTTIGLIA (solo testo + mittente, senza contenuti privati)
+      try {
+        const snap = await getDocs(collection(db, 'messaggiBottiglia'));
+        snap.forEach(d => {
+          const data = d.data();
+          eventi.push({
+            tipo: 'bottiglia',
+            uid: data.uidMittente,
+            nomeOverride: data.nomeMittente,
+            testo: '🍾 Ha mandato un messaggio in bottiglia',
+            ts: data.createdAt,
+            link: `profilo.html?uid=${data.uidDestinatario}#messaggi`,
+          });
+        });
+      } catch(_) {}
+
+      // 3. COMMENTI (collectionGroup)
+      try {
+        const snap = await getDocs(collectionGroup(db, 'commenti'));
+        snap.forEach(d => {
+          const data = d.data();
+          eventi.push({
+            tipo: 'commento',
+            uid: data.uidAutore,
+            nomeOverride: data.nomeAutore,
+            fotoOverride: data.fotoAutore,
+            testo: trunca(data.testo),
+            ts: data.createdAt,
+            link: `profilo.html?uid=${data.uidAutore}`,
+          });
+        });
+      } catch(_) {}
+
+      // 4. MI PRESENTO aggiornati
+      try {
+        const snap = await getDocs(collection(db, 'utenti'));
+        snap.forEach(d => {
+          const data = d.data();
+          if (data.updatedAt && data.miPresento) {
+            eventi.push({
+              tipo: 'presento',
+              uid: d.id,
+              testo: trunca(data.miPresento),
+              ts: data.updatedAt,
+              link: `profilo.html?uid=${d.id}`,
+            });
+          }
+        });
+      } catch(_) {}
+
+      // Ordina: più recenti prima
+      eventi.sort((a, b) => msOf(b.ts) - msOf(a.ts));
+
+      // Badge 24h
+      const novita = eventi.filter(e => ora - msOf(e.ts) < H24).length;
+      const wrap = document.getElementById('novita-wrap');
+      if (novita > 0) {
+        wrap.innerHTML = `<div class="novita-badge">🔴 ${novita} novità nelle ultime 24 ore</div>`;
+      }
+
+      // Render
+      feed.innerHTML = '';
+      if (!eventi.length) { feed.innerHTML = '<p class="empty-msg">Nessun evento ancora.</p>'; return; }
+
+      const ICONE = { diario:'📓', bottiglia:'🍾', commento:'💬', presento:'✨' };
+      const LABEL = { diario:'Nuovo post', bottiglia:'Messaggio in bottiglia', commento:'Commento', presento:'Presentazione aggiornata' };
+      const CLASSI = { diario:'tipo-diario', bottiglia:'tipo-bottiglia', commento:'tipo-commento', presento:'tipo-presento' };
+
+      eventi.slice(0, 60).forEach(e => {
+        const autore = e.nomeOverride || getAutore(e.uid).nome || 'Qualcuno';
+        const foto   = e.fotoOverride || utentiCache[e.uid]?.fotoProfilo || null;
+        const avatarEl = foto
+          ? `<div class="evento-avatar"><img src="${foto}" alt="${autore}"></div>`
+          : `<div class="evento-avatar">${ICONE[e.tipo]}</div>`;
+
+        const card = document.createElement('a');
+        card.className = 'card-evento';
+        card.href      = e.link;
+        card.innerHTML = `
+          <div class="evento-header">
+            ${avatarEl}
+            <div class="evento-meta">
+              <div class="evento-autore">${autore}</div>
+              <div class="evento-data">${formatDT(e.ts)}</div>
+            </div>
+            <span class="evento-tipo ${CLASSI[e.tipo]}">${ICONE[e.tipo]} ${LABEL[e.tipo]}</span>
+          </div>
+          <div class="evento-testo">${e.testo || ''}</div>`;
+        feed.appendChild(card);
+      });
+    }
+
+    loadFeed();
+  </script>
+</body>
+</html>
