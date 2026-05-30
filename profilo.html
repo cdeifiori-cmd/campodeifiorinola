@@ -384,7 +384,7 @@
       from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
     import {
       getFirestore, doc, getDoc, collection, query, where,
-      orderBy, getDocs, addDoc, deleteDoc, updateDoc,
+      getDocs, addDoc, deleteDoc, updateDoc,
       serverTimestamp, increment, setDoc
     } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
@@ -467,11 +467,16 @@
       try {
         const snap = await getDocs(query(
           collection(db, 'diario'),
-          where('uidRagazzo', '==', profileUid),
-          orderBy('createdAt', 'desc')
+          where('uidRagazzo', '==', profileUid)
         ));
         allPosts = [];
         snap.forEach(d => allPosts.push({ id: d.id, ...d.data() }));
+        // Ordina lato client: più recenti prima
+        allPosts.sort((a, b) => {
+          const ta = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+          const tb = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+          return tb - ta;
+        });
         renderPosts(allPosts);
       } catch (e) {
         list.innerHTML = `<p class="empty-msg">Errore: ${e.message}</p>`;
@@ -641,12 +646,19 @@
       try {
         const snap = await getDocs(query(
           collection(db, 'messaggiBottiglia'),
-          where('uidDestinatario', '==', profileUid),
-          orderBy('createdAt', 'desc')
+          where('uidDestinatario', '==', profileUid)
         ));
         list.innerHTML = '';
         if (snap.empty) { list.innerHTML = '<p class="empty-msg">Nessun messaggio ancora 🍾</p>'; return; }
-        snap.forEach(d => list.appendChild(buildBottigliaCard(d.id, d.data())));
+        // Ordina lato client: più recenti prima
+        const bottiglie = [];
+        snap.forEach(d => bottiglie.push({ id: d.id, ...d.data() }));
+        bottiglie.sort((a, b) => {
+          const ta = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+          const tb = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+          return tb - ta;
+        });
+        bottiglie.forEach(b => list.appendChild(buildBottigliaCard(b.id, b)));
       } catch (e) { list.innerHTML = `<p class="empty-msg">Errore: ${e.message}</p>`; }
     }
 
