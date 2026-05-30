@@ -430,11 +430,46 @@
   </div>
 
   <!-- AUDIO -->
-  <div class="section" id="audio-section" style="display:none">
-    <div class="section-title">🎵 Un saluto</div>
+  <div class="section" id="audio-section">
+    <div class="section-title">🎙️ Un saluto</div>
     <div class="section-body">
-      <div class="audio-wrap">
-        <audio id="audio-player" controls></audio>
+      <!-- Player (visibile solo se audioUrl presente) -->
+      <div id="saluto-player-wrap" style="display:none">
+        <div class="audio-wrap">
+          <audio id="audio-player" controls style="width:100%"></audio>
+        </div>
+      </div>
+
+      <!-- Pulsanti owner/admin -->
+      <div id="saluto-owner-ui" style="display:none;margin-top:10px">
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn-media" id="btn-registra-saluto">🎙️ <span id="btn-registra-label">Registra il tuo saluto</span></button>
+          <button class="btn-media hidden" id="btn-elimina-saluto" style="background:#ffeaea;color:#c0392b">🗑️ Elimina saluto</button>
+        </div>
+
+        <!-- UI registrazione -->
+        <div id="saluto-rec-ui" style="display:none;margin-top:10px">
+          <div id="saluto-rec-active" style="display:none;align-items:center;gap:10px;background:#fff0f0;border-radius:10px;padding:10px 14px">
+            <span class="rec-dot"></span>
+            <span style="font-size:0.88rem;font-weight:700;color:#e74c3c">REC</span>
+            <span id="saluto-rec-timer" style="font-size:0.88rem;font-weight:700;color:#555;flex:1">0:00</span>
+            <button id="btn-saluto-stop" type="button" class="btn-media" style="background:#e74c3c;color:#fff">⏹ Stop</button>
+          </div>
+          <div id="saluto-rec-preview" style="display:none;margin-top:8px">
+            <audio id="saluto-preview-audio" controls style="width:100%;margin-bottom:8px"></audio>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button id="btn-saluto-save" class="btn-primary" style="width:auto;margin:0">💾 Salva come saluto</button>
+              <button id="btn-saluto-discard" class="btn-media" style="background:#eee;color:#555">🗑 Scarta</button>
+            </div>
+          </div>
+          <!-- Progress upload -->
+          <div id="saluto-upload-progress" style="display:none;margin-top:8px">
+            <div style="background:#eee;border-radius:20px;height:6px;overflow:hidden">
+              <div id="saluto-upload-bar" style="background:#5a8a4a;height:100%;width:0%;transition:width 0.3s"></div>
+            </div>
+            <p id="saluto-upload-label" style="font-size:0.78rem;color:#888;margin-top:4px;text-align:center">Caricamento…</p>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -687,7 +722,144 @@
       // Bottiglia: loggati autorizzati o admin, NON proprietari
       const showBottiglia = currentUser && !isOwner && (isAutorizzato || isAdmin);
       document.getElementById('btn-manda-bottiglia').classList.toggle('hidden', !showBottiglia);
+      // Aggiorna UI saluto se profileData già caricato
+      if (profileData.nome) renderSalutoUI();
     }
+
+    // ---- SALUTO UI ----
+    function renderSalutoUI() {
+      const hasAudio = !!(profileData.audioUrl);
+      const canEdit  = isOwner || isAdmin;
+
+      // Mostra sempre la sezione
+      // Player
+      if (hasAudio) {
+        document.getElementById('audio-player').src = profileData.audioUrl;
+        document.getElementById('saluto-player-wrap').style.display = '';
+      } else {
+        document.getElementById('saluto-player-wrap').style.display = 'none';
+      }
+
+      // Owner UI
+      if (canEdit) {
+        document.getElementById('saluto-owner-ui').style.display = '';
+        document.getElementById('btn-registra-label').textContent =
+          hasAudio ? 'Registra nuovo saluto' : 'Registra il tuo saluto';
+        document.getElementById('btn-elimina-saluto').classList.toggle('hidden', !hasAudio);
+      } else {
+        document.getElementById('saluto-owner-ui').style.display = 'none';
+      }
+    }
+
+    // ---- LOGICA REGISTRAZIONE SALUTO ----
+    let salutoRecorder   = null;
+    let salutoChunks     = [];
+    let salutoBlob       = null;
+    let salutoRecTimer   = null;
+
+    document.getElementById('btn-registra-saluto').addEventListener('click', async () => {
+      if (!navigator.mediaDevices || typeof MediaRecorder === 'undefined') {
+        alert('Registrazione non supportata in questo browser.'); return;
+      }
+      // Reset UI
+      document.getElementById('saluto-rec-ui').style.display = '';
+      document.getElementById('saluto-rec-active').style.display = 'flex';
+      document.getElementById('saluto-rec-preview').style.display = 'none';
+      document.getElementById('saluto-upload-progress').style.display = 'none';
+      salutoBlob = null;
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        salutoChunks = [];
+        salutoRecorder = new MediaRecorder(stream);
+        salutoRecorder.ondataavailable = e => { if (e.data.size > 0) salutoChunks.push(e.data); };
+        salutoRecorder.onstop = () => {
+          stream.getTracks().forEach(t => t.stop());
+          salutoBlob = new Blob(salutoChunks, { type: 'audio/webm' });
+          const url  = URL.createObjectURL(salutoBlob);
+          document.getElementById('saluto-preview-audio').src = url;
+          document.getElementById('saluto-rec-active').style.display  = 'none';
+          document.getElementById('saluto-rec-preview').style.display = '';
+          clearInterval(salutoRecTimer);
+        };
+        salutoRecorder.start();
+        let secs = 0;
+        salutoRecTimer = setInterval(() => {
+          secs++;
+          const m = Math.floor(secs/60), s = secs%60;
+          document.getElementById('saluto-rec-timer').textContent = `${m}:${s.toString().padStart(2,'0')}`;
+        }, 1000);
+      } catch(e) {
+        document.getElementById('saluto-rec-ui').style.display = 'none';
+        alert(e.name === 'NotAllowedError'
+          ? 'Permesso microfono negato.'
+          : 'Microfono non disponibile: ' + e.message);
+      }
+    });
+
+    document.getElementById('btn-saluto-stop').addEventListener('click', () => {
+      if (salutoRecorder && salutoRecorder.state !== 'inactive') salutoRecorder.stop();
+      clearInterval(salutoRecTimer);
+    });
+
+    document.getElementById('btn-saluto-discard').addEventListener('click', () => {
+      salutoBlob = null;
+      document.getElementById('saluto-rec-ui').style.display = 'none';
+    });
+
+    document.getElementById('btn-saluto-save').addEventListener('click', async () => {
+      if (!salutoBlob) return;
+      const btn = document.getElementById('btn-saluto-save');
+      btn.disabled = true;
+
+      // Progress
+      const prog = document.getElementById('saluto-upload-progress');
+      const bar  = document.getElementById('saluto-upload-bar');
+      const lbl  = document.getElementById('saluto-upload-label');
+      prog.style.display = ''; bar.style.width = '0%'; lbl.textContent = 'Caricamento…';
+      let pct = 0;
+      const t = setInterval(() => { pct = Math.min(pct+6,80); bar.style.width=pct+'%'; }, 250);
+
+      try {
+        const file = new File([salutoBlob], 'saluto.webm', { type: 'audio/webm' });
+        const fd   = new FormData();
+        fd.append('file', file); fd.append('upload_preset', 'campo_dei_fiori');
+        const res  = await fetch('https://api.cloudinary.com/v1_1/dxqyprtzh/video/upload', { method:'POST', body:fd });
+        const json = await res.json();
+        clearInterval(t); bar.style.width='100%';
+        if (json.error) throw new Error(json.error.message);
+
+        // Salva in Firestore
+        await updateDoc(doc(db, profileColl, profileUid), { audioUrl: json.secure_url });
+        profileData.audioUrl = json.secure_url;
+
+        // Aggiorna UI
+        document.getElementById('audio-player').src = json.secure_url;
+        document.getElementById('saluto-player-wrap').style.display = '';
+        document.getElementById('btn-registra-label').textContent = 'Registra nuovo saluto';
+        document.getElementById('btn-elimina-saluto').classList.remove('hidden');
+        document.getElementById('saluto-rec-ui').style.display = 'none';
+        prog.style.display = 'none';
+        salutoBlob = null;
+        lbl.textContent = '✅ Salvato!'; prog.style.display = '';
+        setTimeout(() => { prog.style.display = 'none'; }, 1500);
+      } catch(e) {
+        clearInterval(t); prog.style.display = 'none';
+        alert('Errore upload: ' + e.message);
+      }
+      btn.disabled = false;
+    });
+
+    document.getElementById('btn-elimina-saluto').addEventListener('click', async () => {
+      if (!confirm('Eliminare il saluto audio?')) return;
+      await updateDoc(doc(db, profileColl, profileUid), { audioUrl: '' });
+      profileData.audioUrl = '';
+      document.getElementById('audio-player').src = '';
+      document.getElementById('saluto-player-wrap').style.display = 'none';
+      document.getElementById('btn-registra-label').textContent = 'Registra il tuo saluto';
+      document.getElementById('btn-elimina-saluto').classList.add('hidden');
+      document.getElementById('saluto-rec-ui').style.display = 'none';
+    });
 
     // ---- CARICA PROFILO ----
     async function loadProfilo() {
@@ -714,10 +886,7 @@
         document.getElementById('hero-img').src          = profileData.fotoProfilo;
         document.getElementById('desktop-avatar-img').src = profileData.fotoProfilo;
       }
-      if (profileData.audioUrl) {
-        document.getElementById('audio-player').src = profileData.audioUrl;
-        document.getElementById('audio-section').style.display = '';
-      }
+      renderSalutoUI();
       if (profileData.miPresento) {
         const el = document.getElementById('mi-presento-text');
         el.textContent = profileData.miPresento;
