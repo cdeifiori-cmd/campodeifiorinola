@@ -200,9 +200,15 @@
 
     /* Reazioni */
     .card-post .post-reazioni {
-      display: flex; align-items: center; gap: 6px;
+      display: flex; flex-direction: row; flex-wrap: nowrap;
+      align-items: center; gap: 8px;
       padding: 8px 12px 10px;
       border-top: 1px solid #f0f0f0;
+    }
+    /* Reazioni bottiglia: stessa riga orizzontale */
+    .card-bottiglia .post-reazioni {
+      display: flex; flex-direction: row; flex-wrap: nowrap;
+      align-items: center; gap: 8px;
     }
     .btn-reazione {
       background: #f5f5f5; border: 1.5px solid #e0e0e0;
