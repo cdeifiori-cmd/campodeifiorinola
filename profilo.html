@@ -301,6 +301,26 @@
     .nav-item.active { color: #e07b39; }
     .nav-item .nav-icon { font-size: 1.3rem; line-height: 1; }
 
+    /* ---- MEDIA UPLOAD ---- */
+    .media-upload-row {
+      display: flex; gap: 6px; flex-wrap: wrap;
+      margin-top: 10px;
+    }
+    .btn-media {
+      background: #f0f0f0; border: none; border-radius: 20px;
+      padding: 7px 13px; font-size: 0.82rem; font-weight: 700;
+      font-family: 'Nunito', sans-serif;
+      cursor: pointer; transition: background 0.15s;
+    }
+    .btn-media:hover { background: #e0e0e0; }
+    .rec-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: #e74c3c;
+      animation: blink 0.9s ease-in-out infinite;
+      flex-shrink: 0;
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
     /* ---- UTILS ---- */
     .hidden { display: none !important; }
     .spinner {
@@ -409,11 +429,49 @@
   <div class="modal-overlay hidden" id="modal-diario">
     <div class="modal-box">
       <h3>✏️ Cosa stai pensando?</h3>
-      <textarea id="modal-diario-text" placeholder="Scrivi qualcosa…" rows="5"></textarea>
-      <div style="margin-top:8px;display:flex;gap:8px;align-items:center">
-        <label style="font-size:0.85rem;font-weight:700;color:#888">📷 Foto (URL):</label>
-        <input type="text" id="modal-diario-img" placeholder="https://…" style="flex:1;border:1.5px solid #ddd;border-radius:8px;padding:6px 10px;font-size:0.85rem;outline:none">
+      <textarea id="modal-diario-text" placeholder="Scrivi qualcosa…" rows="4"></textarea>
+
+      <!-- Upload foto/video -->
+      <div class="media-upload-row">
+        <button class="btn-media" id="btn-upload-foto" type="button">📷 Foto</button>
+        <button class="btn-media" id="btn-upload-video" type="button">🎥 Video</button>
+        <button class="btn-media" id="btn-record-audio" type="button">🎙️ Registra audio</button>
+        <input type="file" id="input-foto" accept="image/*" style="display:none">
+        <input type="file" id="input-video" accept="video/*" style="display:none">
       </div>
+
+      <!-- Preview media selezionato -->
+      <div id="media-preview" style="display:none;margin-top:10px">
+        <div style="display:flex;align-items:center;gap:8px;background:#f5f5f5;border-radius:10px;padding:8px 12px">
+          <span id="media-preview-label" style="font-size:0.82rem;color:#555;flex:1"></span>
+          <button id="btn-remove-media" type="button" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:1rem">✕</button>
+        </div>
+        <img id="preview-img" style="display:none;width:100%;border-radius:10px;margin-top:6px;max-height:180px;object-fit:cover">
+        <video id="preview-video" style="display:none;width:100%;border-radius:10px;margin-top:6px;max-height:180px" controls></video>
+      </div>
+
+      <!-- Registrazione audio -->
+      <div id="audio-rec-ui" style="display:none;margin-top:10px">
+        <div id="rec-active" style="display:none;align-items:center;gap:10px;background:#fff0f0;border-radius:10px;padding:10px 14px">
+          <span class="rec-dot"></span>
+          <span style="font-size:0.88rem;font-weight:700;color:#e74c3c">REC</span>
+          <span id="rec-timer" style="font-size:0.88rem;font-weight:700;color:#555;flex:1">0:00</span>
+          <button id="btn-stop-rec" type="button" class="btn-media" style="background:#e74c3c;color:#fff">⏹ Stop</button>
+        </div>
+        <div id="rec-preview" style="display:none;margin-top:8px">
+          <audio id="rec-audio-preview" controls style="width:100%"></audio>
+          <button id="btn-discard-rec" type="button" class="btn-media" style="margin-top:6px;background:#eee;color:#555">🗑 Scarta</button>
+        </div>
+      </div>
+
+      <!-- Upload progress -->
+      <div id="upload-progress" style="display:none;margin-top:10px">
+        <div style="background:#eee;border-radius:20px;height:6px;overflow:hidden">
+          <div id="upload-bar" style="background:#5a8a4a;height:100%;width:0%;transition:width 0.3s"></div>
+        </div>
+        <p style="font-size:0.78rem;color:#888;margin-top:4px;text-align:center" id="upload-label">Caricamento…</p>
+      </div>
+
       <div class="modal-actions">
         <button class="btn-secondary" id="btn-cancel-diario">Annulla</button>
         <button class="btn-primary" id="btn-save-diario" style="width:auto;margin:0">Pubblica</button>
@@ -580,7 +638,8 @@
         ? `<img class="post-avatar" src="${profileData.fotoProfilo}" alt="">`
         : '<div class="post-avatar" style="background:#ddd;display:flex;align-items:center;justify-content:center">🧒</div>';
 
-      const imgHtml  = p.immagineUrl ? `<img class="post-img" src="${p.immagineUrl}" alt="">` : '';
+      const imgHtml   = p.immagineUrl ? `<img class="post-img" src="${p.immagineUrl}" alt="">` : '';
+      const videoHtml = p.videoUrl   ? `<video class="post-img" src="${p.videoUrl}" controls style="max-height:280px"></video>` : '';
       const audioHtml = p.audioUrl   ? `<div class="post-audio"><audio controls src="${p.audioUrl}" style="width:100%"></audio></div>` : '';
 
       // Reazioni
@@ -600,7 +659,7 @@
           ${canDelete ? `<button class="post-delete-btn" title="Elimina">🗑️</button>` : ''}
         </div>
         <div class="post-testo">${p.testo || ''}</div>
-        ${imgHtml}${audioHtml}
+        ${imgHtml}${videoHtml}${audioHtml}
         <div class="post-reazioni">
           <button class="btn-reazione${mieReaz.cuore ? ' attiva' : ''}" data-tipo="cuore">❤️ <span>${reazioni.cuore || 0}</span></button>
           <button class="btn-reazione${mieReaz.like  ? ' attiva' : ''}" data-tipo="like">👍 <span>${reazioni.like  || 0}</span></button>
@@ -658,36 +717,214 @@
       }
     }
 
-    // ---- NUOVO POST ----
-    document.getElementById('diario-new-btn').addEventListener('click', () => {
+    // ---- NUOVO POST: stato ----
+    let pendingMediaUrl  = null;   // URL Cloudinary dopo upload
+    let pendingMediaType = null;   // 'image' | 'video' | 'audio'
+    let mediaRecorder    = null;
+    let recChunks        = [];
+    let recTimerInterval = null;
+    let recBlob          = null;
+
+    const CLOUD_UPLOAD = 'https://api.cloudinary.com/v1_1/dxqyprtzh/upload';
+    const CLOUD_PRESET = 'campo_dei_fiori';
+
+    function resetModalDiario() {
       document.getElementById('modal-diario-text').value = '';
-      document.getElementById('modal-diario-img').value = '';
+      resetMedia();
+      stopRecIfActive();
+    }
+
+    function resetMedia() {
+      pendingMediaUrl  = null;
+      pendingMediaType = null;
+      document.getElementById('media-preview').style.display = 'none';
+      document.getElementById('preview-img').style.display   = 'none';
+      document.getElementById('preview-video').style.display = 'none';
+      document.getElementById('preview-img').src   = '';
+      document.getElementById('preview-video').src = '';
+      document.getElementById('audio-rec-ui').style.display  = 'none';
+      document.getElementById('rec-preview').style.display   = 'none';
+      document.getElementById('rec-active').style.display    = 'none';
+      recBlob = null;
+    }
+
+    function showProgress(label) {
+      document.getElementById('upload-progress').style.display = '';
+      document.getElementById('upload-label').textContent = label;
+      document.getElementById('upload-bar').style.width = '0%';
+    }
+    function hideProgress() {
+      document.getElementById('upload-progress').style.display = 'none';
+    }
+    async function uploadToCloudinary(file, resourceType) {
+      showProgress('Caricamento in corso…');
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('upload_preset', CLOUD_PRESET);
+      fd.append('resource_type', resourceType);
+      // Simula progresso visivo
+      let pct = 0;
+      const bar = document.getElementById('upload-bar');
+      const fakeProgress = setInterval(() => {
+        pct = Math.min(pct + 8, 85);
+        bar.style.width = pct + '%';
+      }, 200);
+      try {
+        const res  = await fetch(`https://api.cloudinary.com/v1_1/dxqyprtzh/${resourceType}/upload`, { method:'POST', body:fd });
+        const json = await res.json();
+        clearInterval(fakeProgress);
+        bar.style.width = '100%';
+        setTimeout(hideProgress, 600);
+        return json.secure_url;
+      } catch(e) {
+        clearInterval(fakeProgress);
+        hideProgress();
+        throw e;
+      }
+    }
+
+    // Foto
+    document.getElementById('btn-upload-foto').addEventListener('click', () =>
+      document.getElementById('input-foto').click());
+    document.getElementById('input-foto').addEventListener('change', async e => {
+      const file = e.target.files[0]; if (!file) return;
+      try {
+        const url = await uploadToCloudinary(file, 'image');
+        pendingMediaUrl  = url;
+        pendingMediaType = 'image';
+        document.getElementById('preview-img').src = url;
+        document.getElementById('preview-img').style.display = 'block';
+        document.getElementById('media-preview-label').textContent = '📷 ' + file.name;
+        document.getElementById('media-preview').style.display = '';
+      } catch(e) { alert('Errore upload foto: ' + e.message); }
+      e.target.value = '';
+    });
+
+    // Video
+    document.getElementById('btn-upload-video').addEventListener('click', () =>
+      document.getElementById('input-video').click());
+    document.getElementById('input-video').addEventListener('change', async e => {
+      const file = e.target.files[0]; if (!file) return;
+      try {
+        const url = await uploadToCloudinary(file, 'video');
+        pendingMediaUrl  = url;
+        pendingMediaType = 'video';
+        document.getElementById('preview-video').src = url;
+        document.getElementById('preview-video').style.display = 'block';
+        document.getElementById('media-preview-label').textContent = '🎥 ' + file.name;
+        document.getElementById('media-preview').style.display = '';
+      } catch(e) { alert('Errore upload video: ' + e.message); }
+      e.target.value = '';
+    });
+
+    // Rimuovi media
+    document.getElementById('btn-remove-media').addEventListener('click', resetMedia);
+
+    // ---- REGISTRAZIONE AUDIO ----
+    document.getElementById('btn-record-audio').addEventListener('click', async () => {
+      resetMedia();
+      document.getElementById('audio-rec-ui').style.display = '';
+      document.getElementById('rec-active').style.display   = 'flex';
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        recChunks    = [];
+        mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recChunks.push(e.data); };
+        mediaRecorder.onstop = () => {
+          stream.getTracks().forEach(t => t.stop());
+          recBlob = new Blob(recChunks, { type: 'audio/webm' });
+          const url = URL.createObjectURL(recBlob);
+          document.getElementById('rec-audio-preview').src = url;
+          document.getElementById('rec-active').style.display  = 'none';
+          document.getElementById('rec-preview').style.display = '';
+          clearInterval(recTimerInterval);
+        };
+        mediaRecorder.start();
+        // Timer
+        let secs = 0;
+        recTimerInterval = setInterval(() => {
+          secs++;
+          const m = Math.floor(secs/60), s = secs%60;
+          document.getElementById('rec-timer').textContent = `${m}:${s.toString().padStart(2,'0')}`;
+        }, 1000);
+      } catch(e) {
+        alert('Microfono non disponibile: ' + e.message);
+        document.getElementById('audio-rec-ui').style.display = 'none';
+      }
+    });
+
+    document.getElementById('btn-stop-rec').addEventListener('click', () => {
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+      clearInterval(recTimerInterval);
+    });
+
+    document.getElementById('btn-discard-rec').addEventListener('click', () => {
+      recBlob = null;
+      document.getElementById('audio-rec-ui').style.display = 'none';
+    });
+
+    function stopRecIfActive() {
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+      clearInterval(recTimerInterval);
+      recBlob = null;
+    }
+
+    document.getElementById('diario-new-btn').addEventListener('click', () => {
+      resetModalDiario();
       document.getElementById('modal-diario').classList.remove('hidden');
     });
-    document.getElementById('btn-cancel-diario').addEventListener('click', () =>
-      document.getElementById('modal-diario').classList.add('hidden'));
+
+    document.getElementById('btn-cancel-diario').addEventListener('click', () => {
+      stopRecIfActive();
+      resetMedia();
+      document.getElementById('modal-diario').classList.add('hidden');
+    });
+
     document.getElementById('btn-save-diario').addEventListener('click', async () => {
       const testo = document.getElementById('modal-diario-text').value.trim();
-      const imgUrl = document.getElementById('modal-diario-img').value.trim();
-      if (!testo || !currentUser) return;
+      if (!currentUser) return;
       const btn = document.getElementById('btn-save-diario');
       btn.disabled = true;
+
+      let imgUrl   = null;
+      let videoUrl = null;
+      let audioUrl = null;
+
       try {
+        // Se c'è un blob audio registrato da caricare
+        if (recBlob) {
+          showProgress('Caricamento audio…');
+          const audioFile = new File([recBlob], 'audio.webm', { type: 'audio/webm' });
+          audioUrl = await uploadToCloudinary(audioFile, 'video'); // Cloudinary tratta audio come video
+          recBlob  = null;
+        } else if (pendingMediaType === 'image')  { imgUrl   = pendingMediaUrl; }
+        else if (pendingMediaType === 'video')     { videoUrl = pendingMediaUrl; }
+        else if (pendingMediaType === 'audio')     { audioUrl = pendingMediaUrl; }
+
         const ref = await addDoc(collection(db, 'diario'), {
-          uidRagazzo: profileUid, testo,
-          immagineUrl: imgUrl || null,
-          audioUrl: null,
+          uidRagazzo: profileUid,
+          testo:      testo || null,
+          immagineUrl: imgUrl,
+          videoUrl,
+          audioUrl,
           reazioni: { cuore: 0, like: 0, dislike: 0 },
           createdAt: serverTimestamp()
         });
+
+        resetMedia();
         document.getElementById('modal-diario').classList.add('hidden');
-        const newPost = { id: ref.id, uidRagazzo: profileUid, testo, immagineUrl: imgUrl || null, reazioni: { cuore:0, like:0, dislike:0 }, createdAt: null };
+
+        const newPost = {
+          id: ref.id, uidRagazzo: profileUid,
+          testo: testo || null,
+          immagineUrl: imgUrl, videoUrl, audioUrl,
+          reazioni: { cuore:0, like:0, dislike:0 }, createdAt: null
+        };
         allPosts.unshift(newPost);
         const list = document.getElementById('diario-list');
-        const emptyMsg = list.querySelector('.empty-msg');
-        if (emptyMsg) emptyMsg.remove();
+        list.querySelector('.empty-msg')?.remove();
         list.prepend(buildPostCard(newPost));
-      } catch (e) { alert('Errore: ' + e.message); }
+      } catch(e) { alert('Errore: ' + e.message); }
       btn.disabled = false;
     });
 
