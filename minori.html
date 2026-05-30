@@ -13,7 +13,6 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Nunito', sans-serif; background: #f5f5f5; padding-bottom: 70px; }
 
-    /* HEADER */
     .top-header {
       background: #e07b39; color: #fff;
       display: flex; align-items: center;
@@ -29,37 +28,41 @@
     .top-header h1 { font-size: 1.1rem; font-weight: 800; flex: 1; }
     .top-header .subtitle { font-size: 0.78rem; opacity: 0.85; }
 
-    /* LISTA */
-    .list-minori { padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+    /* GRIGLIA 2 COLONNE */
+    .list-minori {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2px;
+      padding: 2px;
+    }
+    @media (min-width: 769px) {
+      .list-minori { grid-template-columns: 1fr 1fr 1fr; gap: 3px; padding: 3px; }
+    }
 
     .card-minore {
-      background: #fff; border-radius: 14px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-      display: flex; align-items: center; gap: 14px;
-      padding: 12px 14px;
+      background: #fff;
       text-decoration: none; color: #222;
-      transition: transform 0.15s;
-    }
-    .card-minore:hover { transform: translateX(3px); }
-
-    .card-avatar {
-      width: 62px; height: 62px; border-radius: 50%;
-      object-fit: cover; flex-shrink: 0;
-      background: #e8f4e0;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 1.8rem;
-      box-shadow: 0 2px 8px rgba(90,138,74,0.18);
+      display: flex; flex-direction: column;
       overflow: hidden;
+      transition: opacity 0.15s;
     }
-    .card-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+    .card-minore:hover { opacity: 0.88; }
 
-    .card-info .nome { font-size: 1.05rem; font-weight: 800; }
-    .card-info .tag {
-      font-size: 0.78rem; color: #e07b39; font-weight: 600;
-      margin-top: 3px;
+    .card-foto {
+      width: 100%; aspect-ratio: 1 / 1;
+      overflow: hidden; background: #e8f4e0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 3rem;
+    }
+    .card-foto img {
+      width: 100%; height: 100%;
+      object-fit: cover; object-position: top center; display: block;
+    }
+    .card-nome {
+      padding: 8px 10px 10px; background: #fff;
+      font-size: 0.88rem; font-weight: 700; color: #222;
     }
 
-    /* BOTTOM NAV */
     .bottom-nav {
       position: fixed; bottom: 0; left: 0; right: 0;
       height: 62px; background: #fff;
@@ -80,10 +83,10 @@
       width: 34px; height: 34px;
       border: 3px solid #eee; border-top-color: #5a8a4a;
       border-radius: 50%; animation: spin 0.7s linear infinite;
-      margin: 2rem auto;
+      margin: 2rem auto; grid-column: 1/-1;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
-    .empty-msg { color: #aaa; text-align: center; padding: 2rem; }
+    .empty-msg { color: #aaa; text-align: center; padding: 2rem; grid-column: 1/-1; }
   </style>
 </head>
 <body>
@@ -91,7 +94,7 @@
   <header class="top-header">
     <a href="comunita.html" class="back-btn">←</a>
     <div style="flex:1">
-      <div class="h1" id="comunita-title" style="font-size:1.1rem;font-weight:800">Caricamento…</div>
+      <div id="comunita-title" style="font-size:1.1rem;font-weight:800">Caricamento…</div>
       <div class="subtitle" id="page-subtitle"></div>
     </div>
     <div id="nav-auth-slot"></div>
@@ -135,7 +138,6 @@
     async function init() {
       if (!comunitaId) { list.innerHTML = '<p class="empty-msg">Comunità non specificata.</p>'; return; }
 
-      // Carica nome comunità
       try {
         const snap = await getDoc(doc(db, 'comunita', comunitaId));
         if (snap.exists()) {
@@ -144,7 +146,6 @@
         }
       } catch (_) {}
 
-      // Carica ragazzi
       try {
         const snap = await getDocs(query(
           collection(db, 'utenti'),
@@ -154,16 +155,13 @@
         if (snap.empty) { list.innerHTML = '<p class="empty-msg">Nessun ragazzo/a in questa comunità.</p>'; return; }
         snap.forEach(d => {
           const data = d.data();
-          const avatar = data.fotoProfilo
-            ? `<div class="card-avatar"><img src="${data.fotoProfilo}" alt="${data.nome}"></div>`
-            : `<div class="card-avatar">🧒</div>`;
+          const fotoHtml = data.fotoProfilo
+            ? `<img src="${data.fotoProfilo}" alt="${data.nome}" loading="lazy">`
+            : '🧒';
           list.innerHTML += `
             <a class="card-minore" href="profilo.html?uid=${d.id}">
-              ${avatar}
-              <div class="card-info">
-                <div class="nome">${data.nome || '—'}</div>
-                <div class="tag">🏡 ${comunitaId}</div>
-              </div>
+              <div class="card-foto">${fotoHtml}</div>
+              <div class="card-nome">${data.nome || '—'}</div>
             </a>`;
         });
       } catch (e) {
