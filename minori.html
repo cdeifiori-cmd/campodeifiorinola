@@ -90,10 +90,11 @@
 
   <header class="top-header">
     <a href="comunita.html" class="back-btn">←</a>
-    <div>
+    <div style="flex:1">
       <div class="h1" id="comunita-title" style="font-size:1.1rem;font-weight:800">Caricamento…</div>
       <div class="subtitle" id="page-subtitle"></div>
     </div>
+    <div id="nav-auth-slot"></div>
   </header>
 
   <div id="list-minori" class="list-minori">
@@ -110,6 +111,8 @@
   </nav>
 
   <script type="module">
+    import { setupNavAuth } from './js/nav-auth.js';
+    setupNavAuth();
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getFirestore, doc, getDoc, collection, query, where, getDocs }
       from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";

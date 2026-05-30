@@ -92,6 +92,7 @@
 
   <header class="top-header">
     <h1>👤 Staff Educativo</h1>
+    <div id="nav-auth-slot"></div>
   </header>
 
   <div id="list-staff" class="list-staff">
@@ -108,6 +109,8 @@
   </nav>
 
   <script type="module">
+    import { setupNavAuth } from './js/nav-auth.js';
+    setupNavAuth();
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getFirestore, collection, getDocs }
       from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";

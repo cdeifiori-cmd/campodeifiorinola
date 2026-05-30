@@ -31,11 +31,26 @@
         background-image: url('https://res.cloudinary.com/dxqyprtzh/image/upload/v1780146911/logo_campo_sito_web_ed52gm.png');
       }
     }
+
+    .index-nav {
+      position: fixed;
+      top: 0; right: 0;
+      padding: 12px 16px;
+      z-index: 100;
+    }
   </style>
 </head>
 <body>
   <a class="cover" href="comunita.html" aria-label="Entra nel mondo di Campo dei Fiori"></a>
 
+  <div class="index-nav">
+    <div id="nav-auth-slot"></div>
+  </div>
+
+  <script type="module">
+    import { setupNavAuth } from './js/nav-auth.js';
+    setupNavAuth();
+  </script>
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/service-worker.js');

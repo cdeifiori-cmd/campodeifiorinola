@@ -180,6 +180,7 @@
   <header class="top-header">
     <button class="btn-hamburger" aria-label="Menu">☰</button>
     <h1>Comunità</h1>
+    <div id="nav-auth-slot"></div>
   </header>
 
   <!-- GRIGLIA -->
@@ -210,6 +211,8 @@
   </nav>
 
   <script type="module">
+    import { setupNavAuth } from './js/nav-auth.js';
+    setupNavAuth();
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getFirestore, collection, getDocs, query, orderBy }
       from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
