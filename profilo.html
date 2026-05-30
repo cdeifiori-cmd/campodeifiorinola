@@ -378,6 +378,13 @@
     }
     @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
 
+    /* ---- ANCHOR HIGHLIGHT ---- */
+    .highlight-anchor {
+      outline: 3px solid #e07b39 !important;
+      outline-offset: 2px;
+      transition: outline 0.3s;
+    }
+
     /* ---- UTILS ---- */
     .hidden { display: none !important; }
     .spinner {
@@ -762,6 +769,7 @@
 
       const el = document.createElement('div');
       el.className  = 'card-post';
+      el.id         = `post-${p.id}`;
       el.dataset.id = p.id;
       el.innerHTML  = `
         <div class="post-header">
@@ -1259,7 +1267,9 @@
       const audioHtml = d.audioUrl    ? `<audio controls src="${d.audioUrl}" style="width:100%;margin-top:6px"></audio>` : '';
       const reazioni  = d.reazioni || { cuore:0, like:0, dislike:0 };
       const el = document.createElement('div');
-      el.className  = 'card-bottiglia'; el.dataset.id = id;
+      el.className  = 'card-bottiglia';
+      el.id         = `bottiglia-${id}`;
+      el.dataset.id = id;
       el.innerHTML  = `
         ${canDel ? `<button class="bott-delete" title="Elimina">🗑️</button>` : ''}
         <div class="bott-header">🍾 <strong>${d.nomeMittente || 'Anonimo'}</strong> · ${data}</div>
@@ -1546,6 +1556,19 @@
     await loadProfilo();
     await loadDiario();
     await loadBottiglie();
+
+    // ---- SCROLL & HIGHLIGHT ANCHOR ----
+    const anchor = location.hash?.slice(1); // es. "post-abc123" o "bottiglia-xyz"
+    if (anchor) {
+      const target = document.getElementById(anchor);
+      if (target) {
+        setTimeout(() => {
+          target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          target.classList.add('highlight-anchor');
+          setTimeout(() => target.classList.remove('highlight-anchor'), 2500);
+        }, 300);
+      }
+    }
   </script>
 </body>
 </html>

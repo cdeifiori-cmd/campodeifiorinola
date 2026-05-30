@@ -196,7 +196,7 @@
             uid: data.uidRagazzo,
             testo: data.testo || (data.immagineUrl ? '📷 Foto' : data.videoUrl ? '🎥 Video' : data.audioUrl ? '🎵 Audio' : ''),
             ts: data.createdAt,
-            link: `profilo.html?uid=${data.uidRagazzo}#diario`,
+            link: `profilo.html?uid=${data.uidRagazzo}#post-${d.id}`,
           });
         });
       } catch(_) {}
@@ -212,7 +212,7 @@
             nomeOverride: data.nomeMittente,
             testo: '🍾 Ha mandato un messaggio in bottiglia',
             ts: data.createdAt,
-            link: `profilo.html?uid=${data.uidDestinatario}#messaggi`,
+            link: `profilo.html?uid=${data.uidDestinatario}#bottiglia-${d.id}`,
           });
         });
       } catch(_) {}
@@ -237,7 +237,7 @@
                   fotoOverride: data.fotoAutore,
                   testo: trunca(data.testo),
                   ts: data.createdAt,
-                  link: `profilo.html?uid=${postDoc.data().uidRagazzo}#diario`,
+                  link: `profilo.html?uid=${postDoc.data().uidRagazzo}#post-${postDoc.id}`,
                 });
               });
             }).catch(() => {})
