@@ -13,7 +13,7 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Nunito', sans-serif; background: #f5f5f5; padding-bottom: 70px; color: #222; }
 
-    /* ---- HERO FOTO ---- */
+    /* ---- HERO FOTO (mobile) ---- */
     .hero-foto {
       position: relative;
       width: 100%;
@@ -22,13 +22,6 @@
       max-height: 420px;
       background: #c8dfc0;
       overflow: hidden;
-    }
-    @media (min-width: 769px) {
-      .hero-foto {
-        height: 50vh;
-        min-height: 320px;
-        max-height: none;
-      }
     }
     .hero-foto img {
       width: 100%; height: 100%;
@@ -54,6 +47,57 @@
     }
     .hero-foto.is-owner .edit-foto-btn { display: block; }
 
+    /* ---- DESKTOP: header con cerchio foto ---- */
+    .desktop-header {
+      display: none;
+    }
+    @media (min-width: 769px) {
+      .hero-foto { display: none; }
+      .desktop-header {
+        display: flex;
+        align-items: center;
+        gap: 28px;
+        background: #fff;
+        padding: 28px 32px 24px;
+        border-bottom: 1px solid #eee;
+        position: relative;
+      }
+      .desktop-avatar-wrap {
+        position: relative;
+        width: 200px; height: 200px;
+        border-radius: 50%;
+        overflow: hidden;
+        flex-shrink: 0;
+        background: #c8dfc0;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.13);
+        cursor: pointer;
+      }
+      .desktop-avatar-wrap img {
+        width: 100%; height: 100%;
+        object-fit: cover;
+        object-position: top center;
+        display: block;
+      }
+      .desktop-avatar-overlay {
+        position: absolute; inset: 0;
+        background: rgba(0,0,0,0.35);
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        color: #fff; font-size: 1.3rem;
+        opacity: 0; transition: opacity 0.2s;
+      }
+      .is-owner .desktop-avatar-wrap:hover .desktop-avatar-overlay { opacity: 1; }
+      .desktop-info { flex: 1; }
+      .desktop-back {
+        position: absolute; top: 18px; left: 18px;
+        background: #f0f0f0; border: none; border-radius: 50%;
+        width: 36px; height: 36px; font-size: 1rem;
+        cursor: pointer; display: flex; align-items: center; justify-content: center;
+        color: #555; text-decoration: none;
+      }
+      .desktop-back:hover { background: #e0e0e0; }
+    }
+
     /* ---- INFO NOME ---- */
     .profilo-info {
       background: #fff;
@@ -63,6 +107,7 @@
       gap: 12px;
       border-bottom: 1px solid #eee;
     }
+    @media (min-width: 769px) { .profilo-info { display: none; } }
     .profilo-info .nome { font-size: 1.25rem; font-weight: 800; }
     .profilo-info .comunita-tag {
       font-size: 0.82rem; color: #e07b39; font-weight: 700;
@@ -277,6 +322,19 @@
     <button class="edit-foto-btn" id="btn-edit-foto">📷 Cambia foto</button>
   </div>
 
+  <!-- DESKTOP HEADER: cerchio foto + nome (solo ≥769px) -->
+  <div class="desktop-header" id="desktop-header">
+    <a href="javascript:history.back()" class="desktop-back">←</a>
+    <div class="desktop-avatar-wrap" id="desktop-avatar-wrap">
+      <img id="desktop-avatar-img" src="" alt="Foto profilo">
+      <div class="desktop-avatar-overlay">📷</div>
+    </div>
+    <div class="desktop-info">
+      <div class="nome" id="desktop-nome" style="font-size:1.8rem;font-weight:800;margin-bottom:8px">…</div>
+      <span class="comunita-tag" id="desktop-comunita" style="font-size:0.9rem;color:#e07b39;font-weight:700;background:#fdebd0;border-radius:20px;padding:4px 14px;display:inline-block"></span>
+    </div>
+  </div>
+
   <!-- NOME + COMUNITA -->
   <div class="profilo-info">
     <div>
@@ -432,7 +490,10 @@
 
     function renderPermissions() {
       // Foto edit
-      if (isOwner) document.getElementById('hero-foto').classList.add('is-owner');
+      if (isOwner) {
+        document.getElementById('hero-foto').classList.add('is-owner');
+        document.getElementById('desktop-header').classList.add('is-owner');
+      }
       // Mi presento edit
       document.getElementById('btn-edit-presento').classList.toggle('hidden', !isOwner);
       // Nuovo post diario
@@ -449,11 +510,16 @@
       if (!snap.exists()) { document.getElementById('profilo-nome').textContent = 'Profilo non trovato'; return; }
       profileData = snap.data();
 
-      document.getElementById('profilo-nome').textContent = profileData.nome || '—';
-      document.getElementById('profilo-comunita').textContent = '🏡 ' + (profileData.comunitaId || '');
+      const nome = profileData.nome || '—';
+      const com  = '🏡 ' + (profileData.comunitaId || '');
+      document.getElementById('profilo-nome').textContent     = nome;
+      document.getElementById('profilo-comunita').textContent = com;
+      document.getElementById('desktop-nome').textContent     = nome;
+      document.getElementById('desktop-comunita').textContent = com;
 
       if (profileData.fotoProfilo) {
-        document.getElementById('hero-img').src = profileData.fotoProfilo;
+        document.getElementById('hero-img').src          = profileData.fotoProfilo;
+        document.getElementById('desktop-avatar-img').src = profileData.fotoProfilo;
       }
       if (profileData.audioUrl) {
         document.getElementById('audio-player').src = profileData.audioUrl;
@@ -631,7 +697,11 @@
     });
 
     // ---- FOTO PROFILO ----
-    document.getElementById('btn-edit-foto').addEventListener('click', () => {
+    document.getElementById('desktop-avatar-wrap').addEventListener('click', () => {
+      if (!isOwner) return;
+      triggerFotoUpload();
+    });
+    function triggerFotoUpload() {
       const input = document.createElement('input');
       input.type = 'file'; input.accept = 'image/*';
       input.onchange = async () => {
@@ -641,10 +711,12 @@
         const res  = await fetch('https://api.cloudinary.com/v1_1/dxqyprtzh/image/upload', { method:'POST', body:fd });
         const json = await res.json();
         await updateDoc(doc(db, 'utenti', profileUid), { fotoProfilo: json.secure_url });
-        document.getElementById('hero-img').src = json.secure_url;
+        document.getElementById('hero-img').src           = json.secure_url;
+        document.getElementById('desktop-avatar-img').src = json.secure_url;
       };
       input.click();
-    });
+    }
+    document.getElementById('btn-edit-foto').addEventListener('click', triggerFotoUpload);
 
     // ---- BOTTIGLIE ----
     async function loadBottiglie() {
