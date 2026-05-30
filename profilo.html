@@ -482,13 +482,19 @@
       <h3>✏️ Cosa stai pensando?</h3>
       <textarea id="modal-diario-text" placeholder="Scrivi qualcosa…" rows="4"></textarea>
 
-      <!-- Upload foto/video -->
+      <!-- Upload foto/video/audio -->
       <div class="media-upload-row">
         <button class="btn-media" id="btn-upload-foto" type="button">📷 Foto</button>
         <button class="btn-media" id="btn-upload-video" type="button">🎥 Video</button>
         <button class="btn-media" id="btn-record-audio" type="button">🎙️ Registra audio</button>
+        <button class="btn-media" id="btn-video-url" type="button">🔗 URL video</button>
         <input type="file" id="input-foto" accept="image/*" style="display:none">
         <input type="file" id="input-video" accept="video/*" style="display:none">
+      </div>
+      <!-- Input URL video -->
+      <div id="video-url-input" style="display:none;margin-top:8px">
+        <input type="text" id="input-video-url" placeholder="Incolla URL video (YouTube, mp4…)"
+          style="width:100%;border:1.5px solid #ddd;border-radius:10px;padding:8px 12px;font-size:0.88rem;font-family:'Nunito',sans-serif;outline:none">
       </div>
 
       <!-- Preview media selezionato -->
@@ -553,9 +559,15 @@
         <button class="btn-media" id="btn-bott-video" type="button">🎥 Video</button>
         <button class="btn-media" id="btn-bott-audio-rec" type="button">🎙️ Registra audio</button>
         <button class="btn-media" id="btn-bott-audio-file" type="button">🎵 Carica audio</button>
+        <button class="btn-media" id="btn-bott-video-url" type="button">🔗 URL video</button>
         <input type="file" id="input-bott-foto" accept="image/*" style="display:none">
         <input type="file" id="input-bott-video" accept="video/*" style="display:none">
         <input type="file" id="input-bott-audio" accept="audio/*" style="display:none">
+      </div>
+      <!-- Input URL video bottiglia -->
+      <div id="bott-video-url-input" style="display:none;margin-top:8px">
+        <input type="text" id="input-bott-video-url" placeholder="Incolla URL video (YouTube, mp4…)"
+          style="width:100%;border:1.5px solid #ddd;border-radius:10px;padding:8px 12px;font-size:0.88rem;font-family:'Nunito',sans-serif;outline:none">
       </div>
 
       <div id="bott-media-preview" style="display:none;margin-top:8px">
@@ -1043,6 +1055,12 @@
       e.target.value = '';
     });
 
+    // URL video diario
+    document.getElementById('btn-video-url').addEventListener('click', () => {
+      const wrap = document.getElementById('video-url-input');
+      wrap.style.display = wrap.style.display === 'none' ? '' : 'none';
+    });
+
     // Rimuovi media
     document.getElementById('btn-remove-media').addEventListener('click', resetMedia);
 
@@ -1131,11 +1149,14 @@
         if (recBlob) {
           showProgress('Caricamento audio…');
           const audioFile = new File([recBlob], 'audio.webm', { type: 'audio/webm' });
-          audioUrl = await uploadToCloudinary(audioFile, 'video'); // Cloudinary tratta audio come video
+          audioUrl = await uploadToCloudinary(audioFile, 'video');
           recBlob  = null;
         } else if (pendingMediaType === 'image')  { imgUrl   = pendingMediaUrl; }
         else if (pendingMediaType === 'video')     { videoUrl = pendingMediaUrl; }
         else if (pendingMediaType === 'audio')     { audioUrl = pendingMediaUrl; }
+        // URL video incollato manualmente
+        const urlManuale = document.getElementById('input-video-url').value.trim();
+        if (urlManuale) { videoUrl = urlManuale; }
 
         const ref = await addDoc(collection(db, 'diario'), {
           uidRagazzo: profileUid,
