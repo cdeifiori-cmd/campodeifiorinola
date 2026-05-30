@@ -10,27 +10,41 @@
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <link rel="stylesheet" href="css/style.css">
   <style>
+    body, html { margin: 0; padding: 0; height: 100%; }
+
     .hero {
-      background: url('https://res.cloudinary.com/dxqyprtzh/image/upload/v1780138623/le_scelte_qd4la3.png') center center / cover no-repeat;
       position: relative;
+      width: 100%;
+      height: 100vh;
+      background: url('https://res.cloudinary.com/dxqyprtzh/image/upload/v1780138623/le_scelte_qd4la3.png') center center / cover no-repeat;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
     }
-    .hero::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.45);
+
+    .hero-bottom {
+      position: relative;
+      padding: 2rem 1.5rem 3rem;
+      background: linear-gradient(to top, rgba(0,0,0,0.65) 0%, transparent 100%);
+      text-align: center;
     }
-    .hero > * { position: relative; z-index: 1; }
-    .hero h1 { text-shadow: 0 2px 12px rgba(0,0,0,0.6); }
-    .hero p  { text-shadow: 0 1px 6px rgba(0,0,0,0.5); }
+
+    .hero-tagline {
+      font-family: 'Caveat', cursive;
+      font-size: 1.6rem;
+      color: #fff;
+      text-shadow: 0 1px 8px rgba(0,0,0,0.5);
+      margin-bottom: 1.2rem;
+      line-height: 1.3;
+    }
   </style>
 </head>
 <body>
   <section class="hero">
-    <div class="hero-logo">🌸</div>
-    <h1>Campo dei Fiori Nola</h1>
-    <p>Un posto dove ogni storia merita di essere raccontata</p>
-    <a href="comunita.html" class="btn-hero">Entra</a>
+    <div class="hero-bottom">
+      <p class="hero-tagline">Un posto dove ogni storia<br>merita di essere raccontata</p>
+      <a href="comunita.html" class="btn-hero">Entra</a>
+    </div>
   </section>
 
   <script>
