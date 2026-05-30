@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ragazzi – Campo dei Fiori</title>
+  <title>Staff Educativo – Campo dei Fiori</title>
   <meta name="theme-color" content="#e07b39">
   <link rel="manifest" href="manifest.json">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -13,7 +13,6 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Nunito', sans-serif; background: #f5f5f5; padding-bottom: 70px; }
 
-    /* HEADER */
     .top-header {
       background: #e07b39; color: #fff;
       display: flex; align-items: center;
@@ -21,45 +20,41 @@
       position: sticky; top: 0; z-index: 100;
       box-shadow: 0 2px 6px rgba(0,0,0,0.15);
     }
-    .back-btn {
-      background: none; border: none; color: #fff;
-      font-size: 1.3rem; cursor: pointer; padding: 0 10px 0 0;
-      text-decoration: none;
-    }
-    .top-header h1 { font-size: 1.1rem; font-weight: 800; flex: 1; }
-    .top-header .subtitle { font-size: 0.78rem; opacity: 0.85; }
+    .top-header h1 { font-size: 1.1rem; font-weight: 800; flex: 1; text-align: center; }
 
-    /* LISTA */
-    .list-minori { padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+    .list-staff { padding: 12px; display: flex; flex-direction: column; gap: 10px; }
 
-    .card-minore {
+    .card-staff {
       background: #fff; border-radius: 14px;
       box-shadow: 0 2px 10px rgba(0,0,0,0.08);
       display: flex; align-items: center; gap: 14px;
-      padding: 12px 14px;
-      text-decoration: none; color: #222;
-      transition: transform 0.15s;
+      padding: 14px 16px;
     }
-    .card-minore:hover { transform: translateX(3px); }
-
     .card-avatar {
-      width: 62px; height: 62px; border-radius: 50%;
-      object-fit: cover; flex-shrink: 0;
-      background: #e8f4e0;
+      width: 66px; height: 66px; border-radius: 50%;
+      overflow: hidden; flex-shrink: 0;
+      background: #fdebd0;
       display: flex; align-items: center; justify-content: center;
-      font-size: 1.8rem;
-      box-shadow: 0 2px 8px rgba(90,138,74,0.18);
-      overflow: hidden;
+      font-size: 1.9rem;
+      box-shadow: 0 2px 8px rgba(224,123,57,0.2);
     }
-    .card-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
-
+    .card-avatar img { width: 100%; height: 100%; object-fit: cover; }
     .card-info .nome { font-size: 1.05rem; font-weight: 800; }
-    .card-info .tag {
-      font-size: 0.78rem; color: #e07b39; font-weight: 600;
-      margin-top: 3px;
+    .card-info .ruolo {
+      font-size: 0.8rem; color: #e07b39; font-weight: 600;
+      margin-top: 3px; text-transform: capitalize;
+    }
+    .card-info .admin-badge {
+      display: inline-block; font-size: 0.7rem; font-weight: 700;
+      background: #5a8a4a; color: #fff;
+      border-radius: 10px; padding: 1px 8px; margin-top: 4px;
     }
 
-    /* BOTTOM NAV */
+    /* Desktop: griglia 2 colonne */
+    @media (min-width: 769px) {
+      .list-staff { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; padding: 20px; }
+    }
+
     .bottom-nav {
       position: fixed; bottom: 0; left: 0; right: 0;
       height: 62px; background: #fff;
@@ -78,40 +73,36 @@
 
     .spinner {
       width: 34px; height: 34px;
-      border: 3px solid #eee; border-top-color: #5a8a4a;
+      border: 3px solid #eee; border-top-color: #e07b39;
       border-radius: 50%; animation: spin 0.7s linear infinite;
-      margin: 2rem auto;
+      margin: 2rem auto; grid-column: 1/-1;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
-    .empty-msg { color: #aaa; text-align: center; padding: 2rem; }
+    .empty-msg { color: #aaa; text-align: center; padding: 2rem; grid-column: 1/-1; }
   </style>
 </head>
 <body>
 
   <header class="top-header">
-    <a href="comunita.html" class="back-btn">←</a>
-    <div>
-      <div class="h1" id="comunita-title" style="font-size:1.1rem;font-weight:800">Caricamento…</div>
-      <div class="subtitle" id="page-subtitle"></div>
-    </div>
+    <h1>👤 Staff Educativo</h1>
   </header>
 
-  <div id="list-minori" class="list-minori">
+  <div id="list-staff" class="list-staff">
     <div class="spinner"></div>
   </div>
 
   <nav class="bottom-nav">
     <a href="index.html" class="nav-item"><span class="nav-icon">🏠</span>Home</a>
     <a href="comunita.html" class="nav-item"><span class="nav-icon">🏡</span>Comunità</a>
-    <a href="comunita.html" class="nav-item active"><span class="nav-icon">🧒</span>Ragazzi</a>
-    <a href="staff.html" class="nav-item"><span class="nav-icon">👤</span>Staff</a>
+    <a href="comunita.html" class="nav-item"><span class="nav-icon">🧒</span>Ragazzi</a>
+    <a href="staff.html" class="nav-item active"><span class="nav-icon">👤</span>Staff</a>
     <a href="#" class="nav-item"><span class="nav-icon">📋</span>Progetti</a>
     <a href="#" class="nav-item"><span class="nav-icon">🖼️</span>Galleria</a>
   </nav>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getFirestore, doc, getDoc, collection, query, where, getDocs }
+    import { getFirestore, collection, getDocs }
       from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -125,50 +116,35 @@
     const app = initializeApp(firebaseConfig);
     const db  = getFirestore(app);
 
-    const params     = new URLSearchParams(location.search);
-    const comunitaId = params.get('comunita');
-    const list       = document.getElementById('list-minori');
+    const list = document.getElementById('list-staff');
 
-    async function init() {
-      if (!comunitaId) { list.innerHTML = '<p class="empty-msg">Comunità non specificata.</p>'; return; }
-
-      // Carica nome comunità
+    async function loadStaff() {
       try {
-        const snap = await getDoc(doc(db, 'comunita', comunitaId));
-        if (snap.exists()) {
-          document.getElementById('comunita-title').textContent = snap.data().nomeComunita;
-          document.getElementById('page-subtitle').textContent  = snap.data().descrizione || '';
-        }
-      } catch (_) {}
-
-      // Carica ragazzi
-      try {
-        const snap = await getDocs(query(
-          collection(db, 'utenti'),
-          where('comunitaId', '==', comunitaId)
-        ));
+        const snap = await getDocs(collection(db, 'staff'));
         list.innerHTML = '';
-        if (snap.empty) { list.innerHTML = '<p class="empty-msg">Nessun ragazzo/a in questa comunità.</p>'; return; }
+        if (snap.empty) { list.innerHTML = '<p class="empty-msg">Nessun membro dello staff.</p>'; return; }
         snap.forEach(d => {
           const data = d.data();
           const avatar = data.fotoProfilo
             ? `<div class="card-avatar"><img src="${data.fotoProfilo}" alt="${data.nome}"></div>`
-            : `<div class="card-avatar">🧒</div>`;
+            : `<div class="card-avatar">👤</div>`;
+          const adminBadge = data.admin ? `<span class="admin-badge">admin</span>` : '';
           list.innerHTML += `
-            <a class="card-minore" href="profilo.html?uid=${d.id}">
+            <div class="card-staff">
               ${avatar}
               <div class="card-info">
                 <div class="nome">${data.nome || '—'}</div>
-                <div class="tag">🏡 ${comunitaId}</div>
+                <div class="ruolo">${data.ruolo || ''}</div>
+                ${adminBadge}
               </div>
-            </a>`;
+            </div>`;
         });
       } catch (e) {
         list.innerHTML = `<p class="empty-msg">Errore: ${e.message}</p>`;
       }
     }
 
-    init();
+    loadStaff();
   </script>
 </body>
 </html>

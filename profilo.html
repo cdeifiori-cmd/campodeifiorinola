@@ -398,7 +398,7 @@
     <a href="index.html" class="nav-item"><span class="nav-icon">🏠</span>Home</a>
     <a href="comunita.html" class="nav-item"><span class="nav-icon">🏡</span>Comunità</a>
     <a href="comunita.html" class="nav-item"><span class="nav-icon">🧒</span>Ragazzi</a>
-    <a href="#" class="nav-item"><span class="nav-icon">👤</span>Operatori</a>
+    <a href="staff.html" class="nav-item"><span class="nav-icon">👤</span>Staff</a>
     <a href="#" class="nav-item"><span class="nav-icon">📋</span>Progetti</a>
     <a href="#" class="nav-item"><span class="nav-icon">🖼️</span>Galleria</a>
   </nav>
@@ -465,6 +465,7 @@
     const auth = getAuth(app);
     const db   = getFirestore(app);
 
+    const ADMIN_UID  = 'mCSgNMVEphVIIf4HX0bkcKq2ZKv2';
     const params     = new URLSearchParams(location.search);
     const profileUid = params.get('uid');
     let currentUser  = null;
@@ -477,28 +478,30 @@
     // ---- AUTH ----
     onAuthStateChanged(auth, async user => {
       currentUser = user;
-      isOwner = user && user.uid === profileUid;
-      if (user) {
+      isOwner  = user && user.uid === profileUid;
+      isAdmin  = user && user.uid === ADMIN_UID;
+      if (user && !isAdmin) {
         const usnap = await getDoc(doc(db, 'utenti', user.uid));
         if (usnap.exists()) {
-          isAdmin       = !!usnap.data().admin;
           isAutorizzato = !!usnap.data().autorizzato;
         }
       }
+      if (isAdmin) isAutorizzato = true; // admin può tutto
       renderPermissions();
     });
 
     function renderPermissions() {
+      const canEdit = isOwner || isAdmin;
       // Foto edit
-      if (isOwner) {
+      if (canEdit) {
         document.getElementById('hero-foto').classList.add('is-owner');
         document.getElementById('desktop-header').classList.add('is-owner');
       }
       // Mi presento edit
-      document.getElementById('btn-edit-presento').classList.toggle('hidden', !isOwner);
-      // Nuovo post diario
-      document.getElementById('diario-new-btn').classList.toggle('visible', isOwner);
-      // Bottiglia: solo loggati autorizzati NON proprietari
+      document.getElementById('btn-edit-presento').classList.toggle('hidden', !canEdit);
+      // Nuovo post diario (solo proprietario o admin)
+      document.getElementById('diario-new-btn').classList.toggle('visible', canEdit);
+      // Bottiglia: loggati autorizzati o admin, NON proprietari
       const showBottiglia = currentUser && !isOwner && (isAutorizzato || isAdmin);
       document.getElementById('btn-manda-bottiglia').classList.toggle('hidden', !showBottiglia);
     }
@@ -565,7 +568,7 @@
 
     function buildPostCard(p) {
       const data = p.createdAt?.toDate ? formatDate(p.createdAt.toDate()) : '';
-      const canDelete = isOwner || isAdmin;
+      const canDelete = isOwner || isAdmin; // isAdmin già include ADMIN_UID
       const avatar = profileData.fotoProfilo
         ? `<img class="post-avatar" src="${profileData.fotoProfilo}" alt="">`
         : '<div class="post-avatar" style="background:#ddd;display:flex;align-items:center;justify-content:center">🧒</div>';
