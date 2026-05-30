@@ -6,76 +6,113 @@ service cloud.firestore {
       return request.auth != null && request.auth.uid == 'mCSgNMVEphVIIf4HX0bkcKq2ZKv2';
     }
 
+    function isOwnerOf(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    function isLoggedIn() {
+      return request.auth != null;
+    }
+
     function userHas(field) {
-      return request.auth != null &&
+      return isLoggedIn() &&
              exists(/databases/$(database)/documents/utenti/$(request.auth.uid)) &&
              get(/databases/$(database)/documents/utenti/$(request.auth.uid)).data[field] == true;
     }
 
+    // Admin: accesso totale
     match /{document=**} {
       allow read, write: if isAdmin();
     }
 
+    // Comunità: lettura pubblica
     match /comunita/{id} {
       allow read: if true;
       allow write: if isAdmin();
     }
 
+    // Utenti: lettura pubblica, scrittura solo sul proprio documento
     match /utenti/{uid} {
       allow read: if true;
-      allow write: if request.auth != null && request.auth.uid == uid;
+      allow write: if isOwnerOf(uid);
     }
 
+    // Staff: lettura pubblica, scrittura solo admin
     match /staff/{uid} {
       allow read: if true;
       allow write: if isAdmin();
     }
 
+    // Diario: lettura pubblica
+    // create: solo proprietario del profilo
+    // delete/update: proprietario O admin
     match /diario/{id} {
       allow read: if true;
-      allow create: if request.auth != null && request.resource.data.uidRagazzo == request.auth.uid;
-      allow delete: if request.auth != null && (resource.data.uidRagazzo == request.auth.uid || userHas('admin'));
-      allow update: if request.auth != null && (resource.data.uidRagazzo == request.auth.uid || userHas('admin'));
+      allow create: if isLoggedIn() &&
+                       request.resource.data.uidRagazzo == request.auth.uid;
+      allow delete: if isLoggedIn() && (
+                       resource.data.uidRagazzo == request.auth.uid ||
+                       isAdmin()
+                    );
+      allow update: if isLoggedIn() && (
+                       resource.data.uidRagazzo == request.auth.uid ||
+                       isAdmin()
+                    );
 
+      // Reazioni: ogni utente loggato gestisce solo la propria
       match /reazioni/{userId} {
         allow read: if true;
-        allow write: if request.auth != null && request.auth.uid == userId;
-        allow delete: if request.auth != null && request.auth.uid == userId;
+        allow write: if isLoggedIn() && request.auth.uid == userId;
+        allow delete: if isLoggedIn() && request.auth.uid == userId;
       }
 
+      // Commenti: lettura pubblica, create per loggati
+      // delete: autore del commento, proprietario del profilo, o admin
       match /commenti/{commentoId} {
         allow read: if true;
-        allow create: if request.auth != null;
-        allow delete: if request.auth != null && (
+        allow create: if isLoggedIn();
+        allow delete: if isLoggedIn() && (
           resource.data.uidAutore == request.auth.uid ||
-          userHas('admin') ||
+          isAdmin() ||
           get(/databases/$(database)/documents/diario/$(id)).data.uidRagazzo == request.auth.uid
         );
         allow update: if false;
       }
     }
 
+    // Messaggi in bottiglia
+    // create: utenti loggati con autorizzato:true (o admin), non a se stessi
+    // delete: destinatario o admin
+    // update: solo per reazioni (destinatario o admin)
     match /messaggiBottiglia/{id} {
       allow read: if true;
-      allow create: if request.auth != null &&
+      allow create: if isLoggedIn() &&
                        (userHas('autorizzato') || isAdmin()) &&
                        request.resource.data.uidMittente == request.auth.uid &&
                        request.resource.data.uidMittente != request.resource.data.uidDestinatario;
-      allow delete: if request.auth != null && (resource.data.uidDestinatario == request.auth.uid || userHas('admin') || isAdmin());
-      allow update: if request.auth != null && (resource.data.uidDestinatario == request.auth.uid || isAdmin());
+      allow delete: if isLoggedIn() && (
+                       resource.data.uidDestinatario == request.auth.uid ||
+                       isAdmin()
+                    );
+      allow update: if isLoggedIn() && (
+                       resource.data.uidDestinatario == request.auth.uid ||
+                       isAdmin()
+                    );
 
+      // Reazioni bottiglia
       match /reazioni/{userId} {
         allow read: if true;
-        allow write: if request.auth != null && request.auth.uid == userId;
-        allow delete: if request.auth != null && request.auth.uid == userId;
+        allow write: if isLoggedIn() && request.auth.uid == userId;
+        allow delete: if isLoggedIn() && request.auth.uid == userId;
       }
 
+      // Commenti bottiglia
       match /commenti/{commentoId} {
         allow read: if true;
-        allow create: if request.auth != null;
-        allow delete: if request.auth != null && (
+        allow create: if isLoggedIn();
+        allow delete: if isLoggedIn() && (
           resource.data.uidAutore == request.auth.uid ||
-          userHas('admin') ||
+          isAdmin() ||
           get(/databases/$(database)/documents/messaggiBottiglia/$(id)).data.uidDestinatario == request.auth.uid
         );
         allow update: if false;

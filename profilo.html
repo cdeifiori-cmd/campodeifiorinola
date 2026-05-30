@@ -763,21 +763,34 @@
       renderPermissions();
     });
 
+    function canEditProfile()   { return isOwner || isAdmin; }
+    function canWriteDiary()    { return isOwner || isAdmin; }
+    function canSendBottiglia() { return !!currentUser && !isOwner && (isAutorizzato || isAdmin); }
+    function canReact()         { return !!currentUser; }
+    function canComment()       { return !!currentUser; }
+
     function renderPermissions() {
-      const canEdit = isOwner || isAdmin;
-      // Foto edit
+      const canEdit = canEditProfile();
+
+      // Foto profilo: solo owner/admin vede overlay e pulsante cambia foto
       if (canEdit) {
         document.getElementById('hero-foto').classList.add('is-owner');
         document.getElementById('desktop-header').classList.add('is-owner');
+      } else {
+        document.getElementById('hero-foto').classList.remove('is-owner');
+        document.getElementById('desktop-header').classList.remove('is-owner');
       }
-      // Mi presento edit
+
+      // Mi Presento: modifica solo owner/admin
       document.getElementById('btn-edit-presento').classList.toggle('hidden', !canEdit);
-      // Nuovo post diario (solo proprietario o admin)
-      document.getElementById('diario-new-btn').classList.toggle('visible', canEdit);
-      // Bottiglia: loggati autorizzati o admin, NON proprietari
-      const showBottiglia = currentUser && !isOwner && (isAutorizzato || isAdmin);
-      document.getElementById('btn-manda-bottiglia').classList.toggle('hidden', !showBottiglia);
-      // Aggiorna UI saluto se profileData già caricato
+
+      // Diario: "A cosa stai pensando?" solo owner/admin
+      document.getElementById('diario-new-btn').classList.toggle('visible', canWriteDiary());
+
+      // Bottiglia: solo loggati autorizzati NON proprietari
+      document.getElementById('btn-manda-bottiglia').classList.toggle('hidden', !canSendBottiglia());
+
+      // Saluto: aggiorna UI se profileData già caricato
       if (profileData.nome) renderSalutoUI();
     }
 
@@ -1077,7 +1090,7 @@
       }
       el.querySelectorAll('.btn-reazione').forEach(btn => {
         btn.addEventListener('click', () => {
-          if (!currentUser) { alert('Devi essere loggato per reagire.'); return; }
+          if (!canReact()) { alert('Devi essere loggato per reagire.'); return; }
           toggleReazione('diario', p.id, btn.dataset.tipo, el, reazioni);
         });
       });
@@ -1182,7 +1195,7 @@
 
     async function addCommento(collName, docId, ta, listEl, toggleBtn) {
       const testo = ta.value.trim();
-      if (!testo || !currentUser) return;
+      if (!testo || !canComment()) return;
       ta.value = '';
       // Info autore
       let nomeAutore = currentUser.displayName || currentUser.email || 'Anonimo';
@@ -1401,6 +1414,7 @@
     }
 
     document.getElementById('diario-new-btn').addEventListener('click', () => {
+      if (!canWriteDiary()) return;
       resetModalDiario();
       document.getElementById('modal-diario').classList.remove('hidden');
     });
@@ -1413,7 +1427,7 @@
 
     document.getElementById('btn-save-diario').addEventListener('click', async () => {
       const testo = document.getElementById('modal-diario-text').value.trim();
-      if (!currentUser) return;
+      if (!canWriteDiary()) return;
       const btn = document.getElementById('btn-save-diario');
       btn.disabled = true;
 
@@ -1469,7 +1483,7 @@
       document.getElementById('modal-presento').classList.add('hidden'));
     document.getElementById('btn-save-presento').addEventListener('click', async () => {
       const testo = document.getElementById('modal-presento-text').value.trim();
-      if (!currentUser) return;
+      if (!canEditProfile()) return;
       await updateDoc(doc(db, profileColl, profileUid), { miPresento: testo, updatedAt: serverTimestamp() });
       const el = document.getElementById('mi-presento-text');
       el.textContent = testo || 'Ancora nessuna presentazione…';
@@ -1479,7 +1493,7 @@
 
     // ---- FOTO PROFILO ----
     document.getElementById('desktop-avatar-wrap').addEventListener('click', () => {
-      if (!isOwner) return;
+      if (!canEditProfile()) return;
       triggerFotoUpload();
     });
     function triggerFotoUpload() {
@@ -1573,7 +1587,7 @@
       }
       el.querySelectorAll('.btn-reazione').forEach(btn => {
         btn.addEventListener('click', () => {
-          if (!currentUser) { alert('Devi essere loggato per reagire.'); return; }
+          if (!canReact()) { alert('Devi essere loggato per reagire.'); return; }
           toggleReazione('messaggiBottiglia', id, btn.dataset.tipo, el, reazioni);
         });
       });
@@ -1758,7 +1772,7 @@
     });
     document.getElementById('btn-save-bottiglia').addEventListener('click', async () => {
       const testo = document.getElementById('modal-bottiglia-text').value.trim();
-      if (!currentUser) return;
+      if (!canSendBottiglia()) return;
       const btn = document.getElementById('btn-save-bottiglia');
       btn.disabled = true;
       let imgUrl = null, audioUrl = null, videoUrl = null;
