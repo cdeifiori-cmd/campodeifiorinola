@@ -1487,9 +1487,18 @@
         else if (bottMediaType === 'audio')   { audioUrl  = bottMediaUrl; }
         else if (bottMediaType === 'video')   { videoUrl  = bottMediaUrl; }
 
-        await addDoc(collection(db, 'messaggiBottiglia'), {
+        // Recupera nome e foto del mittente per la card
+        let nomeMittente = currentUser.displayName || currentUser.email || 'Anonimo';
+        let fotoMittente = null;
+        try {
+          let ms = await getDoc(doc(db, 'utenti', currentUser.uid));
+          if (!ms.exists()) ms = await getDoc(doc(db, 'staff', currentUser.uid));
+          if (ms.exists()) { nomeMittente = ms.data().nome || nomeMittente; fotoMittente = ms.data().fotoProfilo || null; }
+        } catch(_) {}
+
+        const ref = await addDoc(collection(db, 'messaggiBottiglia'), {
           uidMittente:     currentUser.uid,
-          nomeMittente:    currentUser.displayName || currentUser.email || 'Anonimo',
+          nomeMittente,
           uidDestinatario: profileUid,
           testo:           testo || null,
           immagineUrl:     imgUrl,
@@ -1497,9 +1506,21 @@
           videoUrl,
           createdAt:       serverTimestamp()
         });
+
         resetBottMedia();
         document.getElementById('modal-bottiglia').classList.add('hidden');
-        alert('Messaggio inviato! 🍾');
+
+        // Aggiungi il nuovo messaggio in cima alla lista senza ricaricare tutto
+        const bottList = document.getElementById('bottiglia-list');
+        const emptyMsg = bottList.querySelector('.empty-msg');
+        if (emptyMsg) emptyMsg.remove();
+        const newBott = {
+          id: ref.id, uidMittente: currentUser.uid, nomeMittente,
+          uidDestinatario: profileUid,
+          testo: testo || null, immagineUrl: imgUrl, audioUrl, videoUrl,
+          createdAt: null
+        };
+        bottList.prepend(buildBottigliaCard(ref.id, newBott));
       } catch(e) { alert('Errore: ' + e.message); }
       btn.disabled = false;
     });
