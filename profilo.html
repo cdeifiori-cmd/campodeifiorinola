@@ -769,13 +769,23 @@
       salutoBlob = null;
 
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        // Bitrate ridotto: mono, 22050Hz per file più leggeri
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: { sampleRate: 22050, channelCount: 1, echoCancellation: true }
+        });
         salutoChunks = [];
-        salutoRecorder = new MediaRecorder(stream);
+        // Scegli il formato più leggero disponibile
+        const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+          ? 'audio/webm;codecs=opus'
+          : MediaRecorder.isTypeSupported('audio/ogg;codecs=opus')
+          ? 'audio/ogg;codecs=opus'
+          : 'audio/webm';
+        salutoRecorder = new MediaRecorder(stream, { mimeType, audioBitsPerSecond: 32000 });
         salutoRecorder.ondataavailable = e => { if (e.data.size > 0) salutoChunks.push(e.data); };
         salutoRecorder.onstop = () => {
           stream.getTracks().forEach(t => t.stop());
-          salutoBlob = new Blob(salutoChunks, { type: 'audio/webm' });
+          salutoBlob = new Blob(salutoChunks, { type: mimeType });
+          console.log('Saluto blob size:', salutoBlob.size, 'bytes', '| tipo:', mimeType);
           const url  = URL.createObjectURL(salutoBlob);
           document.getElementById('saluto-preview-audio').src = url;
           document.getElementById('saluto-rec-active').style.display  = 'none';
@@ -820,32 +830,61 @@
       let pct = 0;
       const t = setInterval(() => { pct = Math.min(pct+6,80); bar.style.width=pct+'%'; }, 250);
 
+      console.log('Upload saluto — blob size:', salutoBlob.size, 'bytes');
       try {
-        const file = new File([salutoBlob], 'saluto.webm', { type: 'audio/webm' });
-        const fd   = new FormData();
-        fd.append('file', file); fd.append('upload_preset', 'campo_dei_fiori');
-        const res  = await fetch('https://api.cloudinary.com/v1_1/dxqyprtzh/video/upload', { method:'POST', body:fd });
-        const json = await res.json();
-        clearInterval(t); bar.style.width='100%';
-        if (json.error) throw new Error(json.error.message);
+        let audioUrl = null;
+
+        if (salutoBlob.size < 1_000_000) {
+          // --- Tentativo 1: Cloudinary ---
+          try {
+            const ext  = salutoBlob.type.includes('ogg') ? 'ogg' : 'webm';
+            const file = new File([salutoBlob], `saluto.${ext}`, { type: salutoBlob.type });
+            const fd   = new FormData();
+            fd.append('file', file);
+            fd.append('upload_preset', 'campo_dei_fiori');
+            const res  = await fetch('https://api.cloudinary.com/v1_1/dxqyprtzh/video/upload', { method:'POST', body:fd });
+            const json = await res.json();
+            console.log('Cloudinary response:', json);
+            if (json.error) throw new Error(json.error.message);
+            audioUrl = json.secure_url;
+          } catch (cloudErr) {
+            console.warn('Cloudinary fallito, uso base64:', cloudErr.message);
+            // --- Fallback: base64 in Firestore (solo se <500KB) ---
+            if (salutoBlob.size < 500_000) {
+              audioUrl = await new Promise((res, rej) => {
+                const reader = new FileReader();
+                reader.onload = () => res(reader.result);
+                reader.onerror = rej;
+                reader.readAsDataURL(salutoBlob);
+              });
+              lbl.textContent = 'Salvataggio locale…';
+            } else {
+              throw new Error('File troppo grande per il fallback. Prova una registrazione più breve (max 30s).');
+            }
+          }
+        } else {
+          throw new Error('Registrazione troppo lunga. Tieni sotto i 60 secondi.');
+        }
+
+        clearInterval(t); bar.style.width = '100%';
 
         // Salva in Firestore
-        await updateDoc(doc(db, profileColl, profileUid), { audioUrl: json.secure_url });
-        profileData.audioUrl = json.secure_url;
+        await updateDoc(doc(db, profileColl, profileUid), { audioUrl });
+        profileData.audioUrl = audioUrl;
 
         // Aggiorna UI
-        document.getElementById('audio-player').src = json.secure_url;
+        document.getElementById('audio-player').src = audioUrl;
         document.getElementById('saluto-player-wrap').style.display = '';
         document.getElementById('btn-registra-label').textContent = 'Registra nuovo saluto';
         document.getElementById('btn-elimina-saluto').classList.remove('hidden');
         document.getElementById('saluto-rec-ui').style.display = 'none';
-        prog.style.display = 'none';
         salutoBlob = null;
         lbl.textContent = '✅ Salvato!'; prog.style.display = '';
-        setTimeout(() => { prog.style.display = 'none'; }, 1500);
+        setTimeout(() => { prog.style.display = 'none'; }, 1800);
       } catch(e) {
         clearInterval(t); prog.style.display = 'none';
-        alert('Errore upload: ' + e.message);
+        console.error('Errore saluto:', e);
+        alert('Errore: ' + e.message);
       }
       btn.disabled = false;
     });
