@@ -1558,16 +1558,26 @@
     await loadBottiglie();
 
     // ---- SCROLL & HIGHLIGHT ANCHOR ----
-    const anchor = location.hash?.slice(1); // es. "post-abc123" o "bottiglia-xyz"
+    const anchor = location.hash?.slice(1);
     if (anchor) {
-      const target = document.getElementById(anchor);
-      if (target) {
-        setTimeout(() => {
+      let attempts = 0;
+      const MAX    = 10;
+      const DELAY  = 400;
+
+      function tryScroll() {
+        attempts++;
+        const target = document.getElementById(anchor);
+        if (target) {
           target.scrollIntoView({ behavior: 'smooth', block: 'center' });
           target.classList.add('highlight-anchor');
           setTimeout(() => target.classList.remove('highlight-anchor'), 2500);
-        }, 300);
+        } else if (attempts < MAX) {
+          setTimeout(tryScroll, DELAY);
+        }
       }
+
+      // Prima chiamata: subito dopo un piccolo delay iniziale
+      setTimeout(tryScroll, 300);
     }
   </script>
 </body>
