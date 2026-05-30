@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Accedi – Campo dei Fiori</title>
+  <meta name="theme-color" content="#5a8a4a">
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="login-wrap">
+    <div class="login-box">
+      <div class="logo">🌸</div>
+      <h1>Campo dei Fiori</h1>
+
+      <div id="login-error" class="login-error hidden"></div>
+
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" placeholder="la-tua@email.it" autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" placeholder="••••••••" autocomplete="current-password">
+      </div>
+
+      <button class="btn-primary" style="width:100%;margin-top:0.5rem" id="btn-login">Entra</button>
+      <p class="text-center mt-2" style="font-size:0.8rem;color:#7a6558">
+        <a href="index.html" style="color:#5a8a4a">← Torna alla home</a>
+      </p>
+    </div>
+  </div>
+
+  <script type="module">
+    import { login, onAuthChange } from './js/auth.js';
+
+    // If already logged in, redirect
+    onAuthChange(user => {
+      if (user) location.href = 'comunita.html';
+    });
+
+    document.getElementById('btn-login').addEventListener('click', async () => {
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const errEl = document.getElementById('login-error');
+      errEl.classList.add('hidden');
+      if (!email || !password) { errEl.textContent = 'Inserisci email e password.'; errEl.classList.remove('hidden'); return; }
+      try {
+        await login(email, password);
+        location.href = 'comunita.html';
+      } catch (e) {
+        errEl.textContent = 'Credenziali non valide. Riprova.';
+        errEl.classList.remove('hidden');
+      }
+    });
+
+    document.getElementById('password').addEventListener('keydown', e => {
+      if (e.key === 'Enter') document.getElementById('btn-login').click();
+    });
+  </script>
+</body>
+</html>

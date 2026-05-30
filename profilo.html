@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profilo – Campo dei Fiori</title>
+  <meta name="theme-color" content="#5a8a4a">
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <nav class="top-nav">
+    <a href="javascript:history.back()" class="brand">← Indietro</a>
+    <div class="nav-actions" id="nav-auth-slot"></div>
+  </nav>
+
+  <!-- Hero profilo -->
+  <div class="profilo-hero">
+    <div class="profilo-avatar-wrap" id="avatar-wrap">
+      <span class="avatar-emoji">🧒</span>
+      <img id="avatar-img" src="" alt="Foto profilo" class="hidden">
+      <div class="profilo-avatar-overlay">📷</div>
+    </div>
+    <div class="profilo-nome" id="profilo-nome">Caricamento...</div>
+    <div class="profilo-comunita" id="profilo-comunita"></div>
+  </div>
+
+  <div class="profilo-content">
+
+    <!-- Audio -->
+    <div class="section-card hidden" id="audio-section">
+      <div class="section-title">🎵 La mia canzone</div>
+      <div class="section-body">
+        <div class="audio-player">
+          <audio id="audio-player" controls style="width:100%"></audio>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mi Presento -->
+    <div class="section-card">
+      <div class="section-title">
+        👋 Mi Presento
+        <button class="btn-secondary hidden" id="btn-edit-presento" style="font-size:0.8rem;padding:0.35rem 0.9rem">Modifica ✏️</button>
+      </div>
+      <div class="section-body">
+        <p class="mi-presento-text mi-presento-empty" id="mi-presento-text">Ancora nessuna presentazione...</p>
+      </div>
+    </div>
+
+    <!-- Il Mio Diario -->
+    <div class="section-card">
+      <div class="section-title">📖 Il Mio Diario</div>
+      <div class="section-body">
+        <div class="fab-wrap hidden" id="fab-input">
+          <div class="fab-input">
+            <span>✏️</span>
+            <span>A cosa stai pensando? ✏️</span>
+          </div>
+        </div>
+        <div id="diario-list" class="diario-list mt-2"></div>
+      </div>
+    </div>
+
+    <!-- Messaggi in Bottiglia -->
+    <div class="section-card">
+      <div class="section-title">
+        🍾 Messaggi in Bottiglia
+      </div>
+      <div class="section-body">
+        <button class="btn-arancio hidden" id="btn-manda-bottiglia" style="margin-bottom:1rem;width:100%">
+          🍾 Manda un messaggio in bottiglia
+        </button>
+        <div id="bottiglia-list" class="bottiglia-list"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Modal: Nuovo diario -->
+  <div class="modal-overlay hidden" id="modal-diario">
+    <div class="modal-box">
+      <h3>✏️ Cosa stai pensando?</h3>
+      <textarea id="modal-diario-text" placeholder="Scrivi qualcosa..." rows="5"></textarea>
+      <div class="modal-actions">
+        <button class="btn-secondary" id="btn-cancel-diario">Annulla</button>
+        <button class="btn-primary" id="btn-save-diario">Salva nel diario</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Mi Presento -->
+  <div class="modal-overlay hidden" id="modal-presento">
+    <div class="modal-box">
+      <h3>👋 La tua presentazione</h3>
+      <textarea id="modal-presento-text" class="nunito" placeholder="Raccontati..." rows="6"></textarea>
+      <div class="modal-actions">
+        <button class="btn-secondary" id="btn-cancel-presento">Annulla</button>
+        <button class="btn-primary" id="btn-save-presento">Salva</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Bottiglia -->
+  <div class="modal-overlay hidden" id="modal-bottiglia">
+    <div class="modal-box">
+      <h3>🍾 Manda un messaggio in bottiglia</h3>
+      <textarea id="modal-bottiglia-text" class="nunito" placeholder="Scrivi il tuo messaggio..." rows="5"></textarea>
+      <div class="modal-actions">
+        <button class="btn-secondary" id="btn-cancel-bottiglia">Annulla</button>
+        <button class="btn-arancio" id="btn-save-bottiglia">Invia 🍾</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="js/profilo.js"></script>
+</body>
+</html>
