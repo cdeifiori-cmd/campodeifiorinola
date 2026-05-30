@@ -29,6 +29,13 @@
       box-shadow: 0 2px 10px rgba(0,0,0,0.08);
       display: flex; align-items: center; gap: 14px;
       padding: 14px 16px;
+      text-decoration: none; color: #222;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .card-staff:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(0,0,0,0.13);
     }
     .card-avatar {
       width: 66px; height: 66px; border-radius: 50%;
@@ -130,14 +137,14 @@
             : `<div class="card-avatar">👤</div>`;
           const adminBadge = data.admin ? `<span class="admin-badge">admin</span>` : '';
           list.innerHTML += `
-            <div class="card-staff">
+            <a class="card-staff" href="profilo.html?uid=${d.id}">
               ${avatar}
               <div class="card-info">
                 <div class="nome">${data.nome || '—'}</div>
                 <div class="ruolo">${data.ruolo || ''}</div>
                 ${adminBadge}
               </div>
-            </div>`;
+            </a>`;
         });
       } catch (e) {
         list.innerHTML = `<p class="empty-msg">Errore: ${e.message}</p>`;
