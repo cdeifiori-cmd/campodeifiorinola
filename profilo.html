@@ -549,10 +549,12 @@
       <textarea id="modal-bottiglia-text" class="nunito" placeholder="Scrivi il tuo messaggio…" rows="4"></textarea>
 
       <div class="media-upload-row">
-        <button class="btn-media" id="btn-bott-foto" type="button">📷 Allega foto</button>
+        <button class="btn-media" id="btn-bott-foto" type="button">📷 Foto</button>
+        <button class="btn-media" id="btn-bott-video" type="button">🎥 Video</button>
         <button class="btn-media" id="btn-bott-audio-rec" type="button">🎙️ Registra audio</button>
         <button class="btn-media" id="btn-bott-audio-file" type="button">🎵 Carica audio</button>
         <input type="file" id="input-bott-foto" accept="image/*" style="display:none">
+        <input type="file" id="input-bott-video" accept="video/*" style="display:none">
         <input type="file" id="input-bott-audio" accept="audio/*" style="display:none">
       </div>
 
@@ -562,6 +564,7 @@
           <button id="btn-bott-remove" type="button" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:1rem">✕</button>
         </div>
         <img id="bott-preview-img" style="display:none;width:100%;border-radius:10px;margin-top:6px;max-height:160px;object-fit:cover">
+        <video id="bott-preview-video" style="display:none;width:100%;border-radius:10px;margin-top:6px;max-height:200px" controls></video>
         <audio id="bott-preview-audio" style="display:none;width:100%;margin-top:6px" controls></audio>
       </div>
 
@@ -1225,6 +1228,7 @@
       const canDel    = isOwner || isAdmin;
       const data      = d.createdAt?.toDate ? formatDate(d.createdAt.toDate()) : '';
       const imgHtml   = d.immagineUrl ? `<img src="${d.immagineUrl}" style="width:100%;border-radius:8px;margin-top:6px;max-height:160px;object-fit:cover">` : '';
+      const videoHtml = d.videoUrl    ? `<video controls src="${d.videoUrl}" style="width:100%;border-radius:8px;margin-top:6px;max-height:220px"></video>` : '';
       const audioHtml = d.audioUrl    ? `<audio controls src="${d.audioUrl}" style="width:100%;margin-top:6px"></audio>` : '';
       const reazioni  = d.reazioni || { cuore:0, like:0, dislike:0 };
       const el = document.createElement('div');
@@ -1233,7 +1237,7 @@
         ${canDel ? `<button class="bott-delete" title="Elimina">🗑️</button>` : ''}
         <div class="bott-header">🍾 <strong>${d.nomeMittente || 'Anonimo'}</strong> · ${data}</div>
         <div class="bott-testo">${d.testo || ''}</div>
-        ${imgHtml}${audioHtml}
+        ${imgHtml}${videoHtml}${audioHtml}
         <div class="post-reazioni" style="margin-top:8px">
           <button class="btn-reazione" data-tipo="cuore">❤️ <span>${reazioni.cuore||0}</span></button>
           <button class="btn-reazione" data-tipo="like">👍 <span>${reazioni.like||0}</span></button>
@@ -1333,11 +1337,13 @@
     function resetBottMedia() {
       bottMediaUrl = null; bottMediaType = null; bottRecBlob = null;
       document.getElementById('bott-media-preview').style.display = 'none';
-      document.getElementById('bott-preview-img').style.display = 'none';
+      document.getElementById('bott-preview-img').style.display   = 'none';
+      document.getElementById('bott-preview-video').style.display = 'none';
       document.getElementById('bott-preview-audio').style.display = 'none';
-      document.getElementById('bott-preview-img').src = '';
+      document.getElementById('bott-preview-img').src   = '';
+      document.getElementById('bott-preview-video').src = '';
       document.getElementById('bott-preview-audio').src = '';
-      document.getElementById('bott-rec-ui').style.display = 'none';
+      document.getElementById('bott-rec-ui').style.display    = 'none';
       document.getElementById('bott-rec-active').style.display = 'none';
       document.getElementById('bott-rec-preview').style.display = 'none';
     }
@@ -1355,6 +1361,22 @@
         document.getElementById('bott-preview-label').textContent = '📷 ' + file.name;
         document.getElementById('bott-media-preview').style.display = '';
       } catch(e) { alert('Errore foto: ' + e.message); }
+      e.target.value = '';
+    });
+
+    // Video bottiglia
+    document.getElementById('btn-bott-video').addEventListener('click', () =>
+      document.getElementById('input-bott-video').click());
+    document.getElementById('input-bott-video').addEventListener('change', async e => {
+      const file = e.target.files[0]; if (!file) return;
+      try {
+        const url = await bottUpload(file, 'video');
+        bottMediaUrl = url; bottMediaType = 'video';
+        document.getElementById('bott-preview-video').src = url;
+        document.getElementById('bott-preview-video').style.display = 'block';
+        document.getElementById('bott-preview-label').textContent = '🎥 ' + file.name;
+        document.getElementById('bott-media-preview').style.display = '';
+      } catch(e) { alert('Errore video: ' + e.message); }
       e.target.value = '';
     });
 
@@ -1434,14 +1456,15 @@
       if (!currentUser) return;
       const btn = document.getElementById('btn-save-bottiglia');
       btn.disabled = true;
-      let imgUrl = null, audioUrl = null;
+      let imgUrl = null, audioUrl = null, videoUrl = null;
       try {
         if (bottRecBlob) {
           const f = new File([bottRecBlob], 'audio.webm', { type:'audio/webm' });
           audioUrl = await bottUpload(f, 'video');
           bottRecBlob = null;
-        } else if (bottMediaType === 'image') { imgUrl   = bottMediaUrl; }
-        else if (bottMediaType === 'audio')   { audioUrl = bottMediaUrl; }
+        } else if (bottMediaType === 'image') { imgUrl    = bottMediaUrl; }
+        else if (bottMediaType === 'audio')   { audioUrl  = bottMediaUrl; }
+        else if (bottMediaType === 'video')   { videoUrl  = bottMediaUrl; }
 
         await addDoc(collection(db, 'messaggiBottiglia'), {
           uidMittente:     currentUser.uid,
@@ -1450,6 +1473,7 @@
           testo:           testo || null,
           immagineUrl:     imgUrl,
           audioUrl,
+          videoUrl,
           createdAt:       serverTimestamp()
         });
         resetBottMedia();
