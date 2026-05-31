@@ -493,7 +493,9 @@
       <div id="saluto-owner-ui" style="display:none;margin-top:10px">
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn-media" id="btn-registra-saluto">🎙️ <span id="btn-registra-label">Registra il tuo saluto</span></button>
+          <button class="btn-media" id="btn-carica-saluto">📁 Carica file audio</button>
           <button class="btn-media hidden" id="btn-elimina-saluto" style="background:#ffeaea;color:#c0392b">🗑️ Elimina saluto</button>
+          <input type="file" id="input-saluto-file" accept="audio/*" style="display:none">
         </div>
 
         <!-- UI registrazione -->
@@ -792,6 +794,22 @@
       if (profileData.nome) renderSalutoUI();
     }
 
+    // ---- HELPER: rileva MIME type supportato per MediaRecorder ----
+    function getSupportedAudioMime() {
+      if (!window.MediaRecorder) return null;
+      const types = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus'];
+      for (const t of types) {
+        if (MediaRecorder.isTypeSupported(t)) return t;
+      }
+      return null;
+    }
+
+    function noRecordingSupport(showEl) {
+      // Nasconde UI rec e mostra messaggio
+      if (showEl) showEl.style.display = 'none';
+      return 'La registrazione non è supportata su questo browser.\nPuoi caricare un file audio registrato con l\'app Memo Vocali del telefono.';
+    }
+
     // ---- HELPER: player audio cross-browser con fallback ----
     function buildAudioPlayer(url, elId) {
       if (!url) return '';
@@ -847,9 +865,24 @@
     let salutoBlob       = null;
     let salutoRecTimer   = null;
 
+    // Carica file audio saluto (fallback per iPhone)
+    document.getElementById('btn-carica-saluto').addEventListener('click', () =>
+      document.getElementById('input-saluto-file').click());
+    document.getElementById('input-saluto-file').addEventListener('change', async e => {
+      const file = e.target.files[0]; if (!file) return;
+      salutoBlob = file;
+      const url = URL.createObjectURL(file);
+      document.getElementById('saluto-rec-ui').style.display = '';
+      document.getElementById('saluto-rec-active').style.display = 'none';
+      document.getElementById('saluto-preview-audio').src = url;
+      document.getElementById('saluto-rec-preview').style.display = '';
+      e.target.value = '';
+    });
+
     document.getElementById('btn-registra-saluto').addEventListener('click', async () => {
-      if (!navigator.mediaDevices || typeof MediaRecorder === 'undefined') {
-        alert('Registrazione non supportata in questo browser.'); return;
+      const mimeType = getSupportedAudioMime();
+      if (!navigator.mediaDevices || !mimeType) {
+        alert(noRecordingSupport(null)); return;
       }
       // Reset UI
       document.getElementById('saluto-rec-ui').style.display = '';
@@ -859,17 +892,10 @@
       salutoBlob = null;
 
       try {
-        // Bitrate ridotto: mono, 22050Hz per file più leggeri
         const stream = await navigator.mediaDevices.getUserMedia({
           audio: { sampleRate: 22050, channelCount: 1, echoCancellation: true }
         });
         salutoChunks = [];
-        // Scegli il formato più leggero disponibile
-        const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-          ? 'audio/webm;codecs=opus'
-          : MediaRecorder.isTypeSupported('audio/ogg;codecs=opus')
-          ? 'audio/ogg;codecs=opus'
-          : 'audio/webm';
         salutoRecorder = new MediaRecorder(stream, { mimeType, audioBitsPerSecond: 32000 });
         salutoRecorder.ondataavailable = e => { if (e.data.size > 0) salutoChunks.push(e.data); };
         salutoRecorder.onstop = () => {
@@ -1378,12 +1404,10 @@
 
     // ---- REGISTRAZIONE AUDIO ----
     document.getElementById('btn-record-audio').addEventListener('click', async () => {
-      // Controlli supporto
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        showError('Il tuo browser non supporta la registrazione audio. Usa Chrome o Safari su iOS 14.3+.'); return;
-      }
-      if (typeof MediaRecorder === 'undefined') {
-        showError('MediaRecorder non supportato in questo browser.'); return;
+      const mimeType = getSupportedAudioMime();
+      if (!navigator.mediaDevices || !mimeType) {
+        showError('Registrazione non supportata su questo browser. Usa il pulsante 🎵 per caricare un file audio dal telefono.');
+        return;
       }
       resetMedia();
       document.getElementById('audio-rec-ui').style.display = '';
@@ -1391,11 +1415,11 @@
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         recChunks    = [];
-        mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder = new MediaRecorder(stream, { mimeType, audioBitsPerSecond: 32000 });
         mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recChunks.push(e.data); };
         mediaRecorder.onstop = () => {
           stream.getTracks().forEach(t => t.stop());
-          recBlob = new Blob(recChunks, { type: 'audio/webm' });
+          recBlob = new Blob(recChunks, { type: mimeType });
           const url = URL.createObjectURL(recBlob);
           document.getElementById('rec-audio-preview').src = url;
           document.getElementById('rec-active').style.display  = 'none';
@@ -1741,8 +1765,9 @@
 
     // Registrazione audio bottiglia
     document.getElementById('btn-bott-audio-rec').addEventListener('click', async () => {
-      if (!navigator.mediaDevices || typeof MediaRecorder === 'undefined') {
-        alert('Registrazione non supportata in questo browser.'); return;
+      const mimeType = getSupportedAudioMime();
+      if (!navigator.mediaDevices || !mimeType) {
+        alert('Registrazione non supportata su questo browser.\nSu iPhone usa il pulsante "🎵 Carica audio" per inviare un file da Memo Vocali.'); return;
       }
       resetBottMedia();
       document.getElementById('bott-rec-ui').style.display = '';
@@ -1750,11 +1775,11 @@
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         bottRecChunks = [];
-        bottRecorder  = new MediaRecorder(stream);
+        bottRecorder  = new MediaRecorder(stream, { mimeType, audioBitsPerSecond: 32000 });
         bottRecorder.ondataavailable = e => { if (e.data.size>0) bottRecChunks.push(e.data); };
         bottRecorder.onstop = () => {
           stream.getTracks().forEach(t=>t.stop());
-          bottRecBlob = new Blob(bottRecChunks, { type:'audio/webm' });
+          bottRecBlob = new Blob(bottRecChunks, { type: mimeType });
           const u = URL.createObjectURL(bottRecBlob);
           document.getElementById('bott-rec-audio-preview').src = u;
           document.getElementById('bott-rec-active').style.display  = 'none';
