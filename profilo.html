@@ -430,267 +430,217 @@
     @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
 
     /* ============================================================
-       DESKTOP REDESIGN — stile magazine/poster (min-width: 769px)
+       DESKTOP LAYOUT  (min-width: 769px)
        ============================================================ */
     @media (min-width: 769px) {
 
-      /* ---- BODY: texture carta puntini ---- */
-      body {
-        background-color: #fef5e7;
-        background-image: radial-gradient(#00000015 1px, transparent 1px);
-        background-size: 20px 20px;
-        padding-bottom: 0;
-      }
+      body { background: #fef9f0; padding-bottom: 0; }
 
-      /* ---- HEADER DESKTOP ---- */
+      /* ---- HEADER ---- */
       .desktop-header {
-        background: linear-gradient(135deg, #1a1a1a 0%, #e85d04 50%, #f4a261 100%);
-        padding: 40px 48px 48px;
-        display: flex; align-items: flex-end; gap: 28px;
-        position: relative; overflow: hidden;
-      }
-      .desktop-header::after {
-        content: '★ ★ ★';
-        position: absolute; bottom: 14px; right: 24px;
-        color: rgba(255,255,255,0.2); font-size: 1.1rem; letter-spacing: 6px;
+        background: linear-gradient(135deg, #e85d04 0%, #f4a261 60%, #52b788 100%);
+        padding: 36px 48px 44px; display: flex; align-items: flex-end;
+        gap: 28px; position: relative;
       }
       .desktop-avatar-wrap {
-        width: 120px; height: 120px; border-radius: 50%;
-        border: 4px solid #ffd60a;
-        box-shadow: 0 0 0 8px rgba(255,214,10,0.2), 0 8px 30px rgba(0,0,0,0.3);
-        flex-shrink: 0; background: #333; overflow: hidden; cursor: pointer; position: relative;
+        width: 130px; height: 130px; border-radius: 50%;
+        border: 4px solid #fff;
+        box-shadow: 0 6px 24px rgba(0,0,0,0.2), 0 0 0 4px rgba(255,255,255,0.3);
+        flex-shrink: 0; background: #eee; overflow: hidden; cursor: pointer; position: relative;
       }
       .desktop-avatar-wrap img { width:100%; height:100%; object-fit:cover; object-position:top center; }
       .desktop-avatar-overlay {
-        position:absolute; inset:0; background:rgba(0,0,0,0.4); border-radius:50%;
+        position:absolute; inset:0; background:rgba(0,0,0,0.35); border-radius:50%;
         display:flex; align-items:center; justify-content:center;
         color:#fff; font-size:1.3rem; opacity:0; transition:opacity 0.2s;
       }
       .is-owner .desktop-avatar-wrap:hover .desktop-avatar-overlay { opacity:1; }
       .desktop-info { flex:1; }
       .desktop-info .nome {
-        font-size: 2.4rem; font-weight: 900; color: #fff;
-        text-shadow: 3px 3px 0 rgba(0,0,0,0.3);
-        letter-spacing: -0.02em; line-height: 1.1; margin-bottom: 10px;
+        font-size: 2rem; font-weight: 900; color: #fff;
+        text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        line-height: 1.1; margin-bottom: 10px;
       }
       .desktop-info .comunita-tag {
-        background: #ffd60a; color: #1a1a1a; font-size: 0.85rem; font-weight: 900;
-        padding: 4px 14px; border-radius: 4px; display: inline-block;
-        text-transform: uppercase; letter-spacing: 0.05em;
+        background: rgba(255,255,255,0.25); color: #fff;
+        font-size: 0.88rem; font-weight: 800;
+        padding: 5px 16px; border-radius: 20px;
+        display: inline-block; backdrop-filter: blur(4px);
       }
       .desktop-back {
         position: absolute; top: 16px; left: 16px;
-        background: rgba(255,255,255,0.15); border: none; border-radius: 50%;
-        width: 38px; height: 38px; font-size: 1rem; color: #fff; cursor: pointer;
-        display: flex; align-items: center; justify-content: center;
+        background: rgba(255,255,255,0.2); border: none; border-radius: 50%;
+        width: 38px; height: 38px; font-size: 1rem; color: #fff;
+        cursor: pointer; display: flex; align-items: center; justify-content: center;
         text-decoration: none; transition: background 0.2s;
       }
-      .desktop-back:hover { background: rgba(255,255,255,0.3); }
+      .desktop-back:hover { background: rgba(255,255,255,0.4); }
       #nav-auth-slot-desktop { margin-left: auto; align-self: flex-start; }
 
       /* ---- LAYOUT 3 COLONNE ---- */
       .desktop-layout {
         display: grid;
-        grid-template-columns: 200px 1fr 250px;
-        gap: 0;
-        min-height: calc(100vh - 56px);
+        grid-template-columns: 220px 1fr 270px;
         align-items: start;
+        min-height: calc(100vh - 56px);
       }
 
       /* ---- SIDEBAR SINISTRA ---- */
       .sidebar-left {
-        background: #fff;
-        min-height: 100vh;
-        padding: 24px 16px;
-        border-right: 2px dashed #f4a261;
-        display: flex; flex-direction: column; gap: 16px;
-        position: sticky; top: 0;
+        background: #fff; min-height: 100vh;
+        padding: 24px 16px; border-right: 1px solid #f0e8d8;
+        display: flex; flex-direction: column; gap: 14px;
+        position: sticky; top: 0; max-height: 100vh; overflow-y: auto;
       }
       .sidebar-logo {
-        font-weight: 900; font-size: 0.95rem; color: #e85d04;
-        padding-bottom: 12px; border-bottom: 3px solid #ffd60a;
-        text-transform: uppercase; letter-spacing: 0.05em;
+        font-weight: 900; font-size: 0.92rem; color: #e85d04;
+        padding-bottom: 12px; border-bottom: 2px solid #f4a261;
       }
-      .sidebar-menu { display: flex; flex-direction: column; gap: 4px; }
+      .sidebar-menu { display: flex; flex-direction: column; gap: 2px; }
       .sidebar-item {
-        display: flex; align-items: center; gap: 10px;
-        padding: 10px 12px; border-radius: 10px;
-        text-decoration: none; color: #444; font-weight: 700; font-size: 0.88rem;
-        transition: background 0.15s, color 0.15s;
+        display: flex; align-items: center; gap: 8px;
+        padding: 9px 12px; border-radius: 10px;
+        text-decoration: none; color: #555; font-weight: 700; font-size: 0.88rem;
+        transition: background 0.15s;
       }
-      .sidebar-item:hover, .sidebar-item--active { background: #ffd60a; color: #1a1a1a; }
+      .sidebar-item:hover, .sidebar-item--active { background: #fef3e2; color: #e85d04; }
       .sidebar-quote {
-        font-size: 0.78rem; color: #888; font-style: italic; line-height: 1.5;
-        border-left: 3px solid #ff6b9d; padding-left: 10px; margin-top: auto;
+        font-size: 0.78rem; color: #aaa; font-style: italic; line-height: 1.5;
+        border-left: 3px solid #f4a261; padding-left: 10px; margin-top: auto;
       }
       .sidebar-saluto-btn {
-        background: #1a1a1a; color: #ffd60a; border: none;
-        border-radius: 8px; padding: 10px 14px;
-        font-family: 'Nunito', sans-serif; font-weight: 900; font-size: 0.85rem;
-        cursor: pointer; text-transform: uppercase; letter-spacing: 0.05em;
-        transition: background 0.2s;
+        background: #e85d04; color: #fff; border: none; border-radius: 10px;
+        padding: 10px 14px; font-family: 'Nunito',sans-serif; font-weight: 800;
+        font-size: 0.88rem; cursor: pointer; transition: background 0.2s;
       }
-      .sidebar-saluto-btn:hover { background: #e85d04; color: #fff; }
+      .sidebar-saluto-btn:hover { background: #c44d04; }
 
       /* ---- COLONNA CENTRALE ---- */
       .profilo-content-desktop {
         padding: 24px 20px 40px;
-        display: flex; flex-direction: column; gap: 18px;
-        min-width: 0;
+        display: flex; flex-direction: column; gap: 18px; min-width: 0;
       }
 
-      /* ---- SECTION BADGES (titoli stile etichetta nera) ---- */
-      .section { background: #fff; border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); margin-top: 0; overflow: visible; }
+      /* ---- SEZIONI: card arrotondate con bordo colorato ---- */
+      .section {
+        background: #fff; border-radius: 18px;
+        box-shadow: 0 3px 16px rgba(0,0,0,0.07);
+        margin-top: 0; overflow: hidden;
+      }
       .section-title {
         display: flex; align-items: center; justify-content: space-between;
-        padding: 16px 20px 8px; font-size: 0.85rem; font-weight: 900;
+        padding: 16px 20px 10px;
+        font-size: 0.82rem; font-weight: 900;
         text-transform: uppercase; letter-spacing: 0.06em;
-        color: #fff; background: #1a1a1a;
-        border-radius: 20px 20px 0 0;
-        position: relative;
+        border-bottom: none; background: transparent;
+        border-radius: 0;
       }
-      .section-title::before { content: '★ '; color: #ffd60a; }
-
-      /* ---- SALUTO: sfondo magenta ---- */
+      /* Saluto: rosa */
       #audio-section { border: 2px solid #ff6b9d; }
-      #audio-section .section-title { background: #ff6b9d; }
-      #audio-section .audio-wrap {
-        background: linear-gradient(135deg, #ff6b9d, #ff8fab);
-        border-radius: 0 0 18px 18px; padding: 16px 20px;
-      }
-      #audio-section .section-body { padding: 0; }
+      #audio-section .section-title { color: #d63384; border-bottom: 2px solid #ff6b9d; }
+      #audio-section .audio-wrap { background: linear-gradient(135deg, #fff0f6, #ffe4f0); }
 
-      /* ---- MI PRESENTO: sfondo giallo post-it ---- */
-      .section:has(#mi-presento-text) {
-        background: #fffde7; border: 2px solid #ffd60a;
-      }
-      .section:has(#mi-presento-text) .section-title { background: #ffd60a; color: #1a1a1a; }
-      .section:has(#mi-presento-text) .section-title::before { content: '✨ '; }
+      /* Mi Presento: giallo */
+      .section:has(#mi-presento-text) { border: 2px solid #ffd60a; }
+      .section:has(#mi-presento-text) .section-title { color: #b38600; border-bottom: 2px solid #ffd60a; }
       .mi-presento-text { font-size: 1rem; line-height: 1.8; color: #333; padding: 4px 20px 18px; }
 
-      /* ---- DIARIO: bordo verde ---- */
+      /* Diario: verde */
       .section:has(#diario-list) { border: 2px solid #52b788; }
-      .section:has(#diario-list) .section-title { background: #52b788; }
-      .section:has(#diario-list) .section-title::before { content: '📓 '; }
+      .section:has(#diario-list) .section-title { color: #2d8660; border-bottom: 2px solid #52b788; }
 
+      /* Messaggi: arancio */
+      .section:has(#bottiglia-list) { border: 2px solid #e85d04; }
+      .section:has(#bottiglia-list) .section-title { color: #e85d04; border-bottom: 2px solid #e85d04; }
+
+      /* ---- POST DIARIO ---- */
       .card-post {
         border-radius: 16px; border-left: 4px solid #52b788;
-        box-shadow: 0 3px 14px rgba(0,0,0,0.08);
+        box-shadow: 0 2px 12px rgba(0,0,0,0.07);
         max-width: 600px; margin: 0 auto; width: 100%;
       }
-      .card-post .post-testo { font-size: 18px; line-height: 1.7; padding: 4px 16px 10px; }
+      .card-post .post-testo { font-size: 18px; line-height: 1.7; }
 
-      /* ---- MESSAGGI BOTTIGLIA: bordo arancio ---- */
-      .section:has(#bottiglia-list) { border: 2px solid #e85d04; }
-      .section:has(#bottiglia-list) .section-title { background: #e85d04; }
-      .section:has(#bottiglia-list) .section-title::before { content: '🍾 '; }
+      /* ---- BOTTIGLIA ---- */
       .card-bottiglia {
-        background: #fff8f3; border: 1px solid #f4a261;
-        border-radius: 14px; box-shadow: 0 2px 10px rgba(232,93,4,0.1);
-        max-width: 600px; margin: 0 auto; width: 100%;
+        background: #fff9f5; border: 1px solid #f4a261;
+        border-radius: 14px; max-width: 600px; margin: 0 auto; width: 100%;
       }
 
-      /* ---- REAZIONI COLORATE ---- */
+      /* ---- REAZIONI ---- */
       .btn-reazione {
-        background: #fff3e0; border: 2px solid #ffd60a;
-        border-radius: 20px; padding: 5px 14px;
-        color: #e85d04; font-weight: 700;
+        background: #fef3e2; border: 1.5px solid #f4a261;
+        border-radius: 20px; padding: 5px 13px; color: #c44d04; font-weight: 700;
       }
       .btn-reazione.attiva { background: #e85d04; border-color: #e85d04; color: #fff; }
-      .btn-reazione:hover { background: #ffd60a; border-color: #e85d04; color: #1a1a1a; }
+      .btn-reazione:hover { background: #f4a261; color: #fff; border-color: #e85d04; }
 
       .diario-list { gap: 18px; }
       .blog-container { padding: 0; }
       .section-body { padding: 12px 20px 18px; }
       .diario-new-btn {
         max-width: 600px; margin: 0 auto 12px;
-        border-radius: 12px; border-color: #52b788;
-        background: #f0faf4; color: #2d8660;
+        border-radius: 12px; border-color: #52b788; background: #f0faf4; color: #2d8660;
       }
       .diario-search { margin: 8px 0 12px; max-width: 600px; margin-left: auto; margin-right: auto; }
 
       /* ---- SIDEBAR DESTRA ---- */
       .sidebar-right {
-        background: transparent;
-        padding: 24px 16px 24px 12px;
+        padding: 20px 14px; border-left: 1px solid #f0e8d8;
         display: flex; flex-direction: column; gap: 16px;
-        border-left: 2px dashed #52b788;
-        position: sticky; top: 0;
-        max-height: 100vh; overflow-y: auto;
+        position: sticky; top: 0; max-height: 100vh; overflow-y: auto;
       }
       .sidebar-widget {
         background: #fff; border-radius: 16px;
-        padding: 14px; box-shadow: 0 3px 12px rgba(0,0,0,0.07);
+        padding: 14px; box-shadow: 0 2px 10px rgba(0,0,0,0.06);
       }
       .widget-title {
-        font-size: 0.72rem; font-weight: 900; letter-spacing: 0.08em;
-        text-transform: uppercase; color: #fff;
-        background: #1a1a1a; border-radius: 6px;
-        padding: 4px 10px; display: inline-block; margin-bottom: 12px;
+        font-size: 0.72rem; font-weight: 900; text-transform: uppercase;
+        letter-spacing: 0.07em; color: #e85d04;
+        border-bottom: 2px solid #f4a261; padding-bottom: 6px; margin-bottom: 12px;
       }
-      /* Share grid */
-      .share-grid {
-        display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
-      }
+      .share-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
       .share-card {
-        display: flex; flex-direction: column; align-items: center; gap: 4px;
+        display: flex; flex-direction: column; align-items: center; gap: 5px;
         border: none; border-radius: 12px; padding: 14px 8px;
-        font-family: 'Nunito', sans-serif; font-size: 0.78rem; font-weight: 800;
-        cursor: pointer; transition: transform 0.12s, box-shadow 0.12s;
-        font-size: 1.4rem;
+        font-size: 1.4rem; cursor: pointer;
+        transition: transform 0.12s, box-shadow 0.12s;
+        font-family: 'Nunito',sans-serif;
       }
-      .share-card span { font-size: 0.72rem; font-weight: 800; color: #fff; }
-      .share-card:hover { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(0,0,0,0.15); }
-      .share-text  { background: #ff6b9d; }
-      .share-audio { background: #7c3aed; }
-      .share-foto  { background: #52b788; }
-      .share-idea  { background: #ffd60a; }
-      .share-idea span { color: #1a1a1a; }
-      /* Activity list */
+      .share-card span { font-size: 0.72rem; font-weight: 800; }
+      .share-card:hover { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(0,0,0,0.12); }
+      .share-text  { background: #fff0f6; color: #d63384; }
+      .share-audio { background: #f3f0ff; color: #7c3aed; }
+      .share-foto  { background: #f0faf4; color: #2d8660; }
+      .share-idea  { background: #fffde7; color: #b38600; }
       .activity-list { display: flex; flex-direction: column; gap: 8px; }
-      .activity-item {
-        display: flex; align-items: flex-start; gap: 8px;
-        font-size: 0.8rem; color: #555; line-height: 1.4;
-      }
+      .activity-item { display: flex; align-items: flex-start; gap: 8px; font-size: 0.8rem; color: #555; line-height: 1.4; }
       .activity-icon { font-size: 1.1rem; flex-shrink: 0; }
       .activity-time { font-size: 0.68rem; color: #bbb; display: block; }
-      /* Comunità avatars */
-      .comunita-avatars { display: flex; gap: -8px; margin-bottom: 10px; flex-wrap: wrap; gap: 4px; }
+      .comunita-avatars { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 10px; }
       .com-avatar {
         width: 38px; height: 38px; border-radius: 50%;
-        border: 2px solid #fff; overflow: hidden;
-        background: #e0e0e0; object-fit: cover;
+        border: 2px solid #fff; overflow: hidden; background: #e8f4e0;
         display: flex; align-items: center; justify-content: center; font-size: 1.1rem;
+        text-decoration: none;
       }
       .com-avatar img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
       .com-more {
         width: 38px; height: 38px; border-radius: 50%;
-        background: #1a1a1a; color: #ffd60a; font-size: 0.7rem; font-weight: 900;
+        background: #e85d04; color: #fff; font-size: 0.7rem; font-weight: 900;
         display: flex; align-items: center; justify-content: center; border: 2px solid #fff;
       }
-      .sidebar-link {
-        display: block; text-align: right; font-size: 0.8rem; font-weight: 800;
-        color: #e85d04; text-decoration: none; margin-top: 4px;
-      }
+      .sidebar-link { display: block; text-align: right; font-size: 0.8rem; font-weight: 800; color: #e85d04; text-decoration: none; margin-top: 6px; }
       .sidebar-link:hover { text-decoration: underline; }
 
-      /* ---- BOTTOM BAR DESKTOP ---- */
-      .desktop-bottom-bar {
-        display: flex; align-items: center; justify-content: center;
-        gap: 20px; padding: 14px;
-        background: #1a1a1a; color: #ffd60a;
-        font-weight: 900; font-size: 0.85rem; letter-spacing: 0.06em;
-        text-transform: uppercase;
-      }
-      .bar-sep { color: #e85d04; font-size: 1.1rem; }
-
-      /* Nascondi hero mobile su desktop */
+      /* ---- Nascondi elementi mobile ---- */
+      .desktop-bottom-bar { display: none; }
       .hero-foto { display: none; }
       .profilo-info { display: none; }
       .bottom-nav { display: none; }
     }
 
-    /* Mobile: nascondi elementi desktop-only */
+    /* Mobile: nascondi sidebar e bottom bar */
     .sidebar-left, .sidebar-right, .desktop-bottom-bar { display: none; }
     .desktop-layout { display: block; }
 
