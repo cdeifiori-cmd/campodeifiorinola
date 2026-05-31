@@ -810,9 +810,19 @@
       return 'La registrazione non è supportata su questo browser.\nPuoi caricare un file audio registrato con l\'app Memo Vocali del telefono.';
     }
 
+    // ---- HELPER: URL audio compatibile Safari via Cloudinary f_auto ----
+    function getCompatibleAudioUrl(url) {
+      if (!url) return url;
+      if (url.includes('cloudinary.com') && url.includes('/upload/') && !url.includes('/f_auto/')) {
+        return url.replace('/upload/', '/upload/f_auto/');
+      }
+      return url;
+    }
+
     // ---- HELPER: player audio cross-browser con fallback ----
     function buildAudioPlayer(url, elId) {
       if (!url) return '';
+      url = getCompatibleAudioUrl(url);
       // Determina il tipo MIME dall'URL
       const isMP3 = /\.(mp3|MP3)/.test(url) || url.includes('mp3');
       const isOGG = /\.(ogg|oga)/.test(url);
