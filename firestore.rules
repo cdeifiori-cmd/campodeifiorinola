@@ -35,12 +35,14 @@ service cloud.firestore {
     match /utenti/{uid} {
       allow read: if true;
       allow write: if isOwnerOf(uid);
+      allow update: if isOwnerOf(uid);
     }
 
-    // Staff: lettura pubblica, scrittura solo admin
+    // Staff: lettura pubblica, update sul proprio documento, write solo admin
     match /staff/{uid} {
       allow read: if true;
       allow write: if isAdmin();
+      allow update: if isOwnerOf(uid) || isAdmin();
     }
 
     // Diario: lettura pubblica
