@@ -85,9 +85,12 @@
 
     /* ===== DESKTOP LAYOUT ===== */
     @media (min-width: 769px) {
-      body { background: var(--crema); }
-      .hero-foto { display: none; }
-      .profilo-info-mobile { display: none; }
+      body { background: var(--crema); padding-bottom: 0; }
+      .hero-foto,
+      .profilo-info-mobile,
+      .section,
+      #saluto-owner-ui-wrap,
+      .bottom-nav { display: none !important; }
 
       .desktop-layout {
         display: grid;
