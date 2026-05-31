@@ -9,2263 +9,1049 @@
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Caveat:wght@500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Caveat:wght@500;600;700&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Nunito', sans-serif; background: #f5f5f5; padding-bottom: 70px; color: #222; }
+    :root {
+      --arancio: #e07b39; --arancio-scuro: #c96a28;
+      --verde: #52b788; --verde-scuro: #3a9a6e;
+      --crema: #fef9f0; --crema-scuro: #fdebd0;
+      --rosa: #ff6b9d; --giallo-scuro: #c8a000;
+      --testo: #222; --testo-muted: #888;
+    }
+    body { font-family: 'Nunito', sans-serif; background: var(--crema); color: var(--testo); padding-bottom: 70px; }
 
-    /* ---- HERO FOTO (mobile) ---- */
+    /* ===== MOBILE ===== */
     .hero-foto {
-      position: relative;
-      width: 100%;
-      height: 55vw;
-      min-height: 220px;
-      max-height: 420px;
-      background: #c8dfc0;
-      overflow: hidden;
+      position: relative; width: 100%; height: 60vw;
+      min-height: 240px; max-height: 420px; background: #c8dfc0; overflow: hidden;
     }
-    .hero-foto img {
-      width: 100%; height: 100%;
-      object-fit: cover;
-      object-position: top center;
-      display: block;
-    }
+    .hero-foto img { width:100%;height:100%;object-fit:cover;object-position:top center;display:block; }
     .hero-foto .back-btn {
-      position: absolute; top: 14px; left: 14px;
-      background: rgba(0,0,0,0.38);
-      color: #fff; border: none; border-radius: 50%;
-      width: 38px; height: 38px;
-      font-size: 1.1rem; cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      text-decoration: none;
+      position:absolute;top:14px;left:14px;background:rgba(0,0,0,.38);
+      color:#fff;border:none;border-radius:50%;width:38px;height:38px;
+      font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;text-decoration:none;z-index:5;
     }
     .hero-foto .edit-foto-btn {
-      position: absolute; bottom: 10px; right: 10px;
-      background: rgba(0,0,0,0.45);
-      color: #fff; border: none; border-radius: 20px;
-      padding: 5px 12px; font-size: 0.78rem; font-family: 'Nunito',sans-serif;
-      cursor: pointer; display: none;
+      position:absolute;bottom:10px;right:10px;background:rgba(0,0,0,.45);
+      color:#fff;border:none;border-radius:20px;padding:5px 12px;font-size:.78rem;
+      font-family:'Nunito',sans-serif;cursor:pointer;display:none;
     }
-    .hero-foto.is-owner .edit-foto-btn { display: block; }
+    .hero-foto.is-owner .edit-foto-btn { display:block; }
+    .profilo-info-mobile { background:#fff;padding:14px 16px 12px;border-bottom:3px solid var(--arancio); }
+    .profilo-info-mobile .nome { font-size:1.35rem;font-weight:900; }
+    .comunita-tag { font-size:.82rem;color:var(--arancio);font-weight:700;background:var(--crema-scuro);border-radius:20px;padding:3px 12px;display:inline-block;margin-top:4px; }
+    .section { background:#fff;margin-top:10px; }
+    .section-title { font-size:1rem;font-weight:900;padding:13px 16px 0;display:flex;align-items:center;justify-content:space-between;text-transform:uppercase;letter-spacing:.03em; }
+    .section-title-bar { display:inline-block;border-bottom:3px solid var(--arancio);padding-bottom:2px; }
+    .section-body { padding:10px 16px 14px; }
+    .section-saluto .section-title { color:var(--rosa); }
+    .section-saluto .section-title-bar { border-bottom-color:var(--rosa); }
+    .section-presento .section-title { color:var(--giallo-scuro); }
+    .section-presento .section-title-bar { border-bottom-color:var(--giallo-scuro); }
+    .section-diario .section-title { color:var(--verde-scuro); }
+    .section-diario .section-title-bar { border-bottom-color:var(--verde); }
+    .section-bottiglia .section-title { color:var(--arancio-scuro); }
+    .section-bottiglia .section-title-bar { border-bottom-color:var(--arancio); }
+    .audio-wrap { background:linear-gradient(135deg,#ff6b9d22,#ff6b9d11);border:2px solid #ff6b9d44;border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:10px; }
+    .audio-wrap audio { flex:1; }
+    .mi-presento-text { font-size:.95rem;line-height:1.8;color:#333;white-space:pre-wrap;background:linear-gradient(135deg,#ffd60a11,#ffd60a06);border-left:4px solid var(--giallo-scuro);padding:12px 14px;border-radius:0 10px 10px 0; }
+    .mi-presento-empty { color:#aaa;font-style:italic;background:#f9f9f9;border-left-color:#ddd; }
+    .diario-search { display:flex;align-items:center;background:#f0f0f0;border-radius:20px;padding:8px 14px;gap:8px;margin:10px 16px 0; }
+    .diario-search input { border:none;background:none;outline:none;font-family:'Nunito',sans-serif;font-size:.9rem;flex:1; }
+    .diario-new-btn { margin:10px 16px 0;display:none;align-items:center;gap:10px;background:linear-gradient(135deg,#52b78820,#52b78810);border:2px dashed var(--verde);border-radius:14px;padding:12px 16px;cursor:pointer;color:var(--verde-scuro);font-size:.9rem;font-weight:700; }
+    .diario-new-btn.visible { display:flex; }
+    .blog-container { max-width:700px;margin:0 auto;padding:0 12px; }
+    .diario-list { padding:10px 0 0;display:flex;flex-direction:column;gap:16px; }
+    .card-post { background:#fff;border-radius:16px;border:2px solid #e8e8e8;overflow:hidden;max-width:600px;margin:0 auto;width:100%;transition:border-color .2s; }
+    .card-post:hover { border-color:var(--verde); }
+    .card-post .post-header { display:flex;align-items:center;gap:10px;padding:12px 14px 8px;background:linear-gradient(135deg,#52b78810,#52b78806); }
+    .card-post .post-avatar { width:38px;height:38px;border-radius:50%;object-fit:cover;background:#e0e0e0;border:2px solid var(--verde); }
+    .card-post .post-meta { flex:1; }
+    .card-post .post-autore { font-size:.88rem;font-weight:800;color:var(--verde-scuro); }
+    .card-post .post-data { font-size:.72rem;color:#aaa; }
+    .card-post .post-testo { font-family:'Caveat',cursive;font-size:1.15rem;line-height:1.6;padding:10px 14px;color:#333;white-space:pre-wrap; }
+    .card-post .post-img { width:100%;max-height:400px;object-fit:contain;display:block;background:#f5f5f5; }
+    .card-post video.post-img { max-height:400px;width:100%;background:#000; }
+    .card-post .post-audio { padding:12px;background:linear-gradient(135deg,var(--verde),var(--verde-scuro));display:flex;align-items:center;gap:12px; }
+    .card-post .post-audio audio { flex:1;height:36px; }
+    .card-post .post-audio::before { content:'🎙️';font-size:1.5rem;flex-shrink:0; }
+    .card-post .post-reazioni { display:flex;flex-direction:row;align-items:center;gap:8px;padding:8px 14px 10px;border-top:1px solid #f0f0f0;background:#fafafa; }
+    .btn-reazione { background:#f5f5f5;border:2px solid #e8e8e8;border-radius:20px;padding:5px 12px;font-size:.85rem;cursor:pointer;display:flex;align-items:center;gap:5px;transition:all .15s;font-family:'Nunito',sans-serif;font-weight:700; }
+    .btn-reazione.cuore.attiva { background:#ffeef5;border-color:var(--rosa);color:var(--rosa); }
+    .btn-reazione.like.attiva { background:#e8f8f0;border-color:var(--verde);color:var(--verde-scuro); }
+    .btn-reazione.dislike.attiva { background:#fff3e0;border-color:var(--arancio);color:var(--arancio-scuro); }
+    .btn-reazione:hover { transform:scale(1.05); }
+    .post-delete-btn { margin-left:auto;background:none;border:none;color:#ccc;font-size:1rem;cursor:pointer;padding:4px;border-radius:50%;transition:all .15s; }
+    .post-delete-btn:hover { color:#e74c3c;background:#ffeaea; }
+    .bottiglia-list { display:flex;flex-direction:column;gap:12px; }
+    .card-bottiglia { background:linear-gradient(135deg,#fff8e6,#fffaf0);border:2px solid #f0d9a0;border-radius:16px;padding:14px;position:relative;max-width:600px;margin:0 auto;width:100%;transition:border-color .2s; }
+    .card-bottiglia:hover { border-color:var(--arancio); }
+    .card-bottiglia .bott-header { font-size:.82rem;color:#888;margin-bottom:8px;display:flex;align-items:center;gap:8px; }
+    .card-bottiglia .bott-avatar { width:30px;height:30px;border-radius:50%;object-fit:cover;background:#e0d0b0;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.9rem;overflow:hidden;border:2px solid var(--arancio); }
+    .card-bottiglia .bott-avatar img { width:100%;height:100%;object-fit:cover; }
+    .card-bottiglia .bott-mittente { font-weight:800;color:var(--arancio-scuro); }
+    .card-bottiglia img.bott-media { width:100%;max-height:400px;object-fit:contain;border-radius:10px;margin-top:8px;background:#f5f5f5;display:block; }
+    .card-bottiglia video.bott-media { width:100%;max-height:400px;border-radius:10px;margin-top:8px; }
+    .card-bottiglia .bott-audio-wrap { background:linear-gradient(135deg,#b8860b,#e0a020);border-radius:12px;padding:10px 12px;display:flex;align-items:center;gap:10px;margin-top:8px; }
+    .card-bottiglia .bott-audio-wrap::before { content:'🍾';font-size:1.3rem; }
+    .card-bottiglia .bott-audio-wrap audio { flex:1;height:34px; }
+    .card-bottiglia .bott-testo { font-size:.95rem;color:#333;line-height:1.6; }
+    .card-bottiglia .bott-delete { position:absolute;top:10px;right:10px;background:none;border:none;color:#ccc;font-size:1rem;cursor:pointer;padding:4px;border-radius:50%;transition:all .15s; }
+    .card-bottiglia .bott-delete:hover { color:#e74c3c;background:#ffeaea; }
+    .card-bottiglia .post-reazioni { display:flex;flex-direction:row;align-items:center;gap:8px;margin-top:10px;padding-top:8px;border-top:1px solid #f0d9a0; }
+    .btn-primary { background:var(--verde);color:#fff;border:none;border-radius:50px;padding:11px 22px;font-family:'Nunito',sans-serif;font-weight:800;font-size:.92rem;cursor:pointer;width:100%;margin-top:8px;transition:background .2s; }
+    .btn-primary:hover { background:var(--verde-scuro); }
+    .btn-arancio { background:var(--arancio);color:#fff;border:none;border-radius:50px;padding:11px 22px;font-family:'Nunito',sans-serif;font-weight:800;font-size:.92rem;cursor:pointer;width:100%;margin-top:8px;transition:background .2s; }
+    .btn-arancio:hover { background:var(--arancio-scuro); }
+    .btn-secondary { background:transparent;color:var(--verde);border:2px solid var(--verde);border-radius:50px;padding:8px 18px;font-family:'Nunito',sans-serif;font-weight:700;font-size:.85rem;cursor:pointer; }
+    .btn-media { background:#f0f0f0;border:none;border-radius:20px;padding:7px 13px;font-size:.82rem;font-weight:700;font-family:'Nunito',sans-serif;cursor:pointer;transition:background .15s; }
+    .btn-media:hover { background:#e0e0e0; }
+    .modal-overlay { position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center;z-index:200; }
+    .modal-overlay.hidden { display:none; }
+    .modal-box { background:#fff;border-radius:24px 24px 0 0;padding:20px 16px 28px;width:100%;max-width:540px;max-height:88vh;overflow-y:auto; }
+    .modal-box h3 { font-size:1.05rem;font-weight:900;margin-bottom:12px; }
+    .modal-box textarea { width:100%;border:2px solid #ddd;border-radius:12px;padding:10px;font-family:'Caveat',cursive;font-size:1.05rem;resize:vertical;min-height:100px;outline:none; }
+    .modal-box textarea:focus { border-color:var(--verde); }
+    .modal-box textarea.nunito { font-family:'Nunito',sans-serif;font-size:.95rem; }
+    .modal-actions { display:flex;gap:10px;margin-top:12px;justify-content:flex-end; }
+    .bottom-nav { position:fixed;bottom:0;left:0;right:0;height:62px;background:#fff;border-top:2px solid var(--crema-scuro);display:flex;align-items:stretch;z-index:100;box-shadow:0 -2px 12px rgba(0,0,0,.08); }
+    .nav-item { flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-decoration:none;color:#999;font-size:.62rem;font-weight:700;gap:2px; }
+    .nav-item.active { color:var(--arancio); }
+    .nav-item .nav-icon { font-size:1.3rem;line-height:1; }
+    .commenti-section { border-top:1px solid #f0f0f0;padding:0 14px 10px; }
+    .commenti-toggle { background:none;border:none;cursor:pointer;font-size:.8rem;color:#aaa;font-family:'Nunito',sans-serif;font-weight:700;padding:8px 0;display:flex;align-items:center;gap:5px; }
+    .commenti-toggle:hover { color:#888; }
+    .commenti-list { display:flex;flex-direction:column;gap:8px;margin-top:6px; }
+    .card-commento { display:flex;gap:8px;align-items:flex-start; }
+    .commento-avatar { width:28px;height:28px;border-radius:50%;object-fit:cover;flex-shrink:0;background:#e0e0e0;display:flex;align-items:center;justify-content:center;font-size:.9rem;overflow:hidden; }
+    .commento-avatar img { width:100%;height:100%;object-fit:cover; }
+    .commento-bubble { background:#f5f5f5;border-radius:0 12px 12px 12px;padding:8px 12px;flex:1;position:relative; }
+    .commento-autore { font-size:.78rem;font-weight:800;color:#333; }
+    .commento-testo { font-size:.88rem;color:#444;margin-top:2px; }
+    .commento-data { font-size:.7rem;color:#bbb;margin-top:3px; }
+    .commento-del { position:absolute;top:5px;right:6px;background:none;border:none;color:#ccc;cursor:pointer;font-size:.85rem; }
+    .commento-del:hover { color:#e74c3c; }
+    .commento-form { display:flex;gap:6px;margin-top:8px;align-items:center; }
+    .commento-form textarea { flex:1;border:2px solid #e0e0e0;border-radius:20px;padding:7px 12px;font-family:'Nunito',sans-serif;font-size:.85rem;resize:none;outline:none;min-height:36px;max-height:80px;line-height:1.4; }
+    .commento-form textarea:focus { border-color:var(--verde); }
+    .commento-form button { background:var(--verde);color:#fff;border:none;border-radius:20px;padding:7px 14px;font-family:'Nunito',sans-serif;font-weight:800;font-size:.82rem;cursor:pointer;white-space:nowrap; }
+    .media-upload-row { display:flex;gap:6px;flex-wrap:wrap;margin-top:10px; }
+    .rec-dot { width:10px;height:10px;border-radius:50%;background:#e74c3c;animation:blink .9s ease-in-out infinite;flex-shrink:0; }
+    @keyframes blink { 0%,100%{opacity:1}50%{opacity:.2} }
+    .highlight-anchor { outline:3px solid var(--arancio)!important;outline-offset:3px;transition:outline .3s; }
+    .hidden { display:none!important; }
+    .spinner { width:34px;height:34px;border:3px solid #eee;border-top-color:var(--verde);border-radius:50%;animation:spin .7s linear infinite;margin:2rem auto; }
+    @keyframes spin { to{transform:rotate(360deg)} }
+    .empty-msg { color:#aaa;text-align:center;padding:1.5rem;font-size:.9rem; }
 
-    /* ---- DESKTOP: header con cerchio foto ---- */
-    .desktop-header {
-      display: none;
-    }
-    @media (min-width: 769px) {
-      .hero-foto { display: none; }
-      .desktop-header {
-        display: flex;
-        align-items: center;
-        gap: 28px;
-        background: #fff;
-        padding: 28px 32px 24px;
-        border-bottom: 1px solid #eee;
-        position: relative;
-      }
-      .desktop-avatar-wrap {
-        position: relative;
-        width: 200px; height: 200px;
-        border-radius: 50%;
-        overflow: hidden;
-        flex-shrink: 0;
-        background: #c8dfc0;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.13);
-        cursor: pointer;
-      }
-      .desktop-avatar-wrap img {
-        width: 100%; height: 100%;
-        object-fit: cover;
-        object-position: top center;
-        display: block;
-      }
-      .desktop-avatar-overlay {
-        position: absolute; inset: 0;
-        background: rgba(0,0,0,0.35);
-        border-radius: 50%;
-        display: flex; align-items: center; justify-content: center;
-        color: #fff; font-size: 1.3rem;
-        opacity: 0; transition: opacity 0.2s;
-      }
-      .is-owner .desktop-avatar-wrap:hover .desktop-avatar-overlay { opacity: 1; }
-      .desktop-info { flex: 1; }
-      .desktop-back {
-        position: absolute; top: 18px; left: 18px;
-        background: #f0f0f0; border: none; border-radius: 50%;
-        width: 36px; height: 36px; font-size: 1rem;
-        cursor: pointer; display: flex; align-items: center; justify-content: center;
-        color: #555; text-decoration: none;
-      }
-      .desktop-back:hover { background: #e0e0e0; }
-    }
+    /* ===== DESKTOP ===== */
+    @media (min-width:769px) {
+      body { padding-bottom:0; }
+      .hero-foto, .profilo-info-mobile, .section, .bottom-nav, #saluto-owner-ui-wrap { display:none!important; }
 
-    /* ---- INFO NOME ---- */
-    .profilo-info {
-      background: #fff;
-      padding: 14px 16px 12px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      border-bottom: 1px solid #eee;
-    }
-    @media (min-width: 769px) { .profilo-info { display: none; } }
-    .profilo-info .nome { font-size: 1.25rem; font-weight: 800; }
-    .profilo-info .comunita-tag {
-      font-size: 0.82rem; color: #e07b39; font-weight: 700;
-      background: #fdebd0; border-radius: 20px;
-      padding: 2px 10px; display: inline-block; margin-top: 3px;
-    }
-
-    /* ---- SEZIONI ---- */
-    .section { background: #fff; margin-top: 10px; border-radius: 0; }
-    .section-title {
-      font-size: 1rem; font-weight: 800; color: #222;
-      padding: 13px 16px 0;
-      display: flex; align-items: center; justify-content: space-between;
-    }
-    .section-body { padding: 10px 16px 14px; }
-
-    /* ---- AUDIO ---- */
-    .audio-wrap {
-      background: #fdebd0;
-      border-radius: 12px;
-      padding: 10px 14px;
-      display: flex; align-items: center; gap: 10px;
-    }
-    .audio-wrap audio { flex: 1; }
-
-    /* ---- MI PRESENTO ---- */
-    .mi-presento-text {
-      font-size: 0.95rem; line-height: 1.7; color: #333;
-      white-space: pre-wrap;
-    }
-    .mi-presento-empty { color: #aaa; font-style: italic; }
-
-    /* ---- DIARIO ---- */
-    .diario-search {
-      display: flex; align-items: center;
-      background: #f0f0f0; border-radius: 20px;
-      padding: 7px 14px; gap: 8px;
-      margin: 10px 16px 0;
-    }
-    .diario-search input {
-      border: none; background: none; outline: none;
-      font-family: 'Nunito', sans-serif; font-size: 0.9rem;
-      flex: 1;
-    }
-
-    .diario-new-btn {
-      margin: 10px 16px 0;
-      display: flex; align-items: center; gap: 8px;
-      background: #f7f7f7; border-radius: 12px;
-      padding: 10px 14px; cursor: pointer;
-      border: 1.5px dashed #ccc; color: #aaa; font-size: 0.9rem;
-      display: none;
-    }
-    .diario-new-btn.visible { display: flex; }
-
-    /* Blog container: max-width centrato su desktop */
-    .blog-container {
-      max-width: 700px;
-      margin: 0 auto;
-      padding: 0 12px;
-    }
-
-    .diario-list { padding: 10px 0 0; display: flex; flex-direction: column; gap: 14px; }
-
-    .card-post {
-      background: #fff;
-      border-radius: 14px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-      overflow: hidden;
-      max-width: 600px;
-      margin: 0 auto;
-      width: 100%;
-    }
-    .card-post .post-header {
-      display: flex; align-items: center; gap: 10px;
-      padding: 10px 12px 6px;
-    }
-    .card-post .post-avatar {
-      width: 34px; height: 34px; border-radius: 50%;
-      object-fit: cover; background: #e0e0e0;
-    }
-    .card-post .post-meta { flex: 1; }
-    .card-post .post-autore { font-size: 0.85rem; font-weight: 700; }
-    .card-post .post-data { font-size: 0.72rem; color: #aaa; }
-    .card-post .post-testo {
-      font-family: 'Caveat', cursive;
-      font-size: 1.08rem; line-height: 1.5;
-      padding: 0 12px 8px; color: #333;
-      white-space: pre-wrap;
-    }
-    /* Immagini: contain per vedere tutta la foto */
-    .card-post .post-img {
-      width: 100%; max-height: 400px;
-      object-fit: contain; display: block;
-      background: #f5f5f5;
-    }
-    /* Video */
-    .card-post video.post-img {
-      max-height: 400px; width: 100%;
-      background: #000;
-    }
-    /* Audio player personalizzato */
-    .card-post .post-audio {
-      padding: 12px;
-      background: linear-gradient(135deg, #e07b39, #c96a28);
-      display: flex; align-items: center; gap: 12px;
-    }
-    .card-post .post-audio audio { flex: 1; height: 36px; }
-    .card-post .post-audio::before {
-      content: '🎙️'; font-size: 1.5rem; flex-shrink: 0;
-    }
-
-    /* Reazioni */
-    .card-post .post-reazioni {
-      display: flex; flex-direction: row; flex-wrap: nowrap;
-      align-items: center; gap: 8px;
-      padding: 8px 12px 10px;
-      border-top: 1px solid #f0f0f0;
-    }
-    /* Reazioni bottiglia: stessa riga orizzontale */
-    .card-bottiglia .post-reazioni {
-      display: flex; flex-direction: row; flex-wrap: nowrap;
-      align-items: center; gap: 8px;
-    }
-    .btn-reazione {
-      background: #f5f5f5; border: 1.5px solid #e0e0e0;
-      border-radius: 20px; padding: 4px 11px;
-      font-size: 0.85rem; cursor: pointer;
-      display: flex; align-items: center; gap: 4px;
-      transition: background 0.15s, border-color 0.15s;
-      font-family: 'Nunito', sans-serif; font-weight: 600;
-    }
-    .btn-reazione.attiva { background: #fdebd0; border-color: #e07b39; color: #e07b39; }
-    .btn-reazione:hover { background: #f0f0f0; }
-    .post-delete-btn {
-      margin-left: auto; background: none; border: none;
-      color: #ccc; font-size: 1rem; cursor: pointer; padding: 2px;
-    }
-    .post-delete-btn:hover { color: #e74c3c; }
-
-    /* ---- BOTTIGLIA ---- */
-    .bottiglia-list { display: flex; flex-direction: column; gap: 10px; }
-    .card-bottiglia {
-      background: #fff7e6; border: 1px solid #f0d9a0;
-      border-radius: 12px; padding: 12px;
-      position: relative;
-      max-width: 600px; margin: 0 auto; width: 100%;
-    }
-    .card-bottiglia .bott-header {
-      font-size: 0.82rem; color: #888; margin-bottom: 6px;
-      display: flex; align-items: center; gap: 8px;
-    }
-    .card-bottiglia .bott-avatar {
-      width: 28px; height: 28px; border-radius: 50%;
-      object-fit: cover; background: #e0d0b0; flex-shrink: 0;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 0.9rem; overflow: hidden;
-    }
-    .card-bottiglia .bott-avatar img { width: 100%; height: 100%; object-fit: cover; }
-    .card-bottiglia .bott-mittente { font-weight: 800; color: #555; }
-    /* Foto bottiglia: contain */
-    .card-bottiglia img.bott-media {
-      width: 100%; max-height: 400px;
-      object-fit: contain; border-radius: 8px;
-      margin-top: 8px; background: #f5f5f5; display: block;
-    }
-    .card-bottiglia video.bott-media {
-      width: 100%; max-height: 400px;
-      border-radius: 8px; margin-top: 8px;
-    }
-    /* Audio bottiglia personalizzato */
-    .card-bottiglia .bott-audio-wrap {
-      background: linear-gradient(135deg, #b8860b, #e0a020);
-      border-radius: 10px; padding: 10px 12px;
-      display: flex; align-items: center; gap: 10px;
-      margin-top: 8px;
-    }
-    .card-bottiglia .bott-audio-wrap::before { content: '🍾'; font-size: 1.3rem; }
-    .card-bottiglia .bott-audio-wrap audio { flex: 1; height: 34px; }
-    .card-bottiglia .bott-testo { font-size: 0.95rem; color: #333; }
-    .card-bottiglia .bott-delete {
-      position: absolute; top: 8px; right: 8px;
-      background: none; border: none; color: #ccc;
-      font-size: 1rem; cursor: pointer;
-    }
-    .card-bottiglia .bott-delete:hover { color: #e74c3c; }
-
-    /* ---- BUTTONS ---- */
-    .btn-primary {
-      background: #5a8a4a; color: #fff; border: none;
-      border-radius: 50px; padding: 11px 22px;
-      font-family: 'Nunito',sans-serif; font-weight: 700;
-      font-size: 0.92rem; cursor: pointer; width: 100%;
-      margin-top: 8px; transition: background 0.2s;
-    }
-    .btn-primary:hover { background: #4a7a3a; }
-    .btn-arancio {
-      background: #e07b39; color: #fff; border: none;
-      border-radius: 50px; padding: 11px 22px;
-      font-family: 'Nunito',sans-serif; font-weight: 700;
-      font-size: 0.92rem; cursor: pointer; width: 100%;
-      margin-top: 8px; transition: background 0.2s;
-    }
-    .btn-arancio:hover { background: #c96a28; }
-    .btn-secondary {
-      background: transparent; color: #5a8a4a;
-      border: 2px solid #5a8a4a; border-radius: 50px;
-      padding: 8px 18px; font-family: 'Nunito',sans-serif;
-      font-weight: 700; font-size: 0.85rem; cursor: pointer;
-    }
-
-    /* ---- MODAL ---- */
-    .modal-overlay {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.5);
-      display: flex; align-items: flex-end; justify-content: center;
-      z-index: 200;
-    }
-    .modal-overlay.hidden { display: none; }
-    .modal-box {
-      background: #fff; border-radius: 20px 20px 0 0;
-      padding: 20px 16px 28px; width: 100%; max-width: 540px;
-      max-height: 88vh; overflow-y: auto;
-    }
-    .modal-box h3 { font-size: 1.05rem; font-weight: 800; margin-bottom: 12px; }
-    .modal-box textarea {
-      width: 100%; border: 1.5px solid #ddd; border-radius: 10px;
-      padding: 10px; font-family: 'Caveat',cursive; font-size: 1.05rem;
-      resize: vertical; min-height: 100px; outline: none;
-    }
-    .modal-box textarea.nunito { font-family: 'Nunito',sans-serif; font-size: 0.95rem; }
-    .modal-actions { display: flex; gap: 10px; margin-top: 12px; justify-content: flex-end; }
-
-    /* ---- BOTTOM NAV ---- */
-    .bottom-nav {
-      position: fixed; bottom: 0; left: 0; right: 0;
-      height: 62px; background: #fff;
-      border-top: 1px solid #e0e0e0;
-      display: flex; align-items: stretch; z-index: 100;
-      box-shadow: 0 -2px 8px rgba(0,0,0,0.07);
-    }
-    .nav-item {
-      flex: 1; display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      text-decoration: none; color: #999;
-      font-size: 0.62rem; font-weight: 600; gap: 2px;
-    }
-    .nav-item.active { color: #e07b39; }
-    .nav-item .nav-icon { font-size: 1.3rem; line-height: 1; }
-
-    /* ---- COMMENTI ---- */
-    .commenti-section {
-      border-top: 1px solid #f0f0f0;
-      padding: 0 12px 10px;
-    }
-    .commenti-toggle {
-      background: none; border: none; cursor: pointer;
-      font-size: 0.8rem; color: #aaa; font-family: 'Nunito',sans-serif;
-      font-weight: 700; padding: 8px 0; display: flex; align-items: center; gap: 5px;
-    }
-    .commenti-toggle:hover { color: #888; }
-    .commenti-list { display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
-    .card-commento {
-      display: flex; gap: 8px; align-items: flex-start;
-    }
-    .commento-avatar {
-      width: 28px; height: 28px; border-radius: 50%;
-      object-fit: cover; flex-shrink: 0;
-      background: #e0e0e0; display: flex; align-items: center; justify-content: center;
-      font-size: 0.9rem; overflow: hidden;
-    }
-    .commento-avatar img { width: 100%; height: 100%; object-fit: cover; }
-    .commento-bubble {
-      background: #f5f5f5; border-radius: 0 12px 12px 12px;
-      padding: 7px 10px; flex: 1; position: relative;
-    }
-    .commento-autore { font-size: 0.78rem; font-weight: 800; color: #333; }
-    .commento-testo  { font-size: 0.88rem; color: #444; margin-top: 2px; }
-    .commento-data   { font-size: 0.7rem; color: #bbb; margin-top: 3px; }
-    .commento-del {
-      position: absolute; top: 5px; right: 6px;
-      background: none; border: none; color: #ccc; cursor: pointer; font-size: 0.85rem;
-    }
-    .commento-del:hover { color: #e74c3c; }
-    .commento-form {
-      display: flex; gap: 6px; margin-top: 8px; align-items: center;
-    }
-    .commento-form textarea {
-      flex: 1; border: 1.5px solid #e0e0e0; border-radius: 20px;
-      padding: 7px 12px; font-family: 'Nunito',sans-serif; font-size: 0.85rem;
-      resize: none; outline: none; min-height: 36px; max-height: 80px;
-      line-height: 1.4;
-    }
-    .commento-form textarea:focus { border-color: #5a8a4a; }
-    .commento-form button {
-      background: #5a8a4a; color: #fff; border: none; border-radius: 20px;
-      padding: 7px 14px; font-family: 'Nunito',sans-serif; font-weight: 700;
-      font-size: 0.82rem; cursor: pointer; white-space: nowrap;
-    }
-    .commento-form button:hover { background: #4a7a3a; }
-
-    /* ---- MEDIA UPLOAD ---- */
-    .media-upload-row {
-      display: flex; gap: 6px; flex-wrap: wrap;
-      margin-top: 10px;
-    }
-    .btn-media {
-      background: #f0f0f0; border: none; border-radius: 20px;
-      padding: 7px 13px; font-size: 0.82rem; font-weight: 700;
-      font-family: 'Nunito', sans-serif;
-      cursor: pointer; transition: background 0.15s;
-    }
-    .btn-media:hover { background: #e0e0e0; }
-    .rec-dot {
-      width: 10px; height: 10px; border-radius: 50%;
-      background: #e74c3c;
-      animation: blink 0.9s ease-in-out infinite;
-      flex-shrink: 0;
-    }
-    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
-
-    /* ============================================================
-       DESKTOP LAYOUT  (min-width: 769px)
-       ============================================================ */
-    @media (min-width: 769px) {
-
-      body { background: #fef9f0; padding-bottom: 0; }
-
-      /* ---- HEADER ---- */
-      .desktop-header {
-        background: linear-gradient(135deg, #e85d04 0%, #f4a261 60%, #52b788 100%);
-        padding: 36px 48px 44px; display: flex; align-items: flex-end;
-        gap: 28px; position: relative;
-      }
-      .desktop-avatar-wrap {
-        width: 130px; height: 130px; border-radius: 50%;
-        border: 4px solid #fff;
-        box-shadow: 0 6px 24px rgba(0,0,0,0.2), 0 0 0 4px rgba(255,255,255,0.3);
-        flex-shrink: 0; background: #eee; overflow: hidden; cursor: pointer; position: relative;
-      }
-      .desktop-avatar-wrap img { width:100%; height:100%; object-fit:cover; object-position:top center; }
-      .desktop-avatar-overlay {
-        position:absolute; inset:0; background:rgba(0,0,0,0.35); border-radius:50%;
-        display:flex; align-items:center; justify-content:center;
-        color:#fff; font-size:1.3rem; opacity:0; transition:opacity 0.2s;
-      }
-      .is-owner .desktop-avatar-wrap:hover .desktop-avatar-overlay { opacity:1; }
-      .desktop-info { flex:1; }
-      .desktop-info .nome {
-        font-size: 2rem; font-weight: 900; color: #fff;
-        text-shadow: 0 2px 10px rgba(0,0,0,0.2);
-        line-height: 1.1; margin-bottom: 10px;
-      }
-      .desktop-info .comunita-tag {
-        background: rgba(255,255,255,0.25); color: #fff;
-        font-size: 0.88rem; font-weight: 800;
-        padding: 5px 16px; border-radius: 20px;
-        display: inline-block; backdrop-filter: blur(4px);
-      }
-      .desktop-back {
-        position: absolute; top: 16px; left: 16px;
-        background: rgba(255,255,255,0.2); border: none; border-radius: 50%;
-        width: 38px; height: 38px; font-size: 1rem; color: #fff;
-        cursor: pointer; display: flex; align-items: center; justify-content: center;
-        text-decoration: none; transition: background 0.2s;
-      }
-      .desktop-back:hover { background: rgba(255,255,255,0.4); }
-      #nav-auth-slot-desktop { margin-left: auto; align-self: flex-start; }
-
-      /* ---- LAYOUT 3 COLONNE ---- */
       .desktop-layout {
-        display: grid;
-        grid-template-columns: 220px 1fr 270px;
-        align-items: start;
-        min-height: calc(100vh - 56px);
+        display:grid;
+        grid-template-columns:220px 1fr 270px;
+        min-height:100vh;
+        max-width:1280px;
+        margin:0 auto;
       }
 
-      /* ---- SIDEBAR SINISTRA ---- */
-      .sidebar-left {
-        background: #fff; min-height: 100vh;
-        padding: 24px 16px; border-right: 1px solid #f0e8d8;
-        display: flex; flex-direction: column; gap: 14px;
-        position: sticky; top: 0; max-height: 100vh; overflow-y: auto;
+      /* SIDEBAR SINISTRA */
+      .sidebar-sinistra {
+        background:#fff;border-right:2px solid var(--crema-scuro);
+        padding:24px 16px;position:sticky;top:0;height:100vh;
+        overflow-y:auto;display:flex;flex-direction:column;gap:6px;
       }
-      .sidebar-logo {
-        font-weight: 900; font-size: 0.92rem; color: #e85d04;
-        padding-bottom: 12px; border-bottom: 2px solid #f4a261;
-      }
-      .sidebar-menu { display: flex; flex-direction: column; gap: 2px; }
-      .sidebar-item {
-        display: flex; align-items: center; gap: 8px;
-        padding: 9px 12px; border-radius: 10px;
-        text-decoration: none; color: #555; font-weight: 700; font-size: 0.88rem;
-        transition: background 0.15s;
-      }
-      .sidebar-item:hover, .sidebar-item--active { background: #fef3e2; color: #e85d04; }
-      .sidebar-quote {
-        font-size: 0.78rem; color: #aaa; font-style: italic; line-height: 1.5;
-        border-left: 3px solid #f4a261; padding-left: 10px; margin-top: auto;
-      }
-      .sidebar-saluto-btn {
-        background: #e85d04; color: #fff; border: none; border-radius: 10px;
-        padding: 10px 14px; font-family: 'Nunito',sans-serif; font-weight: 800;
-        font-size: 0.88rem; cursor: pointer; transition: background 0.2s;
-      }
-      .sidebar-saluto-btn:hover { background: #c44d04; }
+      .sidebar-logo { display:flex;align-items:center;gap:10px;padding:8px 0 20px;border-bottom:2px dashed var(--crema-scuro);margin-bottom:12px; }
+      .sidebar-logo img { width:44px;height:44px;border-radius:50%;object-fit:cover; }
+      .sidebar-logo span { font-size:.9rem;font-weight:900;color:var(--arancio);line-height:1.2; }
+      .sidebar-nav-item { display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;text-decoration:none;color:var(--testo);font-weight:700;font-size:.88rem;transition:all .15s;cursor:pointer;border:none;background:none;width:100%;text-align:left; }
+      .sidebar-nav-item:hover { background:var(--crema-scuro);color:var(--arancio); }
+      .sidebar-nav-item.active { background:var(--arancio);color:#fff; }
+      .sidebar-frase { margin-top:auto;background:var(--crema-scuro);border-radius:14px;padding:14px;border-left:4px solid var(--arancio); }
+      .sidebar-frase p { font-size:.82rem;color:var(--testo-muted);font-style:italic;line-height:1.5; }
+      .sidebar-saluto-btn { display:flex;align-items:center;gap:8px;background:var(--rosa);color:#fff;border:none;border-radius:12px;padding:10px 14px;font-family:'Nunito',sans-serif;font-weight:800;font-size:.85rem;cursor:pointer;width:100%;margin-top:8px;transition:background .15s; }
+      .sidebar-saluto-btn:hover { background:#e05080; }
 
-      /* ---- COLONNA CENTRALE ---- */
-      .profilo-content-desktop {
-        padding: 24px 20px 40px;
-        display: flex; flex-direction: column; gap: 18px; min-width: 0;
+      /* CONTENUTO CENTRALE */
+      .desktop-centro {
+        display:flex;flex-direction:column;overflow-y:auto;height:100vh;
       }
+      .desktop-profilo-header {
+        background:#fff;border-bottom:3px solid var(--arancio);
+        padding:28px 32px 24px;display:flex;align-items:center;gap:28px;position:relative;
+        flex-shrink:0;
+      }
+      .desktop-avatar-wrap { position:relative;width:130px;height:130px;border-radius:50%;overflow:hidden;flex-shrink:0;background:#c8dfc0;border:4px solid var(--arancio);cursor:pointer; }
+      .desktop-avatar-wrap img { width:100%;height:100%;object-fit:cover;object-position:top center;display:block; }
+      .desktop-avatar-overlay { position:absolute;inset:0;background:rgba(0,0,0,.35);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.3rem;opacity:0;transition:opacity .2s; }
+      .is-owner .desktop-avatar-wrap:hover .desktop-avatar-overlay { opacity:1; }
+      .desktop-profilo-info { flex:1; }
+      .desktop-profilo-info .nome { font-size:2.2rem;font-weight:900;color:var(--testo);line-height:1; }
+      .desktop-back { position:absolute;top:16px;left:16px;background:var(--crema);border:2px solid var(--crema-scuro);border-radius:50%;width:36px;height:36px;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#555;text-decoration:none; }
+      .desktop-back:hover { background:var(--crema-scuro); }
 
-      /* ---- SEZIONI: card arrotondate con bordo colorato ---- */
-      .section {
-        background: #fff; border-radius: 18px;
-        box-shadow: 0 3px 16px rgba(0,0,0,0.07);
-        margin-top: 0; overflow: hidden;
-      }
-      .section-title {
-        display: flex; align-items: center; justify-content: space-between;
-        padding: 16px 20px 10px;
-        font-size: 0.82rem; font-weight: 900;
-        text-transform: uppercase; letter-spacing: 0.06em;
-        border-bottom: none; background: transparent;
-        border-radius: 0;
-      }
-      /* Saluto: rosa */
-      #audio-section { border: 2px solid #ff6b9d; }
-      #audio-section .section-title { color: #d63384; border-bottom: 2px solid #ff6b9d; }
-      #audio-section .audio-wrap { background: linear-gradient(135deg, #fff0f6, #ffe4f0); }
+      .contenuto-centrale { padding:24px;display:flex;flex-direction:column;gap:20px;overflow-y:auto;flex:1; }
 
-      /* Mi Presento: giallo */
-      .section:has(#mi-presento-text) { border: 2px solid #ffd60a; }
-      .section:has(#mi-presento-text) .section-title { color: #b38600; border-bottom: 2px solid #ffd60a; }
-      .mi-presento-text { font-size: 1rem; line-height: 1.8; color: #333; padding: 4px 20px 18px; }
+      /* Sezioni desktop */
+      .d-section { background:#fff;border-radius:18px;border:2px solid var(--crema-scuro);overflow:hidden; }
+      .d-section-title { font-size:1rem;font-weight:900;padding:13px 16px 0;display:flex;align-items:center;justify-content:space-between;text-transform:uppercase;letter-spacing:.03em; }
+      .d-section-title-bar { display:inline-block;border-bottom:3px solid var(--arancio);padding-bottom:2px; }
+      .d-section-body { padding:10px 16px 14px; }
+      .d-section-saluto .d-section-title { color:var(--rosa); }
+      .d-section-saluto .d-section-title-bar { border-bottom-color:var(--rosa); }
+      .d-section-presento .d-section-title { color:var(--giallo-scuro); }
+      .d-section-presento .d-section-title-bar { border-bottom-color:var(--giallo-scuro); }
+      .d-section-diario .d-section-title { color:var(--verde-scuro); }
+      .d-section-diario .d-section-title-bar { border-bottom-color:var(--verde); }
+      .d-section-bottiglia .d-section-title { color:var(--arancio-scuro); }
+      .d-section-bottiglia .d-section-title-bar { border-bottom-color:var(--arancio); }
 
-      /* Diario: verde */
-      .section:has(#diario-list) { border: 2px solid #52b788; }
-      .section:has(#diario-list) .section-title { color: #2d8660; border-bottom: 2px solid #52b788; }
+      /* SIDEBAR DESTRA */
+      .sidebar-destra { background:#fff;border-left:2px solid var(--crema-scuro);padding:24px 16px;display:flex;flex-direction:column;gap:20px;height:100vh;position:sticky;top:0;overflow-y:auto; }
+      .sidebar-widget { background:var(--crema);border-radius:16px;padding:16px;border:2px solid var(--crema-scuro); }
+      .sidebar-widget-title { font-size:.82rem;font-weight:900;text-transform:uppercase;letter-spacing:.05em;color:var(--testo-muted);margin-bottom:12px;border-bottom:2px solid var(--crema-scuro);padding-bottom:8px; }
+      .condividi-grid { display:grid;grid-template-columns:1fr 1fr;gap:8px; }
+      .condividi-btn { background:#fff;border:2px solid var(--crema-scuro);border-radius:12px;padding:12px 8px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;font-family:'Nunito',sans-serif;font-weight:800;font-size:.78rem;color:var(--testo);transition:all .15s; }
+      .condividi-btn:hover { border-color:var(--arancio);color:var(--arancio);transform:translateY(-1px); }
+      .condividi-btn .cb-icon { font-size:1.5rem; }
+      .attivita-item { display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--crema-scuro); }
+      .attivita-item:last-child { border-bottom:none; }
+      .attivita-icona { width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.9rem;flex-shrink:0;background:var(--crema-scuro); }
+      .attivita-testo { font-size:.78rem;color:var(--testo);line-height:1.4; }
+      .attivita-tempo { font-size:.7rem;color:var(--testo-muted);margin-top:2px; }
+      .community-avatars { display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:10px; }
+      .community-avatar { width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid #fff;cursor:pointer;transition:transform .15s;text-decoration:none;display:block; }
+      .community-avatar:hover { transform:scale(1.1); }
+      .community-avatar-placeholder { width:36px;height:36px;border-radius:50%;background:var(--arancio);color:#fff;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;border:2px solid #fff; }
+      .btn-scopri { display:block;text-align:center;background:var(--arancio);color:#fff;border-radius:12px;padding:8px;text-decoration:none;font-weight:800;font-size:.82rem;transition:background .15s; }
+      .btn-scopri:hover { background:var(--arancio-scuro); }
 
-      /* Messaggi: arancio */
-      .section:has(#bottiglia-list) { border: 2px solid #e85d04; }
-      .section:has(#bottiglia-list) .section-title { color: #e85d04; border-bottom: 2px solid #e85d04; }
-
-      /* ---- POST DIARIO ---- */
-      .card-post {
-        border-radius: 16px; border-left: 4px solid #52b788;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.07);
-        max-width: 600px; margin: 0 auto; width: 100%;
-      }
-      .card-post .post-testo { font-size: 18px; line-height: 1.7; }
-
-      /* ---- BOTTIGLIA ---- */
-      .card-bottiglia {
-        background: #fff9f5; border: 1px solid #f4a261;
-        border-radius: 14px; max-width: 600px; margin: 0 auto; width: 100%;
-      }
-
-      /* ---- REAZIONI ---- */
-      .btn-reazione {
-        background: #fef3e2; border: 1.5px solid #f4a261;
-        border-radius: 20px; padding: 5px 13px; color: #c44d04; font-weight: 700;
-      }
-      .btn-reazione.attiva { background: #e85d04; border-color: #e85d04; color: #fff; }
-      .btn-reazione:hover { background: #f4a261; color: #fff; border-color: #e85d04; }
-
-      .diario-list { gap: 18px; }
-      .blog-container { padding: 0; }
-      .section-body { padding: 12px 20px 18px; }
-      .diario-new-btn {
-        max-width: 600px; margin: 0 auto 12px;
-        border-radius: 12px; border-color: #52b788; background: #f0faf4; color: #2d8660;
-      }
-      .diario-search { margin: 8px 0 12px; max-width: 600px; margin-left: auto; margin-right: auto; }
-
-      /* ---- SIDEBAR DESTRA ---- */
-      .sidebar-right {
-        padding: 20px 14px; border-left: 1px solid #f0e8d8;
-        display: flex; flex-direction: column; gap: 16px;
-        position: sticky; top: 0; max-height: 100vh; overflow-y: auto;
-      }
-      .sidebar-widget {
-        background: #fff; border-radius: 16px;
-        padding: 14px; box-shadow: 0 2px 10px rgba(0,0,0,0.06);
-      }
-      .widget-title {
-        font-size: 0.72rem; font-weight: 900; text-transform: uppercase;
-        letter-spacing: 0.07em; color: #e85d04;
-        border-bottom: 2px solid #f4a261; padding-bottom: 6px; margin-bottom: 12px;
-      }
-      .share-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-      .share-card {
-        display: flex; flex-direction: column; align-items: center; gap: 5px;
-        border: none; border-radius: 12px; padding: 14px 8px;
-        font-size: 1.4rem; cursor: pointer;
-        transition: transform 0.12s, box-shadow 0.12s;
-        font-family: 'Nunito',sans-serif;
-      }
-      .share-card span { font-size: 0.72rem; font-weight: 800; }
-      .share-card:hover { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(0,0,0,0.12); }
-      .share-text  { background: #fff0f6; color: #d63384; }
-      .share-audio { background: #f3f0ff; color: #7c3aed; }
-      .share-foto  { background: #f0faf4; color: #2d8660; }
-      .share-idea  { background: #fffde7; color: #b38600; }
-      .activity-list { display: flex; flex-direction: column; gap: 8px; }
-      .activity-item { display: flex; align-items: flex-start; gap: 8px; font-size: 0.8rem; color: #555; line-height: 1.4; }
-      .activity-icon { font-size: 1.1rem; flex-shrink: 0; }
-      .activity-time { font-size: 0.68rem; color: #bbb; display: block; }
-      .comunita-avatars { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 10px; }
-      .com-avatar {
-        width: 38px; height: 38px; border-radius: 50%;
-        border: 2px solid #fff; overflow: hidden; background: #e8f4e0;
-        display: flex; align-items: center; justify-content: center; font-size: 1.1rem;
-        text-decoration: none;
-      }
-      .com-avatar img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
-      .com-more {
-        width: 38px; height: 38px; border-radius: 50%;
-        background: #e85d04; color: #fff; font-size: 0.7rem; font-weight: 900;
-        display: flex; align-items: center; justify-content: center; border: 2px solid #fff;
-      }
-      .sidebar-link { display: block; text-align: right; font-size: 0.8rem; font-weight: 800; color: #e85d04; text-decoration: none; margin-top: 6px; }
-      .sidebar-link:hover { text-decoration: underline; }
-
-      /* ---- Nascondi elementi mobile ---- */
-      .desktop-bottom-bar { display: none; }
-      .hero-foto { display: none; }
-      .profilo-info { display: none; }
-      .bottom-nav { display: none; }
+      /* Saluto owner ui desktop */
+      .d-saluto-owner { padding:0 16px 14px;display:none; }
+      .d-saluto-owner.visible { display:block; }
     }
-
-    /* Mobile: nascondi sidebar e bottom bar */
-    .sidebar-left, .sidebar-right, .desktop-bottom-bar { display: none; }
-    .desktop-layout { display: block; }
-
-    /* ---- ANCHOR HIGHLIGHT ---- */
-    .highlight-anchor {
-      outline: 3px solid #e07b39 !important;
-      outline-offset: 2px;
-      transition: outline 0.3s;
-    }
-
-    /* ---- UTILS ---- */
-    .hidden { display: none !important; }
-    .spinner {
-      width: 34px; height: 34px;
-      border: 3px solid #eee; border-top-color: #5a8a4a;
-      border-radius: 50%; animation: spin 0.7s linear infinite;
-      margin: 2rem auto;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .empty-msg { color: #aaa; text-align: center; padding: 1.5rem; font-size: 0.9rem; }
   </style>
 </head>
 <body>
 
-  <!-- HERO FOTO -->
-  <div class="hero-foto" id="hero-foto">
-    <img id="hero-img" src="" alt="Foto profilo">
-    <a href="javascript:history.back()" class="back-btn">←</a>
-    <div id="nav-auth-slot" style="position:absolute;top:12px;right:12px;z-index:10"></div>
-    <button class="edit-foto-btn" id="btn-edit-foto">📷 Cambia foto</button>
-  </div>
-
-  <!-- DESKTOP HEADER: cerchio foto + nome (solo ≥769px) -->
-  <div class="desktop-header" id="desktop-header">
-    <a href="javascript:history.back()" class="desktop-back">←</a>
-    <div class="desktop-avatar-wrap" id="desktop-avatar-wrap">
-      <img id="desktop-avatar-img" src="" alt="Foto profilo">
-      <div class="desktop-avatar-overlay">📷</div>
+<!-- ===== MOBILE ===== -->
+<div class="hero-foto" id="hero-foto">
+  <img id="hero-img" src="" alt="Foto profilo">
+  <a href="javascript:history.back()" class="back-btn">←</a>
+  <div id="nav-auth-slot" style="position:absolute;top:12px;right:12px;z-index:10"></div>
+  <button class="edit-foto-btn" id="btn-edit-foto">📷 Cambia foto</button>
+</div>
+<div class="profilo-info-mobile">
+  <div class="nome" id="profilo-nome">…</div>
+  <span class="comunita-tag" id="profilo-comunita"></span>
+</div>
+<div class="section section-saluto">
+  <div class="section-title"><span class="section-title-bar">🎙️ Un saluto</span></div>
+  <div class="section-body" id="saluto-body-mobile"></div>
+</div>
+<div id="saluto-owner-ui-wrap">
+  <div style="padding:0 16px 10px" id="saluto-owner-ui">
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn-media" id="btn-registra-saluto">🎙️ <span id="btn-registra-label">Registra il tuo saluto</span></button>
+      <button class="btn-media" id="btn-carica-saluto">📁 Carica file audio</button>
+      <button class="btn-media hidden" id="btn-elimina-saluto" style="background:#ffeaea;color:#c0392b">🗑️ Elimina saluto</button>
+      <input type="file" id="input-saluto-file" accept="audio/*" style="display:none">
     </div>
-    <div class="desktop-info">
-      <div class="nome" id="desktop-nome" style="font-size:1.8rem;font-weight:800;margin-bottom:8px">…</div>
-      <span class="comunita-tag" id="desktop-comunita" style="font-size:0.9rem;color:#e07b39;font-weight:700;background:#fdebd0;border-radius:20px;padding:4px 14px;display:inline-block"></span>
+    <div id="saluto-rec-ui" style="display:none;margin-top:10px">
+      <div id="saluto-rec-active" style="display:none;align-items:center;gap:10px;background:#fff0f0;border-radius:12px;padding:10px 14px">
+        <span class="rec-dot"></span>
+        <span style="font-size:.88rem;font-weight:800;color:#e74c3c">REC</span>
+        <span id="saluto-rec-timer" style="font-size:.88rem;font-weight:700;color:#555;flex:1">0:00</span>
+        <button id="btn-saluto-stop" type="button" class="btn-media" style="background:#e74c3c;color:#fff">⏹ Stop</button>
+      </div>
+      <div id="saluto-rec-preview" style="display:none;margin-top:8px">
+        <audio id="saluto-preview-audio" controls style="width:100%;margin-bottom:8px"></audio>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button id="btn-saluto-save" class="btn-primary" style="width:auto;margin:0">💾 Salva come saluto</button>
+          <button id="btn-saluto-discard" class="btn-media" style="background:#eee;color:#555">🗑 Scarta</button>
+        </div>
+      </div>
+      <div id="saluto-upload-progress" style="display:none;margin-top:8px">
+        <div style="background:#eee;border-radius:20px;height:6px;overflow:hidden"><div id="saluto-upload-bar" style="background:var(--verde);height:100%;width:0%;transition:width .3s"></div></div>
+        <p id="saluto-upload-label" style="font-size:.78rem;color:#888;margin-top:4px;text-align:center">Caricamento…</p>
+      </div>
     </div>
-    <div id="nav-auth-slot-desktop" style="margin-left:auto"></div>
   </div>
-
-  <!-- NOME + COMUNITA -->
-  <div class="profilo-info">
-    <div>
-      <div class="nome" id="profilo-nome">…</div>
-      <span class="comunita-tag" id="profilo-comunita"></span>
+</div>
+<div class="section section-presento">
+  <div class="section-title">
+    <span class="section-title-bar">✨ Mi Presento ✨</span>
+    <button class="btn-secondary hidden" id="btn-edit-presento" style="font-size:.78rem;padding:5px 12px">Modifica ✏️</button>
+  </div>
+  <div class="section-body"><p class="mi-presento-text mi-presento-empty" id="mi-presento-text">Ancora nessuna presentazione…</p></div>
+</div>
+<div class="section section-diario">
+  <div class="section-title"><span class="section-title-bar">📓 Il Mio Diario</span></div>
+  <div class="diario-search"><span>🔍</span><input type="text" id="diario-search" placeholder="Cerca nel diario…"></div>
+  <div class="blog-container">
+    <div class="diario-new-btn" id="diario-new-btn">✏️ <span>A cosa stai pensando?</span></div>
+    <div id="diario-list" class="diario-list"><div class="spinner"></div></div>
+  </div>
+</div>
+<div class="section section-bottiglia">
+  <div class="section-title"><span class="section-title-bar">🍾 Messaggi in Bottiglia</span></div>
+  <div class="section-body">
+    <div class="blog-container">
+      <button class="btn-arancio hidden" id="btn-manda-bottiglia" style="width:100%;max-width:600px;margin:0 auto;display:block">🍾 Invia un messaggio in bottiglia</button>
+      <div id="bottiglia-list" class="bottiglia-list" style="margin-top:10px"><div class="spinner"></div></div>
     </div>
   </div>
+</div>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item"><span class="nav-icon">🏠</span>Home</a>
+  <a href="comunita.html" class="nav-item"><span class="nav-icon">🏡</span>Comunità</a>
+  <a href="ragazzi.html" class="nav-item"><span class="nav-icon">🧒</span>Ragazzi</a>
+  <a href="staff.html" class="nav-item"><span class="nav-icon">🤡</span>Staff</a>
+  <a href="#" class="nav-item"><span class="nav-icon">📋</span>Progetti</a>
+  <a href="giornale.html" class="nav-item"><span class="nav-icon">📰</span>Giornale</a>
+</nav>
 
-  <!-- LAYOUT 3 COLONNE DESKTOP -->
-  <div class="desktop-layout">
+<!-- ===== DESKTOP ===== -->
+<div class="desktop-layout" style="display:none">
 
   <!-- SIDEBAR SINISTRA -->
-  <aside class="sidebar-left">
-    <div class="sidebar-logo">🌸 Campo dei Fiori</div>
-    <nav class="sidebar-menu">
-      <a href="index.html" class="sidebar-item">🏠 <span>Home</span></a>
-      <a href="#diario" class="sidebar-item sidebar-item--active">📓 <span>Il Mio Diario</span></a>
-      <a href="#messaggi" class="sidebar-item">🍾 <span>Messaggi in Bottiglia</span></a>
-      <a href="comunita.html" class="sidebar-item">🏘️ <span>La Comunità</span></a>
-    </nav>
-    <div class="sidebar-quote">"Ogni voce fa fiorire la comunità"</div>
-    <button class="sidebar-saluto-btn" onclick="document.getElementById('btn-registra-saluto')?.click()">
-      🎙️ Lascia un saluto
-    </button>
+  <aside class="sidebar-sinistra">
+    <div class="sidebar-logo">
+      <img src="icons/icon-192.png" alt="Logo">
+      <span>Campo dei<br>Fiori Nola</span>
+    </div>
+    <a href="index.html" class="sidebar-nav-item"><span>🏠</span> Home</a>
+    <button class="sidebar-nav-item active" onclick="document.getElementById('d-diario').scrollIntoView({behavior:'smooth'})"><span>📓</span> Il Mio Diario</button>
+    <button class="sidebar-nav-item" onclick="document.getElementById('d-bottiglia').scrollIntoView({behavior:'smooth'})"><span>🍾</span> Messaggi in Bottiglia</button>
+    <a href="comunita.html" class="sidebar-nav-item"><span>🏘️</span> La Comunità</a>
+    <a href="giornale.html" class="sidebar-nav-item"><span>📰</span> Il Giornale</a>
+    <a href="staff.html" class="sidebar-nav-item"><span>🤡</span> Staff Educativo</a>
+    <div class="sidebar-frase">
+      <p>💬 "Ogni voce fa fiorire la comunità. Ascolta, condividi, lascia traccia."</p>
+    </div>
+    <button class="sidebar-saluto-btn hidden" id="btn-sidebar-saluto">🎙️ Lascia un saluto</button>
   </aside>
 
-  <!-- CONTENUTO PRINCIPALE (desktop: centrato in profilo-content-desktop) -->
-  <div class="profilo-content-desktop">
-
-  <!-- AUDIO -->
-  <div class="section" id="audio-section">
-    <div class="section-title">🎙️ Un saluto</div>
-    <div class="section-body">
-      <!-- Player (visibile solo se audioUrl presente) -->
-      <div id="saluto-player-wrap" style="display:none">
-        <div class="audio-wrap" id="saluto-audio-wrap"></div>
+  <!-- CENTRO -->
+  <div class="desktop-centro">
+    <header class="desktop-profilo-header" id="desktop-header">
+      <a href="javascript:history.back()" class="desktop-back">←</a>
+      <div class="desktop-avatar-wrap" id="desktop-avatar-wrap">
+        <img id="desktop-avatar-img" src="" alt="Foto profilo">
+        <div class="desktop-avatar-overlay">📷</div>
       </div>
+      <div class="desktop-profilo-info">
+        <div class="nome" id="desktop-nome">…</div>
+        <span class="comunita-tag" id="desktop-comunita" style="font-size:.9rem;margin-top:6px;display:inline-block"></span>
+        <p style="font-size:.82rem;color:var(--testo-muted);margin-top:8px;font-style:italic">"Un luogo dove le parole diventano ponti e i pensieri diventano semi." 🌱</p>
+      </div>
+      <div id="nav-auth-slot-desktop"></div>
+    </header>
 
-      <!-- Pulsanti owner/admin -->
-      <div id="saluto-owner-ui" style="display:none;margin-top:10px">
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn-media" id="btn-registra-saluto">🎙️ <span id="btn-registra-label">Registra il tuo saluto</span></button>
-          <button class="btn-media" id="btn-carica-saluto">📁 Carica file audio</button>
-          <button class="btn-media hidden" id="btn-elimina-saluto" style="background:#ffeaea;color:#c0392b">🗑️ Elimina saluto</button>
-          <input type="file" id="input-saluto-file" accept="audio/*" style="display:none">
-        </div>
+    <div class="contenuto-centrale">
 
-        <!-- UI registrazione -->
-        <div id="saluto-rec-ui" style="display:none;margin-top:10px">
-          <div id="saluto-rec-active" style="display:none;align-items:center;gap:10px;background:#fff0f0;border-radius:10px;padding:10px 14px">
-            <span class="rec-dot"></span>
-            <span style="font-size:0.88rem;font-weight:700;color:#e74c3c">REC</span>
-            <span id="saluto-rec-timer" style="font-size:0.88rem;font-weight:700;color:#555;flex:1">0:00</span>
-            <button id="btn-saluto-stop" type="button" class="btn-media" style="background:#e74c3c;color:#fff">⏹ Stop</button>
-          </div>
-          <div id="saluto-rec-preview" style="display:none;margin-top:8px">
-            <audio id="saluto-preview-audio" controls style="width:100%;margin-bottom:8px"></audio>
-            <div style="display:flex;gap:8px;flex-wrap:wrap">
-              <button id="btn-saluto-save" class="btn-primary" style="width:auto;margin:0">💾 Salva come saluto</button>
-              <button id="btn-saluto-discard" class="btn-media" style="background:#eee;color:#555">🗑 Scarta</button>
-            </div>
-          </div>
-          <!-- Progress upload -->
-          <div id="saluto-upload-progress" style="display:none;margin-top:8px">
-            <div style="background:#eee;border-radius:20px;height:6px;overflow:hidden">
-              <div id="saluto-upload-bar" style="background:#5a8a4a;height:100%;width:0%;transition:width 0.3s"></div>
-            </div>
-            <p id="saluto-upload-label" style="font-size:0.78rem;color:#888;margin-top:4px;text-align:center">Caricamento…</p>
+      <!-- SALUTO DESKTOP -->
+      <div class="d-section d-section-saluto">
+        <div class="d-section-title"><span class="d-section-title-bar">🎙️ Un saluto</span></div>
+        <div class="d-section-body" id="saluto-body-desktop"></div>
+        <div class="d-saluto-owner" id="d-saluto-owner">
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn-media" id="btn-registra-saluto-d">🎙️ <span id="btn-registra-label-d">Registra il tuo saluto</span></button>
+            <button class="btn-media" id="btn-carica-saluto-d">📁 Carica file audio</button>
+            <button class="btn-media hidden" id="btn-elimina-saluto-d" style="background:#ffeaea;color:#c0392b">🗑️ Elimina saluto</button>
           </div>
         </div>
       </div>
-    </div>
-  </div><!-- fine audio-section -->
 
-  <!-- MI PRESENTO -->
-  <div class="section">
-    <div class="section-title">
-      ✨ Mi Presento ✨
-      <button class="btn-secondary hidden" id="btn-edit-presento" style="font-size:0.78rem;padding:5px 12px">Modifica</button>
-    </div>
-    <div class="section-body">
-      <p class="mi-presento-text mi-presento-empty" id="mi-presento-text">Ancora nessuna presentazione…</p>
-    </div>
-  </div>
-
-  <!-- IL MIO DIARIO -->
-  <div class="section">
-    <div class="section-title">📓 Il Mio Diario</div>
-
-    <div class="diario-search">
-      <span>🔍</span>
-      <input type="text" id="diario-search" placeholder="Cerca nel diario…">
-    </div>
-
-    <div class="blog-container">
-      <div class="diario-new-btn" id="diario-new-btn">
-        ✏️ <span>A cosa stai pensando?</span>
+      <!-- MI PRESENTO DESKTOP -->
+      <div class="d-section d-section-presento">
+        <div class="d-section-title">
+          <span class="d-section-title-bar">✨ Mi Presento ✨</span>
+          <button class="btn-secondary hidden" id="btn-edit-presento-d" style="font-size:.78rem;padding:5px 12px">Modifica ✏️</button>
+        </div>
+        <div class="d-section-body"><p class="mi-presento-text mi-presento-empty" id="mi-presento-text-d">Ancora nessuna presentazione…</p></div>
       </div>
-      <div id="diario-list" class="diario-list">
-        <div class="spinner"></div>
-      </div>
-    </div>
-  </div>
 
-  <!-- MESSAGGI IN BOTTIGLIA -->
-  <div class="section">
-    <div class="section-title">🍾 Messaggi in Bottiglia</div>
-    <div class="section-body">
-      <div class="blog-container">
-        <button class="btn-arancio hidden" id="btn-manda-bottiglia" style="width:100%;max-width:600px;margin:0 auto;display:block">🍾 Invia un messaggio in bottiglia</button>
-        <div id="bottiglia-list" class="bottiglia-list" style="margin-top:10px">
-          <div class="spinner"></div>
+      <!-- DIARIO DESKTOP -->
+      <div class="d-section d-section-diario" id="d-diario">
+        <div class="d-section-title"><span class="d-section-title-bar">📓 Il Mio Diario</span></div>
+        <div class="diario-search" style="margin:10px 16px 0"><span>🔍</span><input type="text" id="diario-search-d" placeholder="Cerca nel diario…"></div>
+        <div class="blog-container">
+          <div class="diario-new-btn" id="diario-new-btn-d">✏️ <span>A cosa stai pensando?</span></div>
+          <div id="diario-list-d" class="diario-list"><div class="spinner"></div></div>
         </div>
       </div>
+
+      <!-- BOTTIGLIA DESKTOP -->
+      <div class="d-section d-section-bottiglia" id="d-bottiglia">
+        <div class="d-section-title"><span class="d-section-title-bar">🍾 Messaggi in Bottiglia</span></div>
+        <div class="d-section-body">
+          <div class="blog-container">
+            <button class="btn-arancio hidden" id="btn-manda-bottiglia-d" style="width:100%;max-width:600px;margin:0 auto;display:block">🍾 Invia un messaggio in bottiglia</button>
+            <div id="bottiglia-list-d" class="bottiglia-list" style="margin-top:10px"><div class="spinner"></div></div>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
-
-  </div><!-- fine profilo-content-desktop -->
 
   <!-- SIDEBAR DESTRA -->
-  <aside class="sidebar-right">
-    <!-- Widget condividi (solo owner/admin) -->
-    <div class="sidebar-widget" id="widget-condividi" style="display:none">
-      <div class="widget-title">COSA VUOI CONDIVIDERE?</div>
-      <div class="share-grid">
-        <button class="share-card share-text" onclick="document.getElementById('diario-new-btn')?.click()">✏️<span>Testo</span></button>
-        <button class="share-card share-audio" onclick="document.getElementById('btn-record-audio')?.click();document.getElementById('diario-new-btn')?.click()">🎙️<span>Audio</span></button>
-        <button class="share-card share-foto" onclick="document.getElementById('btn-upload-foto')?.click();document.getElementById('diario-new-btn')?.click()">📷<span>Foto</span></button>
-        <button class="share-card share-idea" onclick="document.getElementById('diario-new-btn')?.click()">💡<span>Idea</span></button>
+  <aside class="sidebar-destra">
+    <div class="sidebar-widget hidden" id="widget-condividi">
+      <div class="sidebar-widget-title">Cosa vuoi condividere?</div>
+      <div class="condividi-grid">
+        <button class="condividi-btn" id="btn-cd-testo"><span class="cb-icon">✏️</span>Testo</button>
+        <button class="condividi-btn" id="btn-cd-audio"><span class="cb-icon">🎙️</span>Audio</button>
+        <button class="condividi-btn" id="btn-cd-foto"><span class="cb-icon">📷</span>Foto</button>
+        <button class="condividi-btn" id="btn-cd-video"><span class="cb-icon">🎥</span>Video</button>
       </div>
     </div>
-    <!-- Attività recenti -->
     <div class="sidebar-widget">
-      <div class="widget-title">ATTIVITÀ RECENTI</div>
-      <div id="sidebar-activity" class="activity-list"><div class="spinner" style="width:22px;height:22px;border-width:2px;margin:12px auto"></div></div>
+      <div class="sidebar-widget-title">Attività recenti</div>
+      <div id="attivita-list"><div class="spinner" style="width:24px;height:24px;border-width:2px;margin:12px auto"></div></div>
     </div>
-    <!-- Comunità -->
     <div class="sidebar-widget">
-      <div class="widget-title">LA NOSTRA COMUNITÀ</div>
-      <div id="sidebar-comunita-avatars" class="comunita-avatars"></div>
-      <a href="comunita.html" class="sidebar-link">Scopri di più →</a>
+      <div class="sidebar-widget-title">La nostra comunità</div>
+      <div class="community-avatars" id="community-avatars"><div class="spinner" style="width:24px;height:24px;border-width:2px;margin:8px auto"></div></div>
+      <a href="comunita.html" class="btn-scopri">Scopri di più →</a>
     </div>
   </aside>
+</div>
 
-  </div><!-- fine desktop-layout -->
-
-  <!-- BOTTOM BAR DESKTOP -->
-  <div class="desktop-bottom-bar">
-    <span>Esprimi te stesso</span><span class="bar-sep">|</span>
-    <span>Ispirati</span><span class="bar-sep">|</span>
-    <span>Ascolta</span><span class="bar-sep">|</span>
-    <span>Condividi</span>
-  </div>
-
-  <!-- BOTTOM NAV -->
-  <nav class="bottom-nav">
-    <a href="index.html" class="nav-item"><span class="nav-icon">🏠</span>Home</a>
-    <a href="comunita.html" class="nav-item"><span class="nav-icon">🏡</span>Comunità</a>
-    <a href="ragazzi.html" class="nav-item"><span class="nav-icon">🧒</span>Ragazzi</a>
-    <a href="staff.html" class="nav-item"><span class="nav-icon">🤡</span>Staff</a>
-    <a href="#" class="nav-item"><span class="nav-icon">📋</span>Progetti</a>
-    <a href="giornale.html" class="nav-item"><span class="nav-icon">📰</span>Giornale</a>
-  </nav>
-
-  <!-- MODAL: nuovo post diario -->
-  <div class="modal-overlay hidden" id="modal-diario">
-    <div class="modal-box">
-      <h3>✏️ Cosa stai pensando?</h3>
-      <textarea id="modal-diario-text" placeholder="Scrivi qualcosa…" rows="4"></textarea>
-
-      <!-- Upload foto/video/audio -->
-      <div class="media-upload-row">
-        <button class="btn-media" id="btn-upload-foto" type="button">📷 Foto</button>
-        <button class="btn-media" id="btn-upload-video" type="button">🎥 Video</button>
-        <button class="btn-media" id="btn-record-audio" type="button">🎙️ Registra audio</button>
-        <button class="btn-media" id="btn-video-url" type="button">🔗 URL video</button>
-        <input type="file" id="input-foto" accept="image/*" style="display:none">
-        <input type="file" id="input-video" accept="video/*" style="display:none">
+<!-- MODALI -->
+<div class="modal-overlay hidden" id="modal-diario">
+  <div class="modal-box">
+    <h3>✏️ Cosa stai pensando?</h3>
+    <textarea id="modal-diario-text" placeholder="Scrivi qualcosa…" rows="4"></textarea>
+    <div class="media-upload-row">
+      <button class="btn-media" id="btn-upload-foto" type="button">📷 Foto</button>
+      <button class="btn-media" id="btn-upload-video" type="button">🎥 Video</button>
+      <button class="btn-media" id="btn-record-audio" type="button">🎙️ Registra audio</button>
+      <button class="btn-media" id="btn-video-url" type="button">🔗 URL video</button>
+      <input type="file" id="input-foto" accept="image/*" style="display:none">
+      <input type="file" id="input-video" accept="video/*" style="display:none">
+    </div>
+    <div id="video-url-input" style="display:none;margin-top:8px">
+      <input type="text" id="input-video-url" placeholder="Incolla URL video" style="width:100%;border:2px solid #ddd;border-radius:10px;padding:8px 12px;font-size:.88rem;font-family:'Nunito',sans-serif;outline:none">
+    </div>
+    <div id="media-preview" style="display:none;margin-top:10px">
+      <div style="display:flex;align-items:center;gap:8px;background:#f5f5f5;border-radius:10px;padding:8px 12px">
+        <span id="media-preview-label" style="font-size:.82rem;color:#555;flex:1"></span>
+        <button id="btn-remove-media" type="button" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:1rem">✕</button>
       </div>
-      <!-- Input URL video -->
-      <div id="video-url-input" style="display:none;margin-top:8px">
-        <input type="text" id="input-video-url" placeholder="Incolla URL video (YouTube, mp4…)"
-          style="width:100%;border:1.5px solid #ddd;border-radius:10px;padding:8px 12px;font-size:0.88rem;font-family:'Nunito',sans-serif;outline:none">
+      <img id="preview-img" style="display:none;width:100%;border-radius:10px;margin-top:6px;max-height:180px;object-fit:cover">
+      <video id="preview-video" style="display:none;width:100%;border-radius:10px;margin-top:6px;max-height:180px" controls></video>
+    </div>
+    <div id="audio-rec-ui" style="display:none;margin-top:10px">
+      <div id="rec-active" style="display:none;align-items:center;gap:10px;background:#fff0f0;border-radius:12px;padding:10px 14px">
+        <span class="rec-dot"></span><span style="font-size:.88rem;font-weight:800;color:#e74c3c">REC</span>
+        <span id="rec-timer" style="font-size:.88rem;font-weight:700;color:#555;flex:1">0:00</span>
+        <button id="btn-stop-rec" type="button" class="btn-media" style="background:#e74c3c;color:#fff">⏹ Stop</button>
       </div>
-
-      <!-- Preview media selezionato -->
-      <div id="media-preview" style="display:none;margin-top:10px">
-        <div style="display:flex;align-items:center;gap:8px;background:#f5f5f5;border-radius:10px;padding:8px 12px">
-          <span id="media-preview-label" style="font-size:0.82rem;color:#555;flex:1"></span>
-          <button id="btn-remove-media" type="button" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:1rem">✕</button>
-        </div>
-        <img id="preview-img" style="display:none;width:100%;border-radius:10px;margin-top:6px;max-height:180px;object-fit:cover">
-        <video id="preview-video" style="display:none;width:100%;border-radius:10px;margin-top:6px;max-height:180px" controls></video>
-      </div>
-
-      <!-- Registrazione audio -->
-      <div id="audio-rec-ui" style="display:none;margin-top:10px">
-        <div id="rec-active" style="display:none;align-items:center;gap:10px;background:#fff0f0;border-radius:10px;padding:10px 14px">
-          <span class="rec-dot"></span>
-          <span style="font-size:0.88rem;font-weight:700;color:#e74c3c">REC</span>
-          <span id="rec-timer" style="font-size:0.88rem;font-weight:700;color:#555;flex:1">0:00</span>
-          <button id="btn-stop-rec" type="button" class="btn-media" style="background:#e74c3c;color:#fff">⏹ Stop</button>
-        </div>
-        <div id="rec-preview" style="display:none;margin-top:8px">
-          <audio id="rec-audio-preview" controls style="width:100%"></audio>
-          <button id="btn-discard-rec" type="button" class="btn-media" style="margin-top:6px;background:#eee;color:#555">🗑 Scarta</button>
-        </div>
-      </div>
-
-      <!-- Upload progress -->
-      <div id="upload-progress" style="display:none;margin-top:10px">
-        <div style="background:#eee;border-radius:20px;height:6px;overflow:hidden">
-          <div id="upload-bar" style="background:#5a8a4a;height:100%;width:0%;transition:width 0.3s"></div>
-        </div>
-        <p style="font-size:0.78rem;color:#888;margin-top:4px;text-align:center" id="upload-label">Caricamento…</p>
-      </div>
-
-      <div class="modal-actions">
-        <button class="btn-secondary" id="btn-cancel-diario">Annulla</button>
-        <button class="btn-primary" id="btn-save-diario" style="width:auto;margin:0">Pubblica</button>
+      <div id="rec-preview" style="display:none;margin-top:8px">
+        <audio id="rec-audio-preview" controls style="width:100%"></audio>
+        <button id="btn-discard-rec" type="button" class="btn-media" style="margin-top:6px;background:#eee;color:#555">🗑 Scarta</button>
       </div>
     </div>
-  </div>
-
-  <!-- MODAL: modifica Mi Presento -->
-  <div class="modal-overlay hidden" id="modal-presento">
-    <div class="modal-box">
-      <h3>✨ La tua presentazione</h3>
-      <textarea id="modal-presento-text" class="nunito" placeholder="Raccontati…" rows="6"></textarea>
-      <div class="modal-actions">
-        <button class="btn-secondary" id="btn-cancel-presento">Annulla</button>
-        <button class="btn-primary" id="btn-save-presento" style="width:auto;margin:0">Salva</button>
-      </div>
+    <div id="upload-progress" style="display:none;margin-top:10px">
+      <div style="background:#eee;border-radius:20px;height:6px;overflow:hidden"><div id="upload-bar" style="background:var(--verde);height:100%;width:0%;transition:width .3s"></div></div>
+      <p style="font-size:.78rem;color:#888;margin-top:4px;text-align:center" id="upload-label">Caricamento…</p>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" id="btn-cancel-diario">Annulla</button>
+      <button class="btn-primary" id="btn-save-diario" style="width:auto;margin:0">Pubblica 🚀</button>
     </div>
   </div>
+</div>
 
-  <!-- MODAL: messaggio in bottiglia -->
-  <div class="modal-overlay hidden" id="modal-bottiglia">
-    <div class="modal-box">
-      <h3>🍾 Manda un messaggio in bottiglia</h3>
-      <textarea id="modal-bottiglia-text" class="nunito" placeholder="Scrivi il tuo messaggio…" rows="4"></textarea>
-
-      <div class="media-upload-row">
-        <button class="btn-media" id="btn-bott-foto" type="button">📷 Foto</button>
-        <button class="btn-media" id="btn-bott-video" type="button">🎥 Video</button>
-        <button class="btn-media" id="btn-bott-audio-rec" type="button">🎙️ Registra audio</button>
-        <button class="btn-media" id="btn-bott-audio-file" type="button">🎵 Carica audio</button>
-        <button class="btn-media" id="btn-bott-video-url" type="button">🔗 URL video</button>
-        <input type="file" id="input-bott-foto" accept="image/*" style="display:none">
-        <input type="file" id="input-bott-video" accept="video/*" style="display:none">
-        <input type="file" id="input-bott-audio" accept="audio/*" style="display:none">
-      </div>
-      <!-- Input URL video bottiglia -->
-      <div id="bott-video-url-input" style="display:none;margin-top:8px">
-        <input type="text" id="input-bott-video-url" placeholder="Incolla URL video (YouTube, mp4…)"
-          style="width:100%;border:1.5px solid #ddd;border-radius:10px;padding:8px 12px;font-size:0.88rem;font-family:'Nunito',sans-serif;outline:none">
-      </div>
-
-      <div id="bott-media-preview" style="display:none;margin-top:8px">
-        <div style="display:flex;align-items:center;gap:8px;background:#f5f5f5;border-radius:10px;padding:8px 12px">
-          <span id="bott-preview-label" style="font-size:0.82rem;color:#555;flex:1"></span>
-          <button id="btn-bott-remove" type="button" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:1rem">✕</button>
-        </div>
-        <img id="bott-preview-img" style="display:none;width:100%;border-radius:10px;margin-top:6px;max-height:160px;object-fit:cover">
-        <video id="bott-preview-video" style="display:none;width:100%;border-radius:10px;margin-top:6px;max-height:200px" controls></video>
-        <audio id="bott-preview-audio" style="display:none;width:100%;margin-top:6px" controls></audio>
-      </div>
-
-      <div id="bott-rec-ui" style="display:none;margin-top:10px">
-        <div id="bott-rec-active" style="display:none;align-items:center;gap:10px;background:#fff0f0;border-radius:10px;padding:10px 14px">
-          <span class="rec-dot"></span>
-          <span style="font-size:0.88rem;font-weight:700;color:#e74c3c">REC</span>
-          <span id="bott-rec-timer" style="font-size:0.88rem;font-weight:700;color:#555;flex:1">0:00</span>
-          <button id="btn-bott-stop-rec" type="button" class="btn-media" style="background:#e74c3c;color:#fff">⏹ Stop</button>
-        </div>
-        <div id="bott-rec-preview" style="display:none;margin-top:8px">
-          <audio id="bott-rec-audio-preview" controls style="width:100%"></audio>
-          <button id="btn-bott-discard-rec" type="button" class="btn-media" style="margin-top:6px;background:#eee;color:#555">🗑 Scarta</button>
-        </div>
-      </div>
-
-      <div id="bott-upload-progress" style="display:none;margin-top:10px">
-        <div style="background:#eee;border-radius:20px;height:6px;overflow:hidden">
-          <div id="bott-upload-bar" style="background:#e07b39;height:100%;width:0%;transition:width 0.3s"></div>
-        </div>
-        <p style="font-size:0.78rem;color:#888;margin-top:4px;text-align:center" id="bott-upload-label">Caricamento…</p>
-      </div>
-
-      <div class="modal-actions">
-        <button class="btn-secondary" id="btn-cancel-bottiglia">Annulla</button>
-        <button class="btn-arancio" id="btn-save-bottiglia" style="width:auto;margin:0">Invia 🍾</button>
-      </div>
+<div class="modal-overlay hidden" id="modal-presento">
+  <div class="modal-box">
+    <h3>✨ La tua presentazione</h3>
+    <textarea id="modal-presento-text" class="nunito" placeholder="Raccontati…" rows="6"></textarea>
+    <div class="modal-actions">
+      <button class="btn-secondary" id="btn-cancel-presento">Annulla</button>
+      <button class="btn-primary" id="btn-save-presento" style="width:auto;margin:0">Salva</button>
     </div>
   </div>
+</div>
 
-  <script type="module">
-    import { setupNavAuth } from './js/nav-auth.js';
-    // Su desktop usa lo slot nel desktop-header, su mobile quello nell'hero
-    const isMobile = window.innerWidth < 769;
-    setupNavAuth(isMobile ? 'nav-auth-slot' : 'nav-auth-slot-desktop');
+<div class="modal-overlay hidden" id="modal-bottiglia">
+  <div class="modal-box">
+    <h3>🍾 Manda un messaggio in bottiglia</h3>
+    <textarea id="modal-bottiglia-text" class="nunito" placeholder="Scrivi il tuo messaggio…" rows="4"></textarea>
+    <div class="media-upload-row">
+      <button class="btn-media" id="btn-bott-foto" type="button">📷 Foto</button>
+      <button class="btn-media" id="btn-bott-video" type="button">🎥 Video</button>
+      <button class="btn-media" id="btn-bott-audio-rec" type="button">🎙️ Registra audio</button>
+      <button class="btn-media" id="btn-bott-audio-file" type="button">🎵 Carica audio</button>
+      <button class="btn-media" id="btn-bott-video-url" type="button">🔗 URL video</button>
+      <input type="file" id="input-bott-foto" accept="image/*" style="display:none">
+      <input type="file" id="input-bott-video" accept="video/*" style="display:none">
+      <input type="file" id="input-bott-audio" accept="audio/*" style="display:none">
+    </div>
+    <div id="bott-video-url-input" style="display:none;margin-top:8px">
+      <input type="text" id="input-bott-video-url" placeholder="Incolla URL video" style="width:100%;border:2px solid #ddd;border-radius:10px;padding:8px 12px;font-size:.88rem;font-family:'Nunito',sans-serif;outline:none">
+    </div>
+    <div id="bott-media-preview" style="display:none;margin-top:8px">
+      <div style="display:flex;align-items:center;gap:8px;background:#f5f5f5;border-radius:10px;padding:8px 12px">
+        <span id="bott-preview-label" style="font-size:.82rem;color:#555;flex:1"></span>
+        <button id="btn-bott-remove" type="button" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:1rem">✕</button>
+      </div>
+      <img id="bott-preview-img" style="display:none;width:100%;border-radius:10px;margin-top:6px;max-height:160px;object-fit:cover">
+      <video id="bott-preview-video" style="display:none;width:100%;border-radius:10px;margin-top:6px;max-height:200px" controls></video>
+      <audio id="bott-preview-audio" style="display:none;width:100%;margin-top:6px" controls></audio>
+    </div>
+    <div id="bott-rec-ui" style="display:none;margin-top:10px">
+      <div id="bott-rec-active" style="display:none;align-items:center;gap:10px;background:#fff0f0;border-radius:12px;padding:10px 14px">
+        <span class="rec-dot"></span><span style="font-size:.88rem;font-weight:800;color:#e74c3c">REC</span>
+        <span id="bott-rec-timer" style="font-size:.88rem;font-weight:700;color:#555;flex:1">0:00</span>
+        <button id="btn-bott-stop-rec" type="button" class="btn-media" style="background:#e74c3c;color:#fff">⏹ Stop</button>
+      </div>
+      <div id="bott-rec-preview" style="display:none;margin-top:8px">
+        <audio id="bott-rec-audio-preview" controls style="width:100%"></audio>
+        <button id="btn-bott-discard-rec" type="button" class="btn-media" style="margin-top:6px;background:#eee;color:#555">🗑 Scarta</button>
+      </div>
+    </div>
+    <div id="bott-upload-progress" style="display:none;margin-top:10px">
+      <div style="background:#eee;border-radius:20px;height:6px;overflow:hidden"><div id="bott-upload-bar" style="background:var(--arancio);height:100%;width:0%;transition:width .3s"></div></div>
+      <p style="font-size:.78rem;color:#888;margin-top:4px;text-align:center" id="bott-upload-label">Caricamento…</p>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" id="btn-cancel-bottiglia">Annulla</button>
+      <button class="btn-arancio" id="btn-save-bottiglia" style="width:auto;margin:0">Invia 🍾</button>
+    </div>
+  </div>
+</div>
 
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getAuth, onAuthStateChanged }
-      from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import {
-      getFirestore, doc, getDoc, collection, query, where,
-      getDocs, addDoc, deleteDoc, updateDoc,
-      serverTimestamp, increment, setDoc
-    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+<script type="module">
+import { setupNavAuth } from './js/nav-auth.js';
+const isMobile = window.innerWidth < 769;
+setupNavAuth(isMobile ? 'nav-auth-slot' : 'nav-auth-slot-desktop');
+if (!isMobile) {
+  document.querySelector('.desktop-layout').style.display = 'grid';
+}
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyC18lzwqhYcW29TsEO6Oy4Bqvb2PMBUmAg",
-      authDomain: "campo-dei-fiori.firebaseapp.com",
-      projectId: "campo-dei-fiori",
-      storageBucket: "campo-dei-fiori.firebasestorage.app",
-      messagingSenderId: "928976798756",
-      appId: "1:928976798756:web:1b90027ec9f03b203e44b1"
-    };
-    const app  = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db   = getFirestore(app);
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, doc, getDoc, collection, query, where, getDocs, addDoc, deleteDoc, updateDoc, serverTimestamp, increment, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-    const ADMIN_UID   = 'mCSgNMVEphVIIf4HX0bkcKq2ZKv2';
-    const params      = new URLSearchParams(location.search);
-    const profileUid  = params.get('uid');
-    let currentUser   = null;
-    let isOwner       = false;
-    let isAdmin       = false;
-    let isAutorizzato = false;
-    let profileData   = {};
-    let profileColl   = 'utenti';
-    let allPosts      = [];
-    const utentiCache = {}; // uid -> { nome, fotoProfilo } per avatar mittenti
+const firebaseConfig = { apiKey:"AIzaSyC18lzwqhYcW29TsEO6Oy4Bqvb2PMBUmAg", authDomain:"campo-dei-fiori.firebaseapp.com", projectId:"campo-dei-fiori", storageBucket:"campo-dei-fiori.firebasestorage.app", messagingSenderId:"928976798756", appId:"1:928976798756:web:1b90027ec9f03b203e44b1" };
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
-    // ---- AUTH ----
-    onAuthStateChanged(auth, async user => {
-      currentUser = user;
-      isOwner  = user && user.uid === profileUid;
-      isAdmin  = user && user.uid === ADMIN_UID;
-      if (user && !isAdmin) {
-        const usnap = await getDoc(doc(db, 'utenti', user.uid));
-        if (usnap.exists()) {
-          isAutorizzato = !!usnap.data().autorizzato;
-        }
-      }
-      if (isAdmin) isAutorizzato = true; // admin può tutto
-      renderPermissions();
-    });
+const ADMIN_UID = 'mCSgNMVEphVIIf4HX0bkcKq2ZKv2';
+const params = new URLSearchParams(location.search);
+const profileUid = params.get('uid');
+let currentUser=null, isOwner=false, isAdmin=false, isAutorizzato=false;
+let profileData={}, profileColl='utenti', allPosts=[];
+const utentiCache={};
 
-    function canEditProfile()   { return isOwner || isAdmin; }
-    function canWriteDiary()    { return isOwner || isAdmin; }
-    function canSendBottiglia() { return !!currentUser && !isOwner && (isAutorizzato || isAdmin); }
-    function canReact()         { return !!currentUser; }
-    function canComment()       { return !!currentUser; }
+onAuthStateChanged(auth, async user => {
+  currentUser=user; isOwner=user&&user.uid===profileUid; isAdmin=user&&user.uid===ADMIN_UID;
+  if(user&&!isAdmin){const s=await getDoc(doc(db,'utenti',user.uid));if(s.exists())isAutorizzato=!!s.data().autorizzato;}
+  if(isAdmin)isAutorizzato=true;
+  renderPermissions();
+});
 
-    function renderPermissions() {
-      const canEdit = canEditProfile();
+const canEdit=()=>isOwner||isAdmin;
+const canWrite=()=>isOwner||isAdmin;
+const canBottiglia=()=>!!currentUser&&!isOwner&&(isAutorizzato||isAdmin);
+const canReact=()=>!!currentUser;
+const canComment=()=>!!currentUser;
 
-      // Foto profilo: solo owner/admin vede overlay e pulsante cambia foto
-      if (canEdit) {
-        document.getElementById('hero-foto').classList.add('is-owner');
-        document.getElementById('desktop-header').classList.add('is-owner');
-      } else {
-        document.getElementById('hero-foto').classList.remove('is-owner');
-        document.getElementById('desktop-header').classList.remove('is-owner');
-      }
+function renderPermissions(){
+  const e=canEdit();
+  document.getElementById('hero-foto').classList.toggle('is-owner',e);
+  document.getElementById('desktop-header')?.classList.toggle('is-owner',e);
+  document.getElementById('btn-edit-presento').classList.toggle('hidden',!e);
+  const bepd=document.getElementById('btn-edit-presento-d');if(bepd)bepd.classList.toggle('hidden',!e);
+  document.getElementById('diario-new-btn').classList.toggle('visible',canWrite());
+  const dnbd=document.getElementById('diario-new-btn-d');if(dnbd)dnbd.classList.toggle('visible',canWrite());
+  document.getElementById('btn-manda-bottiglia').classList.toggle('hidden',!canBottiglia());
+  const bmbd=document.getElementById('btn-manda-bottiglia-d');if(bmbd)bmbd.classList.toggle('hidden',!canBottiglia());
+  const wc=document.getElementById('widget-condividi');if(wc)wc.classList.toggle('hidden',!e);
+  const bss=document.getElementById('btn-sidebar-saluto');if(bss)bss.classList.toggle('hidden',!e);
+  const dso=document.getElementById('d-saluto-owner');if(dso)dso.classList.toggle('visible',e);
+  if(profileData.nome)renderSalutoUI();
+}
 
-      // Mi Presento: modifica solo owner/admin
-      document.getElementById('btn-edit-presento').classList.toggle('hidden', !canEdit);
+function getSupportedAudioMime(){
+  if(!window.MediaRecorder)return null;
+  for(const t of['audio/mp4','audio/webm;codecs=opus','audio/webm','audio/ogg;codecs=opus'])
+    if(MediaRecorder.isTypeSupported(t))return t;
+  return null;
+}
 
-      // Diario: "A cosa stai pensando?" solo owner/admin
-      document.getElementById('diario-new-btn').classList.toggle('visible', canWriteDiary());
+function getCompatibleAudioUrl(url){
+  if(!url)return url;
+  if(url.includes('cloudinary.com')&&url.includes('/upload/')&&!url.includes('/f_auto/'))
+    return url.replace('/upload/','/upload/f_auto/');
+  return url;
+}
 
-      // Bottiglia: solo loggati autorizzati NON proprietari
-      document.getElementById('btn-manda-bottiglia').classList.toggle('hidden', !canSendBottiglia());
+function buildAudioPlayer(url,elId){
+  if(!url)return '';
+  url=getCompatibleAudioUrl(url);
+  const mime=/\.(mp3|MP3)/.test(url)||url.includes('mp3')?'audio/mpeg':/\.(ogg|oga)/.test(url)?'audio/ogg':'audio/mpeg';
+  const id=elId?`id="${elId}"`:'';
+  return `<audio ${id} controls style="width:100%" preload="metadata" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+    <source src="${url}" type="${mime}"><source src="${url}" type="audio/mp4"><source src="${url}" type="audio/ogg">
+  </audio>
+  <div style="display:none;align-items:center;gap:10px;background:#f5f5f5;border-radius:10px;padding:10px 12px">
+    <span style="font-size:.85rem;color:#888">Audio non disponibile in questo browser</span>
+    <a href="${url}" target="_blank" rel="noopener" style="background:var(--arancio);color:#fff;border-radius:20px;padding:6px 14px;font-size:.82rem;font-weight:800;text-decoration:none;white-space:nowrap">🎵 Ascolta</a>
+  </div>`;
+}
 
-      // Saluto: aggiorna UI se profileData già caricato
-      if (profileData.nome) renderSalutoUI();
-    }
+function renderSalutoUI(){
+  const hasAudio=!!(profileData.audioUrl);
+  const html=hasAudio?`<div class="audio-wrap">${buildAudioPlayer(profileData.audioUrl,'audio-player')}</div>`:`<p style="color:#aaa;font-style:italic;font-size:.9rem">Nessun saluto ancora… 🎙️</p>`;
+  ['saluto-body-mobile','saluto-body-desktop'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=html;});
+  const lbl=document.getElementById('btn-registra-label');if(lbl)lbl.textContent=hasAudio?'Registra nuovo saluto':'Registra il tuo saluto';
+  const lbld=document.getElementById('btn-registra-label-d');if(lbld)lbld.textContent=hasAudio?'Registra nuovo saluto':'Registra il tuo saluto';
+  document.getElementById('btn-elimina-saluto')?.classList.toggle('hidden',!hasAudio);
+  document.getElementById('btn-elimina-saluto-d')?.classList.toggle('hidden',!hasAudio);
+  const wrap=document.getElementById('saluto-owner-ui-wrap');
+  if(wrap)wrap.style.display=canEdit()?'':'none';
+}
 
-    // ---- HELPER: rileva MIME type supportato per MediaRecorder ----
-    function getSupportedAudioMime() {
-      if (!window.MediaRecorder) return null;
-      const types = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus'];
-      for (const t of types) {
-        if (MediaRecorder.isTypeSupported(t)) return t;
-      }
-      return null;
-    }
-
-    function noRecordingSupport(showEl) {
-      // Nasconde UI rec e mostra messaggio
-      if (showEl) showEl.style.display = 'none';
-      return 'La registrazione non è supportata su questo browser.\nPuoi caricare un file audio registrato con l\'app Memo Vocali del telefono.';
-    }
-
-    // ---- HELPER: URL audio compatibile Safari via Cloudinary f_auto ----
-    function getCompatibleAudioUrl(url) {
-      if (!url) return url;
-      if (url.includes('cloudinary.com') && url.includes('/upload/') && !url.includes('/f_auto/')) {
-        return url.replace('/upload/', '/upload/f_auto/');
-      }
-      return url;
-    }
-
-    // ---- HELPER: player audio cross-browser con fallback ----
-    function buildAudioPlayer(url, elId) {
-      if (!url) return '';
-      url = getCompatibleAudioUrl(url);
-      // Determina il tipo MIME dall'URL
-      const isMP3 = /\.(mp3|MP3)/.test(url) || url.includes('mp3');
-      const isOGG = /\.(ogg|oga)/.test(url);
-      const mime  = isMP3 ? 'audio/mpeg' : isOGG ? 'audio/ogg' : 'audio/mpeg';
-      const idAttr = elId ? `id="${elId}"` : '';
-      return `
-        <audio ${idAttr} controls style="width:100%" preload="metadata"
-          onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-          <source src="${url}" type="${mime}">
-          <source src="${url}" type="audio/ogg">
-          Il tuo browser non supporta l'audio.
-        </audio>
-        <div style="display:none;align-items:center;gap:10px;background:#f5f5f5;border-radius:10px;padding:10px 12px">
-          <span style="font-size:0.85rem;color:#888">Audio non disponibile in questo browser</span>
-          <a href="${url}" target="_blank" rel="noopener"
-            style="background:#e07b39;color:#fff;border-radius:20px;padding:6px 14px;font-size:0.82rem;font-weight:700;text-decoration:none;white-space:nowrap">
-            🎵 Ascolta
-          </a>
-        </div>`;
-    }
-
-    // ---- SALUTO UI ----
-    function renderSalutoUI() {
-      const hasAudio = !!(profileData.audioUrl);
-      const canEdit  = isOwner || isAdmin;
-
-      // Mostra sempre la sezione
-      // Player
-      if (hasAudio) {
-        document.getElementById('saluto-audio-wrap').innerHTML = buildAudioPlayer(profileData.audioUrl, 'audio-player');
-        document.getElementById('saluto-player-wrap').style.display = '';
-      } else {
-        document.getElementById('saluto-player-wrap').style.display = 'none';
-      }
-
-      // Owner UI
-      if (canEdit) {
-        document.getElementById('saluto-owner-ui').style.display = '';
-        document.getElementById('btn-registra-label').textContent =
-          hasAudio ? 'Registra nuovo saluto' : 'Registra il tuo saluto';
-        document.getElementById('btn-elimina-saluto').classList.toggle('hidden', !hasAudio);
-      } else {
-        document.getElementById('saluto-owner-ui').style.display = 'none';
-      }
-    }
-
-    // ---- LOGICA REGISTRAZIONE SALUTO ----
-    let salutoRecorder   = null;
-    let salutoChunks     = [];
-    let salutoBlob       = null;
-    let salutoRecTimer   = null;
-
-    // Carica file audio saluto (fallback per iPhone)
-    document.getElementById('btn-carica-saluto').addEventListener('click', () =>
-      document.getElementById('input-saluto-file').click());
-    document.getElementById('input-saluto-file').addEventListener('change', async e => {
-      const file = e.target.files[0]; if (!file) return;
-      salutoBlob = file;
-      const url = URL.createObjectURL(file);
-      document.getElementById('saluto-rec-ui').style.display = '';
-      document.getElementById('saluto-rec-active').style.display = 'none';
-      document.getElementById('saluto-preview-audio').src = url;
-      document.getElementById('saluto-rec-preview').style.display = '';
-      e.target.value = '';
-    });
-
-    document.getElementById('btn-registra-saluto').addEventListener('click', async () => {
-      const mimeType = getSupportedAudioMime();
-      if (!navigator.mediaDevices || !mimeType) {
-        alert(noRecordingSupport(null)); return;
-      }
-      // Reset UI
-      document.getElementById('saluto-rec-ui').style.display = '';
-      document.getElementById('saluto-rec-active').style.display = 'flex';
-      document.getElementById('saluto-rec-preview').style.display = 'none';
-      document.getElementById('saluto-upload-progress').style.display = 'none';
-      salutoBlob = null;
-
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          audio: { sampleRate: 22050, channelCount: 1, echoCancellation: true }
-        });
-        salutoChunks = [];
-        salutoRecorder = new MediaRecorder(stream, { mimeType, audioBitsPerSecond: 32000 });
-        salutoRecorder.ondataavailable = e => { if (e.data.size > 0) salutoChunks.push(e.data); };
-        salutoRecorder.onstop = () => {
-          stream.getTracks().forEach(t => t.stop());
-          salutoBlob = new Blob(salutoChunks, { type: mimeType });
-          console.log('Saluto blob size:', salutoBlob.size, 'bytes', '| tipo:', mimeType);
-          const url  = URL.createObjectURL(salutoBlob);
-          document.getElementById('saluto-preview-audio').src = url;
-          document.getElementById('saluto-rec-active').style.display  = 'none';
-          document.getElementById('saluto-rec-preview').style.display = '';
-          clearInterval(salutoRecTimer);
-        };
-        salutoRecorder.start();
-        let secs = 0;
-        salutoRecTimer = setInterval(() => {
-          secs++;
-          const m = Math.floor(secs/60), s = secs%60;
-          document.getElementById('saluto-rec-timer').textContent = `${m}:${s.toString().padStart(2,'0')}`;
-        }, 1000);
-      } catch(e) {
-        document.getElementById('saluto-rec-ui').style.display = 'none';
-        alert(e.name === 'NotAllowedError'
-          ? 'Permesso microfono negato.'
-          : 'Microfono non disponibile: ' + e.message);
-      }
-    });
-
-    document.getElementById('btn-saluto-stop').addEventListener('click', () => {
-      if (salutoRecorder && salutoRecorder.state !== 'inactive') salutoRecorder.stop();
+// SALUTO REGISTRAZIONE
+let salutoRecorder=null,salutoChunks=[],salutoBlob=null,salutoRecTimer=null;
+document.getElementById('btn-carica-saluto').addEventListener('click',()=>document.getElementById('input-saluto-file').click());
+document.getElementById('input-saluto-file').addEventListener('change',async e=>{
+  const file=e.target.files[0];if(!file)return;
+  salutoBlob=file;
+  document.getElementById('saluto-rec-ui').style.display='';
+  document.getElementById('saluto-rec-active').style.display='none';
+  document.getElementById('saluto-preview-audio').src=URL.createObjectURL(file);
+  document.getElementById('saluto-rec-preview').style.display='';
+  e.target.value='';
+});
+async function startSalutoRec(){
+  const mimeType=getSupportedAudioMime();
+  if(!navigator.mediaDevices||!mimeType){alert('Registrazione non supportata. Usa "Carica file audio".');return;}
+  document.getElementById('saluto-rec-ui').style.display='';
+  document.getElementById('saluto-rec-active').style.display='flex';
+  document.getElementById('saluto-rec-preview').style.display='none';
+  document.getElementById('saluto-upload-progress').style.display='none';
+  salutoBlob=null;
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({audio:{sampleRate:22050,channelCount:1}});
+    salutoChunks=[];
+    salutoRecorder=new MediaRecorder(stream,{mimeType,audioBitsPerSecond:32000});
+    salutoRecorder.ondataavailable=e=>{if(e.data.size>0)salutoChunks.push(e.data);};
+    salutoRecorder.onstop=()=>{
+      stream.getTracks().forEach(t=>t.stop());
+      salutoBlob=new Blob(salutoChunks,{type:mimeType});
+      document.getElementById('saluto-preview-audio').src=URL.createObjectURL(salutoBlob);
+      document.getElementById('saluto-rec-active').style.display='none';
+      document.getElementById('saluto-rec-preview').style.display='';
       clearInterval(salutoRecTimer);
-    });
-
-    document.getElementById('btn-saluto-discard').addEventListener('click', () => {
-      salutoBlob = null;
-      document.getElementById('saluto-rec-ui').style.display = 'none';
-    });
-
-    document.getElementById('btn-saluto-save').addEventListener('click', async () => {
-      if (!salutoBlob) return;
-      const btn = document.getElementById('btn-saluto-save');
-      btn.disabled = true;
-
-      // Progress
-      const prog = document.getElementById('saluto-upload-progress');
-      const bar  = document.getElementById('saluto-upload-bar');
-      const lbl  = document.getElementById('saluto-upload-label');
-      prog.style.display = ''; bar.style.width = '0%'; lbl.textContent = 'Caricamento…';
-      let pct = 0;
-      const t = setInterval(() => { pct = Math.min(pct+6,80); bar.style.width=pct+'%'; }, 250);
-
-      console.log('Upload saluto — blob size:', salutoBlob.size, 'bytes');
-      try {
-        let audioUrl = null;
-
-        if (salutoBlob.size < 1_000_000) {
-          // --- Tentativo 1: Cloudinary ---
-          try {
-            const ext  = salutoBlob.type.includes('ogg') ? 'ogg' : 'webm';
-            const file = new File([salutoBlob], `saluto.${ext}`, { type: salutoBlob.type });
-            const fd   = new FormData();
-            fd.append('file', file);
-            fd.append('upload_preset', 'campo_dei_fiori');
-            const res  = await fetch('https://api.cloudinary.com/v1_1/dxqyprtzh/video/upload', { method:'POST', body:fd });
-            const json = await res.json();
-            console.log('Cloudinary response:', json);
-            if (json.error) throw new Error(json.error.message);
-            audioUrl = json.secure_url;
-          } catch (cloudErr) {
-            console.warn('Cloudinary fallito, uso base64:', cloudErr.message);
-            // --- Fallback: base64 in Firestore (solo se <500KB) ---
-            if (salutoBlob.size < 500_000) {
-              audioUrl = await new Promise((res, rej) => {
-                const reader = new FileReader();
-                reader.onload = () => res(reader.result);
-                reader.onerror = rej;
-                reader.readAsDataURL(salutoBlob);
-              });
-              lbl.textContent = 'Salvataggio locale…';
-            } else {
-              throw new Error('File troppo grande per il fallback. Prova una registrazione più breve (max 30s).');
-            }
-          }
-        } else {
-          throw new Error('Registrazione troppo lunga. Tieni sotto i 60 secondi.');
-        }
-
-        clearInterval(t); bar.style.width = '100%';
-
-        // Salva in Firestore
-        await updateDoc(doc(db, profileColl, profileUid), { audioUrl });
-        profileData.audioUrl = audioUrl;
-
-        // Aggiorna UI
-        document.getElementById('saluto-audio-wrap').innerHTML = buildAudioPlayer(audioUrl, 'audio-player');
-        document.getElementById('saluto-player-wrap').style.display = '';
-        document.getElementById('btn-registra-label').textContent = 'Registra nuovo saluto';
-        document.getElementById('btn-elimina-saluto').classList.remove('hidden');
-        document.getElementById('saluto-rec-ui').style.display = 'none';
-        salutoBlob = null;
-        lbl.textContent = '✅ Salvato!'; prog.style.display = '';
-        setTimeout(() => { prog.style.display = 'none'; }, 1800);
-      } catch(e) {
-        clearInterval(t); prog.style.display = 'none';
-        console.error('Errore saluto:', e);
-        alert('Errore: ' + e.message);
+    };
+    salutoRecorder.start();
+    let secs=0;
+    salutoRecTimer=setInterval(()=>{secs++;const m=Math.floor(secs/60),s=secs%60;document.getElementById('saluto-rec-timer').textContent=`${m}:${s.toString().padStart(2,'0')}`;},1000);
+  }catch(e){document.getElementById('saluto-rec-ui').style.display='none';alert(e.name==='NotAllowedError'?'Permesso microfono negato.':'Errore: '+e.message);}
+}
+document.getElementById('btn-registra-saluto').addEventListener('click',startSalutoRec);
+document.getElementById('btn-registra-saluto-d')?.addEventListener('click',startSalutoRec);
+document.getElementById('btn-sidebar-saluto')?.addEventListener('click',()=>document.getElementById('d-diario').scrollIntoView({behavior:'smooth'}));
+document.getElementById('btn-saluto-stop').addEventListener('click',()=>{if(salutoRecorder&&salutoRecorder.state!=='inactive')salutoRecorder.stop();clearInterval(salutoRecTimer);});
+document.getElementById('btn-saluto-discard').addEventListener('click',()=>{salutoBlob=null;document.getElementById('saluto-rec-ui').style.display='none';});
+document.getElementById('btn-saluto-save').addEventListener('click',async()=>{
+  if(!salutoBlob)return;
+  const btn=document.getElementById('btn-saluto-save');btn.disabled=true;
+  const prog=document.getElementById('saluto-upload-progress'),bar=document.getElementById('saluto-upload-bar'),lbl=document.getElementById('saluto-upload-label');
+  prog.style.display='';bar.style.width='0%';lbl.textContent='Caricamento…';
+  let pct=0;const t=setInterval(()=>{pct=Math.min(pct+6,80);bar.style.width=pct+'%';},250);
+  try{
+    let audioUrl=null;
+    if(salutoBlob.size<1_000_000){
+      try{
+        const ext=salutoBlob.type.includes('ogg')?'ogg':'webm';
+        const file=new File([salutoBlob],`saluto.${ext}`,{type:salutoBlob.type});
+        const fd=new FormData();fd.append('file',file);fd.append('upload_preset','campo_dei_fiori');
+        const res=await fetch('https://api.cloudinary.com/v1_1/dxqyprtzh/video/upload',{method:'POST',body:fd});
+        const json=await res.json();if(json.error)throw new Error(json.error.message);
+        audioUrl=json.secure_url;
+      }catch(ce){
+        if(salutoBlob.size<500_000)audioUrl=await new Promise((r,j)=>{const rd=new FileReader();rd.onload=()=>r(rd.result);rd.onerror=j;rd.readAsDataURL(salutoBlob);});
+        else throw new Error('File troppo grande. Registrazione più breve.');
       }
-      btn.disabled = false;
+    }else throw new Error('Registrazione troppo lunga. Max 60s.');
+    clearInterval(t);bar.style.width='100%';
+    await updateDoc(doc(db,profileColl,profileUid),{audioUrl});
+    profileData.audioUrl=audioUrl;renderSalutoUI();
+    document.getElementById('saluto-rec-ui').style.display='none';salutoBlob=null;
+    lbl.textContent='✅ Salvato!';setTimeout(()=>{prog.style.display='none';},1800);
+  }catch(e){clearInterval(t);prog.style.display='none';alert('Errore: '+e.message);}
+  btn.disabled=false;
+});
+async function eliminaSaluto(){
+  if(!confirm('Eliminare il saluto audio?'))return;
+  await updateDoc(doc(db,profileColl,profileUid),{audioUrl:''});
+  profileData.audioUrl='';renderSalutoUI();
+}
+document.getElementById('btn-elimina-saluto').addEventListener('click',eliminaSaluto);
+document.getElementById('btn-elimina-saluto-d')?.addEventListener('click',eliminaSaluto);
+document.getElementById('btn-carica-saluto-d')?.addEventListener('click',()=>document.getElementById('input-saluto-file').click());
+
+// CARICA PROFILO
+async function loadProfilo(){
+  if(!profileUid){document.getElementById('profilo-nome').textContent='Profilo non trovato';return;}
+  let snap=await getDoc(doc(db,'utenti',profileUid));
+  if(!snap.exists()){snap=await getDoc(doc(db,'staff',profileUid));if(!snap.exists()){document.getElementById('profilo-nome').textContent='Profilo non trovato';return;}profileColl='staff';}
+  else profileColl='utenti';
+  profileData=snap.data();
+  const nome=profileData.nome||'—';
+  const com='🏡 '+(profileData.comunitaId||profileData.comunita||'');
+  document.getElementById('profilo-nome').textContent=nome;
+  document.getElementById('profilo-comunita').textContent=com;
+  document.getElementById('desktop-nome').textContent=nome;
+  document.getElementById('desktop-comunita').textContent=com;
+  if(profileData.fotoProfilo){document.getElementById('hero-img').src=profileData.fotoProfilo;document.getElementById('desktop-avatar-img').src=profileData.fotoProfilo;}
+  renderSalutoUI();
+  if(profileData.miPresento){
+    ['mi-presento-text','mi-presento-text-d'].forEach(id=>{const el=document.getElementById(id);if(el){el.textContent=profileData.miPresento;el.classList.remove('mi-presento-empty');}});
+  }
+  document.getElementById('modal-presento-text').value=profileData.miPresento||'';
+  loadCommunityAvatars();
+}
+
+async function loadCommunityAvatars(){
+  const container=document.getElementById('community-avatars');
+  if(!container||!profileData.comunitaId){if(container)container.innerHTML='';return;}
+  try{
+    const snap=await getDocs(query(collection(db,'utenti'),where('comunitaId','==',profileData.comunitaId)));
+    const members=[];snap.forEach(d=>{if(d.id!==profileUid)members.push({id:d.id,...d.data()});});
+    container.innerHTML='';
+    members.slice(0,6).forEach(m=>{
+      if(m.fotoProfilo){const a=document.createElement('a');a.href=`profilo.html?uid=${m.id}`;a.title=m.nome;const img=document.createElement('img');img.src=m.fotoProfilo;img.className='community-avatar';img.alt=m.nome;a.appendChild(img);container.appendChild(a);}
     });
+    if(members.length>6){const r=document.createElement('div');r.className='community-avatar-placeholder';r.textContent=`+${members.length-6}`;container.appendChild(r);}
+  }catch(_){if(container)container.innerHTML='';}
+}
 
-    document.getElementById('btn-elimina-saluto').addEventListener('click', async () => {
-      if (!confirm('Eliminare il saluto audio?')) return;
-      await updateDoc(doc(db, profileColl, profileUid), { audioUrl: '' });
-      profileData.audioUrl = '';
-      document.getElementById('saluto-audio-wrap').innerHTML = '';
-      document.getElementById('saluto-player-wrap').style.display = 'none';
-      document.getElementById('btn-registra-label').textContent = 'Registra il tuo saluto';
-      document.getElementById('btn-elimina-saluto').classList.add('hidden');
-      document.getElementById('saluto-rec-ui').style.display = 'none';
+async function loadAttivitaRecenti(){
+  const container=document.getElementById('attivita-list');if(!container)return;
+  try{
+    const events=[];
+    const ds=await getDocs(query(collection(db,'diario'),where('uidRagazzo','==',profileUid)));
+    ds.forEach(d=>events.push({tipo:'diario',nome:profileData.nome,data:d.data().createdAt,testo:d.data().testo}));
+    const bs=await getDocs(query(collection(db,'messaggiBottiglia'),where('uidDestinatario','==',profileUid)));
+    bs.forEach(d=>events.push({tipo:'bottiglia',nome:d.data().nomeMittente,data:d.data().createdAt,testo:d.data().testo}));
+    events.sort((a,b)=>(b.data?.toMillis?.()||0)-(a.data?.toMillis?.()||0));
+    container.innerHTML='';
+    const recent=events.slice(0,5);
+    if(!recent.length){container.innerHTML='<p style="font-size:.78rem;color:#aaa">Nessuna attività recente</p>';return;}
+    recent.forEach(ev=>{
+      const el=document.createElement('div');el.className='attivita-item';
+      const icona=ev.tipo==='diario'?'📓':'🍾';
+      const azione=ev.tipo==='diario'?'ha pubblicato un pensiero':'ha inviato una bottiglia';
+      const tempo=ev.data?tempoRelativo(ev.data.toDate()):'';
+      el.innerHTML=`<div class="attivita-icona">${icona}</div><div><div class="attivita-testo"><strong>${ev.nome||''}</strong> ${azione}</div>${ev.testo?`<div class="attivita-testo" style="color:#aaa;font-size:.72rem">"${(ev.testo||'').substring(0,40)}${ev.testo?.length>40?'…':''}"</div>`:''}<div class="attivita-tempo">${tempo}</div></div>`;
+      container.appendChild(el);
     });
+  }catch(_){if(container)container.innerHTML='';}
+}
 
-    // ---- CARICA PROFILO ----
-    async function loadProfilo() {
-      if (!profileUid) { document.getElementById('profilo-nome').textContent = 'Profilo non trovato'; return; }
-      // Cerca prima in utenti, poi in staff
-      let snap = await getDoc(doc(db, 'utenti', profileUid));
-      if (!snap.exists()) {
-        snap = await getDoc(doc(db, 'staff', profileUid));
-        if (!snap.exists()) { document.getElementById('profilo-nome').textContent = 'Profilo non trovato'; return; }
-        profileColl = 'staff';
-      } else {
-        profileColl = 'utenti';
-      }
-      profileData = snap.data();
+function tempoRelativo(date){
+  const diff=Date.now()-date.getTime();
+  const min=Math.floor(diff/60000),ore=Math.floor(diff/3600000),gg=Math.floor(diff/86400000);
+  if(min<1)return 'adesso';if(min<60)return `${min} min fa`;
+  if(ore<24)return `${ore} ora${ore>1?'':''}  fa`;return `${gg} giorno${gg>1?'i':''} fa`;
+}
 
-      const nome = profileData.nome || '—';
-      const com  = '🏡 ' + (profileData.comunitaId || '');
-      document.getElementById('profilo-nome').textContent     = nome;
-      document.getElementById('profilo-comunita').textContent = com;
-      document.getElementById('desktop-nome').textContent     = nome;
-      document.getElementById('desktop-comunita').textContent = com;
+// DIARIO
+async function loadDiario(){
+  ['diario-list','diario-list-d'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML='<div class="spinner"></div>';});
+  try{
+    const snap=await getDocs(query(collection(db,'diario'),where('uidRagazzo','==',profileUid)));
+    allPosts=[];snap.forEach(d=>allPosts.push({id:d.id,...d.data()}));
+    allPosts.sort((a,b)=>(b.createdAt?.toMillis?.()||0)-(a.createdAt?.toMillis?.()||0));
+    renderPosts(allPosts);
+  }catch(e){['diario-list','diario-list-d'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=`<p class="empty-msg">Errore: ${e.message}</p>`;});}
+}
 
-      if (profileData.fotoProfilo) {
-        document.getElementById('hero-img').src          = profileData.fotoProfilo;
-        document.getElementById('desktop-avatar-img').src = profileData.fotoProfilo;
-      }
-      renderSalutoUI();
-      if (profileData.miPresento) {
-        const el = document.getElementById('mi-presento-text');
-        el.textContent = profileData.miPresento;
-        el.classList.remove('mi-presento-empty');
-      }
-      document.getElementById('modal-presento-text').value = profileData.miPresento || '';
-    }
+function renderPosts(posts){
+  ['diario-list','diario-list-d'].forEach(id=>{
+    const list=document.getElementById(id);if(!list)return;
+    if(!posts.length){list.innerHTML='<p class="empty-msg">Il diario è ancora vuoto… ✍️</p>';return;}
+    list.innerHTML='';posts.forEach(p=>list.appendChild(buildPostCard(p)));
+  });
+}
 
-    // ---- DIARIO ----
-    async function loadDiario() {
-      const list = document.getElementById('diario-list');
-      list.innerHTML = '<div class="spinner"></div>';
-      try {
-        const snap = await getDocs(query(
-          collection(db, 'diario'),
-          where('uidRagazzo', '==', profileUid)
-        ));
-        allPosts = [];
-        snap.forEach(d => allPosts.push({ id: d.id, ...d.data() }));
-        // Ordina lato client: più recenti prima
-        allPosts.sort((a, b) => {
-          const ta = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
-          const tb = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
-          return tb - ta;
-        });
-        renderPosts(allPosts);
-      } catch (e) {
-        list.innerHTML = `<p class="empty-msg">Errore: ${e.message}</p>`;
-      }
-    }
+function buildPostCard(p){
+  const data=p.createdAt?.toDate?formatDate(p.createdAt.toDate()):'';
+  const canDel=isOwner||isAdmin;
+  const avatar=profileData.fotoProfilo?`<img class="post-avatar" src="${profileData.fotoProfilo}" alt="">`:'<div class="post-avatar" style="background:#ddd;display:flex;align-items:center;justify-content:center">🧒</div>';
+  const imgHtml=p.immagineUrl?`<img class="post-img" src="${p.immagineUrl}" alt="">`:'';
+  const videoHtml=p.videoUrl?`<video class="post-img" src="${p.videoUrl}" controls></video>`:'';
+  const audioHtml=p.audioUrl?`<div class="post-audio">${buildAudioPlayer(p.audioUrl)}</div>`:'';
+  const reazioni=p.reazioni||{cuore:0,like:0,dislike:0};
+  const el=document.createElement('div');el.className='card-post';el.id=`post-${p.id}`;el.dataset.id=p.id;
+  el.innerHTML=`
+    <div class="post-header">${avatar}<div class="post-meta"><div class="post-autore">${profileData.nome||''}</div><div class="post-data">${data}</div></div>${canDel?'<button class="post-delete-btn" title="Elimina">🗑️</button>':''}</div>
+    <div class="post-testo">${p.testo||''}</div>${imgHtml}${videoHtml}${audioHtml}
+    <div class="post-reazioni">
+      <button class="btn-reazione cuore" data-tipo="cuore">❤️ <span>${reazioni.cuore||0}</span></button>
+      <button class="btn-reazione like" data-tipo="like">👍 <span>${reazioni.like||0}</span></button>
+      <button class="btn-reazione dislike" data-tipo="dislike">👎 <span>${reazioni.dislike||0}</span></button>
+    </div>
+    <div class="commenti-section">
+      <button class="commenti-toggle">💬 <span class="commenti-count">Commenti</span></button>
+      <div class="commenti-body" style="display:none">
+        <div class="commenti-list"></div>
+        ${currentUser?'<div class="commento-form"><textarea placeholder="Scrivi un commento…" rows="1"></textarea><button type="button">Invia</button></div>':''}
+      </div>
+    </div>`;
+  if(canDel)el.querySelector('.post-delete-btn').addEventListener('click',()=>deletePost(p.id));
+  if(currentUser){getDoc(doc(db,'diario',p.id,'reazioni',currentUser.uid)).then(s=>{if(s.exists()){const b=el.querySelector(`[data-tipo="${s.data().tipo}"]`);if(b)b.classList.add('attiva');}});}
+  el.querySelectorAll('.btn-reazione').forEach(btn=>btn.addEventListener('click',()=>{if(!canReact()){alert('Devi essere loggato per reagire.');return;}toggleReazione('diario',p.id,btn.dataset.tipo,el,reazioni);}));
+  const toggle=el.querySelector('.commenti-toggle'),body=el.querySelector('.commenti-body'),commList=el.querySelector('.commenti-list');
+  let loaded=false;
+  toggle.addEventListener('click',async()=>{const open=body.style.display==='none';body.style.display=open?'':'none';if(open&&!loaded){loaded=true;await loadCommenti('diario',p.id,commList,toggle);}});
+  if(currentUser){const form=el.querySelector('.commento-form'),ta=form?.querySelector('textarea'),btnI=form?.querySelector('button');btnI?.addEventListener('click',()=>addCommento('diario',p.id,ta,commList,toggle));ta?.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();btnI.click();}});}
+  return el;
+}
 
-    function renderPosts(posts) {
-      const list = document.getElementById('diario-list');
-      if (!posts.length) { list.innerHTML = '<p class="empty-msg">Il diario è ancora vuoto…</p>'; return; }
-      list.innerHTML = '';
-      posts.forEach(p => list.appendChild(buildPostCard(p)));
-    }
+async function toggleReazione(collName,docId,tipoNuovo,cardEl,reazioni){
+  if(!currentUser)return;
+  const reazRef=doc(db,collName,docId,'reazioni',currentUser.uid);
+  const snap=await getDoc(reazRef);const tipoPrev=snap.exists()?snap.data().tipo:null;
+  const docRef=doc(db,collName,docId);
+  if(tipoPrev===tipoNuovo){
+    await deleteDoc(reazRef);await updateDoc(docRef,{[`reazioni.${tipoNuovo}`]:increment(-1)});
+    const btn=cardEl.querySelector(`[data-tipo="${tipoNuovo}"]`);btn.classList.remove('attiva');btn.querySelector('span').textContent=Math.max(0,(parseInt(btn.querySelector('span').textContent)||1)-1);
+  }else{
+    if(tipoPrev){await updateDoc(docRef,{[`reazioni.${tipoPrev}`]:increment(-1)});const old=cardEl.querySelector(`[data-tipo="${tipoPrev}"]`);if(old){old.classList.remove('attiva');old.querySelector('span').textContent=Math.max(0,(parseInt(old.querySelector('span').textContent)||1)-1);}}
+    await setDoc(reazRef,{tipo:tipoNuovo});await updateDoc(docRef,{[`reazioni.${tipoNuovo}`]:increment(1)});
+    const btn=cardEl.querySelector(`[data-tipo="${tipoNuovo}"]`);btn.classList.add('attiva');btn.querySelector('span').textContent=(parseInt(btn.querySelector('span').textContent)||0)+1;
+  }
+}
 
-    function buildPostCard(p) {
-      const data      = p.createdAt?.toDate ? formatDate(p.createdAt.toDate()) : '';
-      const canDelete = isOwner || isAdmin;
-      const avatar    = profileData.fotoProfilo
-        ? `<img class="post-avatar" src="${profileData.fotoProfilo}" alt="">`
-        : '<div class="post-avatar" style="background:#ddd;display:flex;align-items:center;justify-content:center">🧒</div>';
-      const imgHtml   = p.immagineUrl ? `<img class="post-img" src="${p.immagineUrl}" alt="">` : '';
-      const videoHtml = p.videoUrl    ? `<video class="post-img" src="${p.videoUrl}" controls style="max-height:280px"></video>` : '';
-      const audioHtml = p.audioUrl    ? `<div class="post-audio">${buildAudioPlayer(p.audioUrl)}</div>` : '';
-      const reazioni  = p.reazioni || { cuore:0, like:0, dislike:0 };
+async function loadCommenti(collName,docId,listEl,toggleBtn){
+  listEl.innerHTML='<div class="spinner" style="width:20px;height:20px;border-width:2px;margin:8px auto"></div>';
+  try{
+    const snap=await getDocs(collection(db,collName,docId,'commenti'));
+    const docs=[];snap.forEach(d=>docs.push({id:d.id,...d.data()}));
+    docs.sort((a,b)=>(a.createdAt?.toMillis?.()||0)-(b.createdAt?.toMillis?.()||0));
+    listEl.innerHTML='';
+    if(!docs.length)listEl.innerHTML='<p style="font-size:.78rem;color:#bbb;padding:4px 0">Nessun commento ancora</p>';
+    docs.forEach(c=>listEl.appendChild(buildCommentoEl(collName,docId,c,listEl)));
+    toggleBtn.querySelector('.commenti-count').textContent=docs.length>0?`${docs.length} commento${docs.length>1?'i':''}`:'Commenti';
+  }catch(e){listEl.innerHTML=`<p style="font-size:.78rem;color:#e74c3c">${e.message}</p>`;}
+}
 
-      const el = document.createElement('div');
-      el.className  = 'card-post';
-      el.id         = `post-${p.id}`;
-      el.dataset.id = p.id;
-      el.innerHTML  = `
-        <div class="post-header">
-          ${avatar}
-          <div class="post-meta">
-            <div class="post-autore">${profileData.nome || ''}</div>
-            <div class="post-data">${data}</div>
-          </div>
-          ${canDelete ? `<button class="post-delete-btn" title="Elimina">🗑️</button>` : ''}
-        </div>
-        <div class="post-testo">${p.testo || ''}</div>
-        ${imgHtml}${videoHtml}${audioHtml}
-        <div class="post-reazioni">
-          <button class="btn-reazione" data-tipo="cuore">❤️ <span>${reazioni.cuore||0}</span></button>
-          <button class="btn-reazione" data-tipo="like">👍 <span>${reazioni.like||0}</span></button>
-          <button class="btn-reazione" data-tipo="dislike">👎 <span>${reazioni.dislike||0}</span></button>
-        </div>
-        <div class="commenti-section">
-          <button class="commenti-toggle">💬 <span class="commenti-count">Commenti</span></button>
-          <div class="commenti-body" style="display:none">
-            <div class="commenti-list"></div>
-            ${currentUser ? `
-            <div class="commento-form">
-              <textarea placeholder="Scrivi un commento…" rows="1"></textarea>
-              <button type="button">Invia</button>
-            </div>` : ''}
-          </div>
-        </div>`;
+function buildCommentoEl(collName,docId,c,listEl){
+  const canDel=isOwner||isAdmin||(currentUser&&currentUser.uid===c.uidAutore);
+  const data=c.createdAt?.toDate?formatDate(c.createdAt.toDate()):'';
+  const el=document.createElement('div');el.className='card-commento';el.dataset.id=c.id;
+  el.innerHTML=`<div class="commento-avatar">${c.fotoAutore?`<img src="${c.fotoAutore}" alt="">`:(c.nomeAutore?.[0]||'👤')}</div><div class="commento-bubble">${canDel?'<button class="commento-del" title="Elimina">✕</button>':''}<div class="commento-autore">${c.nomeAutore||'Anonimo'}</div><div class="commento-testo">${c.testo||''}</div><div class="commento-data">${data}</div></div>`;
+  if(canDel)el.querySelector('.commento-del').addEventListener('click',async()=>{await deleteDoc(doc(db,collName,docId,'commenti',c.id));el.remove();});
+  return el;
+}
 
-      if (canDelete) el.querySelector('.post-delete-btn').addEventListener('click', () => deletePost(p.id));
+async function addCommento(collName,docId,ta,listEl,toggleBtn){
+  const testo=ta.value.trim();if(!testo||!canComment())return;ta.value='';
+  let nomeAutore=currentUser.displayName||currentUser.email||'Anonimo',fotoAutore=null;
+  try{let s=await getDoc(doc(db,'utenti',currentUser.uid));if(!s.exists())s=await getDoc(doc(db,'staff',currentUser.uid));if(s.exists()){nomeAutore=s.data().nome||nomeAutore;fotoAutore=s.data().fotoProfilo||null;}}catch(_){}
+  const ref=await addDoc(collection(db,collName,docId,'commenti'),{uidAutore:currentUser.uid,nomeAutore,fotoAutore,testo,createdAt:serverTimestamp()});
+  const newC={id:ref.id,uidAutore:currentUser.uid,nomeAutore,fotoAutore,testo,createdAt:null};
+  const emptyMsg=listEl.querySelector('p');if(emptyMsg)emptyMsg.remove();
+  listEl.appendChild(buildCommentoEl(collName,docId,newC,listEl));
+  const cnt=listEl.querySelectorAll('.card-commento').length;
+  toggleBtn.querySelector('.commenti-count').textContent=`${cnt} commento${cnt>1?'i':''}`;
+}
 
-      // Reazioni — carica stato utente e collega toggle
-      const reazColl = collection(db, 'diario', p.id, 'reazioni');
-      if (currentUser) {
-        getDoc(doc(reazColl, currentUser.uid)).then(snap => {
-          if (snap.exists()) {
-            const tipoAttuale = snap.data().tipo;
-            const btn = el.querySelector(`[data-tipo="${tipoAttuale}"]`);
-            if (btn) btn.classList.add('attiva');
-          }
-        });
-      }
-      el.querySelectorAll('.btn-reazione').forEach(btn => {
-        btn.addEventListener('click', () => {
-          if (!canReact()) { alert('Devi essere loggato per reagire.'); return; }
-          toggleReazione('diario', p.id, btn.dataset.tipo, el, reazioni);
-        });
-      });
+['diario-search','diario-search-d'].forEach(id=>{
+  document.getElementById(id)?.addEventListener('input',e=>{const q=e.target.value.trim().toLowerCase();renderPosts(q?allPosts.filter(p=>(p.testo||'').toLowerCase().includes(q)):allPosts);});
+});
 
-      // Commenti toggle
-      const toggle      = el.querySelector('.commenti-toggle');
-      const body        = el.querySelector('.commenti-body');
-      const commList    = el.querySelector('.commenti-list');
-      let   loaded      = false;
-      toggle.addEventListener('click', async () => {
-        const open = body.style.display === 'none';
-        body.style.display = open ? '' : 'none';
-        if (open && !loaded) {
-          loaded = true;
-          await loadCommenti('diario', p.id, commList, toggle);
-        }
-      });
-      if (currentUser) {
-        const form    = el.querySelector('.commento-form');
-        const ta      = form?.querySelector('textarea');
-        const btnInvia = form?.querySelector('button');
-        btnInvia?.addEventListener('click', () =>
-          addCommento('diario', p.id, ta, commList, toggle));
-        ta?.addEventListener('keydown', e => {
-          if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); btnInvia.click(); }
-        });
-      }
+async function deletePost(id){
+  if(!confirm('Eliminare questo post?'))return;
+  await deleteDoc(doc(db,'diario',id));
+  document.querySelectorAll(`.card-post[data-id="${id}"]`).forEach(el=>el.remove());
+}
 
-      return el;
-    }
+// MODAL DIARIO
+let pendingMediaUrl=null,pendingMediaType=null,mediaRecorder=null,recChunks=[],recTimerInterval=null,recBlob=null;
+const CLOUD_PRESET='campo_dei_fiori';
 
-    // ---- REAZIONI (universale per diario e messaggiBottiglia) ----
-    async function toggleReazione(collName, docId, tipoNuovo, cardEl, contatoriCache) {
-      if (!currentUser) return;
-      const reazRef  = doc(db, collName, docId, 'reazioni', currentUser.uid);
-      const snap     = await getDoc(reazRef);
-      const tipoPrev = snap.exists() ? snap.data().tipo : null;
+function resetModalDiario(){document.getElementById('modal-diario-text').value='';resetMedia();stopRecIfActive();}
+function resetMedia(){pendingMediaUrl=null;pendingMediaType=null;['media-preview','audio-rec-ui','rec-preview','rec-active'].forEach(id=>document.getElementById(id).style.display='none');['preview-img','preview-video'].forEach(id=>{document.getElementById(id).style.display='none';document.getElementById(id).src='';});recBlob=null;}
+function showProgress(label){document.getElementById('upload-progress').style.display='';document.getElementById('upload-label').textContent=label;document.getElementById('upload-bar').style.width='0%';}
+function hideProgress(){document.getElementById('upload-progress').style.display='none';}
+function showError(msg){const el=document.getElementById('upload-label');el.textContent='⚠️ '+msg;el.style.color='#e74c3c';document.getElementById('upload-progress').style.display='';setTimeout(()=>{hideProgress();el.style.color='#888';},4000);}
+async function uploadToCloudinary(file,resourceType){
+  if(!file||file.size===0)throw new Error('File vuoto');
+  showProgress('Caricamento in corso…');
+  const fd=new FormData();fd.append('file',file);fd.append('upload_preset',CLOUD_PRESET);
+  const url=`https://api.cloudinary.com/v1_1/dxqyprtzh/${resourceType}/upload`;
+  let pct=0;const bar=document.getElementById('upload-bar');
+  const fakeP=setInterval(()=>{pct=Math.min(pct+6,80);bar.style.width=pct+'%';},250);
+  try{const res=await fetch(url,{method:'POST',body:fd});const json=await res.json();clearInterval(fakeP);if(json.error){hideProgress();throw new Error(json.error.message);}bar.style.width='100%';setTimeout(hideProgress,500);return json.secure_url;}
+  catch(e){clearInterval(fakeP);hideProgress();throw e;}
+}
+document.getElementById('btn-upload-foto').addEventListener('click',()=>document.getElementById('input-foto').click());
+document.getElementById('input-foto').addEventListener('change',async e=>{const file=e.target.files[0];if(!file)return;try{const url=await uploadToCloudinary(file,'image');pendingMediaUrl=url;pendingMediaType='image';document.getElementById('preview-img').src=url;document.getElementById('preview-img').style.display='block';document.getElementById('media-preview-label').textContent='📷 '+file.name;document.getElementById('media-preview').style.display='';}catch(e){showError('Errore foto: '+e.message);}e.target.value='';});
+document.getElementById('btn-upload-video').addEventListener('click',()=>document.getElementById('input-video').click());
+document.getElementById('input-video').addEventListener('change',async e=>{const file=e.target.files[0];if(!file)return;try{const url=await uploadToCloudinary(file,'video');pendingMediaUrl=url;pendingMediaType='video';document.getElementById('preview-video').src=url;document.getElementById('preview-video').style.display='block';document.getElementById('media-preview-label').textContent='🎥 '+file.name;document.getElementById('media-preview').style.display='';}catch(e){showError('Errore video: '+e.message);}e.target.value='';});
+document.getElementById('btn-video-url').addEventListener('click',()=>{const w=document.getElementById('video-url-input');w.style.display=w.style.display==='none'?'':'none';});
+document.getElementById('btn-remove-media').addEventListener('click',resetMedia);
+document.getElementById('btn-record-audio').addEventListener('click',async()=>{
+  const mimeType=getSupportedAudioMime();if(!navigator.mediaDevices||!mimeType){showError('Registrazione non supportata su questo browser.');return;}
+  resetMedia();document.getElementById('audio-rec-ui').style.display='';document.getElementById('rec-active').style.display='flex';
+  try{const stream=await navigator.mediaDevices.getUserMedia({audio:true});recChunks=[];mediaRecorder=new MediaRecorder(stream,{mimeType,audioBitsPerSecond:32000});
+    mediaRecorder.ondataavailable=e=>{if(e.data.size>0)recChunks.push(e.data);};
+    mediaRecorder.onstop=()=>{stream.getTracks().forEach(t=>t.stop());recBlob=new Blob(recChunks,{type:mimeType});document.getElementById('rec-audio-preview').src=URL.createObjectURL(recBlob);document.getElementById('rec-active').style.display='none';document.getElementById('rec-preview').style.display='';clearInterval(recTimerInterval);};
+    mediaRecorder.start();let secs=0;recTimerInterval=setInterval(()=>{secs++;const m=Math.floor(secs/60),s=secs%60;document.getElementById('rec-timer').textContent=`${m}:${s.toString().padStart(2,'0')}`;},1000);
+  }catch(e){document.getElementById('audio-rec-ui').style.display='none';showError(e.name==='NotAllowedError'?'Permesso microfono negato.':'Microfono non disponibile: '+e.message);}
+});
+document.getElementById('btn-stop-rec').addEventListener('click',()=>{if(mediaRecorder&&mediaRecorder.state!=='inactive')mediaRecorder.stop();clearInterval(recTimerInterval);});
+document.getElementById('btn-discard-rec').addEventListener('click',()=>{recBlob=null;document.getElementById('audio-rec-ui').style.display='none';});
+function stopRecIfActive(){if(mediaRecorder&&mediaRecorder.state!=='inactive')mediaRecorder.stop();clearInterval(recTimerInterval);recBlob=null;}
 
-      const docRef = doc(db, collName, docId);
-      if (tipoPrev === tipoNuovo) {
-        // Stessa reazione → rimuovi
-        await deleteDoc(reazRef);
-        await updateDoc(docRef, { [`reazioni.${tipoNuovo}`]: increment(-1) });
-        const btn = cardEl.querySelector(`[data-tipo="${tipoNuovo}"]`);
-        btn.classList.remove('attiva');
-        btn.querySelector('span').textContent = Math.max(0, (parseInt(btn.querySelector('span').textContent)||1) - 1);
-      } else {
-        // Reazione diversa → rimuovi vecchia (se c'era) e aggiungi nuova
-        if (tipoPrev) {
-          await updateDoc(docRef, { [`reazioni.${tipoPrev}`]: increment(-1) });
-          const old = cardEl.querySelector(`[data-tipo="${tipoPrev}"]`);
-          if (old) {
-            old.classList.remove('attiva');
-            old.querySelector('span').textContent = Math.max(0, (parseInt(old.querySelector('span').textContent)||1)-1);
-          }
-        }
-        await setDoc(reazRef, { tipo: tipoNuovo });
-        await updateDoc(docRef, { [`reazioni.${tipoNuovo}`]: increment(1) });
-        const btn = cardEl.querySelector(`[data-tipo="${tipoNuovo}"]`);
-        btn.classList.add('attiva');
-        btn.querySelector('span').textContent = (parseInt(btn.querySelector('span').textContent)||0) + 1;
-      }
-    }
+function openDiarioModal(){if(!canWrite())return;resetModalDiario();document.getElementById('modal-diario').classList.remove('hidden');}
+document.getElementById('btn-cd-testo')?.addEventListener('click',openDiarioModal);
+document.getElementById('btn-cd-audio')?.addEventListener('click',()=>{openDiarioModal();setTimeout(()=>document.getElementById('btn-record-audio').click(),300);});
+document.getElementById('btn-cd-foto')?.addEventListener('click',()=>{openDiarioModal();setTimeout(()=>document.getElementById('btn-upload-foto').click(),300);});
+document.getElementById('btn-cd-video')?.addEventListener('click',()=>{openDiarioModal();setTimeout(()=>document.getElementById('btn-upload-video').click(),300);});
+['diario-new-btn','diario-new-btn-d'].forEach(id=>document.getElementById(id)?.addEventListener('click',openDiarioModal));
+document.getElementById('btn-cancel-diario').addEventListener('click',()=>{stopRecIfActive();resetMedia();document.getElementById('modal-diario').classList.add('hidden');});
+document.getElementById('btn-save-diario').addEventListener('click',async()=>{
+  const testo=document.getElementById('modal-diario-text').value.trim();if(!canWrite())return;
+  const btn=document.getElementById('btn-save-diario');btn.disabled=true;
+  let imgUrl=null,videoUrl=null,audioUrl=null;
+  try{
+    if(recBlob){showProgress('Caricamento audio…');const af=new File([recBlob],'audio.webm',{type:'audio/webm'});audioUrl=await uploadToCloudinary(af,'video');recBlob=null;}
+    else if(pendingMediaType==='image')imgUrl=pendingMediaUrl;
+    else if(pendingMediaType==='video')videoUrl=pendingMediaUrl;
+    else if(pendingMediaType==='audio')audioUrl=pendingMediaUrl;
+    const urlManuale=document.getElementById('input-video-url').value.trim();if(urlManuale)videoUrl=urlManuale;
+    const ref=await addDoc(collection(db,'diario'),{uidRagazzo:profileUid,testo:testo||null,immagineUrl:imgUrl,videoUrl,audioUrl,reazioni:{cuore:0,like:0,dislike:0},createdAt:serverTimestamp()});
+    resetMedia();document.getElementById('modal-diario').classList.add('hidden');
+    const newPost={id:ref.id,uidRagazzo:profileUid,testo:testo||null,immagineUrl:imgUrl,videoUrl,audioUrl,reazioni:{cuore:0,like:0,dislike:0},createdAt:null};
+    allPosts.unshift(newPost);
+    ['diario-list','diario-list-d'].forEach(id=>{const list=document.getElementById(id);if(!list)return;list.querySelector('.empty-msg')?.remove();list.prepend(buildPostCard(newPost));});
+  }catch(e){showError(e.message);}
+  btn.disabled=false;
+});
 
-    // ---- COMMENTI (universale) ----
-    async function loadCommenti(collName, docId, listEl, toggleBtn) {
-      listEl.innerHTML = '<div class="spinner" style="width:20px;height:20px;margin:8px auto;border-width:2px"></div>';
-      try {
-        const snap = await getDocs(collection(db, collName, docId, 'commenti'));
-        const docs = [];
-        snap.forEach(d => docs.push({ id: d.id, ...d.data() }));
-        docs.sort((a,b) => (a.createdAt?.toMillis?.()||0) - (b.createdAt?.toMillis?.()||0));
-        listEl.innerHTML = '';
-        if (!docs.length) { listEl.innerHTML = '<p style="font-size:0.78rem;color:#bbb;padding:4px 0">Nessun commento ancora</p>'; }
-        docs.forEach(c => listEl.appendChild(buildCommentoEl(collName, docId, c, listEl)));
-        toggleBtn.querySelector('.commenti-count').textContent = docs.length > 0 ? `${docs.length} commento${docs.length>1?'i':''}` : 'Commenti';
-      } catch(e) { listEl.innerHTML = `<p style="font-size:0.78rem;color:#e74c3c">${e.message}</p>`; }
-    }
+function openPresentoModal(){document.getElementById('modal-presento').classList.remove('hidden');}
+['btn-edit-presento','btn-edit-presento-d'].forEach(id=>document.getElementById(id)?.addEventListener('click',openPresentoModal));
+document.getElementById('btn-cancel-presento').addEventListener('click',()=>document.getElementById('modal-presento').classList.add('hidden'));
+document.getElementById('btn-save-presento').addEventListener('click',async()=>{
+  const testo=document.getElementById('modal-presento-text').value.trim();if(!canEdit())return;
+  await updateDoc(doc(db,profileColl,profileUid),{miPresento:testo,updatedAt:serverTimestamp()});
+  ['mi-presento-text','mi-presento-text-d'].forEach(id=>{const el=document.getElementById(id);if(el){el.textContent=testo||'Ancora nessuna presentazione…';el.classList.toggle('mi-presento-empty',!testo);}});
+  document.getElementById('modal-presento').classList.add('hidden');
+});
 
-    function buildCommentoEl(collName, docId, c, listEl) {
-      const canDel = isOwner || isAdmin || (currentUser && currentUser.uid === c.uidAutore);
-      const data   = c.createdAt?.toDate ? formatDate(c.createdAt.toDate()) : '';
-      const avImg  = c.fotoAutore ? `<img src="${c.fotoAutore}" alt="">` : (c.nomeAutore?.[0]||'?');
-      const el     = document.createElement('div');
-      el.className = 'card-commento'; el.dataset.id = c.id;
-      el.innerHTML = `
-        <div class="commento-avatar">${c.fotoAutore ? `<img src="${c.fotoAutore}" alt="">` : (c.nomeAutore?.[0]||'👤')}</div>
-        <div class="commento-bubble">
-          ${canDel ? `<button class="commento-del" title="Elimina">✕</button>` : ''}
-          <div class="commento-autore">${c.nomeAutore || 'Anonimo'}</div>
-          <div class="commento-testo">${c.testo || ''}</div>
-          <div class="commento-data">${data}</div>
-        </div>`;
-      if (canDel) {
-        el.querySelector('.commento-del').addEventListener('click', async () => {
-          await deleteDoc(doc(db, collName, docId, 'commenti', c.id));
-          el.remove();
-        });
-      }
-      return el;
-    }
+document.getElementById('desktop-avatar-wrap').addEventListener('click',()=>{if(!canEdit())return;triggerFotoUpload();});
+function triggerFotoUpload(){const input=document.createElement('input');input.type='file';input.accept='image/*';input.onchange=async()=>{const file=input.files[0];if(!file)return;const fd=new FormData();fd.append('file',file);fd.append('upload_preset','campo_dei_fiori');const res=await fetch('https://api.cloudinary.com/v1_1/dxqyprtzh/image/upload',{method:'POST',body:fd});const json=await res.json();await updateDoc(doc(db,profileColl,profileUid),{fotoProfilo:json.secure_url});document.getElementById('hero-img').src=json.secure_url;document.getElementById('desktop-avatar-img').src=json.secure_url;};input.click();}
+document.getElementById('btn-edit-foto').addEventListener('click',triggerFotoUpload);
 
-    async function addCommento(collName, docId, ta, listEl, toggleBtn) {
-      const testo = ta.value.trim();
-      if (!testo || !canComment()) return;
-      ta.value = '';
-      // Info autore
-      let nomeAutore = currentUser.displayName || currentUser.email || 'Anonimo';
-      let fotoAutore = null;
-      try {
-        let s = await getDoc(doc(db, 'utenti', currentUser.uid));
-        if (!s.exists()) s = await getDoc(doc(db, 'staff', currentUser.uid));
-        if (s.exists()) { nomeAutore = s.data().nome || nomeAutore; fotoAutore = s.data().fotoProfilo || null; }
-      } catch(_) {}
-      const ref = await addDoc(collection(db, collName, docId, 'commenti'), {
-        uidAutore: currentUser.uid, nomeAutore, fotoAutore, testo, createdAt: serverTimestamp()
-      });
-      const newC = { id: ref.id, uidAutore: currentUser.uid, nomeAutore, fotoAutore, testo, createdAt: null };
-      const emptyMsg = listEl.querySelector('p');
-      if (emptyMsg) emptyMsg.remove();
-      listEl.appendChild(buildCommentoEl(collName, docId, newC, listEl));
-      // Aggiorna contatore
-      const cnt = listEl.querySelectorAll('.card-commento').length;
-      toggleBtn.querySelector('.commenti-count').textContent = `${cnt} commento${cnt>1?'i':''}`;
-    }
-
-    // ---- RICERCA DIARIO ----
-    document.getElementById('diario-search').addEventListener('input', e => {
-      const q = e.target.value.trim().toLowerCase();
-      if (!q) { renderPosts(allPosts); return; }
-      renderPosts(allPosts.filter(p => (p.testo || '').toLowerCase().includes(q)));
+async function loadBottiglie(){
+  ['bottiglia-list','bottiglia-list-d'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML='<div class="spinner"></div>';});
+  try{
+    const snap=await getDocs(query(collection(db,'messaggiBottiglia'),where('uidDestinatario','==',profileUid)));
+    const bottiglie=[];snap.forEach(d=>bottiglie.push({id:d.id,...d.data()}));
+    bottiglie.sort((a,b)=>(b.createdAt?.toMillis?.()||0)-(a.createdAt?.toMillis?.()||0));
+    ['bottiglia-list','bottiglia-list-d'].forEach(id=>{
+      const list=document.getElementById(id);if(!list)return;
+      list.innerHTML='';
+      if(!bottiglie.length){list.innerHTML='<p class="empty-msg">Nessun messaggio ancora 🍾</p>';return;}
+      bottiglie.forEach(b=>list.appendChild(buildBottigliaCard(b.id,b)));
     });
+  }catch(e){['bottiglia-list','bottiglia-list-d'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=`<p class="empty-msg">Errore: ${e.message}</p>`;});}
+}
 
-    // ---- DELETE POST ----
-    async function deletePost(id) {
-      if (!confirm('Eliminare questo post?')) return;
-      await deleteDoc(doc(db, 'diario', id));
-      document.querySelector(`.card-post[data-id="${id}"]`)?.remove();
-      if (!document.querySelector('.card-post')) {
-        document.getElementById('diario-list').innerHTML = '<p class="empty-msg">Il diario è ancora vuoto…</p>';
-      }
-    }
+function buildBottigliaCard(id,d){
+  const canDel=isOwner||isAdmin;const data=d.createdAt?.toDate?formatDate(d.createdAt.toDate()):'';
+  const imgHtml=d.immagineUrl?`<img src="${d.immagineUrl}" class="bott-media" alt="">`:'';
+  const videoHtml=d.videoUrl?`<video controls src="${d.videoUrl}" class="bott-media"></video>`:'';
+  const audioHtml=d.audioUrl?`<div class="bott-audio-wrap">${buildAudioPlayer(d.audioUrl)}</div>`:'';
+  const reazioni=d.reazioni||{cuore:0,like:0,dislike:0};
+  const mittAvatar=utentiCache?.[d.uidMittente]?.fotoProfilo;
+  const mittFotoHtml=mittAvatar?`<div class="bott-avatar"><img src="${mittAvatar}" alt="${d.nomeMittente}"></div>`:'<div class="bott-avatar">👤</div>';
+  const el=document.createElement('div');el.className='card-bottiglia';el.id=`bottiglia-${id}`;el.dataset.id=id;
+  el.innerHTML=`${canDel?'<button class="bott-delete" title="Elimina">🗑️</button>':''}<div class="bott-header">${mittFotoHtml}<span class="bott-mittente">${d.nomeMittente||'Anonimo'}</span> · ${data}</div><div class="bott-testo">${d.testo||''}</div>${imgHtml}${videoHtml}${audioHtml}<div class="post-reazioni" style="margin-top:8px"><button class="btn-reazione cuore" data-tipo="cuore">❤️ <span>${reazioni.cuore||0}</span></button><button class="btn-reazione like" data-tipo="like">👍 <span>${reazioni.like||0}</span></button><button class="btn-reazione dislike" data-tipo="dislike">👎 <span>${reazioni.dislike||0}</span></button></div><div class="commenti-section" style="border-top:1px solid #f0d9a0;padding:0 0 6px"><button class="commenti-toggle">💬 <span class="commenti-count">Commenti</span></button><div class="commenti-body" style="display:none"><div class="commenti-list"></div>${currentUser?'<div class="commento-form"><textarea placeholder="Scrivi un commento…" rows="1"></textarea><button type="button">Invia</button></div>':''}</div></div>`;
+  if(canDel)el.querySelector('.bott-delete').addEventListener('click',()=>deleteBottiglia(id));
+  if(currentUser){getDoc(doc(db,'messaggiBottiglia',id,'reazioni',currentUser.uid)).then(s=>{if(s.exists()){const b=el.querySelector(`[data-tipo="${s.data().tipo}"]`);if(b)b.classList.add('attiva');}});}
+  el.querySelectorAll('.btn-reazione').forEach(btn=>btn.addEventListener('click',()=>{if(!canReact()){alert('Devi essere loggato per reagire.');return;}toggleReazione('messaggiBottiglia',id,btn.dataset.tipo,el,reazioni);}));
+  const toggle=el.querySelector('.commenti-toggle'),body=el.querySelector('.commenti-body'),commList=el.querySelector('.commenti-list');
+  let loaded=false;toggle.addEventListener('click',async()=>{const open=body.style.display==='none';body.style.display=open?'':'none';if(open&&!loaded){loaded=true;await loadCommenti('messaggiBottiglia',id,commList,toggle);}});
+  if(currentUser){const form=el.querySelector('.commento-form'),ta=form?.querySelector('textarea'),btnI=form?.querySelector('button');btnI?.addEventListener('click',()=>addCommento('messaggiBottiglia',id,ta,commList,toggle));ta?.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();btnI.click();}});}
+  return el;
+}
 
-    // ---- NUOVO POST: stato ----
-    let pendingMediaUrl  = null;   // URL Cloudinary dopo upload
-    let pendingMediaType = null;   // 'image' | 'video' | 'audio'
-    let mediaRecorder    = null;
-    let recChunks        = [];
-    let recTimerInterval = null;
-    let recBlob          = null;
+async function deleteBottiglia(id){if(!confirm('Eliminare questo messaggio?'))return;await deleteDoc(doc(db,'messaggiBottiglia',id));document.querySelectorAll(`.card-bottiglia[data-id="${id}"]`).forEach(el=>el.remove());}
 
-    const CLOUD_UPLOAD = 'https://api.cloudinary.com/v1_1/dxqyprtzh/upload';
-    const CLOUD_PRESET = 'campo_dei_fiori';
+let bottMediaUrl=null,bottMediaType=null,bottRecorder=null,bottRecChunks=[],bottRecBlob=null,bottRecTimer=null;
+function bottShowProgress(label){document.getElementById('bott-upload-progress').style.display='';document.getElementById('bott-upload-label').textContent=label;document.getElementById('bott-upload-bar').style.width='0%';}
+function bottHideProgress(){document.getElementById('bott-upload-progress').style.display='none';}
+async function bottUpload(file,resourceType){bottShowProgress('Caricamento…');const fd=new FormData();fd.append('file',file);fd.append('upload_preset',CLOUD_PRESET);const url=`https://api.cloudinary.com/v1_1/dxqyprtzh/${resourceType}/upload`;let pct=0;const bar=document.getElementById('bott-upload-bar');const t=setInterval(()=>{pct=Math.min(pct+6,80);bar.style.width=pct+'%';},250);try{const res=await fetch(url,{method:'POST',body:fd});const json=await res.json();clearInterval(t);bar.style.width='100%';setTimeout(bottHideProgress,500);if(json.error)throw new Error(json.error.message);return json.secure_url;}catch(e){clearInterval(t);bottHideProgress();throw e;}}
+function resetBottMedia(){bottMediaUrl=null;bottMediaType=null;bottRecBlob=null;document.getElementById('bott-media-preview').style.display='none';['bott-preview-img','bott-preview-video','bott-preview-audio'].forEach(id=>{const el=document.getElementById(id);el.style.display='none';el.src='';});['bott-rec-ui','bott-rec-active','bott-rec-preview'].forEach(id=>document.getElementById(id).style.display='none');}
+document.getElementById('btn-bott-foto').addEventListener('click',()=>document.getElementById('input-bott-foto').click());
+document.getElementById('input-bott-foto').addEventListener('change',async e=>{const file=e.target.files[0];if(!file)return;try{const url=await bottUpload(file,'image');bottMediaUrl=url;bottMediaType='image';document.getElementById('bott-preview-img').src=url;document.getElementById('bott-preview-img').style.display='block';document.getElementById('bott-preview-label').textContent='📷 '+file.name;document.getElementById('bott-media-preview').style.display='';}catch(e){alert('Errore foto: '+e.message);}e.target.value='';});
+document.getElementById('btn-bott-video').addEventListener('click',()=>document.getElementById('input-bott-video').click());
+document.getElementById('input-bott-video').addEventListener('change',async e=>{const file=e.target.files[0];if(!file)return;try{const url=await bottUpload(file,'video');bottMediaUrl=url;bottMediaType='video';document.getElementById('bott-preview-video').src=url;document.getElementById('bott-preview-video').style.display='block';document.getElementById('bott-preview-label').textContent='🎥 '+file.name;document.getElementById('bott-media-preview').style.display='';}catch(e){alert('Errore video: '+e.message);}e.target.value='';});
+document.getElementById('btn-bott-audio-file').addEventListener('click',()=>document.getElementById('input-bott-audio').click());
+document.getElementById('input-bott-audio').addEventListener('change',async e=>{const file=e.target.files[0];if(!file)return;try{const url=await bottUpload(file,'video');bottMediaUrl=url;bottMediaType='audio';document.getElementById('bott-preview-audio').src=url;document.getElementById('bott-preview-audio').style.display='block';document.getElementById('bott-preview-label').textContent='🎵 '+file.name;document.getElementById('bott-media-preview').style.display='';}catch(e){alert('Errore audio: '+e.message);}e.target.value='';});
+document.getElementById('btn-bott-remove').addEventListener('click',resetBottMedia);
+document.getElementById('btn-bott-video-url').addEventListener('click',()=>{const w=document.getElementById('bott-video-url-input');w.style.display=w.style.display==='none'?'':'none';});
+document.getElementById('btn-bott-audio-rec').addEventListener('click',async()=>{
+  const mimeType=getSupportedAudioMime();if(!navigator.mediaDevices||!mimeType){alert('Registrazione non supportata. Usa "🎵 Carica audio".');return;}
+  resetBottMedia();document.getElementById('bott-rec-ui').style.display='';document.getElementById('bott-rec-active').style.display='flex';
+  try{const stream=await navigator.mediaDevices.getUserMedia({audio:true});bottRecChunks=[];bottRecorder=new MediaRecorder(stream,{mimeType,audioBitsPerSecond:32000});
+    bottRecorder.ondataavailable=e=>{if(e.data.size>0)bottRecChunks.push(e.data);};
+    bottRecorder.onstop=()=>{stream.getTracks().forEach(t=>t.stop());bottRecBlob=new Blob(bottRecChunks,{type:mimeType});document.getElementById('bott-rec-audio-preview').src=URL.createObjectURL(bottRecBlob);document.getElementById('bott-rec-active').style.display='none';document.getElementById('bott-rec-preview').style.display='';clearInterval(bottRecTimer);};
+    bottRecorder.start();let secs=0;bottRecTimer=setInterval(()=>{secs++;const m=Math.floor(secs/60),s=secs%60;document.getElementById('bott-rec-timer').textContent=`${m}:${s.toString().padStart(2,'0')}`;},1000);
+  }catch(e){document.getElementById('bott-rec-ui').style.display='none';alert(e.name==='NotAllowedError'?'Permesso microfono negato.':'Errore: '+e.message);}
+});
+document.getElementById('btn-bott-stop-rec').addEventListener('click',()=>{if(bottRecorder&&bottRecorder.state!=='inactive')bottRecorder.stop();clearInterval(bottRecTimer);});
+document.getElementById('btn-bott-discard-rec').addEventListener('click',()=>{bottRecBlob=null;document.getElementById('bott-rec-ui').style.display='none';});
 
-    function resetModalDiario() {
-      document.getElementById('modal-diario-text').value = '';
-      resetMedia();
-      stopRecIfActive();
-    }
+function openBottigliaModal(){document.getElementById('modal-bottiglia-text').value='';resetBottMedia();document.getElementById('modal-bottiglia').classList.remove('hidden');}
+['btn-manda-bottiglia','btn-manda-bottiglia-d'].forEach(id=>document.getElementById(id)?.addEventListener('click',openBottigliaModal));
+document.getElementById('btn-cancel-bottiglia').addEventListener('click',()=>{if(bottRecorder&&bottRecorder.state!=='inactive')bottRecorder.stop();resetBottMedia();document.getElementById('modal-bottiglia').classList.add('hidden');});
+document.getElementById('btn-save-bottiglia').addEventListener('click',async()=>{
+  const testo=document.getElementById('modal-bottiglia-text').value.trim();if(!canBottiglia())return;
+  const btn=document.getElementById('btn-save-bottiglia');btn.disabled=true;
+  let imgUrl=null,audioUrl=null,videoUrl=null;
+  try{
+    if(bottRecBlob){const f=new File([bottRecBlob],'audio.webm',{type:'audio/webm'});audioUrl=await bottUpload(f,'video');bottRecBlob=null;}
+    else if(bottMediaType==='image')imgUrl=bottMediaUrl;
+    else if(bottMediaType==='audio')audioUrl=bottMediaUrl;
+    else if(bottMediaType==='video')videoUrl=bottMediaUrl;
+    const urlManuale=document.getElementById('input-bott-video-url').value.trim();if(urlManuale)videoUrl=urlManuale;
+    let nomeMittente=currentUser.displayName||currentUser.email||'Anonimo',fotoMittente=null;
+    try{let ms=await getDoc(doc(db,'utenti',currentUser.uid));if(!ms.exists())ms=await getDoc(doc(db,'staff',currentUser.uid));if(ms.exists()){nomeMittente=ms.data().nome||nomeMittente;fotoMittente=ms.data().fotoProfilo||null;}}catch(_){}
+    const ref=await addDoc(collection(db,'messaggiBottiglia'),{uidMittente:currentUser.uid,nomeMittente,uidDestinatario:profileUid,testo:testo||null,immagineUrl:imgUrl,audioUrl,videoUrl,createdAt:serverTimestamp()});
+    resetBottMedia();document.getElementById('modal-bottiglia').classList.add('hidden');
+    const newBott={id:ref.id,uidMittente:currentUser.uid,nomeMittente,uidDestinatario:profileUid,testo:testo||null,immagineUrl:imgUrl,audioUrl,videoUrl,createdAt:null};
+    ['bottiglia-list','bottiglia-list-d'].forEach(id=>{const list=document.getElementById(id);if(!list)return;const em=list.querySelector('.empty-msg');if(em)em.remove();list.prepend(buildBottigliaCard(ref.id,newBott));});
+  }catch(e){alert('Errore: '+e.message);}
+  btn.disabled=false;
+});
 
-    function resetMedia() {
-      pendingMediaUrl  = null;
-      pendingMediaType = null;
-      document.getElementById('media-preview').style.display = 'none';
-      document.getElementById('preview-img').style.display   = 'none';
-      document.getElementById('preview-video').style.display = 'none';
-      document.getElementById('preview-img').src   = '';
-      document.getElementById('preview-video').src = '';
-      document.getElementById('audio-rec-ui').style.display  = 'none';
-      document.getElementById('rec-preview').style.display   = 'none';
-      document.getElementById('rec-active').style.display    = 'none';
-      recBlob = null;
-    }
+['modal-diario','modal-presento','modal-bottiglia'].forEach(id=>{const m=document.getElementById(id);m.addEventListener('click',e=>{if(e.target===m)m.classList.add('hidden');});});
 
-    function showProgress(label) {
-      document.getElementById('upload-progress').style.display = '';
-      document.getElementById('upload-label').textContent = label;
-      document.getElementById('upload-bar').style.width = '0%';
-    }
-    function hideProgress() {
-      document.getElementById('upload-progress').style.display = 'none';
-    }
-    function showError(msg) {
-      const el = document.getElementById('upload-label');
-      el.textContent = '⚠️ ' + msg;
-      el.style.color = '#e74c3c';
-      document.getElementById('upload-progress').style.display = '';
-      setTimeout(() => { hideProgress(); el.style.color = '#888'; }, 4000);
-    }
+function formatDate(d){return d.toLocaleDateString('it-IT',{day:'numeric',month:'long',year:'numeric'});}
 
-    async function uploadToCloudinary(file, resourceType) {
-      // resourceType: 'image' | 'video' (Cloudinary usa 'video' anche per audio)
-      if (!file || file.size === 0) throw new Error('File vuoto o non valido');
-      showProgress('Caricamento in corso…');
-      const fd = new FormData();
-      fd.append('file', file);
-      fd.append('upload_preset', CLOUD_PRESET);
-      // resource_type va nell'URL, non nel body per preset unsigned
-      const url = `https://api.cloudinary.com/v1_1/dxqyprtzh/${resourceType}/upload`;
-      let pct = 0;
-      const bar = document.getElementById('upload-bar');
-      const fakeProgress = setInterval(() => {
-        pct = Math.min(pct + 6, 80);
-        bar.style.width = pct + '%';
-      }, 250);
-      try {
-        const res  = await fetch(url, { method: 'POST', body: fd });
-        const json = await res.json();
-        clearInterval(fakeProgress);
-        if (json.error) { hideProgress(); throw new Error(json.error.message); }
-        bar.style.width = '100%';
-        setTimeout(hideProgress, 500);
-        return json.secure_url;
-      } catch(e) {
-        clearInterval(fakeProgress);
-        hideProgress();
-        throw e;
-      }
-    }
+// INIT
+try{const[us,st]=await Promise.all([getDocs(collection(db,'utenti')),getDocs(collection(db,'staff'))]);us.forEach(d=>{utentiCache[d.id]=d.data();});st.forEach(d=>{utentiCache[d.id]=d.data();});}catch(_){}
+await loadProfilo();await loadDiario();await loadBottiglie();await loadAttivitaRecenti();
 
-    // Foto
-    document.getElementById('btn-upload-foto').addEventListener('click', () =>
-      document.getElementById('input-foto').click());
-    document.getElementById('input-foto').addEventListener('change', async e => {
-      const file = e.target.files[0]; if (!file) return;
-      try {
-        const url = await uploadToCloudinary(file, 'image');
-        pendingMediaUrl  = url;
-        pendingMediaType = 'image';
-        document.getElementById('preview-img').src = url;
-        document.getElementById('preview-img').style.display = 'block';
-        document.getElementById('media-preview-label').textContent = '📷 ' + file.name;
-        document.getElementById('media-preview').style.display = '';
-      } catch(e) { showError('Errore foto: ' + e.message); }
-      e.target.value = '';
-    });
-
-    // Video
-    document.getElementById('btn-upload-video').addEventListener('click', () =>
-      document.getElementById('input-video').click());
-    document.getElementById('input-video').addEventListener('change', async e => {
-      const file = e.target.files[0]; if (!file) return;
-      try {
-        const url = await uploadToCloudinary(file, 'video');
-        pendingMediaUrl  = url;
-        pendingMediaType = 'video';
-        document.getElementById('preview-video').src = url;
-        document.getElementById('preview-video').style.display = 'block';
-        document.getElementById('media-preview-label').textContent = '🎥 ' + file.name;
-        document.getElementById('media-preview').style.display = '';
-      } catch(e) { showError('Errore video: ' + e.message); }
-      e.target.value = '';
-    });
-
-    // URL video diario
-    document.getElementById('btn-video-url').addEventListener('click', () => {
-      const wrap = document.getElementById('video-url-input');
-      wrap.style.display = wrap.style.display === 'none' ? '' : 'none';
-    });
-
-    // Rimuovi media
-    document.getElementById('btn-remove-media').addEventListener('click', resetMedia);
-
-    // ---- REGISTRAZIONE AUDIO ----
-    document.getElementById('btn-record-audio').addEventListener('click', async () => {
-      const mimeType = getSupportedAudioMime();
-      if (!navigator.mediaDevices || !mimeType) {
-        showError('Registrazione non supportata su questo browser. Usa il pulsante 🎵 per caricare un file audio dal telefono.');
-        return;
-      }
-      resetMedia();
-      document.getElementById('audio-rec-ui').style.display = '';
-      document.getElementById('rec-active').style.display   = 'flex';
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        recChunks    = [];
-        mediaRecorder = new MediaRecorder(stream, { mimeType, audioBitsPerSecond: 32000 });
-        mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recChunks.push(e.data); };
-        mediaRecorder.onstop = () => {
-          stream.getTracks().forEach(t => t.stop());
-          recBlob = new Blob(recChunks, { type: mimeType });
-          const url = URL.createObjectURL(recBlob);
-          document.getElementById('rec-audio-preview').src = url;
-          document.getElementById('rec-active').style.display  = 'none';
-          document.getElementById('rec-preview').style.display = '';
-          clearInterval(recTimerInterval);
-        };
-        mediaRecorder.start();
-        // Timer
-        let secs = 0;
-        recTimerInterval = setInterval(() => {
-          secs++;
-          const m = Math.floor(secs/60), s = secs%60;
-          document.getElementById('rec-timer').textContent = `${m}:${s.toString().padStart(2,'0')}`;
-        }, 1000);
-      } catch(e) {
-        document.getElementById('audio-rec-ui').style.display = 'none';
-        const msg = e.name === 'NotAllowedError'
-          ? 'Permesso microfono negato. Consenti l\'accesso nelle impostazioni del browser.'
-          : 'Microfono non disponibile: ' + e.message;
-        showError(msg);
-      }
-    });
-
-    document.getElementById('btn-stop-rec').addEventListener('click', () => {
-      if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
-      clearInterval(recTimerInterval);
-    });
-
-    document.getElementById('btn-discard-rec').addEventListener('click', () => {
-      recBlob = null;
-      document.getElementById('audio-rec-ui').style.display = 'none';
-    });
-
-    function stopRecIfActive() {
-      if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
-      clearInterval(recTimerInterval);
-      recBlob = null;
-    }
-
-    document.getElementById('diario-new-btn').addEventListener('click', () => {
-      if (!canWriteDiary()) return;
-      resetModalDiario();
-      document.getElementById('modal-diario').classList.remove('hidden');
-    });
-
-    document.getElementById('btn-cancel-diario').addEventListener('click', () => {
-      stopRecIfActive();
-      resetMedia();
-      document.getElementById('modal-diario').classList.add('hidden');
-    });
-
-    document.getElementById('btn-save-diario').addEventListener('click', async () => {
-      const testo = document.getElementById('modal-diario-text').value.trim();
-      if (!canWriteDiary()) return;
-      const btn = document.getElementById('btn-save-diario');
-      btn.disabled = true;
-
-      let imgUrl   = null;
-      let videoUrl = null;
-      let audioUrl = null;
-
-      try {
-        // Se c'è un blob audio registrato da caricare
-        if (recBlob) {
-          showProgress('Caricamento audio…');
-          const audioFile = new File([recBlob], 'audio.webm', { type: 'audio/webm' });
-          audioUrl = await uploadToCloudinary(audioFile, 'video');
-          recBlob  = null;
-        } else if (pendingMediaType === 'image')  { imgUrl   = pendingMediaUrl; }
-        else if (pendingMediaType === 'video')     { videoUrl = pendingMediaUrl; }
-        else if (pendingMediaType === 'audio')     { audioUrl = pendingMediaUrl; }
-        // URL video incollato manualmente
-        const urlManuale = document.getElementById('input-video-url').value.trim();
-        if (urlManuale) { videoUrl = urlManuale; }
-
-        const ref = await addDoc(collection(db, 'diario'), {
-          uidRagazzo: profileUid,
-          testo:      testo || null,
-          immagineUrl: imgUrl,
-          videoUrl,
-          audioUrl,
-          reazioni: { cuore: 0, like: 0, dislike: 0 },
-          createdAt: serverTimestamp()
-        });
-
-        resetMedia();
-        document.getElementById('modal-diario').classList.add('hidden');
-
-        const newPost = {
-          id: ref.id, uidRagazzo: profileUid,
-          testo: testo || null,
-          immagineUrl: imgUrl, videoUrl, audioUrl,
-          reazioni: { cuore:0, like:0, dislike:0 }, createdAt: null
-        };
-        allPosts.unshift(newPost);
-        const list = document.getElementById('diario-list');
-        list.querySelector('.empty-msg')?.remove();
-        list.prepend(buildPostCard(newPost));
-      } catch(e) { showError(e.message); }
-      btn.disabled = false;
-    });
-
-    // ---- MI PRESENTO ----
-    document.getElementById('btn-edit-presento').addEventListener('click', () =>
-      document.getElementById('modal-presento').classList.remove('hidden'));
-    document.getElementById('btn-cancel-presento').addEventListener('click', () =>
-      document.getElementById('modal-presento').classList.add('hidden'));
-    document.getElementById('btn-save-presento').addEventListener('click', async () => {
-      const testo = document.getElementById('modal-presento-text').value.trim();
-      if (!canEditProfile()) return;
-      await updateDoc(doc(db, profileColl, profileUid), { miPresento: testo, updatedAt: serverTimestamp() });
-      const el = document.getElementById('mi-presento-text');
-      el.textContent = testo || 'Ancora nessuna presentazione…';
-      el.classList.toggle('mi-presento-empty', !testo);
-      document.getElementById('modal-presento').classList.add('hidden');
-    });
-
-    // ---- FOTO PROFILO ----
-    document.getElementById('desktop-avatar-wrap').addEventListener('click', () => {
-      if (!canEditProfile()) return;
-      triggerFotoUpload();
-    });
-    function triggerFotoUpload() {
-      const input = document.createElement('input');
-      input.type = 'file'; input.accept = 'image/*';
-      input.onchange = async () => {
-        const file = input.files[0]; if (!file) return;
-        const fd = new FormData();
-        fd.append('file', file); fd.append('upload_preset', 'campo_dei_fiori');
-        const res  = await fetch('https://api.cloudinary.com/v1_1/dxqyprtzh/image/upload', { method:'POST', body:fd });
-        const json = await res.json();
-        await updateDoc(doc(db, profileColl, profileUid), { fotoProfilo: json.secure_url });
-        document.getElementById('hero-img').src           = json.secure_url;
-        document.getElementById('desktop-avatar-img').src = json.secure_url;
-      };
-      input.click();
-    }
-    document.getElementById('btn-edit-foto').addEventListener('click', triggerFotoUpload);
-
-    // ---- BOTTIGLIE ----
-    async function loadBottiglie() {
-      const list = document.getElementById('bottiglia-list');
-      list.innerHTML = '<div class="spinner"></div>';
-      try {
-        const snap = await getDocs(query(
-          collection(db, 'messaggiBottiglia'),
-          where('uidDestinatario', '==', profileUid)
-        ));
-        list.innerHTML = '';
-        if (snap.empty) { list.innerHTML = '<p class="empty-msg">Nessun messaggio ancora 🍾</p>'; return; }
-        // Ordina lato client: più recenti prima
-        const bottiglie = [];
-        snap.forEach(d => bottiglie.push({ id: d.id, ...d.data() }));
-        bottiglie.sort((a, b) => {
-          const ta = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
-          const tb = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
-          return tb - ta;
-        });
-        bottiglie.forEach(b => list.appendChild(buildBottigliaCard(b.id, b)));
-      } catch (e) { list.innerHTML = `<p class="empty-msg">Errore: ${e.message}</p>`; }
-    }
-
-    function buildBottigliaCard(id, d) {
-      const canDel    = isOwner || isAdmin;
-      const data      = d.createdAt?.toDate ? formatDate(d.createdAt.toDate()) : '';
-      const imgHtml   = d.immagineUrl ? `<img src="${d.immagineUrl}" class="bott-media" alt="">` : '';
-      const videoHtml = d.videoUrl    ? `<video controls src="${d.videoUrl}" class="bott-media"></video>` : '';
-      const audioHtml = d.audioUrl    ? `<div class="bott-audio-wrap">${buildAudioPlayer(d.audioUrl)}</div>` : '';
-      const reazioni  = d.reazioni || { cuore:0, like:0, dislike:0 };
-      // Avatar mittente
-      const mittAvatar = utentiCache?.[d.uidMittente]?.fotoProfilo;
-      const mittFotoHtml = mittAvatar
-        ? `<div class="bott-avatar"><img src="${mittAvatar}" alt="${d.nomeMittente}"></div>`
-        : `<div class="bott-avatar">👤</div>`;
-      const el = document.createElement('div');
-      el.className  = 'card-bottiglia';
-      el.id         = `bottiglia-${id}`;
-      el.dataset.id = id;
-      el.innerHTML  = `
-        ${canDel ? `<button class="bott-delete" title="Elimina">🗑️</button>` : ''}
-        <div class="bott-header">${mittFotoHtml}<span class="bott-mittente">${d.nomeMittente || 'Anonimo'}</span> <span style="color:#ccc">·</span> ${data}</div>
-        <div class="bott-testo">${d.testo || ''}</div>
-        ${imgHtml}${videoHtml}${audioHtml}
-        <div class="post-reazioni" style="margin-top:8px">
-          <button class="btn-reazione" data-tipo="cuore">❤️ <span>${reazioni.cuore||0}</span></button>
-          <button class="btn-reazione" data-tipo="like">👍 <span>${reazioni.like||0}</span></button>
-          <button class="btn-reazione" data-tipo="dislike">👎 <span>${reazioni.dislike||0}</span></button>
-        </div>
-        <div class="commenti-section" style="border-top:1px solid #f0d9a0;padding:0 0 6px">
-          <button class="commenti-toggle">💬 <span class="commenti-count">Commenti</span></button>
-          <div class="commenti-body" style="display:none">
-            <div class="commenti-list"></div>
-            ${currentUser ? `
-            <div class="commento-form">
-              <textarea placeholder="Scrivi un commento…" rows="1"></textarea>
-              <button type="button">Invia</button>
-            </div>` : ''}
-          </div>
-        </div>`;
-
-      if (canDel) el.querySelector('.bott-delete').addEventListener('click', () => deleteBottiglia(id));
-
-      // Reazioni
-      if (currentUser) {
-        getDoc(doc(db, 'messaggiBottiglia', id, 'reazioni', currentUser.uid)).then(snap => {
-          if (snap.exists()) {
-            const btn = el.querySelector(`[data-tipo="${snap.data().tipo}"]`);
-            if (btn) btn.classList.add('attiva');
-          }
-        });
-      }
-      el.querySelectorAll('.btn-reazione').forEach(btn => {
-        btn.addEventListener('click', () => {
-          if (!canReact()) { alert('Devi essere loggato per reagire.'); return; }
-          toggleReazione('messaggiBottiglia', id, btn.dataset.tipo, el, reazioni);
-        });
-      });
-
-      // Commenti toggle
-      const toggle   = el.querySelector('.commenti-toggle');
-      const body     = el.querySelector('.commenti-body');
-      const commList = el.querySelector('.commenti-list');
-      let   loaded   = false;
-      toggle.addEventListener('click', async () => {
-        const open = body.style.display === 'none';
-        body.style.display = open ? '' : 'none';
-        if (open && !loaded) { loaded = true; await loadCommenti('messaggiBottiglia', id, commList, toggle); }
-      });
-      if (currentUser) {
-        const form     = el.querySelector('.commento-form');
-        const ta       = form?.querySelector('textarea');
-        const btnInvia = form?.querySelector('button');
-        btnInvia?.addEventListener('click', () => addCommento('messaggiBottiglia', id, ta, commList, toggle));
-        ta?.addEventListener('keydown', e => {
-          if (e.key==='Enter' && !e.shiftKey) { e.preventDefault(); btnInvia.click(); }
-        });
-      }
-
-      return el;
-    }
-
-    async function deleteBottiglia(id) {
-      if (!confirm('Eliminare questo messaggio?')) return;
-      await deleteDoc(doc(db, 'messaggiBottiglia', id));
-      document.querySelector(`.card-bottiglia[data-id="${id}"]`)?.remove();
-    }
-
-    // ---- BOTTIGLIA: stato media ----
-    let bottMediaUrl  = null;
-    let bottMediaType = null; // 'image' | 'audio'
-    let bottRecorder  = null;
-    let bottRecChunks = [];
-    let bottRecBlob   = null;
-    let bottRecTimer  = null;
-
-    function bottShowProgress(label) {
-      document.getElementById('bott-upload-progress').style.display = '';
-      document.getElementById('bott-upload-label').textContent = label;
-      document.getElementById('bott-upload-bar').style.width = '0%';
-    }
-    function bottHideProgress() {
-      document.getElementById('bott-upload-progress').style.display = 'none';
-    }
-    async function bottUpload(file, resourceType) {
-      bottShowProgress('Caricamento…');
-      const fd = new FormData();
-      fd.append('file', file); fd.append('upload_preset', CLOUD_PRESET);
-      const url = `https://api.cloudinary.com/v1_1/dxqyprtzh/${resourceType}/upload`;
-      let pct = 0;
-      const bar = document.getElementById('bott-upload-bar');
-      const t = setInterval(() => { pct = Math.min(pct+6,80); bar.style.width=pct+'%'; }, 250);
-      try {
-        const res = await fetch(url, { method:'POST', body:fd });
-        const json = await res.json();
-        clearInterval(t); bar.style.width='100%'; setTimeout(bottHideProgress,500);
-        if (json.error) throw new Error(json.error.message);
-        return json.secure_url;
-      } catch(e) { clearInterval(t); bottHideProgress(); throw e; }
-    }
-    function resetBottMedia() {
-      bottMediaUrl = null; bottMediaType = null; bottRecBlob = null;
-      document.getElementById('bott-media-preview').style.display = 'none';
-      document.getElementById('bott-preview-img').style.display   = 'none';
-      document.getElementById('bott-preview-video').style.display = 'none';
-      document.getElementById('bott-preview-audio').style.display = 'none';
-      document.getElementById('bott-preview-img').src   = '';
-      document.getElementById('bott-preview-video').src = '';
-      document.getElementById('bott-preview-audio').src = '';
-      document.getElementById('bott-rec-ui').style.display    = 'none';
-      document.getElementById('bott-rec-active').style.display = 'none';
-      document.getElementById('bott-rec-preview').style.display = 'none';
-    }
-
-    // Foto bottiglia
-    document.getElementById('btn-bott-foto').addEventListener('click', () =>
-      document.getElementById('input-bott-foto').click());
-    document.getElementById('input-bott-foto').addEventListener('change', async e => {
-      const file = e.target.files[0]; if (!file) return;
-      try {
-        const url = await bottUpload(file, 'image');
-        bottMediaUrl = url; bottMediaType = 'image';
-        document.getElementById('bott-preview-img').src = url;
-        document.getElementById('bott-preview-img').style.display = 'block';
-        document.getElementById('bott-preview-label').textContent = '📷 ' + file.name;
-        document.getElementById('bott-media-preview').style.display = '';
-      } catch(e) { alert('Errore foto: ' + e.message); }
-      e.target.value = '';
-    });
-
-    // Video bottiglia
-    document.getElementById('btn-bott-video').addEventListener('click', () =>
-      document.getElementById('input-bott-video').click());
-    document.getElementById('input-bott-video').addEventListener('change', async e => {
-      const file = e.target.files[0]; if (!file) return;
-      try {
-        const url = await bottUpload(file, 'video');
-        bottMediaUrl = url; bottMediaType = 'video';
-        document.getElementById('bott-preview-video').src = url;
-        document.getElementById('bott-preview-video').style.display = 'block';
-        document.getElementById('bott-preview-label').textContent = '🎥 ' + file.name;
-        document.getElementById('bott-media-preview').style.display = '';
-      } catch(e) { alert('Errore video: ' + e.message); }
-      e.target.value = '';
-    });
-
-    // Audio file bottiglia
-    document.getElementById('btn-bott-audio-file').addEventListener('click', () =>
-      document.getElementById('input-bott-audio').click());
-    document.getElementById('input-bott-audio').addEventListener('change', async e => {
-      const file = e.target.files[0]; if (!file) return;
-      try {
-        const url = await bottUpload(file, 'video');
-        bottMediaUrl = url; bottMediaType = 'audio';
-        document.getElementById('bott-preview-audio').src = url;
-        document.getElementById('bott-preview-audio').style.display = 'block';
-        document.getElementById('bott-preview-label').textContent = '🎵 ' + file.name;
-        document.getElementById('bott-media-preview').style.display = '';
-      } catch(e) { alert('Errore audio: ' + e.message); }
-      e.target.value = '';
-    });
-
-    document.getElementById('btn-bott-remove').addEventListener('click', resetBottMedia);
-
-    // Registrazione audio bottiglia
-    document.getElementById('btn-bott-audio-rec').addEventListener('click', async () => {
-      const mimeType = getSupportedAudioMime();
-      if (!navigator.mediaDevices || !mimeType) {
-        alert('Registrazione non supportata su questo browser.\nSu iPhone usa il pulsante "🎵 Carica audio" per inviare un file da Memo Vocali.'); return;
-      }
-      resetBottMedia();
-      document.getElementById('bott-rec-ui').style.display = '';
-      document.getElementById('bott-rec-active').style.display = 'flex';
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        bottRecChunks = [];
-        bottRecorder  = new MediaRecorder(stream, { mimeType, audioBitsPerSecond: 32000 });
-        bottRecorder.ondataavailable = e => { if (e.data.size>0) bottRecChunks.push(e.data); };
-        bottRecorder.onstop = () => {
-          stream.getTracks().forEach(t=>t.stop());
-          bottRecBlob = new Blob(bottRecChunks, { type: mimeType });
-          const u = URL.createObjectURL(bottRecBlob);
-          document.getElementById('bott-rec-audio-preview').src = u;
-          document.getElementById('bott-rec-active').style.display  = 'none';
-          document.getElementById('bott-rec-preview').style.display = '';
-          clearInterval(bottRecTimer);
-        };
-        bottRecorder.start();
-        let secs = 0;
-        bottRecTimer = setInterval(() => {
-          secs++;
-          const m=Math.floor(secs/60), s=secs%60;
-          document.getElementById('bott-rec-timer').textContent = `${m}:${s.toString().padStart(2,'0')}`;
-        }, 1000);
-      } catch(e) {
-        document.getElementById('bott-rec-ui').style.display = 'none';
-        alert(e.name==='NotAllowedError' ? 'Permesso microfono negato.' : 'Errore: '+e.message);
-      }
-    });
-    document.getElementById('btn-bott-stop-rec').addEventListener('click', () => {
-      if (bottRecorder && bottRecorder.state!=='inactive') bottRecorder.stop();
-      clearInterval(bottRecTimer);
-    });
-    document.getElementById('btn-bott-discard-rec').addEventListener('click', () => {
-      bottRecBlob = null;
-      document.getElementById('bott-rec-ui').style.display = 'none';
-    });
-
-    document.getElementById('btn-manda-bottiglia').addEventListener('click', () => {
-      document.getElementById('modal-bottiglia-text').value = '';
-      resetBottMedia();
-      document.getElementById('modal-bottiglia').classList.remove('hidden');
-    });
-    document.getElementById('btn-cancel-bottiglia').addEventListener('click', () => {
-      if (bottRecorder && bottRecorder.state!=='inactive') bottRecorder.stop();
-      resetBottMedia();
-      document.getElementById('modal-bottiglia').classList.add('hidden');
-    });
-    document.getElementById('btn-save-bottiglia').addEventListener('click', async () => {
-      const testo = document.getElementById('modal-bottiglia-text').value.trim();
-      if (!canSendBottiglia()) return;
-      const btn = document.getElementById('btn-save-bottiglia');
-      btn.disabled = true;
-      let imgUrl = null, audioUrl = null, videoUrl = null;
-      try {
-        if (bottRecBlob) {
-          const f = new File([bottRecBlob], 'audio.webm', { type:'audio/webm' });
-          audioUrl = await bottUpload(f, 'video');
-          bottRecBlob = null;
-        } else if (bottMediaType === 'image') { imgUrl    = bottMediaUrl; }
-        else if (bottMediaType === 'audio')   { audioUrl  = bottMediaUrl; }
-        else if (bottMediaType === 'video')   { videoUrl  = bottMediaUrl; }
-
-        // Recupera nome e foto del mittente per la card
-        let nomeMittente = currentUser.displayName || currentUser.email || 'Anonimo';
-        let fotoMittente = null;
-        try {
-          let ms = await getDoc(doc(db, 'utenti', currentUser.uid));
-          if (!ms.exists()) ms = await getDoc(doc(db, 'staff', currentUser.uid));
-          if (ms.exists()) { nomeMittente = ms.data().nome || nomeMittente; fotoMittente = ms.data().fotoProfilo || null; }
-        } catch(_) {}
-
-        const ref = await addDoc(collection(db, 'messaggiBottiglia'), {
-          uidMittente:     currentUser.uid,
-          nomeMittente,
-          uidDestinatario: profileUid,
-          testo:           testo || null,
-          immagineUrl:     imgUrl,
-          audioUrl,
-          videoUrl,
-          createdAt:       serverTimestamp()
-        });
-
-        resetBottMedia();
-        document.getElementById('modal-bottiglia').classList.add('hidden');
-
-        // Aggiungi il nuovo messaggio in cima alla lista senza ricaricare tutto
-        const bottList = document.getElementById('bottiglia-list');
-        const emptyMsg = bottList.querySelector('.empty-msg');
-        if (emptyMsg) emptyMsg.remove();
-        const newBott = {
-          id: ref.id, uidMittente: currentUser.uid, nomeMittente,
-          uidDestinatario: profileUid,
-          testo: testo || null, immagineUrl: imgUrl, audioUrl, videoUrl,
-          createdAt: null
-        };
-        bottList.prepend(buildBottigliaCard(ref.id, newBott));
-      } catch(e) { alert('Errore: ' + e.message); }
-      btn.disabled = false;
-    });
-
-    // Chiudi modal cliccando overlay
-    ['modal-diario','modal-presento','modal-bottiglia'].forEach(id => {
-      const m = document.getElementById(id);
-      m.addEventListener('click', e => { if (e.target === m) m.classList.add('hidden'); });
-    });
-
-    // ---- HELPER ----
-    function formatDate(d) {
-      return d.toLocaleDateString('it-IT', { day:'numeric', month:'long', year:'numeric' });
-    }
-
-    // ---- SIDEBAR DESTRA ----
-    async function loadSidebar() {
-      if (window.innerWidth < 769) return;
-
-      // Mostra widget condividi se owner/admin
-      if (canEditProfile()) {
-        document.getElementById('widget-condividi').style.display = '';
-      }
-
-      // Comunità: carica compagni
-      if (profileData.comunitaId) {
-        try {
-          const snap = await getDocs(query(
-            collection(db, 'utenti'),
-            where('comunitaId', '==', profileData.comunitaId)
-          ));
-          const membri = [];
-          snap.forEach(d => { if (d.id !== profileUid) membri.push(d.data()); });
-          const container = document.getElementById('sidebar-comunita-avatars');
-          container.innerHTML = '';
-          const link = `minori.html?comunita=${profileData.comunitaId}`;
-          membri.slice(0, 5).forEach(m => {
-            const el = document.createElement('a');
-            el.href = link; el.className = 'com-avatar';
-            el.innerHTML = m.fotoProfilo ? `<img src="${m.fotoProfilo}" alt="${m.nome}">` : '🧒';
-            container.appendChild(el);
-          });
-          if (membri.length > 5) {
-            const more = document.createElement('div');
-            more.className = 'com-more'; more.textContent = `+${membri.length - 5}`;
-            container.appendChild(more);
-          }
-        } catch(_) {}
-      }
-
-      // Attività recenti (ultimi 5 post diario + bottiglie)
-      try {
-        const actEl = document.getElementById('sidebar-activity');
-        const eventi = [];
-        const dSnap = await getDocs(query(collection(db, 'diario'), where('uidRagazzo', '==', profileUid)));
-        dSnap.forEach(d => eventi.push({ tipo: '📓', testo: 'Nuovo post nel diario', ts: d.data().createdAt }));
-        const bSnap = await getDocs(query(collection(db, 'messaggiBottiglia'), where('uidDestinatario', '==', profileUid)));
-        bSnap.forEach(d => eventi.push({ tipo: '🍾', testo: `Messaggio da ${d.data().nomeMittente||'qualcuno'}`, ts: d.data().createdAt }));
-        eventi.sort((a,b) => (b.ts?.toMillis?.() || 0) - (a.ts?.toMillis?.() || 0));
-        actEl.innerHTML = '';
-        if (!eventi.length) { actEl.innerHTML = '<p style="font-size:0.78rem;color:#bbb">Nessuna attività ancora</p>'; return; }
-        eventi.slice(0, 5).forEach(e => {
-          const ago = e.ts?.toDate ? timeAgo(e.ts.toDate()) : '';
-          const el = document.createElement('div');
-          el.className = 'activity-item';
-          el.innerHTML = `<span class="activity-icon">${e.tipo}</span><div><span>${e.testo}</span><span class="activity-time">${ago}</span></div>`;
-          actEl.appendChild(el);
-        });
-      } catch(_) {}
-    }
-
-    function timeAgo(date) {
-      const diff = Math.floor((Date.now() - date.getTime()) / 1000);
-      if (diff < 60) return 'ora';
-      if (diff < 3600) return `${Math.floor(diff/60)} min fa`;
-      if (diff < 86400) return `${Math.floor(diff/3600)} ore fa`;
-      return `${Math.floor(diff/86400)} giorni fa`;
-    }
-
-    // ---- INIT ----
-    // Costruisci cache utenti per avatar mittenti bottiglie
-    try {
-      const [us, st] = await Promise.all([
-        getDocs(collection(db, 'utenti')),
-        getDocs(collection(db, 'staff'))
-      ]);
-      us.forEach(d => { utentiCache[d.id] = d.data(); });
-      st.forEach(d => { utentiCache[d.id] = d.data(); });
-    } catch(_) {}
-
-    await loadProfilo();
-    await loadDiario();
-    await loadBottiglie();
-    loadSidebar();
-
-    // ---- SCROLL & HIGHLIGHT ANCHOR ----
-    const anchor = location.hash?.slice(1);
-    if (anchor) {
-      let attempts = 0;
-      const MAX    = 10;
-      const DELAY  = 400;
-
-      function tryScroll() {
-        attempts++;
-        const target = document.getElementById(anchor);
-        if (target) {
-          target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          target.classList.add('highlight-anchor');
-          setTimeout(() => target.classList.remove('highlight-anchor'), 2500);
-        } else if (attempts < MAX) {
-          setTimeout(tryScroll, DELAY);
-        }
-      }
-
-      // Prima chiamata: subito dopo un piccolo delay iniziale
-      setTimeout(tryScroll, 300);
-    }
-  </script>
+// SCROLL ANCHOR
+const anchor=location.hash?.slice(1);
+if(anchor){let attempts=0;function tryScroll(){attempts++;const target=document.getElementById(anchor);if(target){target.scrollIntoView({behavior:'smooth',block:'center'});target.classList.add('highlight-anchor');setTimeout(()=>target.classList.remove('highlight-anchor'),2500);}else if(attempts<10)setTimeout(tryScroll,window.innerWidth<769?500:400);}setTimeout(tryScroll,300);}
+</script>
 </body>
 </html>
