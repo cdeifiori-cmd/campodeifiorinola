@@ -486,9 +486,7 @@
     <div class="section-body">
       <!-- Player (visibile solo se audioUrl presente) -->
       <div id="saluto-player-wrap" style="display:none">
-        <div class="audio-wrap">
-          <audio id="audio-player" controls style="width:100%"></audio>
-        </div>
+        <div class="audio-wrap" id="saluto-audio-wrap"></div>
       </div>
 
       <!-- Pulsanti owner/admin -->
@@ -794,6 +792,30 @@
       if (profileData.nome) renderSalutoUI();
     }
 
+    // ---- HELPER: player audio cross-browser con fallback ----
+    function buildAudioPlayer(url, elId) {
+      if (!url) return '';
+      // Determina il tipo MIME dall'URL
+      const isMP3 = /\.(mp3|MP3)/.test(url) || url.includes('mp3');
+      const isOGG = /\.(ogg|oga)/.test(url);
+      const mime  = isMP3 ? 'audio/mpeg' : isOGG ? 'audio/ogg' : 'audio/mpeg';
+      const idAttr = elId ? `id="${elId}"` : '';
+      return `
+        <audio ${idAttr} controls style="width:100%" preload="metadata"
+          onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+          <source src="${url}" type="${mime}">
+          <source src="${url}" type="audio/ogg">
+          Il tuo browser non supporta l'audio.
+        </audio>
+        <div style="display:none;align-items:center;gap:10px;background:#f5f5f5;border-radius:10px;padding:10px 12px">
+          <span style="font-size:0.85rem;color:#888">Audio non disponibile in questo browser</span>
+          <a href="${url}" target="_blank" rel="noopener"
+            style="background:#e07b39;color:#fff;border-radius:20px;padding:6px 14px;font-size:0.82rem;font-weight:700;text-decoration:none;white-space:nowrap">
+            🎵 Ascolta
+          </a>
+        </div>`;
+    }
+
     // ---- SALUTO UI ----
     function renderSalutoUI() {
       const hasAudio = !!(profileData.audioUrl);
@@ -802,7 +824,7 @@
       // Mostra sempre la sezione
       // Player
       if (hasAudio) {
-        document.getElementById('audio-player').src = profileData.audioUrl;
+        document.getElementById('saluto-audio-wrap').innerHTML = buildAudioPlayer(profileData.audioUrl, 'audio-player');
         document.getElementById('saluto-player-wrap').style.display = '';
       } else {
         document.getElementById('saluto-player-wrap').style.display = 'none';
@@ -941,7 +963,7 @@
         profileData.audioUrl = audioUrl;
 
         // Aggiorna UI
-        document.getElementById('audio-player').src = audioUrl;
+        document.getElementById('saluto-audio-wrap').innerHTML = buildAudioPlayer(audioUrl, 'audio-player');
         document.getElementById('saluto-player-wrap').style.display = '';
         document.getElementById('btn-registra-label').textContent = 'Registra nuovo saluto';
         document.getElementById('btn-elimina-saluto').classList.remove('hidden');
@@ -961,7 +983,7 @@
       if (!confirm('Eliminare il saluto audio?')) return;
       await updateDoc(doc(db, profileColl, profileUid), { audioUrl: '' });
       profileData.audioUrl = '';
-      document.getElementById('audio-player').src = '';
+      document.getElementById('saluto-audio-wrap').innerHTML = '';
       document.getElementById('saluto-player-wrap').style.display = 'none';
       document.getElementById('btn-registra-label').textContent = 'Registra il tuo saluto';
       document.getElementById('btn-elimina-saluto').classList.add('hidden');
@@ -1040,7 +1062,7 @@
         : '<div class="post-avatar" style="background:#ddd;display:flex;align-items:center;justify-content:center">🧒</div>';
       const imgHtml   = p.immagineUrl ? `<img class="post-img" src="${p.immagineUrl}" alt="">` : '';
       const videoHtml = p.videoUrl    ? `<video class="post-img" src="${p.videoUrl}" controls style="max-height:280px"></video>` : '';
-      const audioHtml = p.audioUrl    ? `<div class="post-audio"><audio controls src="${p.audioUrl}" style="width:100%"></audio></div>` : '';
+      const audioHtml = p.audioUrl    ? `<div class="post-audio">${buildAudioPlayer(p.audioUrl)}</div>` : '';
       const reazioni  = p.reazioni || { cuore:0, like:0, dislike:0 };
 
       const el = document.createElement('div');
@@ -1541,7 +1563,7 @@
       const data      = d.createdAt?.toDate ? formatDate(d.createdAt.toDate()) : '';
       const imgHtml   = d.immagineUrl ? `<img src="${d.immagineUrl}" class="bott-media" alt="">` : '';
       const videoHtml = d.videoUrl    ? `<video controls src="${d.videoUrl}" class="bott-media"></video>` : '';
-      const audioHtml = d.audioUrl    ? `<div class="bott-audio-wrap"><audio controls src="${d.audioUrl}"></audio></div>` : '';
+      const audioHtml = d.audioUrl    ? `<div class="bott-audio-wrap">${buildAudioPlayer(d.audioUrl)}</div>` : '';
       const reazioni  = d.reazioni || { cuore:0, like:0, dislike:0 };
       // Avatar mittente
       const mittAvatar = utentiCache?.[d.uidMittente]?.fotoProfilo;
