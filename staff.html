@@ -165,12 +165,15 @@
             ? `<img src="${data.fotoProfilo}" alt="${data.nome}" loading="lazy">`
             : '🤡';
           const adminBadge = data.admin ? `<span class="admin-badge">admin</span>` : '';
+          const ruoloLabel = data.ruolo
+            ? (data.comunita ? `${data.ruolo} di ${data.comunita}` : data.ruolo)
+            : '';
           grid.innerHTML += `
             <a class="card-staff" href="profilo.html?uid=${data.id}">
               <div class="card-foto">${fotoHtml}</div>
               <div class="card-info">
                 <div class="nome">${data.nome || '—'}</div>
-                <div class="ruolo">${data.ruolo || ''}</div>
+                <div class="ruolo">${ruoloLabel}</div>
                 ${adminBadge}
               </div>
             </a>`;
