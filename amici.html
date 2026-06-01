@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gli Amici – Campo dei Fiori</title>
+  <meta name="theme-color" content="#e07b39">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Caveat:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Nunito', sans-serif; background: #f5f5f5; padding-bottom: 70px; min-height: 100vh; }
+
+    .top-header {
+      background: #e07b39; color: #fff;
+      display: flex; align-items: center;
+      padding: 0 1rem; height: 56px;
+      position: sticky; top: 0; z-index: 100;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    }
+    .top-header h1 { font-size: 1.15rem; font-weight: 800; flex: 1; text-align: center; }
+
+    /* ---- PLACEHOLDER ---- */
+    .placeholder-wrap {
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      min-height: calc(100vh - 56px - 70px);
+      padding: 2rem 1.5rem;
+      text-align: center;
+      gap: 16px;
+    }
+    .placeholder-icon { font-size: 4.5rem; line-height: 1; }
+    .placeholder-title {
+      font-size: 1.5rem; font-weight: 900;
+      color: #333;
+    }
+    .placeholder-sub {
+      font-family: 'Caveat', cursive;
+      font-size: 1.35rem; color: #e07b39;
+      font-weight: 700;
+    }
+    .placeholder-desc {
+      font-size: 0.9rem; color: #888;
+      max-width: 320px; line-height: 1.6;
+    }
+    .placeholder-badge {
+      display: inline-block;
+      background: #fff3e0; color: #e07b39;
+      border: 2px solid #e07b39;
+      border-radius: 20px; padding: 6px 18px;
+      font-size: 0.88rem; font-weight: 800;
+      margin-top: 8px;
+    }
+
+    /* ---- BOTTOM NAV ---- */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      height: 62px; background: #fff;
+      border-top: 1px solid #e0e0e0;
+      display: flex; align-items: stretch; z-index: 100;
+      box-shadow: 0 -2px 8px rgba(0,0,0,0.07);
+    }
+    .nav-item {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-decoration: none; color: #999;
+      font-size: 0.58rem; font-weight: 600; gap: 2px;
+    }
+    .nav-item.active { color: #e07b39; }
+    .nav-item .nav-icon { font-size: 1.2rem; line-height: 1; }
+  </style>
+</head>
+<body>
+
+  <header class="top-header">
+    <h1>🤝 Gli Amici di Campo dei Fiori</h1>
+    <div id="nav-auth-slot"></div>
+  </header>
+
+  <div class="placeholder-wrap">
+    <div class="placeholder-icon">🤝</div>
+    <div class="placeholder-title">Gli Amici di Campo dei Fiori</div>
+    <div class="placeholder-sub">Prossimamente…</div>
+    <div class="placeholder-desc">
+      Questa sezione è in preparazione. Presto potrai scoprire tutte le realtà,
+      le associazioni e le persone amiche che sostengono Campo dei Fiori.
+    </div>
+    <span class="placeholder-badge">🚧 In arrivo</span>
+  </div>
+
+  <nav class="bottom-nav">
+    <a href="index.html" class="nav-item"><span class="nav-icon">🏠</span>Home</a>
+    <a href="comunita.html" class="nav-item"><span class="nav-icon">🏡</span>Comunità</a>
+    <a href="ragazzi.html" class="nav-item"><span class="nav-icon">🧒</span>Ragazzi</a>
+    <a href="staff.html" class="nav-item"><span class="nav-icon">🤡</span>Staff</a>
+    <a href="minori.html?comunita=after-us" class="nav-item"><span class="nav-icon">🌟</span>After Us</a>
+    <a href="#" class="nav-item"><span class="nav-icon">📋</span>Progetti</a>
+    <a href="giornale.html" class="nav-item"><span class="nav-icon">📰</span>Giornale</a>
+    <a href="amici.html" class="nav-item active"><span class="nav-icon">🤝</span>Amici</a>
+  </nav>
+
+  <script type="module">
+    import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { setupNavAuth } from './js/nav-auth.js';
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyC18lzwqhYcW29TsEO6Oy4Bqvb2PMBUmAg",
+      authDomain: "campo-dei-fiori.firebaseapp.com",
+      projectId: "campo-dei-fiori",
+      storageBucket: "campo-dei-fiori.firebasestorage.app",
+      messagingSenderId: "928976798756",
+      appId: "1:928976798756:web:1b90027ec9f03b203e44b1"
+    };
+    const app  = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    setupNavAuth();
+
+    onAuthStateChanged(auth, user => {
+      if (!user) { location.href = 'login.html'; return; }
+    });
+  </script>
+</body>
+</html>
