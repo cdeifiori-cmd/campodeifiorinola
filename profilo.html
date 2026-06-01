@@ -1529,10 +1529,14 @@
         body.style.display = open ? '' : 'none';
         if (open && !loaded) { loaded = true; await loadCommenti('diario', p.id, commList, toggle); }
       });
-      if (currentUser) {
+      {
         const form = el.querySelector('.commento-form');
         const ta   = form?.querySelector('textarea');
         const btnI = form?.querySelector('button');
+        if (!currentUser && ta) {
+          ta.placeholder = 'Accedi per commentare…';
+          ta.addEventListener('focus', () => { ta.blur(); mostraLoginPrompt(); });
+        }
         btnI?.addEventListener('click', () => addCommento('diario', p.id, ta, commList, toggle));
         ta?.addEventListener('keydown', e => { if (e.key==='Enter'&&!e.shiftKey){e.preventDefault();btnI.click();} });
       }
@@ -1772,6 +1776,7 @@
 
     document.getElementById('btn-save-diario').addEventListener('click',async()=>{
       const testo=document.getElementById('modal-diario-text').value.trim();
+      if(!currentUser){mostraLoginPrompt();document.getElementById('modal-diario').classList.add('hidden');return;}
       if(!canWriteDiary())return;
       const btn=document.getElementById('btn-save-diario'); btn.disabled=true;
       let imgUrl=null,videoUrl=null,audioUrl=null;
@@ -1896,17 +1901,21 @@
         });
       }
       el.querySelectorAll('.btn-reazione').forEach(btn=>{
-        btn.addEventListener('click',()=>{if(!canReact()){alert('Devi essere loggato per reagire.');return;}toggleReazione('messaggiBottiglia',id,btn.dataset.tipo,el,reazioni);});
+        btn.addEventListener('click',()=>{if(!canReact()){mostraLoginPrompt();return;}toggleReazione('messaggiBottiglia',id,btn.dataset.tipo,el,reazioni);});
       });
       const toggle=el.querySelector('.commenti-toggle');
       const body=el.querySelector('.commenti-body');
       const commList=el.querySelector('.commenti-list');
       let loaded=false;
       toggle.addEventListener('click',async()=>{const open=body.style.display==='none';body.style.display=open?'':'none';if(open&&!loaded){loaded=true;await loadCommenti('messaggiBottiglia',id,commList,toggle);}});
-      if(currentUser){
+      {
         const form=el.querySelector('.commento-form');
         const ta=form?.querySelector('textarea');
         const btnI=form?.querySelector('button');
+        if(!currentUser&&ta){
+          ta.placeholder='Accedi per commentare…';
+          ta.addEventListener('focus',()=>{ta.blur();mostraLoginPrompt();});
+        }
         btnI?.addEventListener('click',()=>addCommento('messaggiBottiglia',id,ta,commList,toggle));
         ta?.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();btnI.click();}});
       }
