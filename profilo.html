@@ -453,22 +453,27 @@
     .card-post .post-audio audio { flex: 1; height: 36px; }
     .card-post .post-audio::before { content: '🎙️'; font-size: 1.5rem; flex-shrink: 0; }
     .card-post .post-reazioni {
-      display: flex; flex-direction: row; align-items: center; gap: 8px;
+      display: flex; flex-direction: row; align-items: center; gap: 6px;
       padding: 8px 14px 10px; border-top: 1px solid #f0f0f0;
-      background: #fafafa;
+      background: #fafafa; flex-wrap: wrap;
     }
 
     /* ===== REAZIONI ===== */
     .btn-reazione {
       background: #f5f5f5; border: 2px solid #e8e8e8;
-      border-radius: 20px; padding: 5px 12px;
-      font-size: 0.85rem; cursor: pointer;
-      display: flex; align-items: center; gap: 5px;
+      border-radius: 20px; padding: 4px 10px;
+      font-size: 0.82rem; cursor: pointer;
+      display: flex; align-items: center; gap: 4px;
       transition: all 0.15s; font-family: 'Nunito',sans-serif; font-weight: 700;
     }
-    .btn-reazione.cuore.attiva { background: #ffeef5; border-color: var(--rosa); color: var(--rosa); }
-    .btn-reazione.like.attiva { background: #e8f8f0; border-color: var(--verde); color: var(--verde-scuro); }
-    .btn-reazione.dislike.attiva { background: #fff3e0; border-color: var(--arancio); color: var(--arancio-scuro); }
+    .btn-reazione.cuore.attiva    { background: #ffeef5; border-color: var(--rosa); color: var(--rosa); }
+    .btn-reazione.like.attiva     { background: #e8f8f0; border-color: var(--verde); color: var(--verde-scuro); }
+    .btn-reazione.dislike.attiva  { background: #fff3e0; border-color: var(--arancio); color: var(--arancio-scuro); }
+    .btn-reazione.risata.attiva   { background: #fffde7; border-color: #f9a825; color: #f57f17; }
+    .btn-reazione.sorpresa.attiva { background: #e3f2fd; border-color: #1e88e5; color: #1565c0; }
+    .btn-reazione.fuoco.attiva    { background: #fbe9e7; border-color: #e64a19; color: #bf360c; }
+    .btn-reazione.abbraccio.attiva{ background: #f3e5f5; border-color: #8e24aa; color: #6a1b9a; }
+    .btn-reazione.commozione.attiva{ background: #e8eaf6; border-color: #3949ab; color: #283593; }
     .btn-reazione:hover { transform: scale(1.05); }
     .post-delete-btn {
       margin-left: auto; background: none; border: none;
@@ -1482,6 +1487,11 @@
           <button class="btn-reazione cuore" data-tipo="cuore">❤️ <span>${reazioni.cuore||0}</span></button>
           <button class="btn-reazione like" data-tipo="like">👍 <span>${reazioni.like||0}</span></button>
           <button class="btn-reazione dislike" data-tipo="dislike">👎 <span>${reazioni.dislike||0}</span></button>
+          <button class="btn-reazione risata" data-tipo="risata">😂 <span>${reazioni.risata||0}</span></button>
+          <button class="btn-reazione sorpresa" data-tipo="sorpresa">😮 <span>${reazioni.sorpresa||0}</span></button>
+          <button class="btn-reazione fuoco" data-tipo="fuoco">🔥 <span>${reazioni.fuoco||0}</span></button>
+          <button class="btn-reazione abbraccio" data-tipo="abbraccio">🫂 <span>${reazioni.abbraccio||0}</span></button>
+          <button class="btn-reazione commozione" data-tipo="commozione">😢 <span>${reazioni.commozione||0}</span></button>
         </div>
         <div class="commenti-section">
           <button class="commenti-toggle">💬 <span class="commenti-count">Commenti</span></button>
@@ -1766,7 +1776,7 @@
         else if(pendingMediaType==='audio')audioUrl=pendingMediaUrl;
         const urlManuale=document.getElementById('input-video-url').value.trim();
         if(urlManuale)videoUrl=urlManuale;
-        const ref=await addDoc(collection(db,'diario'),{uidRagazzo:profileUid,testo:testo||null,immagineUrl:imgUrl,videoUrl,audioUrl,reazioni:{cuore:0,like:0,dislike:0},createdAt:serverTimestamp()});
+        const ref=await addDoc(collection(db,'diario'),{uidRagazzo:profileUid,testo:testo||null,immagineUrl:imgUrl,videoUrl,audioUrl,reazioni:{cuore:0,like:0,dislike:0,risata:0,sorpresa:0,fuoco:0,abbraccio:0,commozione:0},createdAt:serverTimestamp()});
         incrInt(profileUid,'diarioScritti');
         if(imgUrl) incrInt(profileUid,'fotoCaricate');
         if(audioUrl) incrInt(profileUid,'audioRegistrati');
@@ -1856,10 +1866,15 @@
         <div class="bott-header">${mittFotoHtml}<span class="bott-mittente">${d.nomeMittente||'Anonimo'}</span> · ${data}</div>
         <div class="bott-testo">${d.testo||''}</div>
         ${imgHtml}${videoHtml}${audioHtml}
-        <div class="post-reazioni" style="margin-top:8px">
+        <div class="post-reazioni" style="margin-top:8px;flex-wrap:wrap;gap:6px">
           <button class="btn-reazione cuore" data-tipo="cuore">❤️ <span>${reazioni.cuore||0}</span></button>
           <button class="btn-reazione like" data-tipo="like">👍 <span>${reazioni.like||0}</span></button>
           <button class="btn-reazione dislike" data-tipo="dislike">👎 <span>${reazioni.dislike||0}</span></button>
+          <button class="btn-reazione risata" data-tipo="risata">😂 <span>${reazioni.risata||0}</span></button>
+          <button class="btn-reazione sorpresa" data-tipo="sorpresa">😮 <span>${reazioni.sorpresa||0}</span></button>
+          <button class="btn-reazione fuoco" data-tipo="fuoco">🔥 <span>${reazioni.fuoco||0}</span></button>
+          <button class="btn-reazione abbraccio" data-tipo="abbraccio">🫂 <span>${reazioni.abbraccio||0}</span></button>
+          <button class="btn-reazione commozione" data-tipo="commozione">😢 <span>${reazioni.commozione||0}</span></button>
         </div>
         <div class="commenti-section" style="border-top:1px solid #f0d9a0;padding:0 0 6px">
           <button class="commenti-toggle">💬 <span class="commenti-count">Commenti</span></button>
