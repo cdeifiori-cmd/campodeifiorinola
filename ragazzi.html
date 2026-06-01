@@ -75,6 +75,13 @@
       font-size: 0.65rem; font-weight: 700;
       color: #555; margin-top: 4px;
     }
+    .interazioni-badge {
+      font-size: 0.6rem; font-weight: 600;
+      color: #777; margin-top: 4px;
+      line-height: 1.6;
+      border-top: 1px solid #f0f0f0;
+      padding-top: 4px;
+    }
 
     /* Desktop: 3 colonne */
     @media (min-width: 769px) {
@@ -181,13 +188,22 @@
           const accessiBadge = isAdmin
             ? `<div class="accessi-badge">🔑 ${data.numeroAccessi ?? 0} accessi</div>`
             : '';
+          const int = data.interazioni || {};
+          const interazioniBadge = isAdmin ? `<div class="interazioni-badge">
+            📝 ${int.diarioScritti??0} post &nbsp;
+            🍾 ${int.bottigliaInviati??0} inv / ${int.bottigliaRicevuti??0} ric<br>
+            ❤️ ${int.reazioniDate??0} date / ${int.reazioniRicevute??0} ric &nbsp;
+            💬 ${int.commentiScritti??0} / ${int.commentiRicevuti??0} ric<br>
+            🎙️ ${int.audioRegistrati??0} audio &nbsp;
+            🖼️ ${int.fotoCaricate??0} foto
+          </div>` : '';
           grid.innerHTML += `
             <a class="card-ragazzo" href="profilo.html?uid=${data.id}">
               <div class="card-foto">${fotoHtml}</div>
               <div class="card-nome">
                 ${data.nome || '—'}
                 <div class="tag">🏡 ${data.comunitaId || ''}</div>
-                ${accessiBadge}
+                ${accessiBadge}${interazioniBadge}
               </div>
             </a>`;
         });

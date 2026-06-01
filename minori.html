@@ -79,6 +79,17 @@
     }
     .nav-item.active { color: #e07b39; }
     .nav-item .nav-icon { font-size: 1.3rem; line-height: 1; }
+    .accessi-badge {
+      font-size: 0.65rem; font-weight: 700;
+      color: #555; margin-top: 4px;
+    }
+    .interazioni-badge {
+      font-size: 0.6rem; font-weight: 600;
+      color: #777; margin-top: 4px;
+      line-height: 1.6;
+      border-top: 1px solid #f0f0f0;
+      padding-top: 4px;
+    }
 
     .spinner {
       width: 34px; height: 34px;
@@ -117,6 +128,7 @@
 
   <script type="module">
     import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
     import { getFirestore, doc, getDoc, collection, query, where, getDocs }
       from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import { setupNavAuth } from './js/nav-auth.js';
@@ -129,15 +141,22 @@
       messagingSenderId: "928976798756",
       appId: "1:928976798756:web:1b90027ec9f03b203e44b1"
     };
-    const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
-    const db  = getFirestore(app);
+    const app  = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+    const db   = getFirestore(app);
+    const auth = getAuth(app);
     setupNavAuth();
 
+    const ADMIN_UID  = 'mCSgNMVEphVIIf4HX0bkcKq2ZKv2';
     const params     = new URLSearchParams(location.search);
     const comunitaId = params.get('comunita');
     const list       = document.getElementById('list-minori');
 
-    async function init() {
+    onAuthStateChanged(auth, user => {
+      const isAdmin = !!(user && user.uid === ADMIN_UID);
+      init(isAdmin);
+    });
+
+    async function init(isAdmin) {
       if (!comunitaId) { list.innerHTML = '<p class="empty-msg">Comunità non specificata.</p>'; return; }
 
       try {
@@ -160,18 +179,31 @@
           const fotoHtml = data.fotoProfilo
             ? `<img src="${data.fotoProfilo}" alt="${data.nome}" loading="lazy">`
             : '🧒';
+          const accessiBadge = isAdmin
+            ? `<div class="accessi-badge">🔑 ${data.numeroAccessi ?? 0} accessi</div>`
+            : '';
+          const int = data.interazioni || {};
+          const interazioniBadge = isAdmin ? `<div class="interazioni-badge">
+            📝 ${int.diarioScritti??0} post &nbsp;
+            🍾 ${int.bottigliaInviati??0} inv / ${int.bottigliaRicevuti??0} ric<br>
+            ❤️ ${int.reazioniDate??0} date / ${int.reazioniRicevute??0} ric &nbsp;
+            💬 ${int.commentiScritti??0} / ${int.commentiRicevuti??0} ric<br>
+            🎙️ ${int.audioRegistrati??0} audio &nbsp;
+            🖼️ ${int.fotoCaricate??0} foto
+          </div>` : '';
           list.innerHTML += `
             <a class="card-minore" href="profilo.html?uid=${d.id}">
               <div class="card-foto">${fotoHtml}</div>
-              <div class="card-nome">${data.nome || '—'}</div>
+              <div class="card-nome">
+                ${data.nome || '—'}
+                ${accessiBadge}${interazioniBadge}
+              </div>
             </a>`;
         });
       } catch (e) {
         list.innerHTML = `<p class="empty-msg">Errore: ${e.message}</p>`;
       }
     }
-
-    init();
   </script>
 </body>
 </html>

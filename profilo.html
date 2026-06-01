@@ -1284,6 +1284,7 @@
         await updateDoc(doc(db, profileColl, profileUid), { audioUrl });
         profileData.audioUrl = audioUrl;
         renderSalutoUI();
+        incrInt(profileUid,'audioRegistrati');
         document.getElementById('saluto-rec-ui').style.display = 'none';
         salutoBlob = null;
         lbl.textContent = '✅ Salvato!';
@@ -1543,6 +1544,8 @@
         }
         await setDoc(reazRef, { tipo: tipoNuovo });
         await updateDoc(docRef, { [`reazioni.${tipoNuovo}`]: increment(1) });
+        incrInt(currentUser.uid,'reazioniDate');
+        incrInt(profileUid,'reazioniRicevute');
         const btn = cardEl.querySelector(`[data-tipo="${tipoNuovo}"]`);
         btn.classList.add('attiva');
         btn.querySelector('span').textContent = (parseInt(btn.querySelector('span').textContent)||0)+1;
@@ -1599,6 +1602,8 @@
       const ref = await addDoc(collection(db, collName, docId, 'commenti'), {
         uidAutore: currentUser.uid, nomeAutore, fotoAutore, testo, createdAt: serverTimestamp()
       });
+      incrInt(currentUser.uid,'commentiScritti');
+      incrInt(profileUid,'commentiRicevuti');
       const newC = { id:ref.id, uidAutore:currentUser.uid, nomeAutore, fotoAutore, testo, createdAt:null };
       const emptyMsg = listEl.querySelector('p');
       if (emptyMsg) emptyMsg.remove();
@@ -1762,6 +1767,9 @@
         const urlManuale=document.getElementById('input-video-url').value.trim();
         if(urlManuale)videoUrl=urlManuale;
         const ref=await addDoc(collection(db,'diario'),{uidRagazzo:profileUid,testo:testo||null,immagineUrl:imgUrl,videoUrl,audioUrl,reazioni:{cuore:0,like:0,dislike:0},createdAt:serverTimestamp()});
+        incrInt(profileUid,'diarioScritti');
+        if(imgUrl) incrInt(profileUid,'fotoCaricate');
+        if(audioUrl) incrInt(profileUid,'audioRegistrati');
         resetMedia(); document.getElementById('modal-diario').classList.add('hidden');
         const newPost={id:ref.id,uidRagazzo:profileUid,testo:testo||null,immagineUrl:imgUrl,videoUrl,audioUrl,reazioni:{cuore:0,like:0,dislike:0},createdAt:null};
         allPosts.unshift(newPost);
@@ -1799,6 +1807,7 @@
         const res=await fetch('https://api.cloudinary.com/v1_1/dxqyprtzh/image/upload',{method:'POST',body:fd});
         const json=await res.json();
         await updateDoc(doc(db,profileColl,profileUid),{fotoProfilo:json.secure_url});
+        incrInt(profileUid,'fotoCaricate');
         document.getElementById('hero-img').src=json.secure_url;
         document.getElementById('desktop-avatar-img').src=json.secure_url;
       };
@@ -1958,6 +1967,8 @@
         let fotoMittente=null;
         try{let ms=await getDoc(doc(db,'utenti',currentUser.uid));if(!ms.exists())ms=await getDoc(doc(db,'staff',currentUser.uid));if(ms.exists()){nomeMittente=ms.data().nome||nomeMittente;fotoMittente=ms.data().fotoProfilo||null;}}catch(_){}
         const ref=await addDoc(collection(db,'messaggiBottiglia'),{uidMittente:currentUser.uid,nomeMittente,uidDestinatario:profileUid,testo:testo||null,immagineUrl:imgUrl,audioUrl,videoUrl,createdAt:serverTimestamp()});
+        incrInt(currentUser.uid,'bottigliaInviati');
+        incrInt(profileUid,'bottigliaRicevuti');
         resetBottMedia(); document.getElementById('modal-bottiglia').classList.add('hidden');
         const newBott={id:ref.id,uidMittente:currentUser.uid,nomeMittente,uidDestinatario:profileUid,testo:testo||null,immagineUrl:imgUrl,audioUrl,videoUrl,createdAt:null};
         ['bottiglia-list','bottiglia-list-desktop'].forEach(id=>{
@@ -1975,6 +1986,15 @@
     });
 
     function formatDate(d){return d.toLocaleDateString('it-IT',{day:'numeric',month:'long',year:'numeric'});}
+
+    async function incrInt(uid, campo) {
+      try {
+        let ref = doc(db, 'utenti', uid);
+        let snap = await getDoc(ref);
+        if (!snap.exists()) ref = doc(db, 'staff', uid);
+        await updateDoc(ref, { [`interazioni.${campo}`]: increment(1) });
+      } catch(_) {}
+    }
 
     // INIT
     try{
