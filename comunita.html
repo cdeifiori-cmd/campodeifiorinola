@@ -238,9 +238,6 @@
     const auth = getAuth(app);
     setupNavAuth();
 
-    onAuthStateChanged(auth, user => {
-      if (!user) { location.href = 'login.html'; return; }
-    });
 
     const EMOJI = {
       'bella-mbriana': '🌸', 'itaca': '⚓', 'willy-coyote': '🐺',

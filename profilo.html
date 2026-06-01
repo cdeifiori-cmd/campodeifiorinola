@@ -1109,8 +1109,9 @@
       document.getElementById('btn-edit-presento-desktop').classList.toggle('hidden', !canEdit);
       document.getElementById('diario-new-btn').classList.toggle('visible', canWriteDiary());
       document.getElementById('diario-new-btn-desktop').classList.toggle('visible', canWriteDiary());
-      document.getElementById('btn-manda-bottiglia').classList.toggle('hidden', !canSendBottiglia());
-      document.getElementById('btn-manda-bottiglia-desktop').classList.toggle('hidden', !canSendBottiglia());
+      // Bottiglia: visibile a tutti i non-owner (verifica auth al momento dell'invio)
+      document.getElementById('btn-manda-bottiglia').classList.toggle('hidden', isOwner);
+      document.getElementById('btn-manda-bottiglia-desktop').classList.toggle('hidden', isOwner);
 
       // Widget "cosa vuoi condividere" solo su desktop per owner/admin
       const widgetCondividi = document.getElementById('widget-condividi');
@@ -1501,7 +1502,7 @@
           <button class="commenti-toggle">💬 <span class="commenti-count">Commenti</span></button>
           <div class="commenti-body" style="display:none">
             <div class="commenti-list"></div>
-            ${currentUser ? `<div class="commento-form"><textarea placeholder="Scrivi un commento…" rows="1"></textarea><button type="button">Invia</button></div>` : ''}
+            <div class="commento-form"><textarea placeholder="Scrivi un commento…" rows="1"></textarea><button type="button">Invia</button></div>
           </div>
         </div>`;
       if (canDelete) el.querySelector('.post-delete-btn').addEventListener('click', () => deletePost(p.id));
@@ -1515,7 +1516,7 @@
       }
       el.querySelectorAll('.btn-reazione').forEach(btn => {
         btn.addEventListener('click', () => {
-          if (!canReact()) { alert('Devi essere loggato per reagire.'); return; }
+          if (!canReact()) { mostraLoginPrompt(); return; }
           toggleReazione('diario', p.id, btn.dataset.tipo, el, reazioni);
         });
       });
@@ -1604,7 +1605,8 @@
 
     async function addCommento(collName, docId, ta, listEl, toggleBtn) {
       const testo = ta.value.trim();
-      if (!testo || !canComment()) return;
+      if (!testo) return;
+      if (!canComment()) { mostraLoginPrompt(); return; }
       ta.value = '';
       let nomeAutore = currentUser.displayName || currentUser.email || 'Anonimo';
       let fotoAutore = null;
@@ -1884,7 +1886,7 @@
           <button class="commenti-toggle">💬 <span class="commenti-count">Commenti</span></button>
           <div class="commenti-body" style="display:none">
             <div class="commenti-list"></div>
-            ${currentUser?`<div class="commento-form"><textarea placeholder="Scrivi un commento…" rows="1"></textarea><button type="button">Invia</button></div>`:''}
+            <div class="commento-form"><textarea placeholder="Scrivi un commento…" rows="1"></textarea><button type="button">Invia</button></div>
           </div>
         </div>`;
       if(canDel)el.querySelector('.bott-delete').addEventListener('click',()=>deleteBottiglia(id));
@@ -1966,7 +1968,10 @@
     document.getElementById('btn-bott-discard-rec').addEventListener('click',()=>{bottRecBlob=null;document.getElementById('bott-rec-ui').style.display='none';});
 
     ['btn-manda-bottiglia','btn-manda-bottiglia-desktop'].forEach(id=>{
-      document.getElementById(id)?.addEventListener('click',()=>{document.getElementById('modal-bottiglia-text').value='';resetBottMedia();document.getElementById('modal-bottiglia').classList.remove('hidden');});
+      document.getElementById(id)?.addEventListener('click',()=>{
+        if(!currentUser){mostraLoginPrompt();return;}
+        document.getElementById('modal-bottiglia-text').value='';resetBottMedia();document.getElementById('modal-bottiglia').classList.remove('hidden');
+      });
     });
     document.getElementById('btn-cancel-bottiglia').addEventListener('click',()=>{if(bottRecorder&&bottRecorder.state!=='inactive')bottRecorder.stop();resetBottMedia();document.getElementById('modal-bottiglia').classList.add('hidden');});
 
@@ -2005,6 +2010,20 @@
     });
 
     function formatDate(d){return d.toLocaleDateString('it-IT',{day:'numeric',month:'long',year:'numeric'});}
+
+    function mostraLoginPrompt() {
+      const existing = document.getElementById('login-prompt-toast');
+      if (existing) { existing.remove(); }
+      const toast = document.createElement('div');
+      toast.id = 'login-prompt-toast';
+      toast.innerHTML = `
+        <span>Accedi per interagire</span>
+        <a href="login.html" style="color:#ff9f43;text-decoration:none;font-weight:800">Accedi →</a>
+        <button onclick="this.parentElement.remove()" style="background:none;border:none;color:#aaa;cursor:pointer;font-size:1rem;padding:0;line-height:1">✕</button>`;
+      toast.style.cssText = 'position:fixed;bottom:72px;left:50%;transform:translateX(-50%);background:#222;color:#fff;border-radius:12px;padding:12px 18px;display:flex;align-items:center;gap:14px;font-family:Nunito,sans-serif;font-size:0.88rem;font-weight:700;z-index:2000;box-shadow:0 4px 20px rgba(0,0,0,0.35);white-space:nowrap';
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 4000);
+    }
 
     function computeBadges(allUsers) {
       function score(u) {
@@ -2070,11 +2089,10 @@
       } catch(_) {}
     }
 
-    // INIT — aspetta la prima risoluzione auth; reindirizza se non loggato
-    const authUser = await new Promise(resolve => {
+    // INIT — aspetta la prima risoluzione auth prima di caricare (la pagina è pubblica)
+    await new Promise(resolve => {
       const unsub = onAuthStateChanged(auth, user => { unsub(); resolve(user); });
     });
-    if (!authUser) { location.href = 'login.html'; }
 
     try{
       const[us,st]=await Promise.all([getDocs(collection(db,'utenti')),getDocs(collection(db,'staff'))]);
