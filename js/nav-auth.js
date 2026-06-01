@@ -110,6 +110,9 @@ export function setupNavAuth(slotId = 'nav-auth-slot') {
       return;
     }
 
+    // Setup notifiche push (silenzioso, non blocca il rendering)
+    import('./notifiche.js').then(m => m.setupNotifiche(user)).catch(() => {});
+
     // Leggi foto profilo da Firestore (utenti o staff)
     let foto = null;
     let nome = user.displayName || user.email || 'Utente';
