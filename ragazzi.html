@@ -82,6 +82,12 @@
       border-top: 1px solid #f0f0f0;
       padding-top: 4px;
     }
+    .avatar-star {
+      position: absolute; bottom: 6px; right: 6px;
+      font-size: 1.3rem; line-height: 1; z-index: 2;
+      filter: drop-shadow(0 1px 3px rgba(0,0,0,0.55));
+      pointer-events: none;
+    }
 
     /* Desktop: 3 colonne */
     @media (min-width: 769px) {
@@ -160,6 +166,31 @@
     const ESCLUDI = ['after-us'];
     const grid = document.getElementById('grid-ragazzi');
 
+    function computeBadges(allUsers) {
+      function score(u) {
+        const i = u.interazioni || {};
+        return (i.diarioScritti||0) + (i.bottigliaInviati||0) +
+               (i.commentiScritti||0) + (i.audioRegistrati||0) + (i.fotoCaricate||0);
+      }
+      const byCom = {};
+      allUsers.forEach(u => {
+        if (!u.comunitaId) return;
+        (byCom[u.comunitaId] = byCom[u.comunitaId] || []).push(u);
+      });
+      const badges = {};
+      let globalLeaderUid = null, globalMax = 0;
+      Object.values(byCom).forEach(members => {
+        let leader = null, leaderScore = 0;
+        members.forEach(u => { const s = score(u); if (s > leaderScore) { leaderScore = s; leader = u; } });
+        if (leader && leaderScore > 0) {
+          badges[leader.id] = '⭐';
+          if (leaderScore > globalMax) { globalMax = leaderScore; globalLeaderUid = leader.id; }
+        }
+      });
+      if (globalLeaderUid) badges[globalLeaderUid] = '⭐🏆';
+      return badges;
+    }
+
     onAuthStateChanged(auth, user => {
       const isAdmin = !!(user && user.uid === ADMIN_UID);
       init(isAdmin);
@@ -168,12 +199,13 @@
     async function init(isAdmin) {
       try {
         const snap = await getDocs(collection(db, 'utenti'));
-        const ragazzi = [];
+        const tutti = [], ragazzi = [];
         snap.forEach(d => {
-          const data = d.data();
-          if (ESCLUDI.includes(data.comunitaId)) return;
-          ragazzi.push({ id: d.id, ...data });
+          const data = { id: d.id, ...d.data() };
+          tutti.push(data);
+          if (!ESCLUDI.includes(data.comunitaId)) ragazzi.push(data);
         });
+        const badges = computeBadges(tutti);
         ragazzi.sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'it'));
 
         grid.innerHTML = '';
@@ -185,6 +217,7 @@
           const fotoHtml = data.fotoProfilo
             ? `<img src="${data.fotoProfilo}" alt="${data.nome}" loading="lazy">`
             : '🧒';
+          const star = badges[data.id] ? `<span class="avatar-star">${badges[data.id]}</span>` : '';
           const accessiBadge = isAdmin
             ? `<div class="accessi-badge">🔑 ${data.numeroAccessi ?? 0} accessi</div>`
             : '';
@@ -199,7 +232,7 @@
           </div>` : '';
           grid.innerHTML += `
             <a class="card-ragazzo" href="profilo.html?uid=${data.id}">
-              <div class="card-foto">${fotoHtml}</div>
+              <div class="card-foto" style="position:relative">${fotoHtml}${star}</div>
               <div class="card-nome">
                 ${data.nome || '—'}
                 <div class="tag">🏡 ${data.comunitaId || ''}</div>

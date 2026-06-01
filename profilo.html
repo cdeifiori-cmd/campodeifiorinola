@@ -2002,6 +2002,61 @@
 
     function formatDate(d){return d.toLocaleDateString('it-IT',{day:'numeric',month:'long',year:'numeric'});}
 
+    function computeBadges(allUsers) {
+      function score(u) {
+        const i = u.interazioni || {};
+        return (i.diarioScritti||0) + (i.bottigliaInviati||0) +
+               (i.commentiScritti||0) + (i.audioRegistrati||0) + (i.fotoCaricate||0);
+      }
+      const byCom = {};
+      allUsers.forEach(u => {
+        if (!u.comunitaId) return;
+        (byCom[u.comunitaId] = byCom[u.comunitaId] || []).push(u);
+      });
+      const badges = {};
+      let globalLeaderUid = null, globalMax = 0;
+      Object.values(byCom).forEach(members => {
+        let leader = null, leaderScore = 0;
+        members.forEach(u => { const s = score(u); if (s > leaderScore) { leaderScore = s; leader = u; } });
+        if (leader && leaderScore > 0) {
+          badges[leader.id] = '⭐';
+          if (leaderScore > globalMax) { globalMax = leaderScore; globalLeaderUid = leader.id; }
+        }
+      });
+      if (globalLeaderUid) badges[globalLeaderUid] = '⭐🏆';
+      return badges;
+    }
+
+    function showProfileBadge(badge) {
+      if (!badge) return;
+      // Mobile: sovrapponi sulla hero-foto
+      const heroFoto = document.getElementById('hero-foto');
+      if (heroFoto) {
+        const span = document.createElement('span');
+        span.textContent = badge;
+        span.style.cssText = 'position:absolute;bottom:14px;left:50%;transform:translateX(-50%);font-size:2.2rem;line-height:1;z-index:6;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.65));pointer-events:none';
+        heroFoto.appendChild(span);
+      }
+      // Desktop: aggiungi badge al fianco del nome
+      const desktopNome = document.getElementById('desktop-nome');
+      if (desktopNome && !desktopNome.querySelector('.profile-star-span')) {
+        const span = document.createElement('span');
+        span.className = 'profile-star-span';
+        span.textContent = ' ' + badge;
+        span.style.cssText = 'font-size:1.5rem;vertical-align:middle';
+        desktopNome.appendChild(span);
+      }
+      // Mobile name area
+      const mobileNome = document.getElementById('profilo-nome');
+      if (mobileNome && !mobileNome.querySelector('.profile-star-span')) {
+        const span = document.createElement('span');
+        span.className = 'profile-star-span';
+        span.textContent = ' ' + badge;
+        span.style.cssText = 'font-size:1.1rem;vertical-align:middle';
+        mobileNome.appendChild(span);
+      }
+    }
+
     async function incrInt(uid, campo) {
       try {
         let ref = doc(db, 'utenti', uid);
@@ -2019,6 +2074,16 @@
     }catch(_){}
 
     await loadProfilo();
+
+    // Calcola e mostra badge riconoscimento
+    try {
+      const allUtenti = Object.entries(utentiCache)
+        .filter(([,d]) => !d.ruolo)
+        .map(([id,d]) => ({ id, ...d }));
+      const badges = computeBadges(allUtenti);
+      showProfileBadge(badges[profileUid] || null);
+    } catch(_) {}
+
     await loadDiario();
     await loadBottiglie();
     await loadAttivitaRecenti();
