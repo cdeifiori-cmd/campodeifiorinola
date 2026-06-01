@@ -2066,7 +2066,12 @@
       } catch(_) {}
     }
 
-    // INIT
+    // INIT — aspetta la prima risoluzione auth; reindirizza se non loggato
+    const authUser = await new Promise(resolve => {
+      const unsub = onAuthStateChanged(auth, user => { unsub(); resolve(user); });
+    });
+    if (!authUser) { location.href = 'login.html'; }
+
     try{
       const[us,st]=await Promise.all([getDocs(collection(db,'utenti')),getDocs(collection(db,'staff'))]);
       us.forEach(d=>{utentiCache[d.id]=d.data();});

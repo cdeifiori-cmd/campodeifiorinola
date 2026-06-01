@@ -192,7 +192,8 @@
     }
 
     onAuthStateChanged(auth, user => {
-      const isAdmin = !!(user && user.uid === ADMIN_UID);
+      if (!user) { location.href = 'login.html'; return; }
+      const isAdmin = user.uid === ADMIN_UID;
       init(isAdmin);
     });
 
