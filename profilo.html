@@ -1082,7 +1082,9 @@
       isOwner  = user && user.uid === profileUid;
       isAdmin  = user && user.uid === ADMIN_UID;
       if (user && !isAdmin) {
-        const usnap = await getDoc(doc(db, 'utenti', user.uid));
+        let usnap = await getDoc(doc(db, 'utenti', user.uid));
+        if (!usnap.exists()) usnap = await getDoc(doc(db, 'staff', user.uid));
+        if (!usnap.exists()) usnap = await getDoc(doc(db, 'amici', user.uid));
         if (usnap.exists()) isAutorizzato = !!usnap.data().autorizzato;
       }
       if (isAdmin) isAutorizzato = true;
@@ -1325,8 +1327,11 @@
       let snap = await getDoc(doc(db, 'utenti', profileUid));
       if (!snap.exists()) {
         snap = await getDoc(doc(db, 'staff', profileUid));
-        if (!snap.exists()) { document.getElementById('profilo-nome').textContent = 'Profilo non trovato'; return; }
-        profileColl = 'staff';
+        if (!snap.exists()) {
+          snap = await getDoc(doc(db, 'amici', profileUid));
+          if (!snap.exists()) { document.getElementById('profilo-nome').textContent = 'Profilo non trovato'; return; }
+          profileColl = 'amici';
+        } else { profileColl = 'staff'; }
       } else { profileColl = 'utenti'; }
       profileData = snap.data();
 
@@ -1615,6 +1620,7 @@
       try {
         let s = await getDoc(doc(db,'utenti',currentUser.uid));
         if (!s.exists()) s = await getDoc(doc(db,'staff',currentUser.uid));
+        if (!s.exists()) s = await getDoc(doc(db,'amici',currentUser.uid));
         if (s.exists()) { nomeAutore = s.data().nome || nomeAutore; fotoAutore = s.data().fotoProfilo || null; }
       } catch(_) {}
       const ref = await addDoc(collection(db, collName, docId, 'commenti'), {
@@ -1997,7 +2003,7 @@
         if(urlManuale)videoUrl=urlManuale;
         let nomeMittente=currentUser.displayName||currentUser.email||'Anonimo';
         let fotoMittente=null;
-        try{let ms=await getDoc(doc(db,'utenti',currentUser.uid));if(!ms.exists())ms=await getDoc(doc(db,'staff',currentUser.uid));if(ms.exists()){nomeMittente=ms.data().nome||nomeMittente;fotoMittente=ms.data().fotoProfilo||null;}}catch(_){}
+        try{let ms=await getDoc(doc(db,'utenti',currentUser.uid));if(!ms.exists())ms=await getDoc(doc(db,'staff',currentUser.uid));if(!ms.exists())ms=await getDoc(doc(db,'amici',currentUser.uid));if(ms.exists()){nomeMittente=ms.data().nome||nomeMittente;fotoMittente=ms.data().fotoProfilo||null;}}catch(_){}
         const ref=await addDoc(collection(db,'messaggiBottiglia'),{uidMittente:currentUser.uid,nomeMittente,uidDestinatario:profileUid,testo:testo||null,immagineUrl:imgUrl,audioUrl,videoUrl,createdAt:serverTimestamp()});
         incrInt(currentUser.uid,'bottigliaInviati');
         incrInt(profileUid,'bottigliaRicevuti');
@@ -2103,9 +2109,10 @@
     });
 
     try{
-      const[us,st]=await Promise.all([getDocs(collection(db,'utenti')),getDocs(collection(db,'staff'))]);
+      const[us,st,am]=await Promise.all([getDocs(collection(db,'utenti')),getDocs(collection(db,'staff')),getDocs(collection(db,'amici'))]);
       us.forEach(d=>{utentiCache[d.id]=d.data();});
       st.forEach(d=>{utentiCache[d.id]=d.data();});
+      am.forEach(d=>{utentiCache[d.id]=d.data();});
     }catch(_){}
 
     await loadProfilo();
