@@ -25,7 +25,15 @@ service cloud.firestore {
     // ── Staff ────────────────────────────────────────────────
     match /staff/{uid} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow update: if isOwner(uid) || isAdmin();
+      allow create, delete: if isAdmin();
+    }
+
+    // ── Amici ────────────────────────────────────────────────
+    match /amici/{uid} {
+      allow read: if true;
+      allow update: if isOwner(uid) || isAdmin();
+      allow create, delete: if isAdmin();
     }
 
     // ── Comunità ─────────────────────────────────────────────
