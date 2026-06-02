@@ -23,6 +23,12 @@
     }
     .top-header h1 { font-size: 1.15rem; font-weight: 800; flex: 1; text-align: center; }
 
+    /* WRAPPER CENTRATO SU DESKTOP */
+    .page-content {
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
     /* GRIGLIA 2 COLONNE */
     .grid-amici {
       display: grid;
@@ -74,8 +80,12 @@
     }
 
     /* Desktop: 3 colonne */
-    @media (min-width: 769px) {
+    @media (min-width: 600px) {
       .grid-amici { grid-template-columns: 1fr 1fr 1fr; gap: 3px; padding: 3px; }
+    }
+    /* Schermi larghi: 4 colonne */
+    @media (min-width: 900px) {
+      .grid-amici { grid-template-columns: repeat(4, 1fr); }
     }
 
     .spinner {
@@ -112,8 +122,10 @@
     <div id="nav-auth-slot"></div>
   </header>
 
-  <div id="grid-amici" class="grid-amici">
-    <div class="spinner"></div>
+  <div class="page-content">
+    <div id="grid-amici" class="grid-amici">
+      <div class="spinner"></div>
+    </div>
   </div>
 
   <nav class="bottom-nav">
