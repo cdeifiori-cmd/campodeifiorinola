@@ -23,37 +23,69 @@
     }
     .top-header h1 { font-size: 1.15rem; font-weight: 800; flex: 1; text-align: center; }
 
-    /* ---- PLACEHOLDER ---- */
-    .placeholder-wrap {
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      min-height: calc(100vh - 56px - 70px);
-      padding: 2rem 1.5rem;
-      text-align: center;
-      gap: 16px;
+    /* GRIGLIA 2 COLONNE */
+    .grid-amici {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2px;
+      padding: 2px;
     }
-    .placeholder-icon { font-size: 4.5rem; line-height: 1; }
-    .placeholder-title {
-      font-size: 1.5rem; font-weight: 900;
-      color: #333;
+
+    .card-amico {
+      background: #fff;
+      text-decoration: none;
+      color: #222;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transition: opacity 0.15s;
     }
-    .placeholder-sub {
-      font-family: 'Caveat', cursive;
-      font-size: 1.35rem; color: #e07b39;
-      font-weight: 700;
+    .card-amico:hover { opacity: 0.88; }
+
+    .card-foto {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      overflow: hidden;
+      background: #fdebd0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 3rem;
     }
-    .placeholder-desc {
-      font-size: 0.9rem; color: #888;
-      max-width: 320px; line-height: 1.6;
+    .card-foto img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      object-position: top center;
+      display: block;
     }
-    .placeholder-badge {
-      display: inline-block;
-      background: #fff3e0; color: #e07b39;
-      border: 2px solid #e07b39;
-      border-radius: 20px; padding: 6px 18px;
-      font-size: 0.88rem; font-weight: 800;
-      margin-top: 8px;
+
+    .card-info {
+      padding: 8px 10px 10px;
+      background: #fff;
     }
+    .card-info .nome {
+      font-size: 0.88rem;
+      font-weight: 800;
+      color: #222;
+    }
+    .card-info .ruolo {
+      font-size: 0.72rem;
+      color: #e07b39;
+      font-weight: 600;
+      margin-top: 2px;
+    }
+
+    /* Desktop: 3 colonne */
+    @media (min-width: 769px) {
+      .grid-amici { grid-template-columns: 1fr 1fr 1fr; gap: 3px; padding: 3px; }
+    }
+
+    .spinner {
+      width: 34px; height: 34px;
+      border: 3px solid #eee; border-top-color: #e07b39;
+      border-radius: 50%; animation: spin 0.7s linear infinite;
+      margin: 2rem auto; grid-column: 1/-1;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .empty-msg { color: #aaa; text-align: center; padding: 2rem; grid-column: 1/-1; }
 
     /* ---- BOTTOM NAV ---- */
     .bottom-nav {
@@ -80,15 +112,8 @@
     <div id="nav-auth-slot"></div>
   </header>
 
-  <div class="placeholder-wrap">
-    <div class="placeholder-icon">🤝</div>
-    <div class="placeholder-title">Gli Amici di Campo dei Fiori</div>
-    <div class="placeholder-sub">Prossimamente…</div>
-    <div class="placeholder-desc">
-      Questa sezione è in preparazione. Presto potrai scoprire tutte le realtà,
-      le associazioni e le persone amiche che sostengono Campo dei Fiori.
-    </div>
-    <span class="placeholder-badge">🚧 In arrivo</span>
+  <div id="grid-amici" class="grid-amici">
+    <div class="spinner"></div>
   </div>
 
   <nav class="bottom-nav">
@@ -102,7 +127,9 @@
 
   <script type="module">
     import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { getFirestore, collection, getDocs }
+      from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import { setupNavAuth } from './js/nav-auth.js';
 
     const firebaseConfig = {
@@ -113,10 +140,44 @@
       messagingSenderId: "928976798756",
       appId: "1:928976798756:web:1b90027ec9f03b203e44b1"
     };
-    const app  = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
-    const auth = getAuth(app);
+    const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+    const db  = getFirestore(app);
     setupNavAuth();
 
+    const grid = document.getElementById('grid-amici');
+
+    async function loadAmici() {
+      try {
+        const snap = await getDocs(collection(db, 'amici'));
+        grid.innerHTML = '';
+        if (snap.empty) { grid.innerHTML = '<p class="empty-msg">Nessun amico ancora.</p>'; return; }
+
+        const amici = [];
+        snap.forEach(d => amici.push({ id: d.id, ...d.data() }));
+        amici.sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'it'));
+
+        amici.forEach(data => {
+          const fotoHtml = data.fotoProfilo
+            ? `<img src="${data.fotoProfilo}" alt="${data.nome || ''}" loading="lazy">`
+            : '🤝';
+          const ruoloHtml = (data.ruolo || data.descrizione)
+            ? `<div class="ruolo">${data.ruolo || data.descrizione}</div>`
+            : '';
+          grid.innerHTML += `
+            <div class="card-amico">
+              <div class="card-foto">${fotoHtml}</div>
+              <div class="card-info">
+                <div class="nome">${data.nome || '—'}</div>
+                ${ruoloHtml}
+              </div>
+            </div>`;
+        });
+      } catch (e) {
+        grid.innerHTML = `<p class="empty-msg">Errore: ${e.message}</p>`;
+      }
+    }
+
+    loadAmici();
   </script>
 </body>
 </html>
