@@ -1120,6 +1120,9 @@
       const btnSidebarSaluto = document.getElementById('btn-sidebar-saluto');
       if (btnSidebarSaluto) btnSidebarSaluto.classList.toggle('hidden', !canEdit);
 
+      // Bottone "Cambia foto" - SOLO admin può modificare le foto profilo
+      document.getElementById('btn-edit-foto').classList.toggle('hidden', !isAdmin);
+
       if (profileData.nome) renderSalutoUI();
     }
 
@@ -1816,6 +1819,11 @@
     // FOTO PROFILO
     document.getElementById('desktop-avatar-wrap').addEventListener('click',()=>{if(!canEditProfile())return;triggerFotoUpload();});
     function triggerFotoUpload(){
+      // Solo admin può modificare le foto profilo
+      if (!isAdmin) {
+        showError('Solo l\'admin può modificare le foto profilo');
+        return;
+      }
       const input=document.createElement('input'); input.type='file'; input.accept='image/*';
       input.onchange=async()=>{
         const file=input.files[0];if(!file)return;

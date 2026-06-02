@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin - Aggiorna Foto Profilo</title>
+  <style>
+    body {
+      font-family: 'Nunito', Arial, sans-serif;
+      max-width: 600px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 { color: #1a2e1a; margin-bottom: 20px; }
+    .info-box {
+      background: #e8f5e9;
+      border-left: 4px solid #4caf50;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-radius: 4px;
+    }
+    .error-box {
+      background: #ffebee;
+      border-left: 4px solid #f44336;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-radius: 4px;
+      color: #c62828;
+      display: none;
+    }
+    input, button {
+      padding: 10px;
+      font-size: 1rem;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-family: inherit;
+    }
+    input {
+      width: 100%;
+      margin-bottom: 10px;
+      box-sizing: border-box;
+    }
+    button {
+      background: #1a2e1a;
+      color: white;
+      cursor: pointer;
+      border: none;
+      font-weight: bold;
+      margin-right: 10px;
+    }
+    button:hover { background: #0d1610; }
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    .result {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 4px;
+      display: none;
+    }
+    .result.success {
+      background: #c8e6c9;
+      color: #1b5e20;
+      border: 1px solid #4caf50;
+      display: block;
+    }
+    .result.error {
+      background: #ffcdd2;
+      color: #b71c1c;
+      border: 1px solid #f44336;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔐 Admin - Aggiorna Foto Profilo</h1>
+
+    <div id="auth-section">
+      <div class="info-box">
+        ℹ️ Accedi come admin per aggiornare le foto profilo
+      </div>
+      <button onclick="loginAdmin()">🔑 Accedi come Admin</button>
+    </div>
+
+    <div id="admin-section" style="display: none;">
+      <div class="info-box">
+        ✓ Accesso admin confermato. Puoi procedere con l'aggiornamento.
+      </div>
+
+      <label>Nome utente:</label>
+      <input type="text" id="userName" placeholder="Es: Daniele Grande" value="Daniele Grande">
+
+      <label>URL nuova foto:</label>
+      <input type="text" id="fotoUrl" placeholder="URL Cloudinary" value="https://res.cloudinary.com/dxqyprtzh/image/upload/v1780161143/daniele_kdmioo.png">
+
+      <div style="margin-top: 20px;">
+        <button onclick="updateFoto()">📸 Aggiorna Foto</button>
+        <button onclick="logout()" style="background: #666;">Esci</button>
+      </div>
+
+      <div id="result" class="result"></div>
+    </div>
+
+    <div id="error-box" class="error-box"></div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { getFirestore, collection, query, where, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyC18lzwqhYcW29TsEO6Oy4Bqvb2PMBUmAg",
+      authDomain: "campo-dei-fiori.firebaseapp.com",
+      projectId: "campo-dei-fiori",
+      storageBucket: "campo-dei-fiori.firebasestorage.app",
+      messagingSenderId: "928976798756",
+      appId: "1:928976798756:web:1b90027ec9f03b203e44b1"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const ADMIN_UID = 'mCSgNMVEphVIIf4HX0bkcKq2ZKv2';
+    let currentUser = null;
+
+    onAuthStateChanged(auth, user => {
+      currentUser = user;
+      updateUI();
+    });
+
+    window.loginAdmin = async () => {
+      const email = prompt('Email admin:');
+      const password = prompt('Password:');
+      if (!email || !password) return;
+
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+      } catch (error) {
+        showError('Accesso fallito: ' + error.message);
+      }
+    };
+
+    window.logout = async () => {
+      await signOut(auth);
+    };
+
+    window.updateFoto = async () => {
+      if (!currentUser || currentUser.uid !== ADMIN_UID) {
+        showError('Accesso non autorizzato. Solo l\'admin può aggiornare le foto.');
+        return;
+      }
+
+      const userName = document.getElementById('userName').value.trim();
+      const fotoUrl = document.getElementById('fotoUrl').value.trim();
+
+      if (!userName || !fotoUrl) {
+        showError('Completa tutti i campi');
+        return;
+      }
+
+      const resultEl = document.getElementById('result');
+      resultEl.textContent = '⏳ Aggiornamento in corso...';
+      resultEl.className = 'result';
+
+      try {
+        // Cerca l'utente per nome
+        const q = query(collection(db, 'utenti'), where('nome', '==', userName));
+        const snapshot = await getDocs(q);
+
+        if (snapshot.empty) {
+          showError(`Utente non trovato: "${userName}"`);
+          return;
+        }
+
+        if (snapshot.size > 1) {
+          showError('Trovati più utenti con questo nome. Sii più specifico.');
+          return;
+        }
+
+        const userDoc = snapshot.docs[0];
+        const oldFoto = userDoc.data().fotoProfilo || 'nessuna';
+
+        await updateDoc(userDoc.ref, { fotoProfilo: fotoUrl });
+
+        resultEl.textContent = `✅ Foto aggiornata!\n\nUtente: ${userName}\nVecchia foto: ${oldFoto}\nNuova foto: ${fotoUrl}`;
+        resultEl.className = 'result success';
+      } catch (error) {
+        showError('Errore: ' + error.message);
+      }
+    };
+
+    function updateUI() {
+      const authSection = document.getElementById('auth-section');
+      const adminSection = document.getElementById('admin-section');
+
+      if (currentUser && currentUser.uid === ADMIN_UID) {
+        authSection.style.display = 'none';
+        adminSection.style.display = 'block';
+      } else {
+        authSection.style.display = 'block';
+        adminSection.style.display = 'none';
+      }
+    }
+
+    function showError(msg) {
+      const resultEl = document.getElementById('result');
+      resultEl.textContent = msg;
+      resultEl.className = 'result error';
+    }
+  </script>
+</body>
+</html>
