@@ -1,0 +1,38 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isAdmin() {
+      return request.auth != null && request.auth.uid == 'mCSgNMVEphVIIf4HX0bkcKq2ZKv2';
+    }
+
+    function isMassimo() {
+      return request.auth != null && request.auth.uid == '0u41pvwSTAaryAGWAG8gwuxrZ293';
+    }
+
+    function isSuperUser() {
+      return isAdmin() || isMassimo();
+    }
+
+    function staffRef() {
+      return /databases/(default)/documents/staff/$(request.auth.uid);
+    }
+
+    function isCoordinatriceForFolder(cartella) {
+      return request.auth != null
+        && firestore.exists(staffRef())
+        && firestore.get(staffRef()).data.comunitaId == cartella
+        && firestore.get(staffRef()).data.ruolo.matches('.*Coordinatrice.*');
+    }
+
+    // ── Area Documenti ────────────────────────────────────────
+    match /documenti/{cartella}/{fileName} {
+      allow read, write: if isSuperUser() || isCoordinatriceForFolder(cartella);
+    }
+
+    // ── Tutto il resto (usato dall'app per foto profilo, ecc.) ─
+    match /{allPaths=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}

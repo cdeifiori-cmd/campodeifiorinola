@@ -133,6 +133,7 @@
     <a href="comunita.html" class="nav-item"><span class="nav-icon">🏘️</span>Comunità</a>
     <a href="staff.html" class="nav-item"><span class="nav-icon">🤡</span>Staff</a>
     <a href="minori.html?comunita=after-us" class="nav-item"><span class="nav-icon">🌟</span>After Us</a>
+    <a href="documenti.html" class="nav-item nav-doc-link" style="display:none"><span class="nav-icon">📁</span>Documenti</a>
     <a href="#" class="nav-item"><span class="nav-icon">📋</span>Progetti</a>
     <a href="giornale.html" class="nav-item"><span class="nav-icon">📰</span>Giornale</a>
   </nav>
@@ -143,6 +144,7 @@
     import { getFirestore, collection, getDocs }
       from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import { setupNavAuth } from './js/nav-auth.js';
+    import { setupDocumentiNav } from './js/nav-docs.js';
 
     const firebaseConfig = {
       apiKey: "AIzaSyC18lzwqhYcW29TsEO6Oy4Bqvb2PMBUmAg",
@@ -155,6 +157,7 @@
     const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
     const db  = getFirestore(app);
     setupNavAuth();
+    setupDocumentiNav();
 
     const grid = document.getElementById('grid-amici');
 

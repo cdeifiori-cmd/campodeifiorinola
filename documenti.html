@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Area Documenti – Campo dei Fiori</title>
+  <meta name="theme-color" content="#e07b39">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Nunito', sans-serif; background: #f5f5f5; padding-bottom: 80px; min-height: 100vh; }
+
+    .top-header {
+      background: #e07b39; color: #fff;
+      display: flex; align-items: center;
+      padding: 0 1rem; height: 56px;
+      position: sticky; top: 0; z-index: 100;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+      gap: 10px;
+    }
+    .top-header .back-btn {
+      background: rgba(0,0,0,0.2); border: none; color: #fff;
+      border-radius: 50%; width: 34px; height: 34px;
+      font-size: 1rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      text-decoration: none; flex-shrink: 0;
+    }
+    .top-header h1 { font-size: 1.1rem; font-weight: 800; flex: 1; }
+
+    /* ── Griglia cartelle ── */
+    .cartelle-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      padding: 16px;
+      max-width: 720px;
+      margin: 0 auto;
+    }
+    @media (min-width: 600px) {
+      .cartelle-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    .cartella-card {
+      background: #fff;
+      border-radius: 14px;
+      padding: 20px 12px 16px;
+      display: flex; flex-direction: column;
+      align-items: center; gap: 8px;
+      cursor: pointer;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.08);
+      transition: box-shadow 0.15s, transform 0.12s;
+      border: 2px solid transparent;
+      text-align: center;
+    }
+    .cartella-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.13); transform: translateY(-2px); }
+    .cartella-card.active { border-color: #e07b39; }
+    .cartella-icon { font-size: 2.4rem; line-height: 1; }
+    .cartella-nome { font-size: 0.85rem; font-weight: 800; color: #333; }
+
+    /* ── Sezione file ── */
+    .file-section {
+      max-width: 720px; margin: 0 auto;
+      padding: 0 16px 16px;
+      display: none;
+    }
+    .file-section.visible { display: block; }
+
+    .file-section-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 12px; gap: 10px;
+    }
+    .file-section-title {
+      font-size: 1rem; font-weight: 800; color: #333;
+    }
+    .btn-upload {
+      background: #e07b39; color: #fff; border: none;
+      border-radius: 20px; padding: 7px 16px;
+      font-family: 'Nunito', sans-serif; font-size: 0.82rem; font-weight: 700;
+      cursor: pointer; display: flex; align-items: center; gap: 6px;
+      white-space: nowrap;
+    }
+    .btn-upload:hover { background: #c96a28; }
+    .btn-upload input[type=file] { display: none; }
+
+    .file-list { display: flex; flex-direction: column; gap: 8px; }
+
+    .file-card {
+      background: #fff; border-radius: 10px;
+      padding: 12px 14px;
+      display: flex; align-items: center; gap: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    }
+    .file-icon { font-size: 1.6rem; flex-shrink: 0; }
+    .file-info { flex: 1; min-width: 0; }
+    .file-nome {
+      font-size: 0.85rem; font-weight: 700; color: #222;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .file-meta { font-size: 0.72rem; color: #888; margin-top: 2px; }
+    .file-actions { display: flex; gap: 6px; flex-shrink: 0; }
+    .btn-icon {
+      background: none; border: 1px solid #ddd; border-radius: 8px;
+      padding: 5px 8px; font-size: 0.95rem; cursor: pointer;
+      transition: background 0.12s;
+    }
+    .btn-icon:hover { background: #f0f0f0; }
+    .btn-icon.danger:hover { background: #fdebd0; border-color: #e07b39; }
+
+    .empty-files {
+      text-align: center; color: #aaa; padding: 2rem 1rem;
+      font-size: 0.9rem;
+    }
+
+    /* ── Progress upload ── */
+    .upload-progress {
+      background: #fff; border-radius: 10px; padding: 12px 14px;
+      display: none; align-items: center; gap: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    }
+    .upload-progress.visible { display: flex; }
+    .progress-bar-wrap {
+      flex: 1; background: #eee; border-radius: 4px; height: 6px; overflow: hidden;
+    }
+    .progress-bar { height: 100%; background: #e07b39; width: 0; transition: width 0.2s; }
+    .progress-label { font-size: 0.78rem; color: #888; white-space: nowrap; }
+
+    /* ── Spinner ── */
+    .spinner {
+      width: 30px; height: 30px;
+      border: 3px solid #eee; border-top-color: #e07b39;
+      border-radius: 50%; animation: spin 0.7s linear infinite;
+      margin: 2rem auto;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Accesso negato ── */
+    .access-denied {
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; min-height: calc(100vh - 56px);
+      gap: 12px; text-align: center; padding: 2rem;
+    }
+    .access-denied .icon { font-size: 3rem; }
+    .access-denied p { color: #888; font-size: 0.9rem; }
+
+    /* ── Bottom nav ── */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      height: 62px; background: #fff;
+      border-top: 1px solid #e0e0e0;
+      display: flex; align-items: stretch; z-index: 100;
+      box-shadow: 0 -2px 8px rgba(0,0,0,0.07);
+    }
+    .nav-item {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-decoration: none; color: #999;
+      font-size: 0.58rem; font-weight: 600; gap: 2px;
+    }
+    .nav-item.active { color: #e07b39; }
+    .nav-item .nav-icon { font-size: 1.2rem; line-height: 1; }
+  </style>
+</head>
+<body>
+
+  <header class="top-header">
+    <a href="javascript:history.back()" class="back-btn">←</a>
+    <h1>📁 Area Documenti</h1>
+    <div id="nav-auth-slot"></div>
+  </header>
+
+  <div id="main-content">
+    <div class="spinner" style="margin-top:3rem"></div>
+  </div>
+
+  <nav class="bottom-nav">
+    <a href="index.html" class="nav-item"><img src="https://res.cloudinary.com/dxqyprtzh/image/upload/v1780171524/viso_campo_brd2ic.webp" alt="" style="width:28px;height:28px;border-radius:50%;object-fit:cover;display:block;">Home</a>
+    <a href="comunita.html" class="nav-item"><span class="nav-icon">🏘️</span>Comunità</a>
+    <a href="staff.html" class="nav-item"><span class="nav-icon">🤡</span>Staff</a>
+    <a href="minori.html?comunita=after-us" class="nav-item"><span class="nav-icon">🌟</span>After Us</a>
+    <a href="amici.html" class="nav-item"><span class="nav-icon">🤝</span>Amici</a>
+    <a href="documenti.html" class="nav-item active nav-doc-link"><span class="nav-icon">📁</span>Documenti</a>
+    <a href="#" class="nav-item"><span class="nav-icon">📋</span>Progetti</a>
+    <a href="giornale.html" class="nav-item"><span class="nav-icon">📰</span>Giornale</a>
+  </nav>
+
+  <script type="module">
+    import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getStorage, ref, listAll, getDownloadURL, uploadBytesResumable, deleteObject, getMetadata }
+      from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
+    import { setupNavAuth } from './js/nav-auth.js';
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyC18lzwqhYcW29TsEO6Oy4Bqvb2PMBUmAg",
+      authDomain: "campo-dei-fiori.firebaseapp.com",
+      projectId: "campo-dei-fiori",
+      storageBucket: "campo-dei-fiori.firebasestorage.app",
+      messagingSenderId: "928976798756",
+      appId: "1:928976798756:web:1b90027ec9f03b203e44b1"
+    };
+
+    const app     = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+    const auth    = getAuth(app);
+    const db      = getFirestore(app);
+    const storage = getStorage(app);
+    setupNavAuth();
+
+    const ADMIN_UID   = 'mCSgNMVEphVIIf4HX0bkcKq2ZKv2';
+    const MASSIMO_UID = '0u41pvwSTAaryAGWAG8gwuxrZ293';
+
+    const CARTELLE_ALL = [
+      { id: 'bella-mbriana', label: 'Bella Mbriana', emoji: '🌸' },
+      { id: 'itaca',         label: 'Itaca',         emoji: '⚓' },
+      { id: 'fortapasc',     label: 'Fortapasc',     emoji: '🏠' },
+      { id: 'macrame',       label: 'Macramè',       emoji: '🧶' },
+      { id: 'willy-coyote',  label: 'Willy Coyote',  emoji: '🐺' },
+      { id: 'generale',      label: 'Generale',      emoji: '📂' },
+    ];
+
+    let currentUser   = null;
+    let isAdmin       = false;
+    let isMassimo     = false;
+    let isCoord       = false;
+    let myComunitaId  = null;
+    let cartelleAccesso = [];
+    let cartellaAttiva  = null;
+
+    function fileIcon(nome) {
+      const ext = (nome.split('.').pop() || '').toLowerCase();
+      if (['pdf'].includes(ext))                        return '📄';
+      if (['doc','docx'].includes(ext))                 return '📝';
+      if (['xls','xlsx'].includes(ext))                 return '📊';
+      if (['jpg','jpeg','png','gif','webp'].includes(ext)) return '🖼️';
+      return '📎';
+    }
+
+    function formatBytes(b) {
+      if (!b) return '';
+      if (b < 1024) return b + ' B';
+      if (b < 1048576) return (b/1024).toFixed(1) + ' KB';
+      return (b/1048576).toFixed(1) + ' MB';
+    }
+
+    function formatDate(iso) {
+      if (!iso) return '';
+      return new Date(iso).toLocaleDateString('it-IT', { day:'numeric', month:'short', year:'numeric' });
+    }
+
+    async function renderCartelle() {
+      const content = document.getElementById('main-content');
+      content.innerHTML = `
+        <div class="cartelle-grid" id="cartelle-grid"></div>
+        <div class="file-section" id="file-section">
+          <div class="file-section-header">
+            <div class="file-section-title" id="file-section-title"></div>
+            <label class="btn-upload">
+              ⬆️ Carica
+              <input type="file" id="input-upload" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif,.webp">
+            </label>
+          </div>
+          <div class="upload-progress" id="upload-progress">
+            <span id="upload-filename" style="font-size:0.78rem;color:#555;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+            <div class="progress-bar-wrap"><div class="progress-bar" id="progress-bar"></div></div>
+            <span class="progress-label" id="progress-label">0%</span>
+          </div>
+          <div class="file-list" id="file-list"></div>
+        </div>`;
+
+      const grid = document.getElementById('cartelle-grid');
+      cartelleAccesso.forEach(c => {
+        const card = document.createElement('div');
+        card.className = 'cartella-card';
+        card.dataset.id = c.id;
+        card.innerHTML = `<div class="cartella-icon">${c.emoji}</div><div class="cartella-nome">${c.label}</div>`;
+        card.addEventListener('click', () => openCartella(c));
+        grid.appendChild(card);
+      });
+
+      document.getElementById('input-upload').addEventListener('change', e => {
+        const file = e.target.files[0];
+        if (file && cartellaAttiva) uploadFile(file);
+        e.target.value = '';
+      });
+    }
+
+    async function openCartella(cartella) {
+      cartellaAttiva = cartella;
+      document.querySelectorAll('.cartella-card').forEach(c => c.classList.toggle('active', c.dataset.id === cartella.id));
+      document.getElementById('file-section-title').textContent = `${cartella.emoji} ${cartella.label}`;
+      const section = document.getElementById('file-section');
+      section.classList.add('visible');
+      section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      await loadFiles(cartella.id);
+    }
+
+    async function loadFiles(cartellaId) {
+      const list = document.getElementById('file-list');
+      list.innerHTML = '<div class="spinner"></div>';
+      try {
+        const folderRef = ref(storage, `documenti/${cartellaId}`);
+        const result    = await listAll(folderRef);
+        if (result.items.length === 0) {
+          list.innerHTML = '<p class="empty-files">📭 Nessun documento in questa cartella.</p>';
+          return;
+        }
+        const files = await Promise.all(result.items.map(async item => {
+          const [url, meta] = await Promise.all([getDownloadURL(item), getMetadata(item)]);
+          return { ref: item, name: item.name, url, size: meta.size, updated: meta.updated };
+        }));
+        files.sort((a, b) => new Date(b.updated) - new Date(a.updated));
+        list.innerHTML = '';
+        files.forEach(f => {
+          const card = document.createElement('div');
+          card.className = 'file-card';
+          const canDelete = isAdmin || isMassimo;
+          card.innerHTML = `
+            <div class="file-icon">${fileIcon(f.name)}</div>
+            <div class="file-info">
+              <div class="file-nome" title="${f.name}">${f.name}</div>
+              <div class="file-meta">${formatBytes(f.size)} · ${formatDate(f.updated)}</div>
+            </div>
+            <div class="file-actions">
+              <a class="btn-icon" href="${f.url}" target="_blank" download title="Scarica">⬇️</a>
+              ${canDelete ? `<button class="btn-icon danger" data-path="${f.ref.fullPath}" title="Elimina">🗑️</button>` : ''}
+            </div>`;
+          if (canDelete) {
+            card.querySelector('.btn-icon.danger').addEventListener('click', async btn => {
+              if (!confirm(`Eliminare "${f.name}"?`)) return;
+              await deleteObject(f.ref);
+              card.remove();
+              if (!document.querySelector('.file-card')) {
+                list.innerHTML = '<p class="empty-files">📭 Nessun documento in questa cartella.</p>';
+              }
+            });
+          }
+          list.appendChild(card);
+        });
+      } catch (e) {
+        list.innerHTML = `<p class="empty-files">Errore: ${e.message}</p>`;
+      }
+    }
+
+    function uploadFile(file) {
+      const progress  = document.getElementById('upload-progress');
+      const bar       = document.getElementById('progress-bar');
+      const label     = document.getElementById('progress-label');
+      const fnLabel   = document.getElementById('upload-filename');
+      fnLabel.textContent = file.name;
+      bar.style.width = '0';
+      label.textContent = '0%';
+      progress.classList.add('visible');
+
+      const fileRef  = ref(storage, `documenti/${cartellaAttiva.id}/${file.name}`);
+      const task     = uploadBytesResumable(fileRef, file);
+
+      task.on('state_changed',
+        snap => {
+          const pct = Math.round(snap.bytesTransferred / snap.totalBytes * 100);
+          bar.style.width = pct + '%';
+          label.textContent = pct + '%';
+        },
+        err => {
+          progress.classList.remove('visible');
+          alert('Errore upload: ' + err.message);
+        },
+        async () => {
+          progress.classList.remove('visible');
+          await loadFiles(cartellaAttiva.id);
+        }
+      );
+    }
+
+    function showAccessDenied() {
+      document.getElementById('main-content').innerHTML = `
+        <div class="access-denied">
+          <div class="icon">🔒</div>
+          <strong>Accesso riservato</strong>
+          <p>Quest'area è riservata allo staff autorizzato.</p>
+          <a href="index.html" style="color:#e07b39;font-weight:700">← Torna alla home</a>
+        </div>`;
+    }
+
+    onAuthStateChanged(auth, async user => {
+      currentUser = user;
+
+      if (!user) { showAccessDenied(); return; }
+
+      isAdmin   = user.uid === ADMIN_UID;
+      isMassimo = user.uid === MASSIMO_UID;
+
+      if (!isAdmin && !isMassimo) {
+        const snap = await getDoc(doc(db, 'staff', user.uid));
+        if (snap.exists()) {
+          const ruolo = snap.data().ruolo || '';
+          isCoord = ruolo.includes('Coordinatrice');
+          myComunitaId = snap.data().comunitaId || null;
+        }
+      }
+
+      if (!isAdmin && !isMassimo && !isCoord) { showAccessDenied(); return; }
+
+      if (isAdmin || isMassimo) {
+        cartelleAccesso = CARTELLE_ALL;
+      } else {
+        cartelleAccesso = CARTELLE_ALL.filter(c => c.id === myComunitaId);
+      }
+
+      if (cartelleAccesso.length === 0) { showAccessDenied(); return; }
+
+      renderCartelle();
+    });
+  </script>
+</body>
+</html>
