@@ -1,12 +1,12 @@
 /**
  * notifiche.js — Gestione token FCM per Campo dei Fiori
  *
- * FIX applicati:
- * - Usa navigator.serviceWorker.ready invece di registrare un secondo SW
- *   (evita il conflitto di scope con firebase-messaging-sw.js già registrato)
- * - Salva il token anche per utenti nella collezione 'amici'
- * - Aggiunge logging per facilitare il debugging
- * - Gestisce correttamente il caso token null
+ * Viene chiamato da nav-auth.js ad ogni login utente.
+ * Assicura che:
+ *  1. Il service worker FCM sia quello attivo (non un vecchio SW di caching)
+ *  2. Il token FCM venga ottenuto e salvato su Firestore ad ogni sessione
+ *  3. Se il token è cambiato rispetto a quello salvato, venga aggiornato
+ *  4. I log in console permettano di diagnosticare ogni passo
  */
 
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
@@ -14,6 +14,7 @@ import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/fireb
 import { getFirestore, doc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const VAPID_KEY = 'BIUkTONw1oYZnDjfYX26iLF77yrX10mbHVEtBFwrXRldPzeRD1hFk-3KzC4hc9j9Ne0Zi8BCrUro-J2Hw2xREgU';
+const SW_URL    = '/firebase-messaging-sw.js';
 
 const firebaseConfig = {
   apiKey:            "AIzaSyC18lzwqhYcW29TsEO6Oy4Bqvb2PMBUmAg",
@@ -27,12 +28,48 @@ const firebaseConfig = {
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const db  = getFirestore(app);
 
+/**
+ * Assicura che firebase-messaging-sw.js sia il SW attivo.
+ * Se è in stato "waiting" (c'era un vecchio SW), forza l'aggiornamento.
+ */
+async function getFcmServiceWorker() {
+  // Registra (o recupera) il SW FCM
+  let reg = await navigator.serviceWorker.register(SW_URL, { scope: '/' });
+  console.log('[FCM] SW stato:', reg.active?.scriptURL?.split('/').pop(),
+              '| installing:', !!reg.installing,
+              '| waiting:', !!reg.waiting);
+
+  // Se c'è un SW in attesa (nuovo SW installato ma non ancora attivo),
+  // invia skipWaiting e aspetta che diventi attivo
+  if (reg.waiting) {
+    console.log('[FCM] SW in waiting → forzo attivazione');
+    reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+    // Aspetta l'evento controllerchange (il nuovo SW prende il controllo)
+    await new Promise(resolve => {
+      navigator.serviceWorker.addEventListener('controllerchange', resolve, { once: true });
+      // Timeout di sicurezza: 3 secondi
+      setTimeout(resolve, 3000);
+    });
+    // Rileggi la registration aggiornata
+    reg = await navigator.serviceWorker.getRegistration(SW_URL) || reg;
+  }
+
+  // Aspetta che il SW sia attivo
+  const swReg = await navigator.serviceWorker.ready;
+  console.log('[FCM] SW attivo:', swReg.active?.scriptURL?.split('/').pop() || 'sconosciuto');
+  return swReg;
+}
+
 export async function setupNotifiche(user) {
   if (!user) return;
 
   // FCM richiede Notification API e Service Worker
-  if (!('Notification' in window) || !('serviceWorker' in navigator)) {
-    console.log('[FCM] Browser non supportato');
+  if (!('Notification' in window)) {
+    console.log('[FCM] Notification API non supportata');
+    return;
+  }
+  if (!('serviceWorker' in navigator)) {
+    console.log('[FCM] Service Worker non supportato');
     return;
   }
 
@@ -46,22 +83,23 @@ export async function setupNotifiche(user) {
   }
 
   try {
-    // Chiedi permesso se non ancora dato
+    // Chiedi permesso notifiche se non ancora dato
     let permission = Notification.permission;
+    console.log('[FCM] Permesso attuale:', permission);
+
     if (permission === 'default') {
       permission = await Notification.requestPermission();
+      console.log('[FCM] Permesso dopo richiesta:', permission);
     }
     if (permission !== 'granted') {
-      console.log('[FCM] Permesso notifiche negato:', permission);
+      console.log('[FCM] Permesso non concesso — skip');
       return;
     }
 
-    // ── FIX CRITICO: usa il SW già registrato (firebase-messaging-sw.js)
-    //    invece di registrarne uno nuovo con scope '/' identico.
-    //    navigator.serviceWorker.ready attende che il SW sia attivo.
-    const swReg = await navigator.serviceWorker.ready;
-    console.log('[FCM] Service worker attivo:', swReg.active?.scriptURL);
+    // Ottieni il SW FCM attivo (con forza aggiornamento se necessario)
+    const swReg = await getFcmServiceWorker();
 
+    // Ottieni il token FCM
     const messaging = getMessaging(app);
     const token = await getToken(messaging, {
       vapidKey: VAPID_KEY,
@@ -69,37 +107,39 @@ export async function setupNotifiche(user) {
     });
 
     if (!token) {
-      console.warn('[FCM] Token null — il SW potrebbe non essere attivo o la VAPID key non valida');
+      console.warn('[FCM] getToken() ha restituito null — SW non è FCM-ready?');
       return;
     }
-
     console.log('[FCM] Token ottenuto:', token.slice(0, 20) + '…');
 
-    // ── FIX: salva token cercando anche nella collezione 'amici'
-    let ref  = null;
-    let found = false;
+    // Salva il token su Firestore (cercando in utenti → staff → amici)
+    let saved = false;
     for (const coll of ['utenti', 'staff', 'amici']) {
-      const snap = await getDoc(doc(db, coll, user.uid));
-      if (snap.exists()) {
-        ref = doc(db, coll, user.uid);
-        found = true;
-        // Aggiorna solo se il token è cambiato (evita scritture inutili)
+      try {
+        const snap = await getDoc(doc(db, coll, user.uid));
+        if (!snap.exists()) continue;
+
         const prevToken = snap.data().fcmToken;
         if (prevToken === token) {
-          console.log('[FCM] Token già aggiornato in', coll);
+          console.log('[FCM] Token invariato in', coll, '— nessun aggiornamento necessario');
+          saved = true;
           break;
         }
-        await updateDoc(ref, { fcmToken: token });
-        console.log('[FCM] Token salvato in', coll, 'per', user.uid);
+
+        await updateDoc(doc(db, coll, user.uid), { fcmToken: token });
+        console.log('[FCM] Token aggiornato in', coll, 'per UID', user.uid);
+        saved = true;
         break;
+      } catch (e) {
+        console.warn('[FCM] Errore accesso a', coll + ':', e.message);
       }
     }
 
-    if (!found) {
+    if (!saved) {
       console.warn('[FCM] Utente non trovato in nessuna collezione:', user.uid);
     }
 
-    // Notifiche in foreground (app aperta e in primo piano)
+    // Gestisci notifiche in foreground (app aperta)
     onMessage(messaging, payload => {
       const n = payload.notification || {};
       if (Notification.permission === 'granted') {
@@ -111,6 +151,6 @@ export async function setupNotifiche(user) {
     });
 
   } catch (err) {
-    console.warn('[FCM] Setup non completato:', err.message);
+    console.warn('[FCM] Errore setup:', err.message);
   }
 }

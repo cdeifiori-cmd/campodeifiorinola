@@ -56,6 +56,14 @@ self.addEventListener('notificationclick', event => {
   );
 });
 
+// Risponde al postMessage SKIP_WAITING inviato da notifiche.js
+// quando c'è un vecchio SW in "waiting" da sostituire
+self.addEventListener('message', event => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
+
 // ── Caching (ex service-worker.js) ───────────────────────────────────────
 const CACHE_NAME = 'campo-dei-fiori-v2';
 const ASSETS_TO_PRECACHE = [
