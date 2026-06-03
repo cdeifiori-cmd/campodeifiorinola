@@ -47,9 +47,24 @@
 
     /* ── Page wrapper ────────────────────────────────────────── */
     .page-wrap { max-width: 760px; margin: 0 auto; }
+
+    /* ── Section title badge/pill ────────────────────────────── */
     .section-title {
-      font-size: 0.78rem; font-weight: 800; color: #888;
-      padding: 14px 16px 6px; text-transform: uppercase; letter-spacing: 0.06em;
+      display: block; margin: 20px auto 12px;
+      padding: 6px 24px; border-radius: 20px;
+      font-weight: 700; font-size: 0.85rem;
+      color: #fff; width: fit-content;
+      text-align: center; letter-spacing: 0.05em;
+    }
+    .section-title.comunita  { background: #E8711A; }
+    .section-title.segreteria { background: #2A7F6F; }
+    /* fallback per section-title usato altrove (aree, ragazzi, ecc.) */
+    .section-title.muted {
+      background: none; color: #888;
+      font-size: 0.78rem; font-weight: 800;
+      padding: 14px 16px 6px; margin: 0;
+      border-radius: 0; width: auto; text-align: left;
+      letter-spacing: 0.06em; text-transform: uppercase;
     }
 
     /* ── Community / Area card grid (2 col → 3 col) ─────────── */
@@ -67,8 +82,29 @@
       box-shadow: 0 1px 5px rgba(0,0,0,0.07);
       transition: box-shadow 0.15s, transform 0.12s;
       border: 2px solid transparent;
+      border-top: 3px solid transparent;
     }
-    .nav-card:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.13); transform: translateY(-2px); border-color: #ffd9c0; }
+    /* Card comunità: bordo superiore arancione */
+    .nav-card.comunita-card {
+      border-top: 3px solid #E8711A;
+      box-shadow: 0 2px 8px rgba(232,113,26,0.12);
+    }
+    .nav-card.comunita-card:hover {
+      box-shadow: 0 5px 16px rgba(232,113,26,0.22);
+      transform: translateY(-2px); border-color: #E8711A;
+      border-top-color: #E8711A;
+    }
+    /* Card Documenti Generali: sfondo verde-acqua, bordo superiore */
+    .nav-card.generali-card {
+      background: #E8F5F2;
+      border-top: 3px solid #2A7F6F;
+      box-shadow: 0 2px 8px rgba(42,127,111,0.12);
+    }
+    .nav-card.generali-card:hover {
+      box-shadow: 0 5px 16px rgba(42,127,111,0.22);
+      transform: translateY(-2px); border-color: #2A7F6F;
+      border-top-color: #2A7F6F;
+    }
     .nav-card-icon { font-size: 2rem; line-height: 1; }
     .nav-card-label { font-size: 0.74rem; font-weight: 800; color: #333; line-height: 1.35; }
 
@@ -346,13 +382,13 @@
         if (!list.length) { main.innerHTML = '<p class="empty-msg">Nessuna comunità accessibile.</p>'; return; }
 
         main.innerHTML = `
-          <div class="section-title">Comunità</div>
+          <span class="section-title comunita">COMUNITÀ</span>
           <div class="card-grid" id="com-grid"></div>
-          <div class="section-title" style="margin-top:6px">Generali</div>
+          <span class="section-title segreteria">SEGRETERIA</span>
           <div style="padding:0 14px 16px" id="generali-wrap"></div>`;
 
         list.forEach(c => {
-          const card = mkEl('div', 'nav-card',
+          const card = mkEl('div', 'nav-card comunita-card',
             `<div class="nav-card-icon">${EMOJI_COM[c.id]||'🏘️'}</div>
              <div class="nav-card-label">${c.label}</div>`);
           card.onclick = () => { navStack = [navStack[0]]; go(c.label, () => showRagazzi(c)); };
@@ -360,7 +396,7 @@
         });
 
         // Card fissa "Documenti Generali"
-        const generalCard = mkEl('div', 'nav-card',
+        const generalCard = mkEl('div', 'nav-card generali-card',
           `<div class="nav-card-icon">🗂️</div>
            <div class="nav-card-label">Documenti Generali</div>`);
         generalCard.style.cssText = 'max-width:160px';
@@ -461,7 +497,7 @@
           main.innerHTML = '<p class="empty-msg">Nessun ragazzo/a in questa comunità.</p>'; return;
         }
         main.innerHTML = `
-          <div class="section-title">${EMOJI_COM[community.id]||''} ${community.label}</div>
+          <div class="section-title muted">${EMOJI_COM[community.id]||''} ${community.label}</div>
           <div class="person-grid" id="person-grid"></div>`;
 
         list.forEach(r => {
@@ -479,7 +515,7 @@
     /* ── LEVEL 2 – Aree documentali ─────────────────────────────── */
     function showAreas(community, ragazzo) {
       main.innerHTML = `
-        <div class="section-title">📂 ${ragazzo.nome||ragazzo.id}</div>
+        <div class="section-title muted">📂 ${ragazzo.nome||ragazzo.id}</div>
         <div class="card-grid" id="area-grid"></div>`;
 
       AREE.forEach(area => {
