@@ -253,7 +253,7 @@
 <body>
 
   <header class="top-header">
-    <a href="javascript:history.back()" class="back-btn">←</a>
+    <button class="back-btn" id="btn-back">←</button>
     <h1>📁 Area Documenti</h1>
     <div id="nav-auth-slot"></div>
   </header>
@@ -353,13 +353,31 @@
       navStack.push({ label, render: renderFn });
       renderFn();
       renderBreadcrumb();
+      updateBackBtn();
     }
 
     function goTo(index) {
       navStack = navStack.slice(0, index + 1);
       navStack[index].render();
       renderBreadcrumb();
+      updateBackBtn();
     }
+
+    function goBack() {
+      if (navStack.length <= 1) {
+        // Livello 0: torna a index.html
+        location.href = 'index.html';
+      } else {
+        // Livello 1+: torna al livello precedente nello stack
+        goTo(navStack.length - 2);
+      }
+    }
+
+    function updateBackBtn() {
+      // Nessuna variazione visiva necessaria — il comportamento cambia solo via JS
+    }
+
+    document.getElementById('btn-back').addEventListener('click', goBack);
 
     function renderBreadcrumb() {
       if (navStack.length <= 1) { breadcrumb.style.display = 'none'; return; }
