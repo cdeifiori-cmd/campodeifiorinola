@@ -12,7 +12,7 @@ import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/fireb
 import { getFirestore, doc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 // ⚠️ Sostituisci con la tua chiave VAPID da Firebase Console
-const VAPID_KEY = 'BLbc23M1_SOSTITUISCI_CON_LA_TUA_CHIAVE_VAPID_DA_FIREBASE_CONSOLE';
+const VAPID_KEY = 'BIUkTONw1oYZnDjfYX26iLF77yrX10mbHVEtBFwrXRldPzeRD1hFk-3KzC4hc9j9Ne0Zi8BCrUro-J2Hw2xREgU';
 
 const firebaseConfig = {
   apiKey: "AIzaSyC18lzwqhYcW29TsEO6Oy4Bqvb2PMBUmAg",
