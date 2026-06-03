@@ -14,143 +14,185 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Nunito', sans-serif; background: #f5f5f5; padding-bottom: 80px; min-height: 100vh; }
 
+    /* ── Header ─────────────────────────────────────────────── */
     .top-header {
       background: #e07b39; color: #fff;
       display: flex; align-items: center;
       padding: 0 1rem; height: 56px;
-      position: sticky; top: 0; z-index: 100;
+      position: sticky; top: 0; z-index: 200;
       box-shadow: 0 2px 6px rgba(0,0,0,0.15);
       gap: 10px;
     }
     .top-header .back-btn {
       background: rgba(0,0,0,0.2); border: none; color: #fff;
-      border-radius: 50%; width: 34px; height: 34px;
-      font-size: 1rem; cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
+      border-radius: 50%; width: 34px; height: 34px; font-size: 1.1rem;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
       text-decoration: none; flex-shrink: 0;
     }
-    .top-header h1 { font-size: 1.1rem; font-weight: 800; flex: 1; }
+    .top-header h1 { font-size: 1.05rem; font-weight: 800; flex: 1; }
 
-    /* ── Griglia cartelle ── */
-    .cartelle-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      padding: 16px;
-      max-width: 720px;
-      margin: 0 auto;
+    /* ── Breadcrumb ──────────────────────────────────────────── */
+    .breadcrumb {
+      position: sticky; top: 56px; z-index: 100;
+      display: none; align-items: center; flex-wrap: wrap;
+      background: #fff4ec; border-bottom: 1px solid #ffd9c0;
+      padding: 8px 14px; gap: 2px; font-size: 0.78rem;
+      overflow-x: auto; white-space: nowrap;
     }
-    @media (min-width: 600px) {
-      .cartelle-grid { grid-template-columns: repeat(3, 1fr); }
+    .bc-item { color: #e07b39; font-weight: 700; cursor: pointer; padding: 2px 4px; border-radius: 4px; }
+    .bc-item:hover { background: rgba(224,123,57,0.1); }
+    .bc-item.current { color: #666; cursor: default; font-weight: 600; }
+    .bc-item.current:hover { background: none; }
+    .bc-sep { color: #d4a07a; margin: 0 1px; font-size: 0.85rem; }
+
+    /* ── Page wrapper ────────────────────────────────────────── */
+    .page-wrap { max-width: 760px; margin: 0 auto; }
+    .section-title {
+      font-size: 0.78rem; font-weight: 800; color: #888;
+      padding: 14px 16px 6px; text-transform: uppercase; letter-spacing: 0.06em;
     }
 
-    .cartella-card {
-      background: #fff;
-      border-radius: 14px;
-      padding: 20px 12px 16px;
-      display: flex; flex-direction: column;
-      align-items: center; gap: 8px;
-      cursor: pointer;
-      box-shadow: 0 1px 6px rgba(0,0,0,0.08);
+    /* ── Community / Area card grid (2 col → 3 col) ─────────── */
+    .card-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 10px; padding: 6px 14px 16px;
+    }
+    @media (min-width: 480px) { .card-grid { grid-template-columns: repeat(3, 1fr); } }
+    @media (min-width: 700px) { .card-grid { grid-template-columns: repeat(4, 1fr); } }
+
+    .nav-card {
+      background: #fff; border-radius: 12px; padding: 16px 10px 13px;
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+      cursor: pointer; text-align: center;
+      box-shadow: 0 1px 5px rgba(0,0,0,0.07);
       transition: box-shadow 0.15s, transform 0.12s;
       border: 2px solid transparent;
-      text-align: center;
     }
-    .cartella-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.13); transform: translateY(-2px); }
-    .cartella-card.active { border-color: #e07b39; }
-    .cartella-icon { font-size: 2.4rem; line-height: 1; }
-    .cartella-nome { font-size: 0.85rem; font-weight: 800; color: #333; }
+    .nav-card:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.13); transform: translateY(-2px); border-color: #ffd9c0; }
+    .nav-card-icon { font-size: 2rem; line-height: 1; }
+    .nav-card-label { font-size: 0.74rem; font-weight: 800; color: #333; line-height: 1.35; }
 
-    /* ── Sezione file ── */
-    .file-section {
-      max-width: 720px; margin: 0 auto;
-      padding: 0 16px 16px;
-      display: none;
+    /* ── Person grid ─────────────────────────────────────────── */
+    .person-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; padding: 2px; }
+    @media (min-width: 480px) { .person-grid { grid-template-columns: repeat(4, 1fr); } }
+    @media (min-width: 700px) { .person-grid { grid-template-columns: repeat(5, 1fr); } }
+
+    .person-card {
+      background: #fff; cursor: pointer; display: flex; flex-direction: column;
+      overflow: hidden; transition: opacity 0.15s;
     }
-    .file-section.visible { display: block; }
+    .person-card:hover { opacity: 0.85; }
+    .person-foto {
+      width: 100%; aspect-ratio: 1; overflow: hidden; background: #e8f4e0;
+      display: flex; align-items: center; justify-content: center; font-size: 2.5rem;
+    }
+    .person-foto img { width: 100%; height: 100%; object-fit: cover; object-position: top center; display: block; }
+    .person-nome { padding: 6px 8px 8px; font-size: 0.8rem; font-weight: 800; color: #222; }
 
-    .file-section-header {
+    /* ── Folder view header ──────────────────────────────────── */
+    .folder-header {
       display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: 12px; gap: 10px;
+      padding: 10px 14px 6px; gap: 8px; flex-wrap: wrap;
     }
-    .file-section-title {
-      font-size: 1rem; font-weight: 800; color: #333;
+    .folder-title { font-size: 0.96rem; font-weight: 800; color: #333; }
+    .folder-actions { display: flex; gap: 7px; flex-wrap: wrap; }
+    .btn-act {
+      background: #fff; border: 1.5px solid #ddd; border-radius: 20px;
+      padding: 6px 13px; font-family: 'Nunito', sans-serif;
+      font-size: 0.78rem; font-weight: 700; cursor: pointer;
+      display: flex; align-items: center; gap: 4px; white-space: nowrap;
+      transition: border-color 0.12s, background 0.12s;
     }
-    .btn-upload {
-      background: #e07b39; color: #fff; border: none;
-      border-radius: 20px; padding: 7px 16px;
-      font-family: 'Nunito', sans-serif; font-size: 0.82rem; font-weight: 700;
-      cursor: pointer; display: flex; align-items: center; gap: 6px;
-      white-space: nowrap;
-    }
-    .btn-upload:hover { background: #c96a28; }
-    .btn-upload input[type=file] { display: none; }
+    .btn-act:hover { border-color: #e07b39; background: #fff4ec; }
+    .btn-act input[type=file] { display: none; }
 
-    .file-list { display: flex; flex-direction: column; gap: 8px; }
-
-    .file-card {
-      background: #fff; border-radius: 10px;
-      padding: 12px 14px;
-      display: flex; align-items: center; gap: 12px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    /* ── Item list ───────────────────────────────────────────── */
+    .item-list { padding: 4px 12px 12px; display: flex; flex-direction: column; gap: 4px; }
+    .item-row {
+      background: #fff; border-radius: 10px; padding: 10px 13px;
+      display: flex; align-items: center; gap: 11px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      transition: box-shadow 0.12s;
     }
-    .file-icon { font-size: 1.6rem; flex-shrink: 0; }
-    .file-info { flex: 1; min-width: 0; }
-    .file-nome {
-      font-size: 0.85rem; font-weight: 700; color: #222;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }
-    .file-meta { font-size: 0.72rem; color: #888; margin-top: 2px; }
-    .file-actions { display: flex; gap: 6px; flex-shrink: 0; }
+    .item-row:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .folder-row { cursor: pointer; }
+    .item-icon { font-size: 1.45rem; flex-shrink: 0; line-height: 1; }
+    .item-info { flex: 1; min-width: 0; }
+    .item-name { font-size: 0.84rem; font-weight: 700; color: #222; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .item-meta { font-size: 0.69rem; color: #888; margin-top: 2px; }
+    .item-chevron { color: #bbb; font-size: 1.2rem; flex-shrink: 0; }
+    .item-actions { display: flex; gap: 5px; flex-shrink: 0; }
     .btn-icon {
-      background: none; border: 1px solid #ddd; border-radius: 8px;
-      padding: 5px 8px; font-size: 0.95rem; cursor: pointer;
-      transition: background 0.12s;
+      background: none; border: 1px solid #e5e5e5; border-radius: 7px;
+      padding: 4px 8px; font-size: 0.88rem; cursor: pointer; transition: background 0.12s;
     }
-    .btn-icon:hover { background: #f0f0f0; }
+    .btn-icon:hover { background: #f5f5f5; }
     .btn-icon.danger:hover { background: #fdebd0; border-color: #e07b39; }
 
-    .empty-files {
-      text-align: center; color: #aaa; padding: 2rem 1rem;
-      font-size: 0.9rem;
-    }
-
-    /* ── Progress upload ── */
+    /* ── Upload progress ─────────────────────────────────────── */
     .upload-progress {
-      background: #fff; border-radius: 10px; padding: 12px 14px;
-      display: none; align-items: center; gap: 12px;
+      background: #fff; border-radius: 10px; margin: 0 12px 6px;
+      padding: 9px 13px; display: flex; align-items: center; gap: 10px;
       box-shadow: 0 1px 4px rgba(0,0,0,0.07);
     }
-    .upload-progress.visible { display: flex; }
-    .progress-bar-wrap {
-      flex: 1; background: #eee; border-radius: 4px; height: 6px; overflow: hidden;
-    }
-    .progress-bar { height: 100%; background: #e07b39; width: 0; transition: width 0.2s; }
-    .progress-label { font-size: 0.78rem; color: #888; white-space: nowrap; }
+    .upload-progress.hidden { display: none; }
+    .up-name { font-size: 0.74rem; color: #666; max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-shrink: 0; }
+    .progress-bar-wrap { flex: 1; background: #eee; border-radius: 4px; height: 6px; overflow: hidden; }
+    .progress-bar { height: 100%; background: #e07b39; width: 0; transition: width 0.15s; border-radius: 4px; }
+    .up-pct { font-size: 0.74rem; color: #888; white-space: nowrap; flex-shrink: 0; }
 
-    /* ── Spinner ── */
-    .spinner {
-      width: 30px; height: 30px;
-      border: 3px solid #eee; border-top-color: #e07b39;
-      border-radius: 50%; animation: spin 0.7s linear infinite;
-      margin: 2rem auto;
+    /* ── Modal ───────────────────────────────────────────────── */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 500; padding: 20px;
     }
-    @keyframes spin { to { transform: rotate(360deg); } }
+    .modal-overlay.hidden { display: none; }
+    .modal-box {
+      background: #fff; border-radius: 16px; padding: 22px 18px 18px;
+      max-width: 330px; width: 100%; box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+    }
+    .modal-box h3 { font-size: 1rem; font-weight: 800; margin-bottom: 12px; color: #333; }
+    .modal-input {
+      width: 100%; border: 1.5px solid #ddd; border-radius: 10px;
+      padding: 9px 13px; font-family: 'Nunito', sans-serif;
+      font-size: 0.9rem; outline: none; margin-bottom: 14px;
+    }
+    .modal-input:focus { border-color: #e07b39; }
+    .modal-btns { display: flex; gap: 9px; justify-content: flex-end; }
+    .btn-ghost {
+      background: none; border: 1.5px solid #ddd; border-radius: 20px;
+      padding: 7px 15px; font-family: 'Nunito', sans-serif;
+      font-size: 0.82rem; font-weight: 700; cursor: pointer;
+    }
+    .btn-orange {
+      background: #e07b39; color: #fff; border: none; border-radius: 20px;
+      padding: 7px 15px; font-family: 'Nunito', sans-serif;
+      font-size: 0.82rem; font-weight: 700; cursor: pointer;
+    }
+    .btn-orange:hover { background: #c96a28; }
 
-    /* ── Accesso negato ── */
+    /* ── Access denied ───────────────────────────────────────── */
     .access-denied {
       display: flex; flex-direction: column; align-items: center;
-      justify-content: center; min-height: calc(100vh - 56px);
+      justify-content: center; min-height: calc(100vh - 130px);
       gap: 12px; text-align: center; padding: 2rem;
     }
-    .access-denied .icon { font-size: 3rem; }
-    .access-denied p { color: #888; font-size: 0.9rem; }
+    .access-denied .ad-icon { font-size: 3rem; }
+    .access-denied p { color: #888; font-size: 0.88rem; }
 
-    /* ── Bottom nav ── */
+    /* ── Spinner / empty ─────────────────────────────────────── */
+    .spinner {
+      width: 32px; height: 32px; border: 3px solid #eee; border-top-color: #e07b39;
+      border-radius: 50%; animation: spin 0.7s linear infinite; margin: 3rem auto;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .empty-msg { color: #aaa; text-align: center; padding: 2rem 1rem; font-size: 0.88rem; }
+
+    /* ── Bottom nav ──────────────────────────────────────────── */
     .bottom-nav {
-      position: fixed; bottom: 0; left: 0; right: 0;
-      height: 62px; background: #fff;
-      border-top: 1px solid #e0e0e0;
+      position: fixed; bottom: 0; left: 0; right: 0; height: 62px;
+      background: #fff; border-top: 1px solid #e0e0e0;
       display: flex; align-items: stretch; z-index: 100;
       box-shadow: 0 -2px 8px rgba(0,0,0,0.07);
     }
@@ -158,7 +200,7 @@
       flex: 1; display: flex; flex-direction: column;
       align-items: center; justify-content: center;
       text-decoration: none; color: #999;
-      font-size: 0.58rem; font-weight: 600; gap: 2px;
+      font-size: 0.56rem; font-weight: 600; gap: 2px;
     }
     .nav-item.active { color: #e07b39; }
     .nav-item .nav-icon { font-size: 1.2rem; line-height: 1; }
@@ -172,70 +214,374 @@
     <div id="nav-auth-slot"></div>
   </header>
 
-  <div id="main-content">
-    <div class="spinner" style="margin-top:3rem"></div>
+  <nav class="breadcrumb" id="breadcrumb"></nav>
+
+  <div class="page-wrap">
+    <main id="main-content"><div class="spinner"></div></main>
   </div>
 
+  <!-- Modal: nuova cartella -->
+  <div class="modal-overlay hidden" id="modal-folder">
+    <div class="modal-box">
+      <h3>📁 Nuova cartella</h3>
+      <input class="modal-input" id="input-folder-name" type="text"
+             placeholder="Nome cartella…" maxlength="80" autocomplete="off">
+      <div class="modal-btns">
+        <button class="btn-ghost" id="btn-cancel-folder">Annulla</button>
+        <button class="btn-orange" id="btn-save-folder">Crea</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom nav -->
   <nav class="bottom-nav">
-    <a href="index.html" class="nav-item"><img src="https://res.cloudinary.com/dxqyprtzh/image/upload/v1780171524/viso_campo_brd2ic.webp" alt="" style="width:28px;height:28px;border-radius:50%;object-fit:cover;display:block;">Home</a>
+    <a href="index.html" class="nav-item">
+      <img src="https://res.cloudinary.com/dxqyprtzh/image/upload/v1780171524/viso_campo_brd2ic.webp"
+           alt="" style="width:28px;height:28px;border-radius:50%;object-fit:cover;display:block;">Home
+    </a>
     <a href="comunita.html" class="nav-item"><span class="nav-icon">🏘️</span>Comunità</a>
-    <a href="staff.html" class="nav-item"><span class="nav-icon">🤡</span>Staff</a>
+    <a href="staff.html"    class="nav-item"><span class="nav-icon">🤡</span>Staff</a>
     <a href="minori.html?comunita=after-us" class="nav-item"><span class="nav-icon">🌟</span>After Us</a>
-    <a href="amici.html" class="nav-item"><span class="nav-icon">🤝</span>Amici</a>
+    <a href="amici.html"    class="nav-item"><span class="nav-icon">🤝</span>Amici</a>
     <a href="documenti.html" class="nav-item active nav-doc-link"><span class="nav-icon">📁</span>Documenti</a>
-    <a href="#" class="nav-item"><span class="nav-icon">📋</span>Progetti</a>
     <a href="giornale.html" class="nav-item"><span class="nav-icon">📰</span>Giornale</a>
   </nav>
 
   <script type="module">
-    import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-    import { getStorage, ref, listAll, getDownloadURL, uploadBytesResumable, deleteObject, getMetadata }
+    import { initializeApp, getApps }
+      from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged }
+      from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { getFirestore, doc, getDoc, collection, query, where, orderBy, getDocs }
+      from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getStorage, ref, listAll, getDownloadURL,
+             uploadBytes, uploadBytesResumable, deleteObject, getMetadata }
       from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
-    import { setupNavAuth } from './js/nav-auth.js';
+    import { setupNavAuth }       from './js/nav-auth.js';
+    import { setupDocumentiNav }  from './js/nav-docs.js';
 
     const firebaseConfig = {
-      apiKey: "AIzaSyC18lzwqhYcW29TsEO6Oy4Bqvb2PMBUmAg",
-      authDomain: "campo-dei-fiori.firebaseapp.com",
-      projectId: "campo-dei-fiori",
-      storageBucket: "campo-dei-fiori.firebasestorage.app",
+      apiKey:            "AIzaSyC18lzwqhYcW29TsEO6Oy4Bqvb2PMBUmAg",
+      authDomain:        "campo-dei-fiori.firebaseapp.com",
+      projectId:         "campo-dei-fiori",
+      storageBucket:     "campo-dei-fiori.firebasestorage.app",
       messagingSenderId: "928976798756",
-      appId: "1:928976798756:web:1b90027ec9f03b203e44b1"
+      appId:             "1:928976798756:web:1b90027ec9f03b203e44b1"
     };
-
     const app     = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
-    const auth    = getAuth(app);
     const db      = getFirestore(app);
+    const auth    = getAuth(app);
     const storage = getStorage(app);
     setupNavAuth();
+    setupDocumentiNav();
 
-    const ADMIN_UID   = 'mCSgNMVEphVIIf4HX0bkcKq2ZKv2';
-    const MASSIMO_UID = '0u41pvwSTAaryAGWAG8gwuxrZ293';
+    /* ── Constants ────────────────────────────────────────────────── */
+    const ADMIN_UID      = 'mCSgNMVEphVIIf4HX0bkcKq2ZKv2';
+    const MASSIMO_UID    = '0u41pvwSTAaryAGWAG8gwuxrZ293';
+    const VALID_COMUNITA = ['bella-mbriana','fortapasc','itaca','macrame','willy-coyote'];
+    const EMOJI_COM      = { 'bella-mbriana':'🌸','itaca':'⚓','willy-coyote':'🐺','fortapasc':'🏠','macrame':'🧶' };
 
-    const CARTELLE_ALL = [
-      { id: 'bella-mbriana', label: 'Bella Mbriana', emoji: '🌸' },
-      { id: 'itaca',         label: 'Itaca',         emoji: '⚓' },
-      { id: 'fortapasc',     label: 'Fortapasc',     emoji: '🏠' },
-      { id: 'macrame',       label: 'Macramè',       emoji: '🧶' },
-      { id: 'willy-coyote',  label: 'Willy Coyote',  emoji: '🐺' },
-      { id: 'generale',      label: 'Generale',      emoji: '📂' },
+    const AREE = [
+      { id:'Anagrafica e Giuridica',                    emoji:'📋', short:'Anagrafica' },
+      { id:'Sanitaria',                                 emoji:'🏥', short:'Sanitaria' },
+      { id:'Familiare',                                 emoji:'👪', short:'Familiare' },
+      { id:'Scolastica-Formativa',                      emoji:'📚', short:'Scolastica' },
+      { id:'Educativa',                                 emoji:'🎯', short:'Educativa' },
+      { id:'Psicologica',                               emoji:'🧠', short:'Psicologica' },
+      { id:'Relazioni e Comunicazioni Istituzionali',   emoji:'🏛️', short:'Relazioni' },
+      { id:'Amministrativa',                            emoji:'📊', short:'Amminist.' },
+      { id:'Autonomia e Progetto di Vita',              emoji:'🌱', short:'Autonomia' },
+      { id:'Varie ed Eventuali',                        emoji:'📌', short:'Varie' },
     ];
 
-    let currentUser   = null;
-    let isAdmin       = false;
-    let isMassimo     = false;
-    let isCoord       = false;
-    let myComunitaId  = null;
-    let cartelleAccesso = [];
-    let cartellaAttiva  = null;
+    /* ── User state ───────────────────────────────────────────────── */
+    let isAdmin = false, isMassimo = false, isCoord = false;
+    let myComunitaId = null;
+    let canWrite = false;  // admin, massimo, coordinatrice
 
-    function fileIcon(nome) {
-      const ext = (nome.split('.').pop() || '').toLowerCase();
-      if (['pdf'].includes(ext))                        return '📄';
+    /* ── Navigation stack ─────────────────────────────────────────── */
+    // Each entry: { label: string, render: () => void }
+    let navStack = [];
+    const main       = document.getElementById('main-content');
+    const breadcrumb = document.getElementById('breadcrumb');
+
+    function go(label, renderFn) {
+      navStack.push({ label, render: renderFn });
+      renderFn();
+      renderBreadcrumb();
+    }
+
+    function goTo(index) {
+      navStack = navStack.slice(0, index + 1);
+      navStack[index].render();
+      renderBreadcrumb();
+    }
+
+    function renderBreadcrumb() {
+      if (navStack.length <= 1) { breadcrumb.style.display = 'none'; return; }
+      breadcrumb.style.display = 'flex';
+      breadcrumb.innerHTML = navStack.map((item, i) => {
+        const sep  = i > 0 ? '<span class="bc-sep">›</span>' : '';
+        const last = i === navStack.length - 1;
+        if (last) return `${sep}<span class="bc-item current">${item.label}</span>`;
+        return `${sep}<span class="bc-item" data-idx="${i}">${item.label}</span>`;
+      }).join('');
+      breadcrumb.querySelectorAll('.bc-item[data-idx]').forEach(el => {
+        el.addEventListener('click', () => goTo(parseInt(el.dataset.idx)));
+      });
+    }
+
+    /* ── LEVEL 0 – Comunità ──────────────────────────────────────── */
+    async function showCommunities() {
+      main.innerHTML = '<div class="spinner"></div>';
+      try {
+        const snap = await getDocs(query(collection(db, 'comunita'), orderBy('ordine')));
+        const list = [];
+        snap.forEach(d => {
+          if (VALID_COMUNITA.includes(d.id) &&
+              (isAdmin || isMassimo || d.id === myComunitaId)) {
+            list.push({ id: d.id, label: d.data().nomeComunita });
+          }
+        });
+        if (!list.length) { main.innerHTML = '<p class="empty-msg">Nessuna comunità accessibile.</p>'; return; }
+
+        main.innerHTML = `<div class="section-title">Comunità</div><div class="card-grid" id="com-grid"></div>`;
+        list.forEach(c => {
+          const card = mkEl('div', 'nav-card',
+            `<div class="nav-card-icon">${EMOJI_COM[c.id]||'🏘️'}</div>
+             <div class="nav-card-label">${c.label}</div>`);
+          card.onclick = () => { navStack = [navStack[0]]; go(c.label, () => showRagazzi(c)); };
+          document.getElementById('com-grid').appendChild(card);
+        });
+      } catch(e) { main.innerHTML = `<p class="empty-msg">Errore: ${e.message}</p>`; }
+    }
+
+    /* ── LEVEL 1 – Ragazzi ───────────────────────────────────────── */
+    async function showRagazzi(community) {
+      main.innerHTML = '<div class="spinner"></div>';
+      try {
+        const snap = await getDocs(
+          query(collection(db, 'utenti'), where('comunitaId', '==', community.id))
+        );
+        const list = [];
+        snap.forEach(d => list.push({ id: d.id, ...d.data() }));
+        list.sort((a, b) => (a.nome||'').localeCompare(b.nome||'', 'it'));
+
+        if (!list.length) {
+          main.innerHTML = '<p class="empty-msg">Nessun ragazzo/a in questa comunità.</p>'; return;
+        }
+        main.innerHTML = `
+          <div class="section-title">${EMOJI_COM[community.id]||''} ${community.label}</div>
+          <div class="person-grid" id="person-grid"></div>`;
+
+        list.forEach(r => {
+          const card = mkEl('div', 'person-card',
+            `<div class="person-foto">${r.fotoProfilo
+              ? `<img src="${r.fotoProfilo}" alt="${r.nome||''}" loading="lazy">`
+              : '🧒'}</div>
+             <div class="person-nome">${r.nome||'—'}</div>`);
+          card.onclick = () => go(r.nome||r.id, () => showAreas(community, r));
+          document.getElementById('person-grid').appendChild(card);
+        });
+      } catch(e) { main.innerHTML = `<p class="empty-msg">Errore: ${e.message}</p>`; }
+    }
+
+    /* ── LEVEL 2 – Aree documentali ─────────────────────────────── */
+    function showAreas(community, ragazzo) {
+      main.innerHTML = `
+        <div class="section-title">📂 ${ragazzo.nome||ragazzo.id}</div>
+        <div class="card-grid" id="area-grid"></div>`;
+
+      AREE.forEach(area => {
+        const storagePath = `documenti/${community.id}/${ragazzo.id}/${area.id}`;
+        const card = mkEl('div', 'nav-card',
+          `<div class="nav-card-icon">${area.emoji}</div>
+           <div class="nav-card-label">${area.id}</div>`);
+        card.onclick = () => go(area.short, () => showFolder(storagePath, area.id));
+        document.getElementById('area-grid').appendChild(card);
+      });
+    }
+
+    /* ── LEVEL 3+ – Contenuto cartella ──────────────────────────── */
+    async function showFolder(storagePath, label) {
+      main.innerHTML = '<div class="spinner"></div>';
+      try {
+        const result = await listAll(ref(storage, storagePath));
+        const files  = result.items.filter(item => item.name !== '.keep');
+        const subs   = result.prefixes;
+
+        main.innerHTML = `
+          <div class="folder-header">
+            <div class="folder-title">📂 ${label}</div>
+            ${canWrite ? `
+            <div class="folder-actions">
+              <button class="btn-act" id="btn-new-folder">📁 Nuova cartella</button>
+              <label class="btn-act">
+                ⬆️ Carica
+                <input type="file" id="input-upload" multiple
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.gif,.webp,.mp3,.mp4,.txt,.csv,.zip">
+              </label>
+            </div>` : ''}
+          </div>
+          <div class="upload-progress hidden" id="up-bar">
+            <span class="up-name" id="up-name"></span>
+            <div class="progress-bar-wrap"><div class="progress-bar" id="up-prog"></div></div>
+            <span class="up-pct" id="up-pct">0%</span>
+          </div>
+          <div class="item-list" id="item-list"></div>`;
+
+        const itemList = document.getElementById('item-list');
+
+        if (!files.length && !subs.length) {
+          itemList.innerHTML = '<p class="empty-msg">📭 Cartella vuota</p>';
+        } else {
+          // Sottocartelle prima
+          subs.forEach(prefix => {
+            itemList.appendChild(makeFolderRow(
+              prefix.name,
+              () => go(prefix.name, () => showFolder(prefix.fullPath, prefix.name))
+            ));
+          });
+          // File
+          const metas = await Promise.all(
+            files.map(async item => {
+              try {
+                const [url, meta] = await Promise.all([getDownloadURL(item), getMetadata(item)]);
+                return { item, url, meta };
+              } catch { return null; }
+            })
+          );
+          metas.filter(Boolean).forEach(({ item, url, meta }) => {
+            itemList.appendChild(makeFileRow(item, url, meta));
+          });
+        }
+
+        // Wire buttons
+        if (canWrite) {
+          document.getElementById('btn-new-folder').onclick = async () => {
+            const name = await promptFolderName();
+            if (!name) return;
+            const clean = name.replace(/[/\\?%*:|"<>]/g, '').trim();
+            if (!clean) { alert('Nome non valido.'); return; }
+            try {
+              await uploadBytes(ref(storage, `${storagePath}/${clean}/.keep`), new Uint8Array(0));
+              go(clean, () => showFolder(`${storagePath}/${clean}`, clean));
+            } catch(e) { alert('Errore: ' + e.message); }
+          };
+
+          document.getElementById('input-upload').onchange = async (e) => {
+            const uploadFiles = Array.from(e.target.files);
+            for (const file of uploadFiles) {
+              await doUpload(file, storagePath);
+            }
+            e.target.value = '';
+            // Refresh
+            navStack[navStack.length - 1].render = () => showFolder(storagePath, label);
+            showFolder(storagePath, label);
+          };
+        }
+      } catch(e) { main.innerHTML = `<p class="empty-msg">Errore: ${e.message}</p>`; }
+    }
+
+    /* ── Folder row ──────────────────────────────────────────────── */
+    function makeFolderRow(name, onClickFn) {
+      const row = mkEl('div', 'item-row folder-row',
+        `<span class="item-icon">📁</span>
+         <div class="item-info"><div class="item-name">${name}</div></div>
+         <span class="item-chevron">›</span>`);
+      row.addEventListener('click', onClickFn);
+      return row;
+    }
+
+    /* ── File row ────────────────────────────────────────────────── */
+    function makeFileRow(itemRef, url, meta) {
+      const fname = meta.name || itemRef.name;
+      const canDel = isAdmin || isMassimo;
+      const row = mkEl('div', 'item-row file-row',
+        `<span class="item-icon">${fileIcon(fname)}</span>
+         <div class="item-info">
+           <div class="item-name">${fname}</div>
+           <div class="item-meta">${formatBytes(meta.size)} · ${formatDate(meta.updated)}</div>
+         </div>
+         <div class="item-actions">
+           <a class="btn-icon" href="${url}" target="_blank" title="Scarica">⬇️</a>
+           ${canDel ? `<button class="btn-icon danger" title="Elimina">🗑️</button>` : ''}
+         </div>`);
+      if (canDel) {
+        row.querySelector('.btn-icon.danger').addEventListener('click', async e => {
+          e.stopPropagation();
+          if (!confirm(`Eliminare "${fname}"?`)) return;
+          try {
+            await deleteObject(itemRef);
+            row.remove();
+            const list = document.getElementById('item-list');
+            if (list && !list.querySelector('.item-row'))
+              list.innerHTML = '<p class="empty-msg">📭 Cartella vuota</p>';
+          } catch(e) { alert('Errore eliminazione: ' + e.message); }
+        });
+      }
+      return row;
+    }
+
+    /* ── Upload con progress ─────────────────────────────────────── */
+    function doUpload(file, basePath) {
+      const bar  = document.getElementById('up-prog');
+      const pct  = document.getElementById('up-pct');
+      const name = document.getElementById('up-name');
+      const wrap = document.getElementById('up-bar');
+      name.textContent = file.name; bar.style.width = '0%'; pct.textContent = '0%';
+      wrap.classList.remove('hidden');
+      return new Promise((res, rej) => {
+        const task = uploadBytesResumable(ref(storage, `${basePath}/${file.name}`), file);
+        task.on('state_changed',
+          s => { const p = Math.round(s.bytesTransferred / s.totalBytes * 100); bar.style.width = p+'%'; pct.textContent = p+'%'; },
+          err => { wrap.classList.add('hidden'); rej(err); },
+          ()  => { wrap.classList.add('hidden'); res(); }
+        );
+      });
+    }
+
+    /* ── Prompt nome cartella ────────────────────────────────────── */
+    function promptFolderName() {
+      return new Promise(resolve => {
+        const modal = document.getElementById('modal-folder');
+        const input = document.getElementById('input-folder-name');
+        input.value = '';
+        modal.classList.remove('hidden');
+        requestAnimationFrame(() => input.focus());
+
+        const onSave   = () => { cleanup(); resolve(input.value.trim()); };
+        const onCancel = () => { cleanup(); resolve(null); };
+        const onKey    = e => { if (e.key === 'Enter') onSave(); if (e.key === 'Escape') onCancel(); };
+
+        function cleanup() {
+          modal.classList.add('hidden');
+          document.getElementById('btn-save-folder').removeEventListener('click', onSave);
+          document.getElementById('btn-cancel-folder').removeEventListener('click', onCancel);
+          input.removeEventListener('keydown', onKey);
+        }
+        document.getElementById('btn-save-folder').addEventListener('click', onSave);
+        document.getElementById('btn-cancel-folder').addEventListener('click', onCancel);
+        input.addEventListener('keydown', onKey);
+      });
+    }
+
+    /* ── Utilità ─────────────────────────────────────────────────── */
+    function mkEl(tag, cls, html = '') {
+      const el = document.createElement(tag);
+      el.className = cls; el.innerHTML = html; return el;
+    }
+
+    function fileIcon(name) {
+      const ext = ((name || '').split('.').pop() || '').toLowerCase();
+      if (ext === 'pdf')                                return '📄';
       if (['doc','docx'].includes(ext))                 return '📝';
-      if (['xls','xlsx'].includes(ext))                 return '📊';
+      if (['xls','xlsx','csv'].includes(ext))           return '📊';
+      if (['ppt','pptx'].includes(ext))                 return '📑';
       if (['jpg','jpeg','png','gif','webp'].includes(ext)) return '🖼️';
+      if (['mp3','wav','m4a'].includes(ext))            return '🎵';
+      if (['mp4','mov','avi'].includes(ext))            return '🎬';
+      if (['zip','rar','7z'].includes(ext))             return '🗜️';
       return '📎';
     }
 
@@ -251,143 +597,18 @@
       return new Date(iso).toLocaleDateString('it-IT', { day:'numeric', month:'short', year:'numeric' });
     }
 
-    async function renderCartelle() {
-      const content = document.getElementById('main-content');
-      content.innerHTML = `
-        <div class="cartelle-grid" id="cartelle-grid"></div>
-        <div class="file-section" id="file-section">
-          <div class="file-section-header">
-            <div class="file-section-title" id="file-section-title"></div>
-            <label class="btn-upload">
-              ⬆️ Carica
-              <input type="file" id="input-upload" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif,.webp">
-            </label>
-          </div>
-          <div class="upload-progress" id="upload-progress">
-            <span id="upload-filename" style="font-size:0.78rem;color:#555;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
-            <div class="progress-bar-wrap"><div class="progress-bar" id="progress-bar"></div></div>
-            <span class="progress-label" id="progress-label">0%</span>
-          </div>
-          <div class="file-list" id="file-list"></div>
-        </div>`;
-
-      const grid = document.getElementById('cartelle-grid');
-      cartelleAccesso.forEach(c => {
-        const card = document.createElement('div');
-        card.className = 'cartella-card';
-        card.dataset.id = c.id;
-        card.innerHTML = `<div class="cartella-icon">${c.emoji}</div><div class="cartella-nome">${c.label}</div>`;
-        card.addEventListener('click', () => openCartella(c));
-        grid.appendChild(card);
-      });
-
-      document.getElementById('input-upload').addEventListener('change', e => {
-        const file = e.target.files[0];
-        if (file && cartellaAttiva) uploadFile(file);
-        e.target.value = '';
-      });
-    }
-
-    async function openCartella(cartella) {
-      cartellaAttiva = cartella;
-      document.querySelectorAll('.cartella-card').forEach(c => c.classList.toggle('active', c.dataset.id === cartella.id));
-      document.getElementById('file-section-title').textContent = `${cartella.emoji} ${cartella.label}`;
-      const section = document.getElementById('file-section');
-      section.classList.add('visible');
-      section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      await loadFiles(cartella.id);
-    }
-
-    async function loadFiles(cartellaId) {
-      const list = document.getElementById('file-list');
-      list.innerHTML = '<div class="spinner"></div>';
-      try {
-        const folderRef = ref(storage, `documenti/${cartellaId}`);
-        const result    = await listAll(folderRef);
-        if (result.items.length === 0) {
-          list.innerHTML = '<p class="empty-files">📭 Nessun documento in questa cartella.</p>';
-          return;
-        }
-        const files = await Promise.all(result.items.map(async item => {
-          const [url, meta] = await Promise.all([getDownloadURL(item), getMetadata(item)]);
-          return { ref: item, name: item.name, url, size: meta.size, updated: meta.updated };
-        }));
-        files.sort((a, b) => new Date(b.updated) - new Date(a.updated));
-        list.innerHTML = '';
-        files.forEach(f => {
-          const card = document.createElement('div');
-          card.className = 'file-card';
-          const canDelete = isAdmin || isMassimo;
-          card.innerHTML = `
-            <div class="file-icon">${fileIcon(f.name)}</div>
-            <div class="file-info">
-              <div class="file-nome" title="${f.name}">${f.name}</div>
-              <div class="file-meta">${formatBytes(f.size)} · ${formatDate(f.updated)}</div>
-            </div>
-            <div class="file-actions">
-              <a class="btn-icon" href="${f.url}" target="_blank" download title="Scarica">⬇️</a>
-              ${canDelete ? `<button class="btn-icon danger" data-path="${f.ref.fullPath}" title="Elimina">🗑️</button>` : ''}
-            </div>`;
-          if (canDelete) {
-            card.querySelector('.btn-icon.danger').addEventListener('click', async btn => {
-              if (!confirm(`Eliminare "${f.name}"?`)) return;
-              await deleteObject(f.ref);
-              card.remove();
-              if (!document.querySelector('.file-card')) {
-                list.innerHTML = '<p class="empty-files">📭 Nessun documento in questa cartella.</p>';
-              }
-            });
-          }
-          list.appendChild(card);
-        });
-      } catch (e) {
-        list.innerHTML = `<p class="empty-files">Errore: ${e.message}</p>`;
-      }
-    }
-
-    function uploadFile(file) {
-      const progress  = document.getElementById('upload-progress');
-      const bar       = document.getElementById('progress-bar');
-      const label     = document.getElementById('progress-label');
-      const fnLabel   = document.getElementById('upload-filename');
-      fnLabel.textContent = file.name;
-      bar.style.width = '0';
-      label.textContent = '0%';
-      progress.classList.add('visible');
-
-      const fileRef  = ref(storage, `documenti/${cartellaAttiva.id}/${file.name}`);
-      const task     = uploadBytesResumable(fileRef, file);
-
-      task.on('state_changed',
-        snap => {
-          const pct = Math.round(snap.bytesTransferred / snap.totalBytes * 100);
-          bar.style.width = pct + '%';
-          label.textContent = pct + '%';
-        },
-        err => {
-          progress.classList.remove('visible');
-          alert('Errore upload: ' + err.message);
-        },
-        async () => {
-          progress.classList.remove('visible');
-          await loadFiles(cartellaAttiva.id);
-        }
-      );
-    }
-
     function showAccessDenied() {
-      document.getElementById('main-content').innerHTML = `
+      main.innerHTML = `
         <div class="access-denied">
-          <div class="icon">🔒</div>
+          <div class="ad-icon">🔒</div>
           <strong>Accesso riservato</strong>
-          <p>Quest'area è riservata allo staff autorizzato.</p>
-          <a href="index.html" style="color:#e07b39;font-weight:700">← Torna alla home</a>
+          <p>Quest'area è riservata all'amministrazione e alle coordinatrici.</p>
+          <a href="index.html" style="color:#e07b39;font-weight:700;text-decoration:none;margin-top:8px">← Torna alla home</a>
         </div>`;
     }
 
+    /* ── Auth + avvio ────────────────────────────────────────────── */
     onAuthStateChanged(auth, async user => {
-      currentUser = user;
-
       if (!user) { showAccessDenied(); return; }
 
       isAdmin   = user.uid === ADMIN_UID;
@@ -397,22 +618,18 @@
         const snap = await getDoc(doc(db, 'staff', user.uid));
         if (snap.exists()) {
           const ruolo = snap.data().ruolo || '';
-          isCoord = ruolo.includes('Coordinatrice');
+          isCoord      = ruolo.includes('Coordinatrice');
           myComunitaId = snap.data().comunitaId || null;
         }
       }
 
-      if (!isAdmin && !isMassimo && !isCoord) { showAccessDenied(); return; }
+      canWrite = isAdmin || isMassimo || isCoord;
+      if (!canWrite) { showAccessDenied(); return; }
 
-      if (isAdmin || isMassimo) {
-        cartelleAccesso = CARTELLE_ALL;
-      } else {
-        cartelleAccesso = CARTELLE_ALL.filter(c => c.id === myComunitaId);
-      }
-
-      if (cartelleAccesso.length === 0) { showAccessDenied(); return; }
-
-      renderCartelle();
+      // Boot navigation
+      navStack = [{ label: '📁 Documenti', render: showCommunities }];
+      showCommunities();
+      renderBreadcrumb();
     });
   </script>
 </body>
