@@ -151,8 +151,12 @@
     setupDocumentiNav();
   </script>
   <script>
+    // Registra UN SOLO service worker unificato (FCM + caching).
+    // NON registrare service-worker.js separatamente: stesso scope = conflitto.
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/service-worker.js');
+      navigator.serviceWorker.register('/firebase-messaging-sw.js')
+        .then(reg => console.log('[SW] Registrato:', reg.scope))
+        .catch(err => console.warn('[SW] Errore registrazione:', err));
     }
   </script>
 </body>
