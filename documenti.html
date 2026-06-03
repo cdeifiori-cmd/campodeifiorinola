@@ -72,6 +72,9 @@
       display: grid; grid-template-columns: 1fr 1fr;
       gap: 10px; padding: 6px 14px 16px;
     }
+    /* Grid comunità: gap ridotto per compattare le 5 card */
+    #com-grid { gap: 7px; padding-bottom: 10px; }
+
     @media (min-width: 480px) { .card-grid { grid-template-columns: repeat(3, 1fr); } }
     @media (min-width: 700px) { .card-grid { grid-template-columns: repeat(4, 1fr); } }
 
@@ -84,8 +87,10 @@
       border: 2px solid transparent;
       border-top: 3px solid transparent;
     }
-    /* Card comunità: bordo superiore arancione */
+    /* Card comunità: bordo superiore arancione + dimensioni ridotte */
     .nav-card.comunita-card {
+      padding: 11px 8px 9px;
+      gap: 5px;
       border-top: 3px solid #E8711A;
       box-shadow: 0 2px 8px rgba(232,113,26,0.12);
     }
@@ -94,6 +99,9 @@
       transform: translateY(-2px); border-color: #E8711A;
       border-top-color: #E8711A;
     }
+    .nav-card.comunita-card .nav-card-icon { font-size: 1.45rem; }
+    .nav-card.comunita-card .nav-card-label { font-size: 0.68rem; }
+
     /* Card Documenti Generali: sfondo verde-acqua, bordo superiore */
     .nav-card.generali-card {
       background: #E8F5F2;
