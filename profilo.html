@@ -387,6 +387,17 @@
       color: #aaa; font-style: italic;
       background: #f9f9f9; border-left-color: #ddd;
     }
+    .presento-reazioni { margin-top: 14px; flex-wrap: wrap; gap: 6px; }
+
+    /* ── Banner login per sezioni protette ── */
+    .login-hint-banner {
+      background: #fff8e7; border: 1.5px solid #f5c84c;
+      border-radius: 10px; padding: 9px 14px;
+      font-size: 0.82rem; color: #666; margin-bottom: 10px;
+      text-align: center; font-weight: 500;
+    }
+    .login-hint-banner a { color: #e07b39; font-weight: 700; text-decoration: none; }
+    .login-hint-banner a:hover { text-decoration: underline; }
 
     /* ===== DIARIO ===== */
     .diario-search {
@@ -711,6 +722,7 @@
     </div>
     <div class="section-body">
       <p class="mi-presento-text mi-presento-empty" id="mi-presento-text">Ancora nessuna presentazione…</p>
+      <div class="post-reazioni presento-reazioni hidden" id="presento-reazioni-mobile"></div>
     </div>
   </div>
 
@@ -815,6 +827,7 @@
         </div>
         <div class="section-body">
           <p class="mi-presento-text mi-presento-empty" id="mi-presento-text-desktop">Ancora nessuna presentazione…</p>
+          <div class="post-reazioni presento-reazioni hidden" id="presento-reazioni-desktop"></div>
         </div>
       </div>
 
@@ -1364,6 +1377,9 @@
       }
       document.getElementById('modal-presento-text').value = profileData.miPresento || '';
 
+      // Reaction su Mi Presento
+      renderPresentoReazioni();
+
       // Carica sidebar community
       loadCommunityAvatars();
     }
@@ -1628,6 +1644,89 @@
             const s = btnPrev.querySelector('span');
             if (s) s.textContent = (parseInt(s.textContent) || 0) + 1;
           }
+        }
+      }
+    }
+
+    // ── FEATURE: Reaction su "Mi Presento" ──────────────────────────────────
+
+    const TIPI_REAZIONE = [
+      {tipo:'cuore',emoji:'❤️'},{tipo:'like',emoji:'👍'},{tipo:'dislike',emoji:'👎'},
+      {tipo:'risata',emoji:'😂'},{tipo:'sorpresa',emoji:'😮'},{tipo:'fuoco',emoji:'🔥'},
+      {tipo:'abbraccio',emoji:'🫂'},{tipo:'commozione',emoji:'😢'},
+    ];
+
+    function renderPresentoReazioni() {
+      const reazioni = profileData.reazioniPresento || {};
+      const html = TIPI_REAZIONE.map(t =>
+        `<button class="btn-reazione ${t.tipo}" data-tipo="${t.tipo}">${t.emoji} <span>${reazioni[t.tipo]||0}</span></button>`
+      ).join('');
+
+      ['presento-reazioni-mobile','presento-reazioni-desktop'].forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (isOwner) return; // il proprietario non reagisce alla propria presentazione
+        el.innerHTML = html;
+        el.classList.remove('hidden');
+
+        // Stato attuale dell'utente loggato
+        if (currentUser) {
+          getDoc(doc(db, profileColl, profileUid, 'reazioniPresento', currentUser.uid)).then(snap => {
+            if (snap.exists()) {
+              const btn = el.querySelector(`[data-tipo="${snap.data().tipo}"]`);
+              if (btn) btn.classList.add('attiva');
+            }
+          });
+        }
+
+        // Handler click
+        el.querySelectorAll('.btn-reazione').forEach(btn => {
+          btn.addEventListener('click', () => {
+            if (!canReact()) { mostraLoginPrompt(); return; }
+            toggleReazionePresento(btn.dataset.tipo, el);
+          });
+        });
+      });
+    }
+
+    async function toggleReazionePresento(tipoNuovo, containerEl) {
+      if (!currentUser) return;
+      const reazRef = doc(db, profileColl, profileUid, 'reazioniPresento', currentUser.uid);
+      const docRef  = doc(db, profileColl, profileUid);
+
+      let tipoPrev = null;
+      try {
+        const snap = await getDoc(reazRef);
+        if (snap.exists()) tipoPrev = snap.data().tipo;
+      } catch(e) { console.warn('[Reazione Presento] lettura:', e.message); return; }
+
+      if (tipoPrev === tipoNuovo) {
+        // Rimozione — UI ottimistica
+        const btn = containerEl.querySelector(`[data-tipo="${tipoNuovo}"]`);
+        if (btn) { btn.classList.remove('attiva'); const s=btn.querySelector('span'); if(s)s.textContent=Math.max(0,(parseInt(s.textContent)||1)-1); }
+        try {
+          await deleteDoc(reazRef);
+          await updateDoc(docRef, { [`reazioniPresento.${tipoNuovo}`]: increment(-1) });
+        } catch(e) {
+          console.warn('[Reazione Presento] rimozione:', e.message);
+          if (btn) { btn.classList.add('attiva'); const s=btn.querySelector('span'); if(s)s.textContent=(parseInt(s.textContent)||0)+1; }
+        }
+      } else {
+        // Aggiunta/cambio — UI ottimistica
+        const btnN = containerEl.querySelector(`[data-tipo="${tipoNuovo}"]`);
+        const btnP = tipoPrev ? containerEl.querySelector(`[data-tipo="${tipoPrev}"]`) : null;
+        if (btnP) { btnP.classList.remove('attiva'); const s=btnP.querySelector('span'); if(s)s.textContent=Math.max(0,(parseInt(s.textContent)||1)-1); }
+        if (btnN) { btnN.classList.add('attiva'); const s=btnN.querySelector('span'); if(s)s.textContent=(parseInt(s.textContent)||0)+1; }
+        try {
+          await setDoc(reazRef, { tipo: tipoNuovo });
+          const updates = { [`reazioniPresento.${tipoNuovo}`]: increment(1) };
+          if (tipoPrev) updates[`reazioniPresento.${tipoPrev}`] = increment(-1);
+          await updateDoc(docRef, updates);
+        } catch(e) {
+          console.warn('[Reazione Presento] scrittura:', e.message);
+          // Rollback UI
+          if (btnN) { btnN.classList.remove('attiva'); const s=btnN.querySelector('span'); if(s)s.textContent=Math.max(0,(parseInt(s.textContent)||1)-1); }
+          if (btnP) { btnP.classList.add('attiva'); const s=btnP.querySelector('span'); if(s)s.textContent=(parseInt(s.textContent)||0)+1; }
         }
       }
     }
@@ -1916,7 +2015,14 @@
         ['bottiglia-list','bottiglia-list-desktop'].forEach(id=>{
           const list=document.getElementById(id);if(!list)return;
           list.innerHTML='';
-          if(!bottiglie.length){list.innerHTML='<p class="empty-msg">Nessun messaggio ancora 🍾</p>';return;}
+          // Banner per utenti non loggati (sola lettura)
+          if(!currentUser){
+            const banner=document.createElement('div');
+            banner.className='login-hint-banner';
+            banner.innerHTML='🔑 <a href="login.html">Accedi</a> per inviare messaggi e interagire';
+            list.appendChild(banner);
+          }
+          if(!bottiglie.length){const p=document.createElement('p');p.className='empty-msg';p.textContent='Nessun messaggio ancora 🍾';list.appendChild(p);return;}
           bottiglie.forEach(b=>list.appendChild(buildBottigliaCard(b.id,b)));
         });
       }catch(e){

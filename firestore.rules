@@ -18,8 +18,16 @@ service cloud.firestore {
     match /utenti/{uid} {
       allow read: if true;
       allow create: if isOwner(uid) || isAdmin();
-      allow update: if isOwner(uid) || isAdmin();
+      allow update: if isOwner(uid) || isAdmin()
+                    // Qualsiasi utente loggato può aggiornare solo il campo reazioniPresento
+                    || (isLoggedIn() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reazioniPresento']));
       allow delete: if isAdmin();
+
+      // Reazioni su "Mi Presento": ogni utente gestisce solo la propria
+      match /reazioniPresento/{reazId} {
+        allow read: if true;
+        allow write: if isLoggedIn() && request.auth.uid == reazId;
+      }
     }
 
     // ── Staff ────────────────────────────────────────────────
@@ -77,7 +85,7 @@ service cloud.firestore {
 
     // ── Messaggi in Bottiglia ────────────────────────────────
     match /messaggiBottiglia/{bottId} {
-      allow read: if isLoggedIn();
+      allow read: if true;  // lettura pubblica (sola lettura per non loggati)
       allow create: if isLoggedIn()
                     && request.auth.uid == request.resource.data.uidMittente
                     && request.auth.uid != request.resource.data.uidDestinatario;
@@ -94,7 +102,7 @@ service cloud.firestore {
 
       // Commenti alle bottiglie
       match /commenti/{commentId} {
-        allow read: if isLoggedIn();
+        allow read: if true;  // leggibili anche da non loggati
         allow create: if isLoggedIn();
         allow delete: if isLoggedIn()
                       && (request.auth.uid == resource.data.uidAutore || isAdmin());
@@ -103,7 +111,7 @@ service cloud.firestore {
 
       // Reazioni alle bottiglie
       match /reazioni/{userId} {
-        allow read: if isLoggedIn();
+        allow read: if true;  // leggibili anche da non loggati
         allow write: if isLoggedIn() && request.auth.uid == userId;
       }
     }
