@@ -31,10 +31,18 @@ async function getAllFcmTokens(excludeUid = null) {
     try {
       const snap = await db.collection(coll).get();
       snap.forEach(docSnap => {
-        if (docSnap.id === excludeUid) return; // escludi autore
-        const token = docSnap.data().fcmToken;
-        if (token && typeof token === 'string' && token.length > 10) {
-          tokens.push(token);
+        if (docSnap.id === excludeUid) return;
+        const d = docSnap.data();
+
+        // Nuovo campo array (più dispositivi per utente)
+        if (Array.isArray(d.fcmTokens)) {
+          d.fcmTokens.forEach(t => {
+            if (t && typeof t === 'string' && t.length > 10) tokens.push(t);
+          });
+        }
+        // Vecchio campo stringa (backward compat — aggiunge se non già in array)
+        if (d.fcmToken && typeof d.fcmToken === 'string' && d.fcmToken.length > 10) {
+          tokens.push(d.fcmToken);
         }
       });
       console.log(`[FCM] Collezione '${coll}': ${snap.size} doc letti`);
@@ -167,18 +175,30 @@ exports.onNuovoContenuto = onDocumentCreated(
           }
         });
 
-        // Rimuovi token stale da tutte le collezioni
+        // Rimuovi token stale da tutte le collezioni (array + vecchio campo stringa)
         if (staleTokens.length > 0) {
           console.log(`[FCM] Rimozione ${staleTokens.length} token stale da Firestore`);
-          for (const coll of ['utenti', 'staff', 'amici']) {
-            try {
-              const snap = await db.collection(coll).where('fcmToken', 'in', staleTokens.slice(0, 30)).get();
-              for (const docSnap of snap.docs) {
-                await docSnap.ref.update({ fcmToken: null });
-                console.log(`[FCM] Token stale rimosso da ${coll}/${docSnap.id}`);
+          for (const staleToken of staleTokens) {
+            for (const coll of ['utenti', 'staff', 'amici']) {
+              try {
+                // Cerca nel nuovo campo array
+                const arrSnap = await db.collection(coll)
+                  .where('fcmTokens', 'array-contains', staleToken).get();
+                for (const docSnap of arrSnap.docs) {
+                  const filtered = (docSnap.data().fcmTokens || []).filter(t => t !== staleToken);
+                  await docSnap.ref.update({ fcmTokens: filtered });
+                  console.log(`[FCM] Token stale rimosso dall'array in ${coll}/${docSnap.id}`);
+                }
+                // Cerca nel vecchio campo stringa
+                const strSnap = await db.collection(coll)
+                  .where('fcmToken', '==', staleToken).get();
+                for (const docSnap of strSnap.docs) {
+                  await docSnap.ref.update({ fcmToken: null });
+                  console.log(`[FCM] Token stale (campo stringa) rimosso da ${coll}/${docSnap.id}`);
+                }
+              } catch (e) {
+                console.warn(`[FCM] Errore pulizia token in ${coll}:`, e.message);
               }
-            } catch (e) {
-              console.warn(`[FCM] Errore pulizia token in ${coll}:`, e.message);
             }
           }
         }

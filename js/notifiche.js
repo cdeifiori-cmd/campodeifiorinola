@@ -112,22 +112,34 @@ export async function setupNotifiche(user) {
     }
     console.log('[FCM] Token ottenuto:', token.slice(0, 20) + '…');
 
-    // Salva il token su Firestore (cercando in utenti → staff → amici)
+    // Salva il token su Firestore (array per supportare più dispositivi)
+    // Cerca in utenti → staff → amici
     let saved = false;
     for (const coll of ['utenti', 'staff', 'amici']) {
       try {
         const snap = await getDoc(doc(db, coll, user.uid));
         if (!snap.exists()) continue;
 
-        const prevToken = snap.data().fcmToken;
-        if (prevToken === token) {
-          console.log('[FCM] Token invariato in', coll, '— nessun aggiornamento necessario');
+        const data = snap.data();
+
+        // Migrazione: se esiste il vecchio campo stringa, convertilo in array
+        const existing = data.fcmTokens
+          ? [...data.fcmTokens]
+          : data.fcmToken ? [data.fcmToken] : [];
+
+        if (existing.includes(token)) {
+          console.log('[FCM] Token già presente nell\'array in', coll);
           saved = true;
           break;
         }
 
-        await updateDoc(doc(db, coll, user.uid), { fcmToken: token });
-        console.log('[FCM] Token aggiornato in', coll, 'per UID', user.uid);
+        // Aggiunge il nuovo token in cima, max 5 per utente (1 per dispositivo)
+        const updated = [token, ...existing].slice(0, 5);
+        await updateDoc(doc(db, coll, user.uid), {
+          fcmTokens: updated,  // nuovo campo array
+          fcmToken:  token     // mantiene per compatibilità
+        });
+        console.log(`[FCM] Array token aggiornato in ${coll} (${updated.length} token) per UID`, user.uid);
         saved = true;
         break;
       } catch (e) {
