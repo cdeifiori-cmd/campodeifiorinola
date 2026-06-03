@@ -48,9 +48,14 @@ service cloud.firestore {
       // Solo il proprietario del profilo può creare post nel proprio diario
       allow create: if isLoggedIn()
                     && request.auth.uid == request.resource.data.uidRagazzo;
-      // Solo il proprietario o admin possono aggiornare (es. reazioni aggregate)
+      // Il proprietario/admin possono aggiornare tutto il documento;
+      // qualsiasi utente loggato può aggiornare SOLO il campo reazioni (contatori).
       allow update: if isLoggedIn()
-                    && (request.auth.uid == resource.data.uidRagazzo || isAdmin());
+                    && (
+                      request.auth.uid == resource.data.uidRagazzo
+                      || isAdmin()
+                      || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reazioni'])
+                    );
       allow delete: if isLoggedIn()
                     && (request.auth.uid == resource.data.uidRagazzo || isAdmin());
 
@@ -77,7 +82,11 @@ service cloud.firestore {
                     && request.auth.uid == request.resource.data.uidMittente
                     && request.auth.uid != request.resource.data.uidDestinatario;
       allow update: if isLoggedIn()
-                    && (request.auth.uid == resource.data.uidDestinatario || isAdmin());
+                    && (
+                      request.auth.uid == resource.data.uidDestinatario
+                      || isAdmin()
+                      || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reazioni'])
+                    );
       allow delete: if isLoggedIn()
                     && (request.auth.uid == resource.data.uidDestinatario
                         || request.auth.uid == resource.data.uidMittente
