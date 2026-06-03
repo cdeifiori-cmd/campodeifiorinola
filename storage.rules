@@ -28,7 +28,19 @@ service firebase.storage {
         && firestore.get(staffRef(request.auth.uid)).data.ruolo.matches('.*Coordinatrice.*');
     }
 
-    // ── Area Documenti ─────────────────────────────────────────────
+    // Qualunque coordinatrice (per Documenti Generali)
+    function isAnyCoordinatrice() {
+      return request.auth != null
+        && firestore.exists(staffRef(request.auth.uid))
+        && firestore.get(staffRef(request.auth.uid)).data.ruolo.matches('.*Coordinatrice.*');
+    }
+
+    // ── Documenti Generali (cartella piatta, accesso a tutte le coord.) ─
+    match /documenti/documenti-generali/{file} {
+      allow read, write: if isSuperUser() || isAnyCoordinatrice();
+    }
+
+    // ── Area Documenti per comunità ───────────────────────────────
     // Struttura: documenti/{comunitaId}/{uid}/{area}/{...sottocartelle}/{file}
     match /documenti/{comunitaId}/{allPaths=**} {
       allow read, write: if isSuperUser() || isCoordinatriceForComunita(comunitaId);
