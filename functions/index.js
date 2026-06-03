@@ -20,6 +20,22 @@ async function getFcmToken(uid) {
   return null;
 }
 
+// Raccoglie tutti i token FCM validi da utenti, staff e amici
+// excludeUid: non include il token dell'autore del post
+async function getAllFcmTokens(excludeUid = null) {
+  const tokens = [];
+  for (const coll of ['utenti', 'staff', 'amici']) {
+    const snap = await db.collection(coll).get();
+    snap.forEach(docSnap => {
+      if (docSnap.id !== excludeUid) {
+        const token = docSnap.data().fcmToken;
+        if (token) tokens.push(token);
+      }
+    });
+  }
+  return [...new Set(tokens)]; // rimuovi eventuali duplicati
+}
+
 async function getNome(uid) {
   for (const coll of ['utenti', 'staff']) {
     const snap = await db.collection(coll).doc(uid).get();
@@ -92,6 +108,59 @@ exports.onNuovoCommentoDiario = onDocumentCreated(
       url:   `/profilo.html?uid=${destUid}#post-${postId}`,
       tag:   `commento-diario-${postId}`
     });
+  }
+);
+
+// ─── Trigger 4: Nuovo post nel Giornale (diario) — broadcast a tutti ─────
+// Il Giornale è un feed client-side aggregato; la collezione sorgente è 'diario'.
+// Quando un ragazzo/a pubblica un nuovo post, tutti gli utenti registrati
+// ricevono una notifica push.
+
+exports.onNuovoPostGiornale = onDocumentCreated(
+  'diario/{postId}',
+  async event => {
+    const data      = event.data.data();
+    const postId    = event.params.postId;
+    const autoreUid = data.uidRagazzo;
+
+    // Salta post senza contenuto (es. draft non completati)
+    if (!data.testo && !data.immagineUrl && !data.audioUrl && !data.videoUrl) return;
+
+    const nomeAutore = await getNome(autoreUid);
+    const anteprima  = data.testo
+      ? tronca(data.testo)
+      : data.immagineUrl ? '📷 Ha condiviso una foto'
+      : data.audioUrl    ? '🎙️ Ha condiviso un audio'
+      : data.videoUrl    ? '🎬 Ha condiviso un video'
+      : 'Nuovo contenuto nel giornale!';
+
+    const tokens = await getAllFcmTokens(autoreUid);
+    if (!tokens.length) return;
+
+    const msgBase = {
+      notification: {
+        title: '🗞️ Campo dei Fiori',
+        body:  `${nomeAutore}: ${anteprima}`
+      },
+      webpush: {
+        notification: {
+          title: '🗞️ Campo dei Fiori',
+          body:  `${nomeAutore}: ${anteprima}`,
+          icon:  '/icons/icon-192.png',
+          badge: '/icons/icon-192.png',
+          tag:   `giornale-${postId}`
+        },
+        fcmOptions: { link: '/giornale.html' }
+      },
+      android: { notification: { sound: 'default', channelId: 'campo_notifiche' } },
+      apns:    { payload: { aps: { sound: 'default', badge: 1 } } }
+    };
+
+    // FCM accetta max 500 token per chiamata multicast
+    for (let i = 0; i < tokens.length; i += 500) {
+      const batch = tokens.slice(i, i + 500);
+      await messaging.sendEachForMulticast({ ...msgBase, tokens: batch });
+    }
   }
 );
 
