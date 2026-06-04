@@ -34,15 +34,17 @@ messaging.onBackgroundMessage(payload => {
     icon:                '/icons/icon-192.png',
     badge:               '/icons/icon-192.png',
     tag:                 data.tag || 'campo-notifica',
-    data:                { url: data.url || '/' },
+    data:                { url: data.url || '/giornale.html' },
     requireInteraction:  false
   });
 });
 
-// Click sulla notifica → naviga alla pagina giusta
+// Click sulla notifica → naviga alla pagina giusta e azzera badge
 self.addEventListener('notificationclick', event => {
   event.notification.close();
-  const url = (event.notification.data && event.notification.data.url) || '/';
+  // Azzera il badge app (BUG 1 fix)
+  if (self.registration.setAppBadge) self.registration.setAppBadge(0).catch(() => {});
+  const url = (event.notification.data && event.notification.data.url) || '/giornale.html';
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
       for (const client of list) {

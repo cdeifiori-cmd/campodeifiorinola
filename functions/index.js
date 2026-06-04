@@ -95,6 +95,7 @@ exports.onNuovaBottiglia = onDocumentCreated(
 
     const msgBase = {
       notification: { title: '💌 Nuovo messaggio in bottiglia', body: 'Qualcuno ti ha scritto su Campo dei Fiori' },
+      data: { url: '/giornale.html', tag: `bottiglia-${bottigliaId}` }, // letto dal SW al click
       webpush: {
         notification: {
           title: '💌 Nuovo messaggio in bottiglia',
@@ -192,6 +193,7 @@ exports.onNuovoContenuto = onDocumentCreated(
         title: '🗞️ Campo dei Fiori',
         body:  `${nomeAutore}: ${anteprima}`
       },
+      data: { url: '/giornale.html', tag: `giornale-${postId}` }, // letto dal SW al click
       webpush: {
         notification: {
           title:  '🗞️ Campo dei Fiori',
