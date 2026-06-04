@@ -13,13 +13,24 @@
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html { min-height: 100%; background: #1a2e1a; }
-    body { min-height: 100%; background: #1a2e1a; font-family: 'Nunito', sans-serif; }
+    /* Layout a schermata singola: tutto visibile senza scrollare */
+    html, body {
+      height: 100%; max-height: 100%;
+      overflow: hidden;
+      background: #1a2e1a;
+      font-family: 'Nunito', sans-serif;
+    }
+    /* Colonna verticale: cover + sezione post */
+    .page-layout {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
 
     .cover {
       display: block;
-      width: 100vw;
-      height: 100vh;
+      width: 100%;
+      flex: 0 0 55vh;          /* 55% viewport — regolabile */
       background: center center / cover no-repeat;
       cursor: pointer;
     }
@@ -27,7 +38,10 @@
       .cover { background-image: url('https://res.cloudinary.com/dxqyprtzh/image/upload/v1780146302/logo_camp_app_cellulare_txohak.png'); }
     }
     @media (min-width: 769px) {
-      .cover { background-image: url('https://res.cloudinary.com/dxqyprtzh/image/upload/v1780146911/logo_campo_sito_web_ed52gm.png'); }
+      .cover {
+        background-image: url('https://res.cloudinary.com/dxqyprtzh/image/upload/v1780146911/logo_campo_sito_web_ed52gm.png');
+        flex-basis: 60vh;
+      }
     }
 
 
@@ -84,14 +98,21 @@
 
     /* ---- Sezione Ultimi Post ---- */
     .ultimi-post {
+      flex: 1;                  /* occupa tutto lo spazio rimanente */
+      overflow: hidden;
       background: #1a2e1a;
-      padding: 32px 16px 100px;
+      /* su mobile tiene conto della bottom nav (62px) */
+      padding: 14px 16px 70px;
       max-width: 640px;
+      width: 100%;
       margin: 0 auto;
+    }
+    @media (min-width: 769px) {
+      .ultimi-post { padding-bottom: 16px; }
     }
     .ultimi-post-header {
       display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: 16px;
+      margin-bottom: 10px;
     }
     .ultimi-post-title {
       color: #fff; font-size: 1.05rem; font-weight: 800;
@@ -106,8 +127,8 @@
       display: block; text-decoration: none;
       background: rgba(255,255,255,0.07);
       border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 12px; padding: 14px 16px;
-      margin-bottom: 10px;
+      border-radius: 12px; padding: 10px 14px;
+      margin-bottom: 8px;
       transition: background 0.15s, transform 0.12s;
       cursor: pointer;
     }
@@ -165,6 +186,7 @@
   </style>
 </head>
 <body>
+  <div class="page-layout">
 
   <a class="cover" href="comunita.html" aria-label="Entra nel mondo di Campo dei Fiori"></a>
 
@@ -190,6 +212,8 @@
     </div>
     <div id="ultimi-post-list"><div id="ultimi-spinner">Caricamento…</div></div>
   </section>
+
+  </div><!-- /page-layout -->
 
   <!-- Auth su mobile (in alto a destra) -->
   <div class="index-nav">
