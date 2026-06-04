@@ -76,7 +76,75 @@ function tronca(testo, max = 80) {
   return testo.length > max ? testo.slice(0, max) + '…' : testo;
 }
 
-// ─── UNICO TRIGGER: nuovo post nel diario → broadcast a tutti ────────────
+// ─── TRIGGER 2: nuovo messaggio in bottiglia → broadcast a tutti ─────────
+
+exports.onNuovaBottiglia = onDocumentCreated(
+  { document: 'messaggiBottiglia/{bottigliaId}', region: 'europe-west1' },
+  async event => {
+    const bottigliaId = event.params.bottigliaId;
+    console.log('[FCM] Trigger onNuovaBottiglia — id:', bottigliaId);
+
+    const data = event.data?.data();
+    if (!data) { console.warn('[FCM] Documento vuoto, uscita.'); return; }
+
+    const mittente = data.uidMittente;
+    console.log('[FCM] Mittente UID:', mittente);
+
+    const tokens = await getAllFcmTokens(mittente); // escludi mittente
+    if (!tokens.length) { console.warn('[FCM] Nessun token trovato.'); return; }
+
+    const msgBase = {
+      notification: { title: '💌 Nuovo messaggio in bottiglia', body: 'Qualcuno ti ha scritto su Campo dei Fiori' },
+      webpush: {
+        notification: {
+          title: '💌 Nuovo messaggio in bottiglia',
+          body:  'Qualcuno ti ha scritto su Campo dei Fiori',
+          icon:  '/icons/icon-192.png',
+          badge: '/icons/icon-192.png',
+          tag:   `bottiglia-${bottigliaId}`
+        },
+        fcmOptions: { link: '/giornale.html' }
+      },
+      android: { notification: { sound: 'default', channelId: 'campo_notifiche' } },
+      apns:    { payload: { aps: { sound: 'default', badge: 1 } } }
+    };
+
+    console.log(`[FCM] Invio bottiglia a ${tokens.length} token...`);
+    const staleTokens = [];
+    const results = await Promise.all(
+      tokens.map(async (token, idx) => {
+        try {
+          const msgId = await messaging.send({ ...msgBase, token });
+          console.log(`[FCM] ✓ Token[${idx}] OK — ${msgId}`);
+          return { success: true };
+        } catch (err) {
+          const code = err.code || String(err);
+          console.error(`[FCM] ✗ Token[${idx}] ERRORE — ${code}: ${err.message}`);
+          if (code.includes('registration-token-not-registered') || code.includes('invalid-registration-token')) {
+            staleTokens.push(token);
+          }
+          return { success: false };
+        }
+      })
+    );
+    const ok = results.filter(r => r.success).length;
+    console.log(`[FCM] Bottiglia completata — Successi: ${ok}, Falliti: ${results.length - ok}`);
+
+    // Pulizia token stale
+    for (const st of staleTokens) {
+      for (const coll of ['utenti', 'staff', 'amici']) {
+        try {
+          const s = await db.collection(coll).where('fcmTokens', 'array-contains', st).get();
+          for (const d of s.docs) { await d.ref.update({ fcmTokens: (d.data().fcmTokens||[]).filter(t=>t!==st) }); }
+          const s2 = await db.collection(coll).where('fcmToken', '==', st).get();
+          for (const d of s2.docs) { await d.ref.update({ fcmToken: null }); }
+        } catch (e) { console.warn(`[FCM] Pulizia ${coll}:`, e.message); }
+      }
+    }
+  }
+);
+
+// ─── TRIGGER 1: nuovo post nel diario → broadcast a tutti ────────────────
 
 exports.onNuovoContenuto = onDocumentCreated(
   { document: 'diario/{postId}', region: 'europe-west1' },

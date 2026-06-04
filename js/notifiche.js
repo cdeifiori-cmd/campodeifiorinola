@@ -127,19 +127,14 @@ export async function setupNotifiche(user) {
           ? [...data.fcmTokens]
           : data.fcmToken ? [data.fcmToken] : [];
 
-        if (existing.includes(token)) {
-          console.log('[FCM] Token già presente nell\'array in', coll);
-          saved = true;
-          break;
-        }
-
-        // Aggiunge il nuovo token in cima, max 5 per utente (1 per dispositivo)
-        const updated = [token, ...existing].slice(0, 5);
+        // Sempre aggiorna: nuovo token in cima, deduplicato, max 5
+        const filtered = existing.filter(t => t !== token); // rimuovi eventuale duplicato
+        const updated  = [token, ...filtered].slice(0, 5);
         await updateDoc(doc(db, coll, user.uid), {
-          fcmTokens: updated,  // nuovo campo array
-          fcmToken:  token     // mantiene per compatibilità
+          fcmTokens: updated,  // array aggiornato ad ogni sessione
+          fcmToken:  token     // backward compat
         });
-        console.log(`[FCM] Array token aggiornato in ${coll} (${updated.length} token) per UID`, user.uid);
+        console.log(`[FCM] Token scritto in ${coll} (${updated.length} in array) UID:`, user.uid);
         saved = true;
         break;
       } catch (e) {
