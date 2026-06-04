@@ -46,6 +46,17 @@
     }
     .card-evento:hover { transform: translateY(-2px); }
 
+    .btn-delete-post {
+      margin-left: auto;
+      background: none; border: none;
+      font-size: 1rem; cursor: pointer;
+      opacity: 0.45; padding: 2px 4px;
+      border-radius: 6px;
+      transition: opacity 0.15s, background 0.15s;
+      flex-shrink: 0;
+    }
+    .btn-delete-post:hover { opacity: 1; background: #fdebd0; }
+
     .evento-header {
       display: flex; align-items: center; gap: 10px;
       margin-bottom: 6px;
@@ -128,7 +139,8 @@
   <script type="module">
     import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { getFirestore, collection, getDocs, query, orderBy, limit }
+    import { getFirestore, collection, getDocs, query, orderBy, limit,
+             deleteDoc, doc }
       from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import { setupNavAuth } from './js/nav-auth.js';
     import { setupDocumentiNav } from './js/nav-docs.js';
@@ -151,6 +163,10 @@
     if (navigator.clearAppBadge) navigator.clearAppBadge().catch(() => {});
     if (navigator.setAppBadge)   navigator.setAppBadge(0).catch(() => {});
 
+
+    const ADMIN_UID = 'mCSgNMVEphVIIf4HX0bkcKq2ZKv2';
+    let   isAdmin   = false;
+    onAuthStateChanged(auth, user => { isAdmin = !!(user && user.uid === ADMIN_UID); });
 
     const feed   = document.getElementById('feed');
     const ora    = Date.now();
@@ -204,6 +220,7 @@
           const data = d.data();
           eventi.push({
             tipo: 'diario',
+            id:   d.id,
             uid: data.uidRagazzo,
             testo: data.testo || (data.immagineUrl ? '📷 Foto' : data.videoUrl ? '🎥 Video' : data.audioUrl ? '🎵 Audio' : ''),
             ts: data.createdAt,
@@ -302,6 +319,11 @@
         const card = document.createElement('a');
         card.className = 'card-evento';
         card.href      = e.link;
+
+        const deleteBtn = (isAdmin && e.tipo === 'diario' && e.id)
+          ? `<button class="btn-delete-post" title="Elimina post" data-id="${e.id}">🗑️</button>`
+          : '';
+
         card.innerHTML = `
           <div class="evento-header">
             ${avatarEl}
@@ -310,8 +332,25 @@
               <div class="evento-data">${formatDT(e.ts)}</div>
             </div>
             <span class="evento-tipo ${CLASSI[e.tipo]}">${ICONE[e.tipo]} ${LABEL[e.tipo]}</span>
+            ${deleteBtn}
           </div>
           <div class="evento-testo">${e.testo || ''}</div>`;
+
+        // Listener eliminazione (stopPropagation per non aprire il link)
+        if (isAdmin && e.tipo === 'diario' && e.id) {
+          card.querySelector('.btn-delete-post').addEventListener('click', async ev => {
+            ev.preventDefault();
+            ev.stopPropagation();
+            if (!confirm('Sei sicuro di voler eliminare questo post?')) return;
+            try {
+              await deleteDoc(doc(db, 'diario', e.id));
+              card.remove();
+            } catch(err) {
+              alert('Errore eliminazione: ' + err.message);
+            }
+          });
+        }
+
         feed.appendChild(card);
       });
     }
