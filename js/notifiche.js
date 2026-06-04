@@ -62,8 +62,9 @@ async function getFcmServiceWorker() {
 
 export async function setupNotifiche(user) {
   if (!user) return;
-  // Azzera il badge app ogni volta che l'utente apre l'app (BUG 1 fix)
-  if ('clearAppBadge' in navigator) navigator.clearAppBadge().catch(() => {});
+  // Azzera badge con tutti i metodi disponibili (compatibilità Android/Samsung)
+  if (navigator.clearAppBadge) navigator.clearAppBadge().catch(() => {});
+  if (navigator.setAppBadge)   navigator.setAppBadge(0).catch(() => {});
 
   // FCM richiede Notification API e Service Worker
   if (!('Notification' in window)) {

@@ -107,7 +107,7 @@ exports.onNuovaBottiglia = onDocumentCreated(
         fcmOptions: { link: '/giornale.html' }
       },
       android: { notification: { sound: 'default', channelId: 'campo_notifiche' } },
-      apns:    { payload: { aps: { sound: 'default', badge: 1 } } }
+      apns:    { payload: { aps: { sound: 'default' } } }
     };
 
     console.log(`[FCM] Invio bottiglia a ${tokens.length} token...`);

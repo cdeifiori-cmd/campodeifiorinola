@@ -42,7 +42,8 @@ messaging.onBackgroundMessage(payload => {
 // Click sulla notifica → naviga alla pagina giusta e azzera badge
 self.addEventListener('notificationclick', event => {
   event.notification.close();
-  // Azzera il badge app (BUG 1 fix)
+  // Azzera badge (tutti i metodi, compatibilità Samsung/Android)
+  if (self.registration.clearBadge) self.registration.clearBadge().catch(() => {});
   if (self.registration.setAppBadge) self.registration.setAppBadge(0).catch(() => {});
   const url = (event.notification.data && event.notification.data.url) || '/giornale.html';
   event.waitUntil(
