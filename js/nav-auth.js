@@ -22,7 +22,39 @@ const CSS = `
     position: relative;
     display: flex;
     align-items: center;
+    gap: 6px;
   }
+
+  /* ── Icona notifiche con badge ── */
+  .notif-bell {
+    position: relative;
+    width: 34px; height: 34px;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(255,255,255,0.15);
+    border-radius: 50%;
+    cursor: pointer;
+    text-decoration: none;
+    font-size: 1.15rem;
+    flex-shrink: 0;
+    transition: background 0.2s;
+  }
+  .notif-bell:hover { background: rgba(255,255,255,0.28); }
+  .notif-bell .notif-count {
+    position: absolute;
+    top: -3px; right: -3px;
+    background: #e74c3c;
+    color: #fff;
+    border-radius: 10px;
+    font-size: 0.6rem;
+    font-weight: 800;
+    font-family: 'Nunito', sans-serif;
+    min-width: 16px; height: 16px;
+    padding: 0 4px;
+    display: flex; align-items: center; justify-content: center;
+    line-height: 1;
+    display: none;
+  }
+  .notif-bell .notif-count.visible { display: flex; }
   .btn-accedi {
     background: rgba(255,255,255,0.22);
     color: #fff;
@@ -131,6 +163,10 @@ export function setupNavAuth(slotId = 'nav-auth-slot') {
 
     slot.innerHTML = `
       <div class="nav-auth-wrap" id="nav-auth-wrap">
+        <a class="notif-bell" id="notif-bell" href="giornale.html" title="Notifiche">
+          🔔
+          <span class="notif-count" id="notif-count"></span>
+        </a>
         <div class="user-avatar-btn" id="user-avatar-btn" title="${nome}">
           ${avatarInner}
         </div>
@@ -140,6 +176,28 @@ export function setupNavAuth(slotId = 'nav-auth-slot') {
           <button class="logout-btn" id="btn-logout">🚪 Esci</button>
         </div>
       </div>`;
+
+    // Mostra contatore notifiche non lette dal localStorage
+    const bellEl  = document.getElementById('notif-bell');
+    const countEl = document.getElementById('notif-count');
+    function aggiornaContatore() {
+      const n = parseInt(localStorage.getItem('fcm_unread') || '0', 10);
+      if (n > 0) {
+        countEl.textContent = n > 99 ? '99+' : String(n);
+        countEl.classList.add('visible');
+        if (navigator.setAppBadge) navigator.setAppBadge(n).catch(() => {});
+      } else {
+        countEl.classList.remove('visible');
+        if (navigator.clearAppBadge) navigator.clearAppBadge().catch(() => {});
+      }
+    }
+    aggiornaContatore();
+    // Click campanella → vai al giornale e azzera
+    bellEl.addEventListener('click', () => {
+      localStorage.setItem('fcm_unread', '0');
+      if (navigator.clearAppBadge) navigator.clearAppBadge().catch(() => {});
+      if (navigator.setAppBadge)   navigator.setAppBadge(0).catch(() => {});
+    });
 
     document.getElementById('user-avatar-btn').addEventListener('click', e => {
       e.stopPropagation();

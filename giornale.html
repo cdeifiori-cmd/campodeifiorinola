@@ -146,6 +146,10 @@
     const auth = getAuth(app);
     setupNavAuth();
     setupDocumentiNav();
+    // Azzera badge notifiche quando si apre il giornale
+    localStorage.setItem('fcm_unread', '0');
+    if (navigator.clearAppBadge) navigator.clearAppBadge().catch(() => {});
+    if (navigator.setAppBadge)   navigator.setAppBadge(0).catch(() => {});
 
 
     const feed   = document.getElementById('feed');
