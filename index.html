@@ -13,35 +13,24 @@
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    /* Layout a schermata singola: tutto visibile senza scrollare */
     html, body {
-      height: 100%; max-height: 100%;
-      overflow: hidden;
-      background: #1a2e1a;
-      font-family: 'Nunito', sans-serif;
-    }
-    /* Colonna verticale: cover + sezione post */
-    .page-layout {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
+      height: 100%; overflow: hidden;
+      background: #1a2e1a; font-family: 'Nunito', sans-serif;
     }
 
+    /* Cover a schermo intero */
     .cover {
       display: block;
-      width: 100%;
-      flex: 0 0 55vh;          /* 55% viewport — regolabile */
+      position: fixed; inset: 0;
       background: center center / cover no-repeat;
       cursor: pointer;
+      z-index: 0;
     }
     @media (max-width: 768px) {
       .cover { background-image: url('https://res.cloudinary.com/dxqyprtzh/image/upload/v1780146302/logo_camp_app_cellulare_txohak.png'); }
     }
     @media (min-width: 769px) {
-      .cover {
-        background-image: url('https://res.cloudinary.com/dxqyprtzh/image/upload/v1780146911/logo_campo_sito_web_ed52gm.png');
-        flex-basis: 60vh;
-      }
+      .cover { background-image: url('https://res.cloudinary.com/dxqyprtzh/image/upload/v1780146911/logo_campo_sito_web_ed52gm.png'); }
     }
 
 
@@ -96,23 +85,28 @@
       .top-nav-desktop .spacer { flex: 1; }
     }
 
-    /* ---- Sezione Ultimi Post ---- */
+    /* ---- Sezione Ultimi Post — overlay in basso sulla cover ---- */
     .ultimi-post {
-      flex: 1;                  /* occupa tutto lo spazio rimanente */
-      overflow: hidden;
-      background: #1a2e1a;
-      /* su mobile tiene conto della bottom nav (62px) */
-      padding: 14px 16px 70px;
-      max-width: 640px;
-      width: 100%;
-      margin: 0 auto;
+      position: fixed;
+      bottom: 62px;   /* sopra la bottom nav mobile */
+      left: 0; right: 0;
+      z-index: 10;
+      background: rgba(0,0,0,0.58);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      padding: 12px 16px 14px;
+      pointer-events: auto;
     }
     @media (min-width: 769px) {
-      .ultimi-post { padding-bottom: 16px; }
+      .ultimi-post { bottom: 0; }
+    }
+    .ultimi-post-inner {
+      max-width: 640px;
+      margin: 0 auto;
     }
     .ultimi-post-header {
       display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
     }
     .ultimi-post-title {
       color: #fff; font-size: 1.05rem; font-weight: 800;
@@ -123,38 +117,35 @@
       text-decoration: none; transition: color 0.15s;
     }
     .ultimi-post-link:hover { color: #fff; }
+    /* Lista post compatta verticale */
+    #ultimi-post-list { display: flex; flex-direction: column; gap: 6px; }
+
     .post-card {
-      display: block; text-decoration: none;
-      background: rgba(255,255,255,0.07);
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 12px; padding: 10px 14px;
-      margin-bottom: 8px;
-      transition: background 0.15s, transform 0.12s;
+      display: flex; align-items: baseline; gap: 10px;
+      text-decoration: none;
+      padding: 5px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
       cursor: pointer;
+      transition: opacity 0.15s;
     }
-    .post-card:hover {
-      background: rgba(255,255,255,0.12);
-      transform: translateY(-1px);
-    }
+    .post-card:last-child { border-bottom: none; }
+    .post-card:hover { opacity: 0.75; }
     .post-card-autore {
-      font-size: 0.78rem; font-weight: 800;
-      color: #a8d5a2; margin-bottom: 4px;
+      font-size: 0.76rem; font-weight: 800;
+      color: #a8d5a2; white-space: nowrap; flex-shrink: 0;
     }
     .post-card-testo {
-      font-size: 0.88rem; color: rgba(255,255,255,0.85);
-      line-height: 1.5; margin-bottom: 6px;
+      font-size: 0.8rem; color: rgba(255,255,255,0.82);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      flex: 1;
     }
     .post-card-ora {
-      font-size: 0.72rem; color: rgba(255,255,255,0.45);
-      font-weight: 600;
+      font-size: 0.68rem; color: rgba(255,255,255,0.4);
+      font-weight: 600; white-space: nowrap; flex-shrink: 0;
     }
-    .post-card-media {
-      font-size: 0.82rem; color: rgba(255,255,255,0.55);
-      font-style: italic;
-    }
+    .post-card-media { font-size: 0.78rem; color: rgba(255,255,255,0.5); }
     #ultimi-spinner {
-      text-align: center; padding: 24px 0;
-      color: rgba(255,255,255,0.4); font-size: 0.85rem;
+      color: rgba(255,255,255,0.35); font-size: 0.8rem; text-align: center; padding: 6px 0;
     }
 
     /* ---- MOBILE: bottom nav fissa ---- */
@@ -186,8 +177,6 @@
   </style>
 </head>
 <body>
-  <div class="page-layout">
-
   <a class="cover" href="comunita.html" aria-label="Entra nel mondo di Campo dei Fiori"></a>
 
   <!-- DESKTOP: barra in cima -->
@@ -206,14 +195,14 @@
 
   <!-- Sezione Ultimi Post del Giornale -->
   <section class="ultimi-post" aria-label="Ultimi post del giornale">
-    <div class="ultimi-post-header">
-      <span class="ultimi-post-title">📰 Dal giornale</span>
-      <a href="giornale.html" class="ultimi-post-link">Vedi tutto →</a>
+    <div class="ultimi-post-inner">
+      <div class="ultimi-post-header">
+        <span class="ultimi-post-title">📰 Dal giornale</span>
+        <a href="giornale.html" class="ultimi-post-link">Vedi tutto →</a>
+      </div>
+      <div id="ultimi-post-list"><div id="ultimi-spinner">Caricamento…</div></div>
     </div>
-    <div id="ultimi-post-list"><div id="ultimi-spinner">Caricamento…</div></div>
   </section>
-
-  </div><!-- /page-layout -->
 
   <!-- Auth su mobile (in alto a destra) -->
   <div class="index-nav">
@@ -289,10 +278,9 @@
           card.className = 'post-card';
           card.href = 'giornale.html';
           card.innerHTML = `
-            <div class="post-card-autore">${nome}</div>
-            ${testo ? `<div class="post-card-testo">${testo}</div>` : ''}
-            ${media ? `<div class="post-card-media">${media}</div>` : ''}
-            <div class="post-card-ora">${ora}</div>`;
+            <span class="post-card-autore">${nome}</span>
+            <span class="post-card-testo">${testo || media}</span>
+            <span class="post-card-ora">${ora}</span>`;
           list.appendChild(card);
         });
       } catch(e) {
