@@ -13,7 +13,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { height: 100%; background: #1a2e1a; font-family: 'Nunito', sans-serif; }
+    html { min-height: 100%; background: #1a2e1a; }
+    body { min-height: 100%; background: #1a2e1a; font-family: 'Nunito', sans-serif; }
 
     .cover {
       display: block;
@@ -81,6 +82,60 @@
       .top-nav-desktop .spacer { flex: 1; }
     }
 
+    /* ---- Sezione Ultimi Post ---- */
+    .ultimi-post {
+      background: #1a2e1a;
+      padding: 32px 16px 100px;
+      max-width: 640px;
+      margin: 0 auto;
+    }
+    .ultimi-post-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .ultimi-post-title {
+      color: #fff; font-size: 1.05rem; font-weight: 800;
+      letter-spacing: 0.02em;
+    }
+    .ultimi-post-link {
+      color: #a8d5a2; font-size: 0.82rem; font-weight: 700;
+      text-decoration: none; transition: color 0.15s;
+    }
+    .ultimi-post-link:hover { color: #fff; }
+    .post-card {
+      display: block; text-decoration: none;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px; padding: 14px 16px;
+      margin-bottom: 10px;
+      transition: background 0.15s, transform 0.12s;
+      cursor: pointer;
+    }
+    .post-card:hover {
+      background: rgba(255,255,255,0.12);
+      transform: translateY(-1px);
+    }
+    .post-card-autore {
+      font-size: 0.78rem; font-weight: 800;
+      color: #a8d5a2; margin-bottom: 4px;
+    }
+    .post-card-testo {
+      font-size: 0.88rem; color: rgba(255,255,255,0.85);
+      line-height: 1.5; margin-bottom: 6px;
+    }
+    .post-card-ora {
+      font-size: 0.72rem; color: rgba(255,255,255,0.45);
+      font-weight: 600;
+    }
+    .post-card-media {
+      font-size: 0.82rem; color: rgba(255,255,255,0.55);
+      font-style: italic;
+    }
+    #ultimi-spinner {
+      text-align: center; padding: 24px 0;
+      color: rgba(255,255,255,0.4); font-size: 0.85rem;
+    }
+
     /* ---- MOBILE: bottom nav fissa ---- */
     .bottom-nav-mobile {
       position: fixed;
@@ -127,6 +182,15 @@
     <div id="nav-auth-slot-desktop" style="display:flex;align-items:center"></div>
   </nav>
 
+  <!-- Sezione Ultimi Post del Giornale -->
+  <section class="ultimi-post" aria-label="Ultimi post del giornale">
+    <div class="ultimi-post-header">
+      <span class="ultimi-post-title">📰 Dal giornale</span>
+      <a href="giornale.html" class="ultimi-post-link">Vedi tutto →</a>
+    </div>
+    <div id="ultimi-post-list"><div id="ultimi-spinner">Caricamento…</div></div>
+  </section>
+
   <!-- Auth su mobile (in alto a destra) -->
   <div class="index-nav">
     <div id="nav-auth-slot"></div>
@@ -144,11 +208,76 @@
   </nav>
 
   <script type="module">
-    import { setupNavAuth } from './js/nav-auth.js';
+    import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getFirestore, collection, getDocs, query, orderBy, limit }
+      from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { setupNavAuth }      from './js/nav-auth.js';
     import { setupDocumentiNav } from './js/nav-docs.js';
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyC18lzwqhYcW29TsEO6Oy4Bqvb2PMBUmAg",
+      authDomain: "campo-dei-fiori.firebaseapp.com",
+      projectId: "campo-dei-fiori",
+      storageBucket: "campo-dei-fiori.firebasestorage.app",
+      messagingSenderId: "928976798756",
+      appId: "1:928976798756:web:1b90027ec9f03b203e44b1"
+    };
+    const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+    const db  = getFirestore(app);
+
     const isMobile = window.innerWidth < 769;
     setupNavAuth(isMobile ? 'nav-auth-slot' : 'nav-auth-slot-desktop');
     setupDocumentiNav();
+
+    // ── Ultimi 3 post del diario ──────────────────────────────────────
+    async function loadUltimiPost() {
+      const list = document.getElementById('ultimi-post-list');
+      try {
+        // Cache nomi utenti
+        const nomiCache = {};
+        const utentiSnap = await getDocs(collection(db, 'utenti'));
+        utentiSnap.forEach(d => { nomiCache[d.id] = d.data().nome; });
+        const staffSnap = await getDocs(collection(db, 'staff'));
+        staffSnap.forEach(d => { nomiCache[d.id] = d.data().nome; });
+
+        const snap = await getDocs(
+          query(collection(db, 'diario'), orderBy('createdAt', 'desc'), limit(3))
+        );
+
+        if (snap.empty) { list.innerHTML = ''; return; }
+
+        list.innerHTML = '';
+        snap.forEach(d => {
+          const post  = d.data();
+          const nome  = nomiCache[post.uidRagazzo] || 'Qualcuno';
+          const ts    = post.createdAt?.toDate?.();
+          const ora   = ts ? ts.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
+                           + ' · ' + ts.toLocaleDateString('it-IT', { day: 'numeric', month: 'short' })
+                          : '';
+          const testo = post.testo
+            ? (post.testo.length > 80 ? post.testo.slice(0, 80) + '…' : post.testo)
+            : '';
+          const media = !post.testo
+            ? (post.immagineUrl ? '📷 Foto' : post.videoUrl ? '🎬 Video' : post.audioUrl ? '🎵 Audio' : '')
+            : '';
+
+          const card = document.createElement('a');
+          card.className = 'post-card';
+          card.href = 'giornale.html';
+          card.innerHTML = `
+            <div class="post-card-autore">${nome}</div>
+            ${testo ? `<div class="post-card-testo">${testo}</div>` : ''}
+            ${media ? `<div class="post-card-media">${media}</div>` : ''}
+            <div class="post-card-ora">${ora}</div>`;
+          list.appendChild(card);
+        });
+      } catch(e) {
+        list.innerHTML = '';
+        console.warn('Ultimi post:', e.message);
+      }
+    }
+
+    loadUltimiPost();
   </script>
   <script>
     // Registra UN SOLO service worker unificato (FCM + caching).
