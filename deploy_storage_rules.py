@@ -37,20 +37,15 @@ r.raise_for_status()
 ruleset_name = r.json()['name']
 print(f'Ruleset creato: {ruleset_name}')
 
-# 2. Crea o aggiorna il release firebase.storage
-release_name = f'projects/{PROJECT_ID}/releases/firebase.storage'
+# 2. PATCH sul release Storage esistente (release già creato in precedenza)
+BUCKET = 'campo-dei-fiori.firebasestorage.app'
+release_name = f'projects/{PROJECT_ID}/releases/firebase.storage/{BUCKET}'
 release_body = {'release': {'name': release_name, 'rulesetName': ruleset_name}}
 
-# Prova prima PATCH (aggiorna esistente), poi POST (crea nuovo)
 r2 = requests.patch(
     f'https://firebaserules.googleapis.com/v1/{release_name}',
     json=release_body, headers=headers
 )
-if r2.status_code == 404:
-    r2 = requests.post(
-        f'https://firebaserules.googleapis.com/v1/projects/{PROJECT_ID}/releases',
-        json=release_body, headers=headers
-    )
 r2.raise_for_status()
 print('Storage rules deployate con successo!')
 print(json.dumps(r2.json(), indent=2))

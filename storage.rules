@@ -20,24 +20,37 @@ service firebase.storage {
       return /databases/(default)/documents/staff/$(uid);
     }
 
-    // Coordinatrice: può accedere solo alla propria comunità
-    function isCoordinatriceForComunita(comunitaId) {
+    // Qualsiasi membro dello staff autenticato
+    function isStaff() {
       return request.auth != null
-        && firestore.exists(staffRef(request.auth.uid))
-        && firestore.get(staffRef(request.auth.uid)).data.comunitaId == comunitaId
-        && firestore.get(staffRef(request.auth.uid)).data.ruolo.matches('.*Coordinatrice.*');
+        && firestore.exists(staffRef(request.auth.uid));
     }
 
-    // Qualunque coordinatrice (per Documenti Generali)
+    // Qualunque coordinatrice (per Documenti Generali / Segreteria)
     function isAnyCoordinatrice() {
       return request.auth != null
         && firestore.exists(staffRef(request.auth.uid))
         && firestore.get(staffRef(request.auth.uid)).data.ruolo.matches('.*Coordinatrice.*');
     }
 
-    // ── Documenti Generali (cartella piatta, accesso a tutte le coord.) ─
+    // Coordinatrice: può accedere se comunitaId è nel suo array (o uguale alla stringa)
+    function isCoordinatriceForComunita(comunitaId) {
+      let staffData = firestore.get(staffRef(request.auth.uid)).data;
+      return request.auth != null
+        && firestore.exists(staffRef(request.auth.uid))
+        && staffData.ruolo.matches('.*Coordinatrice.*')
+        && (
+          // Array (nuovo formato): usa operatore "in"
+          (staffData.comunitaId is list && comunitaId in staffData.comunitaId)
+          // Stringa (vecchio formato, backward compat)
+          || staffData.comunitaId == comunitaId
+        );
+    }
+
+    // ── Documenti Generali / Segreteria ──────────────────────────
+    // Accessibili a superuser e a qualsiasi membro dello staff autenticato
     match /documenti/documenti-generali/{file} {
-      allow read, write: if isSuperUser() || isAnyCoordinatrice();
+      allow read, write: if isSuperUser() || isStaff();
     }
 
     // ── Area Documenti per comunità ───────────────────────────────

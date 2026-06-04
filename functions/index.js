@@ -142,72 +142,62 @@ exports.onNuovoContenuto = onDocumentCreated(
       }
     };
 
-    // Invia in batch da 500 (limite FCM)
-    let totalSuccess = 0;
-    let totalFail    = 0;
+    // Invia a ogni token con messaging.send() individuale (più affidabile di sendEachForMulticast)
+    // Promise.all invia tutti in parallelo senza bloccarsi su singoli errori
+    console.log(`[FCM] Avvio invio a ${tokens.length} token in parallelo...`);
 
-    for (let i = 0; i < tokens.length; i += 500) {
-      const batch = tokens.slice(i, i + 500);
-      console.log(`[FCM] Invio batch ${Math.floor(i/500)+1}: ${batch.length} token`);
-      try {
-        const result = await messaging.sendEachForMulticast({
-          ...msgBase,
-          tokens: batch
-        });
-        totalSuccess += result.successCount;
-        totalFail    += result.failureCount;
-        console.log(`[FCM] Batch OK: ${result.successCount} successi, ${result.failureCount} falliti`);
+    const staleTokens = [];
 
-        // Logga errori e rimuove token stale/scaduti da Firestore
-        const staleTokens = [];
-        result.responses.forEach((resp, idx) => {
-          if (!resp.success) {
-            const code = resp.error?.code || '';
-            console.warn(`[FCM] Token [${idx}] fallito:`, code, resp.error?.message);
-            // Token non più valido → va rimosso
-            if (
-              code === 'messaging/registration-token-not-registered' ||
-              code === 'messaging/invalid-registration-token' ||
-              code === 'messaging/invalid-argument'
-            ) {
-              staleTokens.push(batch[idx]);
-            }
+    const results = await Promise.all(
+      tokens.map(async (token, idx) => {
+        try {
+          console.log(`[FCM] Invio a token[${idx}]: ${token.slice(0,20)}…`);
+          const msgId = await messaging.send({ ...msgBase, token });
+          console.log(`[FCM] ✓ Token[${idx}] OK — messageId: ${msgId}`);
+          return { success: true };
+        } catch (err) {
+          const code = err.code || err.errorInfo?.code || String(err);
+          console.error(`[FCM] ✗ Token[${idx}] ERRORE — code: ${code} | msg: ${err.message}`);
+          if (
+            code.includes('registration-token-not-registered') ||
+            code.includes('invalid-registration-token') ||
+            code.includes('invalid-argument')
+          ) {
+            staleTokens.push(token);
           }
-        });
+          return { success: false, code };
+        }
+      })
+    );
 
-        // Rimuovi token stale da tutte le collezioni (array + vecchio campo stringa)
-        if (staleTokens.length > 0) {
-          console.log(`[FCM] Rimozione ${staleTokens.length} token stale da Firestore`);
-          for (const staleToken of staleTokens) {
-            for (const coll of ['utenti', 'staff', 'amici']) {
-              try {
-                // Cerca nel nuovo campo array
-                const arrSnap = await db.collection(coll)
-                  .where('fcmTokens', 'array-contains', staleToken).get();
-                for (const docSnap of arrSnap.docs) {
-                  const filtered = (docSnap.data().fcmTokens || []).filter(t => t !== staleToken);
-                  await docSnap.ref.update({ fcmTokens: filtered });
-                  console.log(`[FCM] Token stale rimosso dall'array in ${coll}/${docSnap.id}`);
-                }
-                // Cerca nel vecchio campo stringa
-                const strSnap = await db.collection(coll)
-                  .where('fcmToken', '==', staleToken).get();
-                for (const docSnap of strSnap.docs) {
-                  await docSnap.ref.update({ fcmToken: null });
-                  console.log(`[FCM] Token stale (campo stringa) rimosso da ${coll}/${docSnap.id}`);
-                }
-              } catch (e) {
-                console.warn(`[FCM] Errore pulizia token in ${coll}:`, e.message);
-              }
+    const totalSuccess = results.filter(r => r.success).length;
+    const totalFail    = results.filter(r => !r.success).length;
+    console.log(`[FCM] Completato — Successi: ${totalSuccess}, Falliti: ${totalFail}`);
+
+    // Rimuovi token stale da tutte le collezioni
+    if (staleTokens.length > 0) {
+      console.log(`[FCM] Rimozione ${staleTokens.length} token stale da Firestore`);
+      for (const staleToken of staleTokens) {
+        for (const coll of ['utenti', 'staff', 'amici']) {
+          try {
+            const arrSnap = await db.collection(coll)
+              .where('fcmTokens', 'array-contains', staleToken).get();
+            for (const docSnap of arrSnap.docs) {
+              const filtered = (docSnap.data().fcmTokens || []).filter(t => t !== staleToken);
+              await docSnap.ref.update({ fcmTokens: filtered });
+              console.log(`[FCM] Token stale rimosso array ${coll}/${docSnap.id}`);
             }
+            const strSnap = await db.collection(coll)
+              .where('fcmToken', '==', staleToken).get();
+            for (const docSnap of strSnap.docs) {
+              await docSnap.ref.update({ fcmToken: null });
+              console.log(`[FCM] Token stale rimosso stringa ${coll}/${docSnap.id}`);
+            }
+          } catch (e) {
+            console.warn(`[FCM] Errore pulizia ${coll}:`, e.message);
           }
         }
-      } catch (err) {
-        console.error('[FCM] Errore invio batch:', err.message);
-        totalFail += batch.length;
       }
     }
-
-    console.log(`[FCM] Completato — Successi: ${totalSuccess}, Falliti: ${totalFail}`);
   }
 );

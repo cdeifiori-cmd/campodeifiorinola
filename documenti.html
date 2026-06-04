@@ -340,7 +340,7 @@
 
     /* ── User state ───────────────────────────────────────────────── */
     let isAdmin = false, isMassimo = false, isCoord = false;
-    let myComunitaId = null;
+    let myComunita = [];  // array: supporta coordinatrici con più comunità
     let canWrite = false;  // admin, massimo, coordinatrice
 
     /* ── Navigation stack ─────────────────────────────────────────── */
@@ -401,7 +401,7 @@
         const list = [];
         snap.forEach(d => {
           if (VALID_COMUNITA.includes(d.id) &&
-              (isAdmin || isMassimo || d.id === myComunitaId)) {
+              (isAdmin || isMassimo || myComunita.includes(d.id))) {
             list.push({ id: d.id, label: d.data().nomeComunita });
           }
         });
@@ -770,8 +770,12 @@
         const snap = await getDoc(doc(db, 'staff', user.uid));
         if (snap.exists()) {
           const ruolo = snap.data().ruolo || '';
-          isCoord      = ruolo.includes('Coordinatrice');
-          myComunitaId = snap.data().comunitaId || null;
+          isCoord = ruolo.includes('Coordinatrice');
+          // Normalizza comunitaId: può essere stringa o array
+          const rawCom = snap.data().comunitaId;
+          myComunita = Array.isArray(rawCom)
+            ? rawCom
+            : (rawCom ? [rawCom] : []);
         }
       }
 
