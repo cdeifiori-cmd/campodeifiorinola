@@ -152,16 +152,6 @@ export async function setupNotifiche(user) {
     // Gestisci notifiche in foreground (app aperta)
     onMessage(messaging, payload => {
       const n = payload.notification || {};
-      // Incrementa contatore non lette
-      const prev = parseInt(localStorage.getItem('fcm_unread') || '0', 10);
-      localStorage.setItem('fcm_unread', String(prev + 1));
-      // Aggiorna badge campanella se visibile
-      const countEl = document.getElementById('notif-count');
-      if (countEl) {
-        const tot = prev + 1;
-        countEl.textContent = tot > 99 ? '99+' : String(tot);
-        countEl.classList.add('visible');
-      }
       if (Notification.permission === 'granted') {
         new Notification(n.title || 'Campo dei Fiori 🌸', {
           body: n.body || '',
