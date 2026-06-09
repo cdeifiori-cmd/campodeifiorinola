@@ -764,6 +764,9 @@
       <a href="index.html" class="sidebar-nav-item">
         <span class="nav-icon">🏠</span> Home
       </a>
+      <a href="piazzetta.html" class="sidebar-nav-item">
+        <span class="nav-icon">🏡</span> La Piazzetta
+      </a>
       <button class="sidebar-nav-item active" onclick="document.getElementById('diario-section-desktop').scrollIntoView({behavior:'smooth'})">
         <span class="nav-icon">📓</span> Il Mio Diario
       </button>
@@ -905,12 +908,9 @@
   <!-- BOTTOM NAV (solo mobile) -->
   <nav class="bottom-nav">
     <a href="index.html" class="nav-item"><img src="https://res.cloudinary.com/dxqyprtzh/image/upload/v1780171524/viso_campo_brd2ic.webp" alt="" style="width:28px;height:28px;border-radius:50%;object-fit:cover;display:block;">Home</a>
+    <a href="piazzetta.html" class="nav-item"><span class="nav-icon">🏡</span>Piazzetta</a>
     <a href="comunita.html" class="nav-item"><span class="nav-icon">🏘️</span>Comunità</a>
     <a href="staff.html" class="nav-item"><span class="nav-icon">🤡</span>Staff</a>
-    <a href="minori.html?comunita=after-us" class="nav-item"><span class="nav-icon">🌟</span>After Us</a>
-    <a href="amici.html" class="nav-item"><span class="nav-icon">🤝</span>Amici</a>
-    <a href="documenti.html" class="nav-item nav-doc-link" style="display:none"><span class="nav-icon">📁</span>Documenti</a>
-    <a href="#" class="nav-item"><span class="nav-icon">📋</span>Progetti</a>
     <a href="giornale.html" class="nav-item"><span class="nav-icon">📰</span>Giornale</a>
   </nav>
 
@@ -1152,7 +1152,8 @@
 
     function getSupportedAudioMime() {
       if (!window.MediaRecorder) return null;
-      const types = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus'];
+      // webm/opus first: reliable on Android Chrome. mp4 last: isTypeSupported can lie on some Android versions.
+      const types = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus', 'audio/mp4'];
       for (const t of types) {
         if (MediaRecorder.isTypeSupported(t)) return t;
       }
@@ -1250,7 +1251,7 @@
       document.getElementById('saluto-upload-progress').style.display = 'none';
       salutoBlob = null;
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: { sampleRate: 22050, channelCount: 1 } });
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         salutoChunks = [];
         salutoRecorder = new MediaRecorder(stream, { mimeType, audioBitsPerSecond: 32000 });
         salutoRecorder.ondataavailable = e => { if (e.data.size > 0) salutoChunks.push(e.data); };
@@ -1271,7 +1272,11 @@
         }, 1000);
       } catch(e) {
         document.getElementById('saluto-rec-ui').style.display = 'none';
-        alert(e.name === 'NotAllowedError' ? 'Permesso microfono negato.' : 'Errore: ' + e.message);
+        alert(e.name === 'NotAllowedError'
+          ? 'Permesso microfono negato. Vai nelle impostazioni del browser > Sito > Microfono e consentilo, poi riprova.'
+          : e.name === 'NotFoundError'
+          ? 'Nessun microfono trovato. Controlla che il dispositivo abbia un microfono funzionante.'
+          : 'Errore microfono: ' + e.message);
       }
     });
 
@@ -1907,7 +1912,11 @@
         recTimerInterval=setInterval(()=>{secs++;const m=Math.floor(secs/60),s=secs%60;document.getElementById('rec-timer').textContent=`${m}:${s.toString().padStart(2,'0')}`;},1000);
       }catch(e){
         document.getElementById('audio-rec-ui').style.display='none';
-        showError(e.name==='NotAllowedError'?'Permesso microfono negato.':'Microfono non disponibile: '+e.message);
+        showError(e.name==='NotAllowedError'
+          ?'Permesso microfono negato. Vai nelle impostazioni del browser > Sito > Microfono e consentilo, poi riprova.'
+          :e.name==='NotFoundError'
+          ?'Nessun microfono trovato sul dispositivo.'
+          :'Errore microfono: '+e.message);
       }
     });
     document.getElementById('btn-stop-rec').addEventListener('click',()=>{if(mediaRecorder&&mediaRecorder.state!=='inactive')mediaRecorder.stop();clearInterval(recTimerInterval);});
@@ -2143,7 +2152,7 @@
         bottRecorder.onstop=()=>{stream.getTracks().forEach(t=>t.stop());bottRecBlob=new Blob(bottRecChunks,{type:mimeType});document.getElementById('bott-rec-audio-preview').src=URL.createObjectURL(bottRecBlob);document.getElementById('bott-rec-active').style.display='none';document.getElementById('bott-rec-preview').style.display='';clearInterval(bottRecTimer);};
         bottRecorder.start();
         let secs=0;bottRecTimer=setInterval(()=>{secs++;const m=Math.floor(secs/60),s=secs%60;document.getElementById('bott-rec-timer').textContent=`${m}:${s.toString().padStart(2,'0')}`;},1000);
-      }catch(e){document.getElementById('bott-rec-ui').style.display='none';alert(e.name==='NotAllowedError'?'Permesso microfono negato.':'Errore: '+e.message);}
+      }catch(e){document.getElementById('bott-rec-ui').style.display='none';alert(e.name==='NotAllowedError'?'Permesso microfono negato. Vai nelle impostazioni del browser > Sito > Microfono e consentilo, poi riprova.':e.name==='NotFoundError'?'Nessun microfono trovato sul dispositivo.':'Errore microfono: '+e.message);}
     });
     document.getElementById('btn-bott-stop-rec').addEventListener('click',()=>{if(bottRecorder&&bottRecorder.state!=='inactive')bottRecorder.stop();clearInterval(bottRecTimer);});
     document.getElementById('btn-bott-discard-rec').addEventListener('click',()=>{bottRecBlob=null;document.getElementById('bott-rec-ui').style.display='none';});

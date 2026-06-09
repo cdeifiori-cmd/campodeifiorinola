@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>La Piazzetta – Campo dei Fiori</title>
+  <meta name="theme-color" content="#4a7c59">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --verde:       #4a7c59;
+      --verde-scuro: #3a6347;
+      --verde-light: #e8f4e0;
+      --arancio:     #e07b39;
+      --crema:       #fef9f0;
+      --testo:       #222;
+      --testo-muted: #888;
+    }
+
+    body {
+      font-family: 'Nunito', sans-serif;
+      background: #f0f4f0;
+      color: var(--testo);
+      padding-bottom: 80px;
+    }
+
+    /* ── Header ── */
+    .top-header {
+      background: var(--verde);
+      color: #fff;
+      display: flex; align-items: center;
+      padding: 0 1rem; height: 56px;
+      position: sticky; top: 0; z-index: 100;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+    .top-header h1 { font-size: 1.1rem; font-weight: 800; flex: 1; text-align: center; }
+
+    /* ── Feed ── */
+    .feed { padding: 10px 12px; display: flex; flex-direction: column; gap: 12px; max-width: 640px; margin: 0 auto; }
+
+    /* ── Post card ── */
+    .post-card {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+      overflow: hidden;
+    }
+    .post-header {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 14px 8px;
+    }
+    .post-avatar {
+      width: 40px; height: 40px; border-radius: 50%;
+      overflow: hidden; flex-shrink: 0;
+      background: var(--verde-light);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.3rem;
+    }
+    .post-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .post-meta { flex: 1; min-width: 0; }
+    .post-autore { font-size: 0.9rem; font-weight: 800; }
+    .post-data   { font-size: 0.72rem; color: var(--testo-muted); margin-top: 1px; }
+    .post-delete-btn {
+      background: none; border: none;
+      font-size: 1rem; cursor: pointer;
+      opacity: 0.4; padding: 4px;
+      border-radius: 8px; transition: opacity 0.15s, background 0.15s;
+      flex-shrink: 0; display: none;
+    }
+    .post-delete-btn:hover { opacity: 1; background: #fdebd0; }
+
+    .post-text {
+      font-size: 0.95rem; line-height: 1.55;
+      padding: 0 14px 10px;
+      white-space: pre-wrap; word-break: break-word;
+    }
+    .post-media { width: 100%; display: block; max-height: 420px; object-fit: cover; }
+    .post-media-video { width: 100%; display: block; max-height: 420px; background: #000; }
+    .post-audio { width: 100%; padding: 8px 14px; }
+
+    /* ── Reactions ── */
+    .post-reactions {
+      display: flex; align-items: center; gap: 4px;
+      padding: 8px 14px;
+      flex-wrap: wrap;
+    }
+    .reaction-btn {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: #f5f5f5; border: 1.5px solid #e8e8e8;
+      border-radius: 20px; padding: 4px 10px;
+      font-size: 0.88rem; font-weight: 700;
+      cursor: pointer; transition: background 0.15s, border-color 0.15s;
+      color: var(--testo);
+    }
+    .reaction-btn.active { background: var(--verde-light); border-color: var(--verde); color: var(--verde-scuro); }
+    .reaction-btn:hover   { background: var(--verde-light); }
+
+    /* ── Comments toggle ── */
+    .post-footer {
+      border-top: 1px solid #f0f0f0;
+      padding: 8px 14px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .btn-comments {
+      background: none; border: none;
+      font-size: 0.82rem; font-weight: 700; color: var(--testo-muted);
+      cursor: pointer; display: flex; align-items: center; gap: 4px;
+      padding: 4px 0; transition: color 0.15s;
+    }
+    .btn-comments:hover { color: var(--verde); }
+
+    /* ── Comments section ── */
+    .comments-section { padding: 0 14px 12px; display: none; }
+    .comments-section.open { display: block; }
+    .comment-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+    .comment-item {
+      display: flex; gap: 8px; align-items: flex-start;
+    }
+    .comment-avatar {
+      width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
+      background: var(--verde-light);
+      display: flex; align-items: center; justify-content: center; font-size: 1rem;
+      overflow: hidden;
+    }
+    .comment-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .comment-bubble {
+      background: #f5f8f5; border-radius: 12px;
+      padding: 7px 10px; flex: 1; min-width: 0;
+      font-size: 0.85rem;
+    }
+    .comment-autore { font-weight: 800; font-size: 0.78rem; margin-bottom: 2px; }
+    .comment-text   { color: #444; white-space: pre-wrap; word-break: break-word; }
+    .comment-media-thumb { max-width: 180px; border-radius: 8px; margin-top: 6px; display: block; }
+    .comment-data   { font-size: 0.68rem; color: #bbb; margin-top: 3px; }
+
+    /* comment reactions */
+    .comment-reactions {
+      display: flex; gap: 3px; flex-wrap: wrap; margin-top: 4px;
+    }
+    .comment-reaction-btn {
+      background: #eee; border: 1px solid #ddd;
+      border-radius: 14px; padding: 2px 7px;
+      font-size: 0.78rem; font-weight: 700;
+      cursor: pointer; color: var(--testo);
+      transition: background 0.12s;
+    }
+    .comment-reaction-btn.active { background: var(--verde-light); border-color: var(--verde); }
+
+    /* comment input */
+    .comment-input-wrap {
+      display: flex; gap: 8px; align-items: flex-end;
+    }
+    .comment-input-inner { flex: 1; }
+    .comment-textarea {
+      width: 100%; border: 1.5px solid #ddd; border-radius: 12px;
+      padding: 8px 10px; font-family: 'Nunito', sans-serif;
+      font-size: 0.88rem; resize: none; outline: none;
+      transition: border-color 0.15s; min-height: 36px; max-height: 120px;
+    }
+    .comment-textarea:focus { border-color: var(--verde); }
+    .comment-media-btns {
+      display: flex; gap: 4px; margin-top: 4px;
+    }
+    .comment-media-btn {
+      background: none; border: 1.5px solid #ddd; border-radius: 20px;
+      padding: 3px 9px; font-size: 0.78rem; cursor: pointer;
+      transition: background 0.12s, border-color 0.12s;
+    }
+    .comment-media-btn:hover { background: var(--verde-light); border-color: var(--verde); }
+    .comment-send-btn {
+      background: var(--verde); color: #fff;
+      border: none; border-radius: 12px;
+      padding: 8px 14px; font-size: 0.88rem; font-weight: 700;
+      cursor: pointer; white-space: nowrap; transition: background 0.15s;
+      flex-shrink: 0;
+    }
+    .comment-send-btn:hover { background: var(--verde-scuro); }
+
+    /* ── FAB nuovo post ── */
+    .fab {
+      position: fixed;
+      bottom: 80px; right: 18px;
+      width: 56px; height: 56px;
+      background: var(--verde);
+      color: #fff; font-size: 1.8rem;
+      border: none; border-radius: 50%;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+      cursor: pointer; z-index: 200;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s, transform 0.15s;
+    }
+    .fab:hover { background: var(--verde-scuro); transform: scale(1.08); }
+
+    /* ── Modal ── */
+    .modal-backdrop {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.55);
+      z-index: 500; display: flex;
+      align-items: flex-end; justify-content: center;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.2s;
+    }
+    .modal-backdrop.open { opacity: 1; pointer-events: all; }
+    .modal-sheet {
+      background: #fff;
+      border-radius: 20px 20px 0 0;
+      width: 100%; max-width: 640px;
+      padding: 20px 18px 24px;
+      max-height: 90vh;
+      overflow-y: auto;
+      transform: translateY(100%);
+      transition: transform 0.25s ease;
+    }
+    .modal-backdrop.open .modal-sheet { transform: translateY(0); }
+
+    .modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .modal-title { font-size: 1.05rem; font-weight: 800; }
+    .modal-close {
+      background: #f0f0f0; border: none; border-radius: 50%;
+      width: 32px; height: 32px; font-size: 1rem;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+    }
+
+    .form-textarea {
+      width: 100%; border: 1.5px solid #ddd; border-radius: 12px;
+      padding: 10px 12px; font-family: 'Nunito', sans-serif;
+      font-size: 0.95rem; resize: none; outline: none;
+      min-height: 100px; transition: border-color 0.15s;
+    }
+    .form-textarea:focus { border-color: var(--verde); }
+
+    .media-btns {
+      display: flex; gap: 8px; flex-wrap: wrap;
+      margin: 10px 0 6px;
+    }
+    .media-btn {
+      display: flex; align-items: center; gap: 5px;
+      background: #f5f5f5; border: 1.5px solid #e0e0e0;
+      border-radius: 20px; padding: 6px 14px;
+      font-family: 'Nunito', sans-serif; font-size: 0.85rem; font-weight: 700;
+      cursor: pointer; transition: background 0.15s, border-color 0.15s;
+    }
+    .media-btn:hover { background: var(--verde-light); border-color: var(--verde); }
+    .media-btn.recording { background: #ffe5e5; border-color: #e74c3c; color: #e74c3c; animation: pulse 1s infinite; }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
+
+    .media-preview { margin: 8px 0; }
+    .media-preview img, .media-preview video {
+      max-width: 100%; border-radius: 10px; display: block;
+    }
+    .media-preview audio { width: 100%; margin-top: 4px; }
+    .media-preview .remove-media {
+      background: #e74c3c; color: #fff; border: none; border-radius: 8px;
+      padding: 3px 10px; font-size: 0.78rem; cursor: pointer; margin-top: 4px;
+    }
+
+    .upload-progress {
+      height: 4px; background: #e0e0e0; border-radius: 2px; margin: 8px 0;
+      display: none;
+    }
+    .upload-progress-bar {
+      height: 100%; background: var(--verde); border-radius: 2px;
+      transition: width 0.3s;
+    }
+
+    .btn-pubblica {
+      width: 100%; background: var(--verde); color: #fff;
+      border: none; border-radius: 14px;
+      padding: 12px; font-family: 'Nunito', sans-serif;
+      font-size: 1rem; font-weight: 800; cursor: pointer;
+      margin-top: 10px; transition: background 0.15s;
+    }
+    .btn-pubblica:hover:not(:disabled) { background: var(--verde-scuro); }
+    .btn-pubblica:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* ── Bottom nav ── */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      height: 62px; background: #fff;
+      border-top: 1px solid #e0e0e0;
+      display: flex; align-items: stretch; z-index: 100;
+      box-shadow: 0 -2px 8px rgba(0,0,0,0.07);
+    }
+    .nav-item {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-decoration: none; color: #999;
+      font-size: 0.62rem; font-weight: 600; gap: 2px;
+    }
+    .nav-item.active { color: var(--verde); }
+    .nav-item .nav-icon { font-size: 1.3rem; line-height: 1; }
+
+    .spinner {
+      width: 34px; height: 34px;
+      border: 3px solid #eee; border-top-color: var(--verde);
+      border-radius: 50%; animation: spin 0.7s linear infinite;
+      margin: 2.5rem auto;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .empty-msg { color: var(--testo-muted); text-align: center; padding: 2rem; }
+
+    /* ── Login required ── */
+    .login-required {
+      text-align: center; padding: 3rem 1rem; color: var(--testo-muted);
+    }
+    .login-required a { color: var(--verde); font-weight: 700; text-decoration: none; }
+  </style>
+</head>
+<body>
+
+  <header class="top-header">
+    <h1>🏡 La Piazzetta</h1>
+    <div id="nav-auth-slot"></div>
+  </header>
+
+  <div id="feed" class="feed"><div class="spinner"></div></div>
+
+  <button class="fab" id="fab-new-post" title="Nuovo post" style="display:none">＋</button>
+
+  <!-- Modal nuovo post -->
+  <div class="modal-backdrop" id="modal-backdrop">
+    <div class="modal-sheet" id="modal-sheet">
+      <div class="modal-header">
+        <span class="modal-title">📝 Scrivi qualcosa…</span>
+        <button class="modal-close" id="modal-close">✕</button>
+      </div>
+      <textarea class="form-textarea" id="post-text" placeholder="Cosa vuoi condividere in piazzetta?" rows="4"></textarea>
+      <div class="media-btns">
+        <label class="media-btn" id="btn-foto-label">
+          📷 Foto
+          <input type="file" accept="image/*" id="input-foto" style="display:none">
+        </label>
+        <label class="media-btn" id="btn-video-label">
+          🎬 Video
+          <input type="file" accept="video/*" id="input-video" style="display:none">
+        </label>
+        <button class="media-btn" id="btn-audio">🎙️ Registra</button>
+      </div>
+      <div class="media-preview" id="media-preview"></div>
+      <div class="upload-progress" id="upload-progress">
+        <div class="upload-progress-bar" id="upload-bar" style="width:0%"></div>
+      </div>
+      <button class="btn-pubblica" id="btn-pubblica">Pubblica</button>
+    </div>
+  </div>
+
+  <nav class="bottom-nav">
+    <a href="index.html" class="nav-item"><img src="https://res.cloudinary.com/dxqyprtzh/image/upload/v1780171524/viso_campo_brd2ic.webp" alt="" style="width:28px;height:28px;border-radius:50%;object-fit:cover;display:block;">Home</a>
+    <a href="piazzetta.html" class="nav-item active"><span class="nav-icon">🏡</span>Piazzetta</a>
+    <a href="comunita.html" class="nav-item"><span class="nav-icon">🏘️</span>Comunità</a>
+    <a href="staff.html" class="nav-item"><span class="nav-icon">🤡</span>Staff</a>
+    <a href="giornale.html" class="nav-item"><span class="nav-icon">📰</span>Giornale</a>
+  </nav>
+
+  <script type="module">
+    import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import {
+      getFirestore, collection, addDoc, getDocs, getDoc, doc, updateDoc,
+      query, orderBy, limit, serverTimestamp, onSnapshot, deleteDoc,
+      increment, setDoc, arrayUnion, arrayRemove
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { setupNavAuth } from './js/nav-auth.js';
+    import { setupDocumentiNav } from './js/nav-docs.js';
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyC18lzwqhYcW29TsEO6Oy4Bqvb2PMBUmAg",
+      authDomain: "campo-dei-fiori.firebaseapp.com",
+      projectId: "campo-dei-fiori",
+      storageBucket: "campo-dei-fiori.firebasestorage.app",
+      messagingSenderId: "928976798756",
+      appId: "1:928976798756:web:1b90027ec9f03b203e44b1"
+    };
+
+    const app  = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+    const db   = getFirestore(app);
+    const auth = getAuth(app);
+
+    const CLOUD_NAME   = 'dxqyprtzh';
+    const CLOUD_PRESET = 'campo_dei_fiori';
+    const ADMIN_UID    = 'mCSgNMVEphVIIf4HX0bkcKq2ZKv2';
+    const EMOJIS       = ['❤️','😂','👏','🔥','😢'];
+
+    setupNavAuth('nav-auth-slot');
+    setupDocumentiNav();
+
+    let currentUser = null;
+    let currentUserData = null;
+    let isAdmin = false;
+
+    // ── Auth ──────────────────────────────────────────────────────────────
+    onAuthStateChanged(auth, async user => {
+      if (!user) {
+        document.getElementById('feed').innerHTML =
+          `<div class="login-required">
+            <p>Devi essere loggato per vedere la Piazzetta.<br>
+            <a href="login.html">Accedi →</a></p>
+           </div>`;
+        return;
+      }
+      currentUser = user;
+      isAdmin = user.uid === ADMIN_UID;
+
+      // Leggi dati utente
+      try {
+        let snap = await getDoc(doc(db, 'utenti', user.uid));
+        if (!snap.exists()) snap = await getDoc(doc(db, 'staff', user.uid));
+        if (snap.exists()) currentUserData = snap.data();
+      } catch(_) {}
+
+      document.getElementById('fab-new-post').style.display = 'flex';
+      loadFeed();
+    });
+
+    // ── Cloudinary upload ─────────────────────────────────────────────────
+    async function uploadToCloudinary(file, resourceType = 'image') {
+      const bar = document.getElementById('upload-bar');
+      const prog = document.getElementById('upload-progress');
+      prog.style.display = 'block';
+      bar.style.width = '10%';
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('upload_preset', CLOUD_PRESET);
+      const url = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${resourceType}/upload`;
+      bar.style.width = '40%';
+      const res = await fetch(url, { method: 'POST', body: fd });
+      bar.style.width = '90%';
+      const data = await res.json();
+      bar.style.width = '100%';
+      setTimeout(() => { prog.style.display = 'none'; bar.style.width = '0%'; }, 600);
+      if (!data.secure_url) throw new Error('Upload fallito');
+      return data.secure_url;
+    }
+
+    // ── Modal nuovo post ──────────────────────────────────────────────────
+    let pendingMedia = null; // { file, type: 'image'|'video'|'audio', previewUrl, cloudUrl? }
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let isRecording = false;
+
+    const fab      = document.getElementById('fab-new-post');
+    const backdrop = document.getElementById('modal-backdrop');
+    const btnClose = document.getElementById('modal-close');
+
+    fab.addEventListener('click', () => backdrop.classList.add('open'));
+    btnClose.addEventListener('click', closeModal);
+    backdrop.addEventListener('click', e => { if (e.target === backdrop) closeModal(); });
+
+    function closeModal() {
+      backdrop.classList.remove('open');
+      document.getElementById('post-text').value = '';
+      pendingMedia = null;
+      document.getElementById('media-preview').innerHTML = '';
+      if (isRecording) stopRecording();
+    }
+
+    // Foto
+    document.getElementById('input-foto').addEventListener('change', e => {
+      const file = e.target.files[0]; if (!file) return;
+      const url = URL.createObjectURL(file);
+      pendingMedia = { file, type: 'image', previewUrl: url };
+      renderMediaPreview();
+      e.target.value = '';
+    });
+
+    // Video
+    document.getElementById('input-video').addEventListener('change', e => {
+      const file = e.target.files[0]; if (!file) return;
+      const url = URL.createObjectURL(file);
+      pendingMedia = { file, type: 'video', previewUrl: url };
+      renderMediaPreview();
+      e.target.value = '';
+    });
+
+    // Audio recording
+    document.getElementById('btn-audio').addEventListener('click', async () => {
+      if (isRecording) { stopRecording(); return; }
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        audioChunks = [];
+        mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+        mediaRecorder.onstop = () => {
+          const blob = new Blob(audioChunks, { type: 'audio/webm' });
+          const url = URL.createObjectURL(blob);
+          const file = new File([blob], `audio_${Date.now()}.webm`, { type: 'audio/webm' });
+          pendingMedia = { file, type: 'audio', previewUrl: url };
+          renderMediaPreview();
+          stream.getTracks().forEach(t => t.stop());
+        };
+        mediaRecorder.start();
+        isRecording = true;
+        document.getElementById('btn-audio').textContent = '⏹️ Stop';
+        document.getElementById('btn-audio').classList.add('recording');
+      } catch(err) {
+        alert('Microfono non disponibile: ' + err.message);
+      }
+    });
+
+    function stopRecording() {
+      if (mediaRecorder && isRecording) {
+        mediaRecorder.stop();
+        isRecording = false;
+        document.getElementById('btn-audio').textContent = '🎙️ Registra';
+        document.getElementById('btn-audio').classList.remove('recording');
+      }
+    }
+
+    function renderMediaPreview() {
+      const wrap = document.getElementById('media-preview');
+      if (!pendingMedia) { wrap.innerHTML = ''; return; }
+      let inner = '';
+      if (pendingMedia.type === 'image') {
+        inner = `<img src="${pendingMedia.previewUrl}" style="max-width:100%;border-radius:10px;">`;
+      } else if (pendingMedia.type === 'video') {
+        inner = `<video src="${pendingMedia.previewUrl}" controls style="max-width:100%;border-radius:10px;"></video>`;
+      } else if (pendingMedia.type === 'audio') {
+        inner = `<audio src="${pendingMedia.previewUrl}" controls style="width:100%;"></audio>`;
+      }
+      wrap.innerHTML = inner + `<button class="remove-media" onclick="removeMedia()">✕ Rimuovi</button>`;
+    }
+
+    window.removeMedia = () => {
+      pendingMedia = null;
+      document.getElementById('media-preview').innerHTML = '';
+    };
+
+    // Pubblica post
+    document.getElementById('btn-pubblica').addEventListener('click', async () => {
+      if (!currentUser) return;
+      const text = document.getElementById('post-text').value.trim();
+      if (!text && !pendingMedia) { alert('Scrivi qualcosa o aggiungi un media!'); return; }
+
+      const btn = document.getElementById('btn-pubblica');
+      btn.disabled = true; btn.textContent = 'Pubblicazione…';
+
+      try {
+        let mediaUrl = null, mediaType = null;
+        if (pendingMedia) {
+          const resType = pendingMedia.type === 'image' ? 'image'
+                        : pendingMedia.type === 'video' ? 'video' : 'video';
+          mediaUrl  = await uploadToCloudinary(pendingMedia.file, resType);
+          mediaType = pendingMedia.type;
+        }
+
+        const nome  = currentUserData?.nome || currentUser.displayName || 'Anonimo';
+        const foto  = currentUserData?.fotoProfilo || null;
+        const postData = {
+          authorId:    currentUser.uid,
+          authorName:  nome,
+          authorPhoto: foto,
+          text:        text,
+          mediaUrl:    mediaUrl,
+          mediaType:   mediaType,
+          timestamp:   serverTimestamp(),
+          reactions:   {},
+          commentsCount: 0,
+        };
+
+        await addDoc(collection(db, 'piazzetta_posts'), postData);
+        closeModal();
+      } catch(err) {
+        alert('Errore: ' + err.message);
+      } finally {
+        btn.disabled = false; btn.textContent = 'Pubblica';
+      }
+    });
+
+    // ── Feed ──────────────────────────────────────────────────────────────
+    function loadFeed() {
+      const feedEl = document.getElementById('feed');
+      feedEl.innerHTML = '<div class="spinner"></div>';
+
+      const q = query(collection(db, 'piazzetta_posts'), orderBy('timestamp', 'desc'), limit(40));
+
+      onSnapshot(q, snap => {
+        feedEl.innerHTML = '';
+        if (snap.empty) {
+          feedEl.innerHTML = '<p class="empty-msg">Ancora nessun post. Sii il primo a scrivere! ☀️</p>';
+          return;
+        }
+        snap.forEach(d => feedEl.appendChild(renderPost(d.id, d.data())));
+      }, err => {
+        feedEl.innerHTML = '<p class="empty-msg">Errore caricamento. Riprova.</p>';
+        console.error(err);
+      });
+    }
+
+    function formatDT(ts) {
+      if (!ts?.toDate) return '';
+      const d = ts.toDate();
+      return d.toLocaleDateString('it-IT', { day:'numeric', month:'long' }) +
+             ' · ' + d.toLocaleTimeString('it-IT', { hour:'2-digit', minute:'2-digit' });
+    }
+
+    function renderPost(postId, data) {
+      const card = document.createElement('div');
+      card.className = 'post-card';
+      card.dataset.postId = postId;
+
+      // Avatar
+      const avatarHtml = data.authorPhoto
+        ? `<div class="post-avatar"><img src="${data.authorPhoto}" alt="${data.authorName}"></div>`
+        : `<div class="post-avatar">🧒</div>`;
+
+      // Media
+      let mediaHtml = '';
+      if (data.mediaUrl) {
+        if (data.mediaType === 'image') {
+          mediaHtml = `<img class="post-media" src="${data.mediaUrl}" alt="foto" loading="lazy">`;
+        } else if (data.mediaType === 'video') {
+          mediaHtml = `<video class="post-media-video" src="${data.mediaUrl}" controls playsinline></video>`;
+        } else if (data.mediaType === 'audio') {
+          mediaHtml = `<div class="post-audio"><audio src="${data.mediaUrl}" controls style="width:100%"></audio></div>`;
+        }
+      }
+
+      // Reactions
+      const reactions = data.reactions || {};
+      const reactionsHtml = EMOJIS.map(emoji => {
+        const count = reactions[emoji] || 0;
+        const myReactions = data._myReactions || [];
+        const active = myReactions.includes(emoji) ? 'active' : '';
+        return `<button class="reaction-btn ${active}" data-emoji="${emoji}" onclick="toggleReaction('${postId}','${emoji}',this)">${emoji}${count > 0 ? ' <span>' + count + '</span>' : ''}</button>`;
+      }).join('');
+
+      const commCount = data.commentsCount || 0;
+      const canDelete = isAdmin || (currentUser && currentUser.uid === data.authorId);
+
+      card.innerHTML = `
+        <div class="post-header">
+          ${avatarHtml}
+          <div class="post-meta">
+            <div class="post-autore">${escHtml(data.authorName || 'Anonimo')}</div>
+            <div class="post-data">${formatDT(data.timestamp)}</div>
+          </div>
+          <button class="post-delete-btn" title="Elimina post" onclick="deletePost('${postId}',this)" style="${canDelete ? 'display:block' : 'display:none'}">🗑️</button>
+        </div>
+        ${data.text ? `<div class="post-text">${escHtml(data.text)}</div>` : ''}
+        ${mediaHtml}
+        <div class="post-reactions">${reactionsHtml}</div>
+        <div class="post-footer">
+          <button class="btn-comments" onclick="toggleComments('${postId}',this)">
+            💬 ${commCount > 0 ? commCount + ' commenti' : 'Commenta'}
+          </button>
+        </div>
+        <div class="comments-section" id="comments-${postId}"></div>`;
+
+      return card;
+    }
+
+    // ── Reactions ─────────────────────────────────────────────────────────
+    window.toggleReaction = async (postId, emoji, btn) => {
+      if (!currentUser) { alert('Fai il login per reagire!'); return; }
+      const postRef = doc(db, 'piazzetta_posts', postId);
+      const reactionKey = `reactions.${emoji}`;
+      const userReactRef = doc(db, 'piazzetta_posts', postId, 'user_reactions', currentUser.uid);
+
+      try {
+        const urSnap = await getDoc(userReactRef);
+        const myReactions = urSnap.exists() ? (urSnap.data().emojis || []) : [];
+        const already = myReactions.includes(emoji);
+
+        if (already) {
+          await updateDoc(postRef, { [reactionKey]: increment(-1) });
+          await updateDoc(userReactRef, { emojis: arrayRemove(emoji) });
+          btn.classList.remove('active');
+          updateReactionCount(btn, -1);
+        } else {
+          await updateDoc(postRef, { [reactionKey]: increment(1) });
+          if (urSnap.exists()) {
+            await updateDoc(userReactRef, { emojis: arrayUnion(emoji) });
+          } else {
+            await setDoc(userReactRef, { emojis: [emoji] });
+          }
+          btn.classList.add('active');
+          updateReactionCount(btn, 1);
+        }
+      } catch(err) { console.error('Reaction error:', err); }
+    };
+
+    function updateReactionCount(btn, delta) {
+      const emoji = btn.dataset.emoji;
+      let span = btn.querySelector('span');
+      if (!span) {
+        span = document.createElement('span');
+        btn.appendChild(document.createTextNode(' '));
+        btn.appendChild(span);
+      }
+      const cur = parseInt(span.textContent || '0');
+      const next = cur + delta;
+      if (next <= 0) {
+        // remove count display
+        if (btn.contains(span)) {
+          const textNode = span.previousSibling;
+          if (textNode) btn.removeChild(textNode);
+          btn.removeChild(span);
+        }
+      } else {
+        span.textContent = next;
+      }
+    }
+
+    // ── Delete post ───────────────────────────────────────────────────────
+    window.deletePost = async (postId, btn) => {
+      if (!confirm('Eliminare questo post?')) return;
+      try {
+        await deleteDoc(doc(db, 'piazzetta_posts', postId));
+        btn.closest('.post-card')?.remove();
+      } catch(err) { alert('Errore: ' + err.message); }
+    };
+
+    // ── Comments ──────────────────────────────────────────────────────────
+    const loadedComments = new Set();
+
+    window.toggleComments = async (postId, btn) => {
+      const section = document.getElementById(`comments-${postId}`);
+      if (!section) return;
+      const isOpen = section.classList.toggle('open');
+      if (isOpen && !loadedComments.has(postId)) {
+        loadedComments.add(postId);
+        await loadComments(postId, section);
+      }
+    };
+
+    async function loadComments(postId, section) {
+      section.innerHTML = '<div style="color:#aaa;font-size:0.82rem;padding:4px 0">Caricamento…</div>';
+      try {
+        const q = query(
+          collection(db, 'piazzetta_posts', postId, 'comments'),
+          orderBy('timestamp', 'asc')
+        );
+        onSnapshot(q, snap => {
+          const list = section.querySelector('.comment-list') || (() => {
+            const l = document.createElement('div');
+            l.className = 'comment-list';
+            return l;
+          })();
+          list.innerHTML = '';
+          snap.forEach(d => list.appendChild(renderComment(postId, d.id, d.data())));
+          section.innerHTML = '';
+          section.appendChild(list);
+          section.appendChild(buildCommentInput(postId));
+        });
+      } catch(err) {
+        section.innerHTML = `<div style="color:#e74c3c;font-size:0.82rem">${err.message}</div>`;
+      }
+    }
+
+    function renderComment(postId, commentId, data) {
+      const item = document.createElement('div');
+      item.className = 'comment-item';
+
+      const avatarHtml = data.authorPhoto
+        ? `<div class="comment-avatar"><img src="${data.authorPhoto}" alt="${data.authorName}"></div>`
+        : `<div class="comment-avatar">🧒</div>`;
+
+      let mediaHtml = '';
+      if (data.mediaUrl) {
+        if (data.mediaType === 'image')
+          mediaHtml = `<img src="${data.mediaUrl}" class="comment-media-thumb" loading="lazy">`;
+        else if (data.mediaType === 'video')
+          mediaHtml = `<video src="${data.mediaUrl}" controls style="max-width:180px;border-radius:8px;margin-top:6px;display:block;"></video>`;
+        else if (data.mediaType === 'audio')
+          mediaHtml = `<audio src="${data.mediaUrl}" controls style="width:100%;margin-top:6px;"></audio>`;
+      }
+
+      const reactions = data.reactions || {};
+      const reactHtml = EMOJIS.map(emoji => {
+        const count = reactions[emoji] || 0;
+        return `<button class="comment-reaction-btn" data-emoji="${emoji}" onclick="toggleCommentReaction('${postId}','${commentId}','${emoji}',this)">${emoji}${count > 0 ? ' ' + count : ''}</button>`;
+      }).join('');
+
+      const canDel = isAdmin || (currentUser && currentUser.uid === data.authorId);
+
+      item.innerHTML = `
+        ${avatarHtml}
+        <div class="comment-bubble">
+          <div class="comment-autore">${escHtml(data.authorName || 'Anonimo')}</div>
+          ${data.text ? `<div class="comment-text">${escHtml(data.text)}</div>` : ''}
+          ${mediaHtml}
+          <div class="comment-reactions">${reactHtml}</div>
+          <div class="comment-data">
+            ${formatDT(data.timestamp)}
+            ${canDel ? `<button onclick="deleteComment('${postId}','${commentId}',this)" style="margin-left:8px;background:none;border:none;cursor:pointer;font-size:0.75rem;color:#ccc;">✕</button>` : ''}
+          </div>
+        </div>`;
+
+      return item;
+    }
+
+    window.toggleCommentReaction = async (postId, commentId, emoji, btn) => {
+      if (!currentUser) return;
+      const ref = doc(db, 'piazzetta_posts', postId, 'comments', commentId);
+      const reactionKey = `reactions.${emoji}`;
+      try {
+        const snap = await getDoc(ref);
+        const reactions = snap.data()?.reactions || {};
+        // Simple toggle by tracking in userReactions sub-collection would be ideal,
+        // but for simplicity just increment (no per-user tracking on comments)
+        const cur = reactions[emoji] || 0;
+        await updateDoc(ref, { [reactionKey]: increment(1) });
+        btn.classList.add('active');
+        const parts = btn.textContent.split(' ');
+        btn.textContent = emoji + ' ' + (cur + 1);
+      } catch(err) { console.error(err); }
+    };
+
+    window.deleteComment = async (postId, commentId, btn) => {
+      if (!confirm('Eliminare commento?')) return;
+      try {
+        await deleteDoc(doc(db, 'piazzetta_posts', postId, 'comments', commentId));
+        await updateDoc(doc(db, 'piazzetta_posts', postId), { commentsCount: increment(-1) });
+        btn.closest('.comment-item')?.remove();
+      } catch(err) { alert(err.message); }
+    };
+
+    function buildCommentInput(postId) {
+      const wrap = document.createElement('div');
+      wrap.className = 'comment-input-wrap';
+      wrap.dataset.postId = postId;
+
+      let commentMedia = null;
+      let commentMediaRecorder = null;
+      let commentAudioChunks = [];
+      let commentRecording = false;
+
+      wrap.innerHTML = `
+        <div class="comment-input-inner">
+          <textarea class="comment-textarea" placeholder="Scrivi un commento…" rows="1" id="ctextarea-${postId}"></textarea>
+          <div class="comment-media-btns">
+            <label class="comment-media-btn">📷<input type="file" accept="image/*" style="display:none" class="c-foto-input"></label>
+            <label class="comment-media-btn">🎬<input type="file" accept="video/*" style="display:none" class="c-video-input"></label>
+            <button class="comment-media-btn c-audio-btn">🎙️</button>
+          </div>
+          <div class="comment-media-preview"></div>
+        </div>
+        <button class="comment-send-btn">Invia</button>`;
+
+      const textarea   = wrap.querySelector(`#ctextarea-${postId}`);
+      const mediaPreview = wrap.querySelector('.comment-media-preview');
+      const fotoInput  = wrap.querySelector('.c-foto-input');
+      const videoInput = wrap.querySelector('.c-video-input');
+      const audioBtn   = wrap.querySelector('.c-audio-btn');
+      const sendBtn    = wrap.querySelector('.comment-send-btn');
+
+      // auto-resize textarea
+      textarea.addEventListener('input', () => {
+        textarea.style.height = 'auto';
+        textarea.style.height = textarea.scrollHeight + 'px';
+      });
+
+      function setCommentMedia(file, type, url) {
+        commentMedia = { file, type, previewUrl: url };
+        let inner = '';
+        if (type === 'image') inner = `<img src="${url}" class="comment-media-thumb">`;
+        else if (type === 'video') inner = `<video src="${url}" controls style="max-width:180px;border-radius:8px;margin-top:4px;display:block;"></video>`;
+        else if (type === 'audio') inner = `<audio src="${url}" controls style="width:100%;margin-top:4px;"></audio>`;
+        mediaPreview.innerHTML = inner + `<button onclick="this.closest('.comment-media-preview').innerHTML=''" style="background:#e74c3c;color:#fff;border:none;border-radius:6px;padding:2px 8px;font-size:0.75rem;cursor:pointer;margin-top:3px;" onclick="">✕</button>`;
+        mediaPreview.querySelector('button').addEventListener('click', () => { commentMedia = null; });
+      }
+
+      fotoInput.addEventListener('change', e => {
+        const f = e.target.files[0]; if (!f) return;
+        setCommentMedia(f, 'image', URL.createObjectURL(f));
+        e.target.value = '';
+      });
+      videoInput.addEventListener('change', e => {
+        const f = e.target.files[0]; if (!f) return;
+        setCommentMedia(f, 'video', URL.createObjectURL(f));
+        e.target.value = '';
+      });
+
+      audioBtn.addEventListener('click', async () => {
+        if (commentRecording) {
+          commentMediaRecorder.stop();
+          commentRecording = false;
+          audioBtn.textContent = '🎙️';
+          audioBtn.classList.remove('recording');
+          return;
+        }
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          commentAudioChunks = [];
+          commentMediaRecorder = new MediaRecorder(stream);
+          commentMediaRecorder.ondataavailable = e => commentAudioChunks.push(e.data);
+          commentMediaRecorder.onstop = () => {
+            const blob = new Blob(commentAudioChunks, { type: 'audio/webm' });
+            const file = new File([blob], `audio_${Date.now()}.webm`, { type: 'audio/webm' });
+            setCommentMedia(file, 'audio', URL.createObjectURL(blob));
+            stream.getTracks().forEach(t => t.stop());
+          };
+          commentMediaRecorder.start();
+          commentRecording = true;
+          audioBtn.textContent = '⏹️';
+          audioBtn.classList.add('recording');
+        } catch(err) { alert('Microfono non disponibile'); }
+      });
+
+      sendBtn.addEventListener('click', async () => {
+        if (!currentUser) { alert('Fai il login!'); return; }
+        const text = textarea.value.trim();
+        if (!text && !commentMedia) return;
+
+        sendBtn.disabled = true; sendBtn.textContent = '…';
+        try {
+          let mediaUrl = null, mediaType = null;
+          if (commentMedia) {
+            const resType = commentMedia.type === 'image' ? 'image' : 'video';
+            mediaUrl  = await uploadToCloudinarySimple(commentMedia.file, resType);
+            mediaType = commentMedia.type;
+          }
+
+          const nome = currentUserData?.nome || currentUser.displayName || 'Anonimo';
+          const foto = currentUserData?.fotoProfilo || null;
+          await addDoc(collection(db, 'piazzetta_posts', postId, 'comments'), {
+            authorId:    currentUser.uid,
+            authorName:  nome,
+            authorPhoto: foto,
+            text:        text,
+            mediaUrl:    mediaUrl,
+            mediaType:   mediaType,
+            timestamp:   serverTimestamp(),
+            reactions:   {},
+          });
+          await updateDoc(doc(db, 'piazzetta_posts', postId), { commentsCount: increment(1) });
+
+          textarea.value = ''; textarea.style.height = 'auto';
+          commentMedia = null; mediaPreview.innerHTML = '';
+
+          // update counter on button
+          const footerBtn = document.querySelector(`[data-post-id="${postId}"] .btn-comments`) ||
+                            wrap.closest('.post-card')?.querySelector('.btn-comments');
+          if (footerBtn) {
+            const cur = parseInt(footerBtn.textContent.match(/\d+/)?.[0] || '0');
+            footerBtn.textContent = `💬 ${cur + 1} commenti`;
+          }
+        } catch(err) { alert('Errore: ' + err.message); }
+        finally { sendBtn.disabled = false; sendBtn.textContent = 'Invia'; }
+      });
+
+      return wrap;
+    }
+
+    async function uploadToCloudinarySimple(file, resourceType = 'image') {
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('upload_preset', CLOUD_PRESET);
+      const url = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${resourceType}/upload`;
+      const res = await fetch(url, { method: 'POST', body: fd });
+      const data = await res.json();
+      if (!data.secure_url) throw new Error('Upload fallito');
+      return data.secure_url;
+    }
+
+    function escHtml(s) {
+      return String(s)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+  </script>
+</body>
+</html>
