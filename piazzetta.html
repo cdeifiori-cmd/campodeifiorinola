@@ -344,6 +344,10 @@
           <input type="file" accept="video/*" id="input-video" style="display:none">
         </label>
         <button class="media-btn" id="btn-audio">🎙️ Registra</button>
+        <label class="media-btn" id="btn-audio-file-label">
+          🎵 Allega audio
+          <input type="file" accept="audio/*,.mp3,.m4a,.wav,.ogg,.aac,.flac,.weba,.opus" id="input-audio-file" style="display:none">
+        </label>
       </div>
       <div class="media-preview" id="media-preview"></div>
       <div class="upload-progress" id="upload-progress">
@@ -481,6 +485,15 @@
       e.target.value = '';
     });
 
+    // Audio da file
+    document.getElementById('input-audio-file').addEventListener('change', e => {
+      const file = e.target.files[0]; if (!file) return;
+      const url = URL.createObjectURL(file);
+      pendingMedia = { file, type: 'audio', previewUrl: url };
+      renderMediaPreview();
+      e.target.value = '';
+    });
+
     // Audio recording
     document.getElementById('btn-audio').addEventListener('click', async () => {
       if (isRecording) { stopRecording(); return; }
@@ -546,8 +559,7 @@
       try {
         let mediaUrl = null, mediaType = null;
         if (pendingMedia) {
-          const resType = pendingMedia.type === 'image' ? 'image'
-                        : pendingMedia.type === 'video' ? 'video' : 'video';
+          const resType = pendingMedia.type === 'image' ? 'image' : 'video';
           mediaUrl  = await uploadToCloudinary(pendingMedia.file, resType);
           mediaType = pendingMedia.type;
         }
@@ -841,6 +853,7 @@
             <label class="comment-media-btn">📷<input type="file" accept="image/*" style="display:none" class="c-foto-input"></label>
             <label class="comment-media-btn">🎬<input type="file" accept="video/*" style="display:none" class="c-video-input"></label>
             <button class="comment-media-btn c-audio-btn">🎙️</button>
+            <label class="comment-media-btn">🎵<input type="file" accept="audio/*,.mp3,.m4a,.wav,.ogg,.aac,.flac,.weba,.opus" style="display:none" class="c-audio-file-input"></label>
           </div>
           <div class="comment-media-preview"></div>
         </div>
@@ -869,6 +882,8 @@
         mediaPreview.querySelector('button').addEventListener('click', () => { commentMedia = null; });
       }
 
+      const audioFileInput = wrap.querySelector('.c-audio-file-input');
+
       fotoInput.addEventListener('change', e => {
         const f = e.target.files[0]; if (!f) return;
         setCommentMedia(f, 'image', URL.createObjectURL(f));
@@ -877,6 +892,11 @@
       videoInput.addEventListener('change', e => {
         const f = e.target.files[0]; if (!f) return;
         setCommentMedia(f, 'video', URL.createObjectURL(f));
+        e.target.value = '';
+      });
+      audioFileInput.addEventListener('change', e => {
+        const f = e.target.files[0]; if (!f) return;
+        setCommentMedia(f, 'audio', URL.createObjectURL(f));
         e.target.value = '';
       });
 
@@ -915,7 +935,7 @@
         try {
           let mediaUrl = null, mediaType = null;
           if (commentMedia) {
-            const resType = commentMedia.type === 'image' ? 'image' : 'video';
+            const resType = commentMedia.type === 'image' ? 'image' : 'video'; // Cloudinary usa 'video' anche per audio
             mediaUrl  = await uploadToCloudinarySimple(commentMedia.file, resType);
             mediaType = commentMedia.type;
           }
