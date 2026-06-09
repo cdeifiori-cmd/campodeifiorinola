@@ -59,9 +59,9 @@
     .media-grid.c3 { grid-template-columns: 1fr 1fr; }
     .media-grid.c3 .mgitem:first-child { grid-column: 1 / -1; }
     .media-grid.cmany { grid-template-columns: 1fr 1fr; }
-    .mgitem { overflow: hidden; background: #000; position: relative; }
-    .mgitem img, .mgitem video { width: 100%; display: block; object-fit: cover; min-height: 100px; max-height: 300px; }
-    .media-grid.c1 .mgitem img, .media-grid.c1 .mgitem video { max-height: 420px; }
+    .mgitem { background: #000; position: relative; }
+    .mgitem img, .mgitem video { width: 100%; display: block; object-fit: contain; height: auto; }
+    .mgitem video { background: #000; }
 
     .audio-list { padding: 4px 14px; display: flex; flex-direction: column; gap: 6px; }
     .audio-row {
@@ -105,8 +105,8 @@
     /* comment media */
     .cmedia-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: 6px; }
     .cmedia-grid.single { grid-template-columns: 1fr; }
-    .cmedia-grid img  { width: 100%; border-radius: 8px; display: block; max-height: 180px; object-fit: cover; }
-    .cmedia-grid video { width: 100%; border-radius: 8px; display: block; max-height: 180px; }
+    .cmedia-grid img  { width: 100%; border-radius: 8px; display: block; height: auto; object-fit: contain; }
+    .cmedia-grid video { width: 100%; border-radius: 8px; display: block; height: auto; }
     .caudio-list { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
     .caudio-row  { display: flex; align-items: center; gap: 6px; background: var(--verde-light); border-radius: 8px; padding: 5px 8px; }
     .caudio-row audio { flex: 1; height: 28px; min-width: 0; }
@@ -148,7 +148,7 @@
     .preview-count { font-size: 0.78rem; color: var(--testo-muted); font-weight: 700; margin-bottom: 4px; }
     .preview-grid  { display: flex; flex-wrap: wrap; gap: 8px; }
     .prev-item     { position: relative; border-radius: 10px; overflow: visible; }
-    .prev-item img, .prev-item video { display: block; width: 90px; height: 72px; object-fit: cover; border-radius: 10px; }
+    .prev-item img, .prev-item video { display: block; width: 90px; height: auto; object-fit: contain; border-radius: 10px; background: #f0f0f0; }
     .prev-item.audio {
       display: flex; align-items: center; gap: 6px;
       background: var(--verde-light); border-radius: 10px; padding: 6px 10px; width: 100%;
