@@ -133,6 +133,7 @@
     .post-card-autore {
       font-size: 0.76rem; font-weight: 800;
       color: #a8d5a2; white-space: nowrap; flex-shrink: 0;
+      display: flex; align-items: center; gap: 3px;
     }
     .post-card-testo {
       font-size: 0.8rem; color: rgba(255,255,255,0.82);
@@ -224,7 +225,7 @@
 
   <script type="module">
     import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getFirestore, collection, getDocs, query, orderBy, limit }
+    import { getFirestore, collection, getDocs, query, orderBy, limit, onSnapshot }
       from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import { setupNavAuth }      from './js/nav-auth.js';
     import { setupDocumentiNav } from './js/nav-docs.js';
@@ -246,54 +247,118 @@
     setupDocumentiNav();
     setupInstallBanner();
 
-    // ── Ultimi 3 post del diario ──────────────────────────────────────
-    async function loadUltimiPost() {
-      const list = document.getElementById('ultimi-post-list');
-      try {
-        // Cache nomi utenti
-        const nomiCache = {};
-        const utentiSnap = await getDocs(collection(db, 'utenti'));
-        utentiSnap.forEach(d => { nomiCache[d.id] = d.data().nome; });
-        const staffSnap = await getDocs(collection(db, 'staff'));
-        staffSnap.forEach(d => { nomiCache[d.id] = d.data().nome; });
+    // ── "Dal Giornale" — feed real-time con diario + piazzetta ──────────
+    // Manteniamo due array separati (uno per collezione) e ri-renderizziamo
+    // ogni volta che uno dei due onSnapshot scatta.
+    const nomiCache = {};
+    let diaroPosts    = [];  // { autore, testo, tsMs, href, badge }
+    let piazzettaPosts = []; // { autore, testo, tsMs, href, badge }
 
-        const snap = await getDocs(
-          query(collection(db, 'diario'), orderBy('createdAt', 'desc'), limit(3))
-        );
-
-        if (snap.empty) { list.innerHTML = ''; return; }
-
-        list.innerHTML = '';
-        snap.forEach(d => {
-          const post  = d.data();
-          const nome  = nomiCache[post.uidRagazzo] || 'Qualcuno';
-          const ts    = post.createdAt?.toDate?.();
-          const ora   = ts ? ts.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
-                           + ' · ' + ts.toLocaleDateString('it-IT', { day: 'numeric', month: 'short' })
-                          : '';
-          const testo = post.testo
-            ? (post.testo.length > 80 ? post.testo.slice(0, 80) + '…' : post.testo)
-            : '';
-          const media = !post.testo
-            ? (post.immagineUrl ? '📷 Foto' : post.videoUrl ? '🎬 Video' : post.audioUrl ? '🎵 Audio' : '')
-            : '';
-
-          const card = document.createElement('a');
-          card.className = 'post-card';
-          card.href = 'giornale.html';
-          card.innerHTML = `
-            <span class="post-card-autore">${nome}</span>
-            <span class="post-card-testo">${testo || media}</span>
-            <span class="post-card-ora">${ora}</span>`;
-          list.appendChild(card);
-        });
-      } catch(e) {
-        list.innerHTML = '';
-        console.warn('Ultimi post:', e.message);
-      }
+    function tsMs(ts) {
+      return ts?.toMillis?.() ?? ts?.seconds * 1000 ?? 0;
     }
 
-    loadUltimiPost();
+    function formatOra(ts) {
+      if (!ts?.toDate) return '';
+      const d = ts.toDate();
+      return d.toLocaleTimeString('it-IT', { hour:'2-digit', minute:'2-digit' })
+             + ' · ' + d.toLocaleDateString('it-IT', { day:'numeric', month:'short' });
+    }
+
+    function trunc(s, n = 80) {
+      if (!s) return '';
+      return s.length > n ? s.slice(0, n) + '…' : s;
+    }
+
+    function renderWidget() {
+      const list = document.getElementById('ultimi-post-list');
+      if (!list) return;
+
+      // Unisci, ordina per timestamp decrescente, prendi i primi 3
+      const tutti = [...diaroPosts, ...piazzettaPosts]
+        .sort((a, b) => b.tsMs - a.tsMs)
+        .slice(0, 3);
+
+      list.innerHTML = '';
+      if (!tutti.length) return;
+
+      tutti.forEach(item => {
+        const card = document.createElement('a');
+        card.className = 'post-card';
+        card.href = item.href;
+        card.innerHTML = `
+          <span class="post-card-autore">${item.badge ? item.badge + ' ' : ''}${item.autore}</span>
+          <span class="post-card-testo">${item.testo}</span>
+          <span class="post-card-ora">${item.ora}</span>`;
+        list.appendChild(card);
+      });
+    }
+
+    async function setupWidget() {
+      // Cache nomi utenti (one-time, sufficiente per il widget)
+      try {
+        const [u, s] = await Promise.all([
+          getDocs(collection(db, 'utenti')),
+          getDocs(collection(db, 'staff')),
+        ]);
+        u.forEach(d => { nomiCache[d.id] = d.data().nome; });
+        s.forEach(d => { nomiCache[d.id] = d.data().nome; });
+      } catch(_) {}
+
+      // ── Listener 1: diario ──────────────────────────────────────────
+      onSnapshot(
+        query(collection(db, 'diario'), orderBy('createdAt', 'desc'), limit(10)),
+        snap => {
+          diaroPosts = [];
+          snap.forEach(d => {
+            const p = d.data();
+            const testo = p.testo
+              ? trunc(p.testo)
+              : (p.immagineUrl ? '📷 Foto' : p.videoUrl ? '🎬 Video' : p.audioUrl ? '🎵 Audio' : '');
+            diaroPosts.push({
+              autore: nomiCache[p.uidRagazzo] || 'Qualcuno',
+              testo,
+              ora:   formatOra(p.createdAt),
+              tsMs:  tsMs(p.createdAt),
+              href:  'giornale.html',
+              badge: '',
+            });
+          });
+          renderWidget();
+        },
+        err => console.warn('diario onSnapshot:', err.message)
+      );
+
+      // ── Listener 2: piazzetta_posts ─────────────────────────────────
+      onSnapshot(
+        query(collection(db, 'piazzetta_posts'), orderBy('timestamp', 'desc'), limit(10)),
+        snap => {
+          piazzettaPosts = [];
+          snap.forEach(d => {
+            const p = d.data();
+            // testo del post o tipo di media
+            let testo = p.text ? trunc(p.text) : '';
+            if (!testo) {
+              const media = Array.isArray(p.media) ? p.media : (p.mediaUrl ? [{ type: p.mediaType }] : []);
+              const tipi  = media.map(m => m.type === 'image' ? '📷 Foto' : m.type === 'video' ? '🎬 Video' : '🎵 Audio');
+              testo = tipi.join(' · ') || '';
+            }
+            piazzettaPosts.push({
+              autore: p.authorName || 'Qualcuno',
+              testo,
+              ora:   formatOra(p.timestamp),
+              tsMs:  tsMs(p.timestamp),
+              href:  'piazzetta.html',
+              badge: '📍',
+            });
+          });
+          renderWidget();
+        },
+        err => console.warn('piazzetta onSnapshot:', err.message)
+      );
+    }
+
+    setupWidget();
   </script>
   <script>
     // Registra UN SOLO service worker unificato (FCM + caching).
