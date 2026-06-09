@@ -147,6 +147,7 @@
       from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import { setupNavAuth } from './js/nav-auth.js';
     import { setupDocumentiNav } from './js/nav-docs.js';
+    import { setupInstallBanner } from './js/install-banner.js';
 
     const firebaseConfig = {
       apiKey: "AIzaSyC18lzwqhYcW29TsEO6Oy4Bqvb2PMBUmAg",
@@ -161,6 +162,7 @@
     const auth = getAuth(app);
     setupNavAuth();
     setupDocumentiNav();
+    setupInstallBanner();
 
     const ADMIN_UID = 'mCSgNMVEphVIIf4HX0bkcKq2ZKv2';
     const grid = document.getElementById('grid-staff');
