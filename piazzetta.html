@@ -17,8 +17,6 @@
       --verde:       #4a7c59;
       --verde-scuro: #3a6347;
       --verde-light: #e8f4e0;
-      --arancio:     #e07b39;
-      --crema:       #fef9f0;
       --testo:       #222;
       --testo-muted: #888;
     }
@@ -32,8 +30,7 @@
 
     /* ── Header ── */
     .top-header {
-      background: var(--verde);
-      color: #fff;
+      background: var(--verde); color: #fff;
       display: flex; align-items: center;
       padding: 0 1rem; height: 56px;
       position: sticky; top: 0; z-index: 100;
@@ -45,72 +42,78 @@
     .feed { padding: 10px 12px; display: flex; flex-direction: column; gap: 12px; max-width: 640px; margin: 0 auto; }
 
     /* ── Post card ── */
-    .post-card {
-      background: #fff;
-      border-radius: 16px;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.07);
-      overflow: hidden;
-    }
-    .post-header {
-      display: flex; align-items: center; gap: 10px;
-      padding: 12px 14px 8px;
-    }
+    .post-card { background: #fff; border-radius: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.07); overflow: hidden; }
+    .post-header { display: flex; align-items: center; gap: 10px; padding: 12px 14px 8px; }
     .post-avatar {
-      width: 40px; height: 40px; border-radius: 50%;
-      overflow: hidden; flex-shrink: 0;
-      background: var(--verde-light);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 1.3rem;
+      width: 40px; height: 40px; border-radius: 50%; overflow: hidden; flex-shrink: 0;
+      background: var(--verde-light); display: flex; align-items: center; justify-content: center; font-size: 1.3rem;
     }
     .post-avatar img { width: 100%; height: 100%; object-fit: cover; }
     .post-meta { flex: 1; min-width: 0; }
     .post-autore { font-size: 0.9rem; font-weight: 800; }
     .post-data   { font-size: 0.72rem; color: var(--testo-muted); margin-top: 1px; }
     .post-delete-btn {
-      background: none; border: none;
-      font-size: 1rem; cursor: pointer;
-      opacity: 0.4; padding: 4px;
-      border-radius: 8px; transition: opacity 0.15s, background 0.15s;
-      flex-shrink: 0; display: none;
+      background: none; border: none; font-size: 1rem; cursor: pointer;
+      opacity: 0.4; padding: 4px; border-radius: 8px; flex-shrink: 0;
+      transition: opacity 0.15s, background 0.15s;
     }
     .post-delete-btn:hover { opacity: 1; background: #fdebd0; }
+    .post-text { font-size: 0.95rem; line-height: 1.55; padding: 0 14px 10px; white-space: pre-wrap; word-break: break-word; }
 
-    .post-text {
-      font-size: 0.95rem; line-height: 1.55;
-      padding: 0 14px 10px;
-      white-space: pre-wrap; word-break: break-word;
+    /* ── Media grid (post feed) ── */
+    .media-grid {
+      display: grid; gap: 3px;
+      margin-bottom: 2px;
     }
-    .post-media { width: 100%; display: block; max-height: 420px; object-fit: cover; }
-    .post-media-video { width: 100%; display: block; max-height: 420px; background: #000; }
-    .post-audio { width: 100%; padding: 8px 14px; }
+    .media-grid.count-1 { grid-template-columns: 1fr; }
+    .media-grid.count-2 { grid-template-columns: 1fr 1fr; }
+    .media-grid.count-3 { grid-template-columns: 1fr 1fr; }
+    .media-grid.count-3 .media-grid-item:first-child { grid-column: 1 / -1; }
+    .media-grid.count-4,
+    .media-grid.count-many { grid-template-columns: 1fr 1fr; }
+
+    .media-grid-item { position: relative; overflow: hidden; background: #000; }
+    .media-grid-item img,
+    .media-grid-item video {
+      width: 100%; display: block; object-fit: cover;
+      max-height: 320px; min-height: 120px;
+    }
+    .media-grid.count-1 .media-grid-item img,
+    .media-grid.count-1 .media-grid-item video { max-height: 420px; }
+
+    .media-audio-row {
+      padding: 4px 14px;
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .audio-player-wrap {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--verde-light); border-radius: 10px;
+      padding: 7px 10px;
+    }
+    .audio-player-wrap .audio-icon { font-size: 1.1rem; flex-shrink: 0; }
+    .audio-player-wrap audio { flex: 1; height: 32px; min-width: 0; }
+    .audio-player-wrap .audio-name {
+      font-size: 0.72rem; color: var(--verde-scuro); font-weight: 700;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px;
+    }
 
     /* ── Reactions ── */
-    .post-reactions {
-      display: flex; align-items: center; gap: 4px;
-      padding: 8px 14px;
-      flex-wrap: wrap;
-    }
+    .post-reactions { display: flex; align-items: center; gap: 4px; padding: 8px 14px; flex-wrap: wrap; }
     .reaction-btn {
       display: inline-flex; align-items: center; gap: 4px;
       background: #f5f5f5; border: 1.5px solid #e8e8e8;
       border-radius: 20px; padding: 4px 10px;
-      font-size: 0.88rem; font-weight: 700;
-      cursor: pointer; transition: background 0.15s, border-color 0.15s;
-      color: var(--testo);
+      font-size: 0.88rem; font-weight: 700; cursor: pointer;
+      transition: background 0.15s, border-color 0.15s; color: var(--testo);
     }
     .reaction-btn.active { background: var(--verde-light); border-color: var(--verde); color: var(--verde-scuro); }
-    .reaction-btn:hover   { background: var(--verde-light); }
+    .reaction-btn:hover  { background: var(--verde-light); }
 
     /* ── Comments toggle ── */
-    .post-footer {
-      border-top: 1px solid #f0f0f0;
-      padding: 8px 14px;
-      display: flex; align-items: center; gap: 8px;
-    }
+    .post-footer { border-top: 1px solid #f0f0f0; padding: 8px 14px; display: flex; align-items: center; gap: 8px; }
     .btn-comments {
-      background: none; border: none;
-      font-size: 0.82rem; font-weight: 700; color: var(--testo-muted);
-      cursor: pointer; display: flex; align-items: center; gap: 4px;
+      background: none; border: none; font-size: 0.82rem; font-weight: 700;
+      color: var(--testo-muted); cursor: pointer; display: flex; align-items: center; gap: 4px;
       padding: 4px 0; transition: color 0.15s;
     }
     .btn-comments:hover { color: var(--verde); }
@@ -119,79 +122,94 @@
     .comments-section { padding: 0 14px 12px; display: none; }
     .comments-section.open { display: block; }
     .comment-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
-    .comment-item {
-      display: flex; gap: 8px; align-items: flex-start;
-    }
+    .comment-item { display: flex; gap: 8px; align-items: flex-start; }
     .comment-avatar {
       width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
-      background: var(--verde-light);
-      display: flex; align-items: center; justify-content: center; font-size: 1rem;
-      overflow: hidden;
+      background: var(--verde-light); display: flex; align-items: center; justify-content: center; font-size: 1rem; overflow: hidden;
     }
     .comment-avatar img { width: 100%; height: 100%; object-fit: cover; }
-    .comment-bubble {
-      background: #f5f8f5; border-radius: 12px;
-      padding: 7px 10px; flex: 1; min-width: 0;
-      font-size: 0.85rem;
-    }
+    .comment-bubble { background: #f5f8f5; border-radius: 12px; padding: 7px 10px; flex: 1; min-width: 0; font-size: 0.85rem; }
     .comment-autore { font-weight: 800; font-size: 0.78rem; margin-bottom: 2px; }
     .comment-text   { color: #444; white-space: pre-wrap; word-break: break-word; }
-    .comment-media-thumb { max-width: 180px; border-radius: 8px; margin-top: 6px; display: block; }
     .comment-data   { font-size: 0.68rem; color: #bbb; margin-top: 3px; }
 
+    /* comment media */
+    .comment-media-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: 6px; }
+    .comment-media-grid.single { grid-template-columns: 1fr; }
+    .comment-media-grid img { width: 100%; border-radius: 8px; display: block; max-height: 180px; object-fit: cover; }
+    .comment-media-grid video { width: 100%; border-radius: 8px; display: block; max-height: 180px; }
+    .comment-audio-list { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
+    .comment-audio-item { display: flex; align-items: center; gap: 6px; background: var(--verde-light); border-radius: 8px; padding: 5px 8px; }
+    .comment-audio-item audio { flex: 1; height: 28px; min-width: 0; }
+
     /* comment reactions */
-    .comment-reactions {
-      display: flex; gap: 3px; flex-wrap: wrap; margin-top: 4px;
-    }
+    .comment-reactions { display: flex; gap: 3px; flex-wrap: wrap; margin-top: 4px; }
     .comment-reaction-btn {
-      background: #eee; border: 1px solid #ddd;
-      border-radius: 14px; padding: 2px 7px;
-      font-size: 0.78rem; font-weight: 700;
-      cursor: pointer; color: var(--testo);
-      transition: background 0.12s;
+      background: #eee; border: 1px solid #ddd; border-radius: 14px; padding: 2px 7px;
+      font-size: 0.78rem; font-weight: 700; cursor: pointer; color: var(--testo); transition: background 0.12s;
     }
     .comment-reaction-btn.active { background: var(--verde-light); border-color: var(--verde); }
 
     /* comment input */
-    .comment-input-wrap {
-      display: flex; gap: 8px; align-items: flex-end;
-    }
+    .comment-input-wrap { display: flex; gap: 8px; align-items: flex-end; }
     .comment-input-inner { flex: 1; }
     .comment-textarea {
       width: 100%; border: 1.5px solid #ddd; border-radius: 12px;
-      padding: 8px 10px; font-family: 'Nunito', sans-serif;
-      font-size: 0.88rem; resize: none; outline: none;
-      transition: border-color 0.15s; min-height: 36px; max-height: 120px;
+      padding: 8px 10px; font-family: 'Nunito', sans-serif; font-size: 0.88rem;
+      resize: none; outline: none; transition: border-color 0.15s; min-height: 36px; max-height: 120px;
     }
     .comment-textarea:focus { border-color: var(--verde); }
-    .comment-media-btns {
-      display: flex; gap: 4px; margin-top: 4px;
-    }
+    .comment-media-btns { display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap; }
     .comment-media-btn {
       background: none; border: 1.5px solid #ddd; border-radius: 20px;
       padding: 3px 9px; font-size: 0.78rem; cursor: pointer;
-      transition: background 0.12s, border-color 0.12s;
+      transition: background 0.12s, border-color 0.12s; font-family: 'Nunito', sans-serif;
     }
     .comment-media-btn:hover { background: var(--verde-light); border-color: var(--verde); }
+    .comment-media-btn.recording { background: #ffe5e5; border-color: #e74c3c; color: #e74c3c; animation: pulse 1s infinite; }
     .comment-send-btn {
-      background: var(--verde); color: #fff;
-      border: none; border-radius: 12px;
+      background: var(--verde); color: #fff; border: none; border-radius: 12px;
       padding: 8px 14px; font-size: 0.88rem; font-weight: 700;
-      cursor: pointer; white-space: nowrap; transition: background 0.15s;
-      flex-shrink: 0;
+      cursor: pointer; white-space: nowrap; transition: background 0.15s; flex-shrink: 0;
     }
     .comment-send-btn:hover { background: var(--verde-scuro); }
 
-    /* ── FAB nuovo post ── */
+    /* ── Preview griglia allegati ── */
+    .preview-grid {
+      display: flex; flex-wrap: wrap; gap: 8px;
+      margin: 8px 0;
+    }
+    .preview-item {
+      position: relative; border-radius: 10px; overflow: visible;
+      background: #f0f0f0;
+    }
+    .preview-item img,
+    .preview-item video { display: block; width: 100px; height: 80px; object-fit: cover; border-radius: 10px; }
+    .preview-item.audio-item {
+      display: flex; align-items: center; gap: 6px;
+      background: var(--verde-light); border-radius: 10px; padding: 6px 10px;
+      width: 100%;
+    }
+    .preview-item.audio-item .audio-icon { font-size: 1.2rem; }
+    .preview-item.audio-item audio { flex: 1; height: 32px; }
+    .preview-item.audio-item .audio-fname { font-size: 0.75rem; font-weight: 700; color: var(--verde-scuro); max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .preview-remove {
+      position: absolute; top: -6px; right: -6px;
+      width: 20px; height: 20px; border-radius: 50%;
+      background: #e74c3c; color: #fff; border: none;
+      font-size: 0.7rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      line-height: 1; z-index: 5;
+    }
+    .preview-item.audio-item .preview-remove { position: static; flex-shrink: 0; }
+    .preview-count { font-size: 0.78rem; color: var(--testo-muted); font-weight: 700; margin-bottom: 2px; }
+
+    /* ── FAB ── */
     .fab {
-      position: fixed;
-      bottom: 80px; right: 18px;
-      width: 56px; height: 56px;
-      background: var(--verde);
-      color: #fff; font-size: 1.8rem;
-      border: none; border-radius: 50%;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.25);
-      cursor: pointer; z-index: 200;
+      position: fixed; bottom: 80px; right: 18px;
+      width: 56px; height: 56px; background: var(--verde); color: #fff;
+      font-size: 1.8rem; border: none; border-radius: 50%;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.25); cursor: pointer; z-index: 200;
       display: flex; align-items: center; justify-content: center;
       transition: background 0.15s, transform 0.15s;
     }
@@ -199,119 +217,69 @@
 
     /* ── Modal ── */
     .modal-backdrop {
-      position: fixed; inset: 0;
-      background: rgba(0,0,0,0.55);
-      z-index: 500; display: flex;
-      align-items: flex-end; justify-content: center;
-      opacity: 0; pointer-events: none;
-      transition: opacity 0.2s;
+      position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+      z-index: 500; display: flex; align-items: flex-end; justify-content: center;
+      opacity: 0; pointer-events: none; transition: opacity 0.2s;
     }
     .modal-backdrop.open { opacity: 1; pointer-events: all; }
     .modal-sheet {
-      background: #fff;
-      border-radius: 20px 20px 0 0;
-      width: 100%; max-width: 640px;
-      padding: 20px 18px 24px;
-      max-height: 90vh;
-      overflow-y: auto;
-      transform: translateY(100%);
-      transition: transform 0.25s ease;
+      background: #fff; border-radius: 20px 20px 0 0;
+      width: 100%; max-width: 640px; padding: 20px 18px 24px;
+      max-height: 90vh; overflow-y: auto;
+      transform: translateY(100%); transition: transform 0.25s ease;
     }
     .modal-backdrop.open .modal-sheet { transform: translateY(0); }
-
-    .modal-header {
-      display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: 14px;
-    }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
     .modal-title { font-size: 1.05rem; font-weight: 800; }
     .modal-close {
       background: #f0f0f0; border: none; border-radius: 50%;
-      width: 32px; height: 32px; font-size: 1rem;
-      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px; font-size: 1rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
     }
-
     .form-textarea {
       width: 100%; border: 1.5px solid #ddd; border-radius: 12px;
-      padding: 10px 12px; font-family: 'Nunito', sans-serif;
-      font-size: 0.95rem; resize: none; outline: none;
-      min-height: 100px; transition: border-color 0.15s;
+      padding: 10px 12px; font-family: 'Nunito', sans-serif; font-size: 0.95rem;
+      resize: none; outline: none; min-height: 100px; transition: border-color 0.15s;
     }
     .form-textarea:focus { border-color: var(--verde); }
-
-    .media-btns {
-      display: flex; gap: 8px; flex-wrap: wrap;
-      margin: 10px 0 6px;
-    }
+    .media-btns { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0 6px; }
     .media-btn {
       display: flex; align-items: center; gap: 5px;
-      background: #f5f5f5; border: 1.5px solid #e0e0e0;
-      border-radius: 20px; padding: 6px 14px;
-      font-family: 'Nunito', sans-serif; font-size: 0.85rem; font-weight: 700;
+      background: #f5f5f5; border: 1.5px solid #e0e0e0; border-radius: 20px;
+      padding: 6px 14px; font-family: 'Nunito', sans-serif; font-size: 0.85rem; font-weight: 700;
       cursor: pointer; transition: background 0.15s, border-color 0.15s;
     }
     .media-btn:hover { background: var(--verde-light); border-color: var(--verde); }
     .media-btn.recording { background: #ffe5e5; border-color: #e74c3c; color: #e74c3c; animation: pulse 1s infinite; }
     @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
 
-    .media-preview { margin: 8px 0; }
-    .media-preview img, .media-preview video {
-      max-width: 100%; border-radius: 10px; display: block;
-    }
-    .media-preview audio { width: 100%; margin-top: 4px; }
-    .media-preview .remove-media {
-      background: #e74c3c; color: #fff; border: none; border-radius: 8px;
-      padding: 3px 10px; font-size: 0.78rem; cursor: pointer; margin-top: 4px;
-    }
-
-    .upload-progress {
-      height: 4px; background: #e0e0e0; border-radius: 2px; margin: 8px 0;
-      display: none;
-    }
-    .upload-progress-bar {
-      height: 100%; background: var(--verde); border-radius: 2px;
-      transition: width 0.3s;
-    }
-
+    .upload-progress { height: 4px; background: #e0e0e0; border-radius: 2px; margin: 8px 0; display: none; }
+    .upload-progress-bar { height: 100%; background: var(--verde); border-radius: 2px; transition: width 0.3s; }
     .btn-pubblica {
-      width: 100%; background: var(--verde); color: #fff;
-      border: none; border-radius: 14px;
-      padding: 12px; font-family: 'Nunito', sans-serif;
-      font-size: 1rem; font-weight: 800; cursor: pointer;
-      margin-top: 10px; transition: background 0.15s;
+      width: 100%; background: var(--verde); color: #fff; border: none; border-radius: 14px;
+      padding: 12px; font-family: 'Nunito', sans-serif; font-size: 1rem; font-weight: 800;
+      cursor: pointer; margin-top: 10px; transition: background 0.15s;
     }
     .btn-pubblica:hover:not(:disabled) { background: var(--verde-scuro); }
     .btn-pubblica:disabled { opacity: 0.5; cursor: not-allowed; }
 
     /* ── Bottom nav ── */
     .bottom-nav {
-      position: fixed; bottom: 0; left: 0; right: 0;
-      height: 62px; background: #fff;
-      border-top: 1px solid #e0e0e0;
-      display: flex; align-items: stretch; z-index: 100;
+      position: fixed; bottom: 0; left: 0; right: 0; height: 62px; background: #fff;
+      border-top: 1px solid #e0e0e0; display: flex; align-items: stretch; z-index: 100;
       box-shadow: 0 -2px 8px rgba(0,0,0,0.07);
     }
     .nav-item {
-      flex: 1; display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      text-decoration: none; color: #999;
-      font-size: 0.62rem; font-weight: 600; gap: 2px;
+      flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-decoration: none; color: #999; font-size: 0.62rem; font-weight: 600; gap: 2px;
     }
     .nav-item.active { color: var(--verde); }
     .nav-item .nav-icon { font-size: 1.3rem; line-height: 1; }
 
-    .spinner {
-      width: 34px; height: 34px;
-      border: 3px solid #eee; border-top-color: var(--verde);
-      border-radius: 50%; animation: spin 0.7s linear infinite;
-      margin: 2.5rem auto;
-    }
+    .spinner { width: 34px; height: 34px; border: 3px solid #eee; border-top-color: var(--verde); border-radius: 50%; animation: spin 0.7s linear infinite; margin: 2.5rem auto; }
     @keyframes spin { to { transform: rotate(360deg); } }
     .empty-msg { color: var(--testo-muted); text-align: center; padding: 2rem; }
-
-    /* ── Login required ── */
-    .login-required {
-      text-align: center; padding: 3rem 1rem; color: var(--testo-muted);
-    }
+    .login-required { text-align: center; padding: 3rem 1rem; color: var(--testo-muted); }
     .login-required a { color: var(--verde); font-weight: 700; text-decoration: none; }
   </style>
 </head>
@@ -335,21 +303,21 @@
       </div>
       <textarea class="form-textarea" id="post-text" placeholder="Cosa vuoi condividere in piazzetta?" rows="4"></textarea>
       <div class="media-btns">
-        <label class="media-btn" id="btn-foto-label">
+        <label class="media-btn">
           📷 Foto
-          <input type="file" accept="image/*" id="input-foto" style="display:none">
+          <input type="file" accept="image/*" id="input-foto" multiple style="display:none">
         </label>
-        <label class="media-btn" id="btn-video-label">
+        <label class="media-btn">
           🎬 Video
-          <input type="file" accept="video/*" id="input-video" style="display:none">
+          <input type="file" accept="video/*" id="input-video" multiple style="display:none">
         </label>
         <button class="media-btn" id="btn-audio">🎙️ Registra</button>
-        <label class="media-btn" id="btn-audio-file-label">
+        <label class="media-btn">
           🎵 Allega audio
-          <input type="file" accept="audio/*,.mp3,.m4a,.wav,.ogg,.aac,.flac,.weba,.opus" id="input-audio-file" style="display:none">
+          <input type="file" accept="audio/*,.mp3,.m4a,.wav,.ogg,.aac,.flac,.weba,.opus" id="input-audio-file" multiple style="display:none">
         </label>
       </div>
-      <div class="media-preview" id="media-preview"></div>
+      <div id="post-preview-wrap"></div>
       <div class="upload-progress" id="upload-progress">
         <div class="upload-progress-bar" id="upload-bar" style="width:0%"></div>
       </div>
@@ -373,7 +341,7 @@
       query, orderBy, limit, serverTimestamp, onSnapshot, deleteDoc,
       increment, setDoc, arrayUnion, arrayRemove
     } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-    import { setupNavAuth } from './js/nav-auth.js';
+    import { setupNavAuth }      from './js/nav-auth.js';
     import { setupDocumentiNav } from './js/nav-docs.js';
 
     const firebaseConfig = {
@@ -393,6 +361,7 @@
     const CLOUD_PRESET = 'campo_dei_fiori';
     const ADMIN_UID    = 'mCSgNMVEphVIIf4HX0bkcKq2ZKv2';
     const EMOJIS       = ['❤️','😂','👏','🔥','😢'];
+    const MAX_FILES    = 10;
 
     setupNavAuth('nav-auth-slot');
     setupDocumentiNav();
@@ -405,180 +374,219 @@
     onAuthStateChanged(auth, async user => {
       if (!user) {
         document.getElementById('feed').innerHTML =
-          `<div class="login-required">
-            <p>Devi essere loggato per vedere la Piazzetta.<br>
-            <a href="login.html">Accedi →</a></p>
-           </div>`;
+          `<div class="login-required"><p>Devi essere loggato per vedere la Piazzetta.<br>
+           <a href="login.html">Accedi →</a></p></div>`;
         return;
       }
       currentUser = user;
       isAdmin = user.uid === ADMIN_UID;
-
-      // Leggi dati utente
       try {
         let snap = await getDoc(doc(db, 'utenti', user.uid));
         if (!snap.exists()) snap = await getDoc(doc(db, 'staff', user.uid));
         if (snap.exists()) currentUserData = snap.data();
       } catch(_) {}
-
       document.getElementById('fab-new-post').style.display = 'flex';
       loadFeed();
     });
 
     // ── Cloudinary upload ─────────────────────────────────────────────────
-    async function uploadToCloudinary(file, resourceType = 'image') {
-      const bar = document.getElementById('upload-bar');
-      const prog = document.getElementById('upload-progress');
-      prog.style.display = 'block';
-      bar.style.width = '10%';
+    function cloudResourceType(type) {
+      return type === 'image' ? 'image' : 'video'; // Cloudinary usa 'video' per audio e video
+    }
+
+    async function uploadOne(file, type, onProgress) {
       const fd = new FormData();
       fd.append('file', file);
       fd.append('upload_preset', CLOUD_PRESET);
-      const url = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${resourceType}/upload`;
-      bar.style.width = '40%';
-      const res = await fetch(url, { method: 'POST', body: fd });
-      bar.style.width = '90%';
+      const url = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${cloudResourceType(type)}/upload`;
+      onProgress?.(30);
+      const res  = await fetch(url, { method: 'POST', body: fd });
+      onProgress?.(90);
       const data = await res.json();
-      bar.style.width = '100%';
-      setTimeout(() => { prog.style.display = 'none'; bar.style.width = '0%'; }, 600);
-      if (!data.secure_url) throw new Error('Upload fallito');
+      onProgress?.(100);
+      if (!data.secure_url) throw new Error(`Upload fallito per ${file.name}`);
       return data.secure_url;
     }
 
+    async function uploadAll(items, progressEl, barEl) {
+      if (progressEl) progressEl.style.display = 'block';
+      const total = items.length;
+      let done = 0;
+      const results = await Promise.all(items.map(item =>
+        uploadOne(item.file, item.type, pct => {
+          if (barEl) barEl.style.width = Math.round((done / total + pct / 100 / total) * 100) + '%';
+        }).then(url => {
+          done++;
+          if (barEl) barEl.style.width = Math.round(done / total * 100) + '%';
+          return { url, type: item.type, name: item.name };
+        })
+      ));
+      setTimeout(() => {
+        if (progressEl) progressEl.style.display = 'none';
+        if (barEl) barEl.style.width = '0%';
+      }, 600);
+      return results;
+    }
+
+    // ── Media items list (shared helper) ─────────────────────────────────
+    // item = { file, type:'image'|'video'|'audio', name, previewUrl }
+
+    function makeMediaManager(previewContainerId, counterId) {
+      const items = []; // { file, type, name, previewUrl }
+
+      function add(file, type) {
+        if (items.length >= MAX_FILES) {
+          alert(`Puoi allegare al massimo ${MAX_FILES} file per post.`);
+          return false;
+        }
+        const previewUrl = URL.createObjectURL(file);
+        const name = file.name || `${type}_${Date.now()}`;
+        items.push({ file, type, name, previewUrl });
+        render();
+        return true;
+      }
+
+      function remove(idx) {
+        URL.revokeObjectURL(items[idx].previewUrl);
+        items.splice(idx, 1);
+        render();
+      }
+
+      function clear() {
+        items.forEach(i => URL.revokeObjectURL(i.previewUrl));
+        items.length = 0;
+        render();
+      }
+
+      function render() {
+        const wrap = document.getElementById(previewContainerId);
+        if (!wrap) return;
+        if (!items.length) { wrap.innerHTML = ''; return; }
+        let html = `<div class="preview-count">${items.length} allegat${items.length === 1 ? 'o' : 'i'}</div><div class="preview-grid">`;
+        items.forEach((item, idx) => {
+          if (item.type === 'image') {
+            html += `<div class="preview-item">
+              <img src="${item.previewUrl}" alt="${escHtml(item.name)}">
+              <button class="preview-remove" data-idx="${idx}" title="Rimuovi">✕</button>
+            </div>`;
+          } else if (item.type === 'video') {
+            html += `<div class="preview-item">
+              <video src="${item.previewUrl}" muted></video>
+              <button class="preview-remove" data-idx="${idx}" title="Rimuovi">✕</button>
+            </div>`;
+          } else {
+            html += `<div class="preview-item audio-item">
+              <span class="audio-icon">🎵</span>
+              <audio src="${item.previewUrl}" controls></audio>
+              <span class="audio-fname">${escHtml(item.name)}</span>
+              <button class="preview-remove" data-idx="${idx}" title="Rimuovi">✕</button>
+            </div>`;
+          }
+        });
+        html += '</div>';
+        wrap.innerHTML = html;
+        wrap.querySelectorAll('.preview-remove').forEach(btn => {
+          btn.addEventListener('click', () => remove(parseInt(btn.dataset.idx)));
+        });
+      }
+
+      return { items, add, remove, clear, render };
+    }
+
     // ── Modal nuovo post ──────────────────────────────────────────────────
-    let pendingMedia = null; // { file, type: 'image'|'video'|'audio', previewUrl, cloudUrl? }
-    let mediaRecorder = null;
-    let audioChunks = [];
-    let isRecording = false;
+    let postMediaMgr = makeMediaManager('post-preview-wrap');
+    let postRecorder = null;
+    let postAudioChunks = [];
+    let postRecording = false;
 
     const fab      = document.getElementById('fab-new-post');
     const backdrop = document.getElementById('modal-backdrop');
     const btnClose = document.getElementById('modal-close');
 
-    fab.addEventListener('click', () => backdrop.classList.add('open'));
+    fab.addEventListener('click', () => {
+      // Re-create manager each time modal opens to have fresh state
+      postMediaMgr = makeMediaManager('post-preview-wrap');
+      backdrop.classList.add('open');
+    });
     btnClose.addEventListener('click', closeModal);
     backdrop.addEventListener('click', e => { if (e.target === backdrop) closeModal(); });
 
     function closeModal() {
       backdrop.classList.remove('open');
       document.getElementById('post-text').value = '';
-      pendingMedia = null;
-      document.getElementById('media-preview').innerHTML = '';
-      if (isRecording) stopRecording();
+      postMediaMgr.clear();
+      if (postRecording) stopPostRecording();
     }
 
-    // Foto
     document.getElementById('input-foto').addEventListener('change', e => {
-      const file = e.target.files[0]; if (!file) return;
-      const url = URL.createObjectURL(file);
-      pendingMedia = { file, type: 'image', previewUrl: url };
-      renderMediaPreview();
+      Array.from(e.target.files).forEach(f => postMediaMgr.add(f, 'image'));
       e.target.value = '';
     });
-
-    // Video
     document.getElementById('input-video').addEventListener('change', e => {
-      const file = e.target.files[0]; if (!file) return;
-      const url = URL.createObjectURL(file);
-      pendingMedia = { file, type: 'video', previewUrl: url };
-      renderMediaPreview();
+      Array.from(e.target.files).forEach(f => postMediaMgr.add(f, 'video'));
       e.target.value = '';
     });
-
-    // Audio da file
     document.getElementById('input-audio-file').addEventListener('change', e => {
-      const file = e.target.files[0]; if (!file) return;
-      const url = URL.createObjectURL(file);
-      pendingMedia = { file, type: 'audio', previewUrl: url };
-      renderMediaPreview();
+      Array.from(e.target.files).forEach(f => postMediaMgr.add(f, 'audio'));
       e.target.value = '';
     });
 
-    // Audio recording
     document.getElementById('btn-audio').addEventListener('click', async () => {
-      if (isRecording) { stopRecording(); return; }
+      if (postRecording) { stopPostRecording(); return; }
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        audioChunks = [];
-        mediaRecorder = new MediaRecorder(stream);
-        mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-        mediaRecorder.onstop = () => {
-          const blob = new Blob(audioChunks, { type: 'audio/webm' });
-          const url = URL.createObjectURL(blob);
-          const file = new File([blob], `audio_${Date.now()}.webm`, { type: 'audio/webm' });
-          pendingMedia = { file, type: 'audio', previewUrl: url };
-          renderMediaPreview();
+        postAudioChunks = [];
+        postRecorder = new MediaRecorder(stream);
+        postRecorder.ondataavailable = e => postAudioChunks.push(e.data);
+        postRecorder.onstop = () => {
+          const blob = new Blob(postAudioChunks, { type: 'audio/webm' });
+          const file = new File([blob], `registrazione_${Date.now()}.webm`, { type: 'audio/webm' });
+          postMediaMgr.add(file, 'audio');
           stream.getTracks().forEach(t => t.stop());
         };
-        mediaRecorder.start();
-        isRecording = true;
-        document.getElementById('btn-audio').textContent = '⏹️ Stop';
-        document.getElementById('btn-audio').classList.add('recording');
-      } catch(err) {
-        alert('Microfono non disponibile: ' + err.message);
-      }
+        postRecorder.start();
+        postRecording = true;
+        const btn = document.getElementById('btn-audio');
+        btn.textContent = '⏹️ Stop'; btn.classList.add('recording');
+      } catch(err) { alert('Microfono non disponibile: ' + err.message); }
     });
 
-    function stopRecording() {
-      if (mediaRecorder && isRecording) {
-        mediaRecorder.stop();
-        isRecording = false;
-        document.getElementById('btn-audio').textContent = '🎙️ Registra';
-        document.getElementById('btn-audio').classList.remove('recording');
+    function stopPostRecording() {
+      if (postRecorder && postRecording) {
+        postRecorder.stop(); postRecording = false;
+        const btn = document.getElementById('btn-audio');
+        btn.textContent = '🎙️ Registra'; btn.classList.remove('recording');
       }
     }
 
-    function renderMediaPreview() {
-      const wrap = document.getElementById('media-preview');
-      if (!pendingMedia) { wrap.innerHTML = ''; return; }
-      let inner = '';
-      if (pendingMedia.type === 'image') {
-        inner = `<img src="${pendingMedia.previewUrl}" style="max-width:100%;border-radius:10px;">`;
-      } else if (pendingMedia.type === 'video') {
-        inner = `<video src="${pendingMedia.previewUrl}" controls style="max-width:100%;border-radius:10px;"></video>`;
-      } else if (pendingMedia.type === 'audio') {
-        inner = `<audio src="${pendingMedia.previewUrl}" controls style="width:100%;"></audio>`;
-      }
-      wrap.innerHTML = inner + `<button class="remove-media" onclick="removeMedia()">✕ Rimuovi</button>`;
-    }
-
-    window.removeMedia = () => {
-      pendingMedia = null;
-      document.getElementById('media-preview').innerHTML = '';
-    };
-
-    // Pubblica post
     document.getElementById('btn-pubblica').addEventListener('click', async () => {
       if (!currentUser) return;
       const text = document.getElementById('post-text').value.trim();
-      if (!text && !pendingMedia) { alert('Scrivi qualcosa o aggiungi un media!'); return; }
+      if (!text && !postMediaMgr.items.length) { alert('Scrivi qualcosa o aggiungi un allegato!'); return; }
 
       const btn = document.getElementById('btn-pubblica');
       btn.disabled = true; btn.textContent = 'Pubblicazione…';
 
       try {
-        let mediaUrl = null, mediaType = null;
-        if (pendingMedia) {
-          const resType = pendingMedia.type === 'image' ? 'image' : 'video';
-          mediaUrl  = await uploadToCloudinary(pendingMedia.file, resType);
-          mediaType = pendingMedia.type;
-        }
+        const progEl = document.getElementById('upload-progress');
+        const barEl  = document.getElementById('upload-bar');
+        const media  = postMediaMgr.items.length
+          ? await uploadAll(postMediaMgr.items, progEl, barEl)
+          : [];
 
-        const nome  = currentUserData?.nome || currentUser.displayName || 'Anonimo';
-        const foto  = currentUserData?.fotoProfilo || null;
-        const postData = {
+        const nome = currentUserData?.nome || currentUser.displayName || 'Anonimo';
+        const foto = currentUserData?.fotoProfilo || null;
+
+        await addDoc(collection(db, 'piazzetta_posts'), {
           authorId:    currentUser.uid,
           authorName:  nome,
           authorPhoto: foto,
           text:        text,
-          mediaUrl:    mediaUrl,
-          mediaType:   mediaType,
+          media:       media,   // [{url, type, name}]
           timestamp:   serverTimestamp(),
           reactions:   {},
           commentsCount: 0,
-        };
-
-        await addDoc(collection(db, 'piazzetta_posts'), postData);
+        });
         closeModal();
       } catch(err) {
         alert('Errore: ' + err.message);
@@ -591,9 +599,7 @@
     function loadFeed() {
       const feedEl = document.getElementById('feed');
       feedEl.innerHTML = '<div class="spinner"></div>';
-
       const q = query(collection(db, 'piazzetta_posts'), orderBy('timestamp', 'desc'), limit(40));
-
       onSnapshot(q, snap => {
         feedEl.innerHTML = '';
         if (snap.empty) {
@@ -614,35 +620,70 @@
              ' · ' + d.toLocaleTimeString('it-IT', { hour:'2-digit', minute:'2-digit' });
     }
 
+    // Normalizza i media del post: supporta sia il vecchio campo mediaUrl/mediaType
+    // che il nuovo array media:[{url,type,name}]
+    function normalizeMedia(data) {
+      if (Array.isArray(data.media) && data.media.length) return data.media;
+      if (data.mediaUrl) return [{ url: data.mediaUrl, type: data.mediaType || 'image', name: '' }];
+      return [];
+    }
+
+    function buildMediaHtml(mediaList) {
+      if (!mediaList.length) return '';
+      const imgs   = mediaList.filter(m => m.type === 'image');
+      const vids   = mediaList.filter(m => m.type === 'video');
+      const audios = mediaList.filter(m => m.type === 'audio');
+
+      const visualItems = [...imgs, ...vids];
+      let html = '';
+
+      if (visualItems.length) {
+        const cnt = visualItems.length;
+        const cls = cnt === 1 ? 'count-1' : cnt === 2 ? 'count-2' : cnt === 3 ? 'count-3' : 'count-many';
+        html += `<div class="media-grid ${cls}">`;
+        visualItems.forEach(m => {
+          html += `<div class="media-grid-item">`;
+          if (m.type === 'image')
+            html += `<img src="${escHtml(m.url)}" alt="foto" loading="lazy">`;
+          else
+            html += `<video src="${escHtml(m.url)}" controls playsinline></video>`;
+          html += `</div>`;
+        });
+        html += `</div>`;
+      }
+
+      if (audios.length) {
+        html += `<div class="media-audio-row">`;
+        audios.forEach(m => {
+          const fname = m.name ? escHtml(m.name) : '🎵 Audio';
+          html += `<div class="audio-player-wrap">
+            <span class="audio-icon">🎵</span>
+            <audio src="${escHtml(m.url)}" controls></audio>
+            <span class="audio-name">${fname}</span>
+          </div>`;
+        });
+        html += `</div>`;
+      }
+
+      return html;
+    }
+
     function renderPost(postId, data) {
       const card = document.createElement('div');
       card.className = 'post-card';
       card.dataset.postId = postId;
 
-      // Avatar
       const avatarHtml = data.authorPhoto
-        ? `<div class="post-avatar"><img src="${data.authorPhoto}" alt="${data.authorName}"></div>`
+        ? `<div class="post-avatar"><img src="${escHtml(data.authorPhoto)}" alt="${escHtml(data.authorName || '')}"></div>`
         : `<div class="post-avatar">🧒</div>`;
 
-      // Media
-      let mediaHtml = '';
-      if (data.mediaUrl) {
-        if (data.mediaType === 'image') {
-          mediaHtml = `<img class="post-media" src="${data.mediaUrl}" alt="foto" loading="lazy">`;
-        } else if (data.mediaType === 'video') {
-          mediaHtml = `<video class="post-media-video" src="${data.mediaUrl}" controls playsinline></video>`;
-        } else if (data.mediaType === 'audio') {
-          mediaHtml = `<div class="post-audio"><audio src="${data.mediaUrl}" controls style="width:100%"></audio></div>`;
-        }
-      }
+      const mediaList = normalizeMedia(data);
+      const mediaHtml = buildMediaHtml(mediaList);
 
-      // Reactions
       const reactions = data.reactions || {};
       const reactionsHtml = EMOJIS.map(emoji => {
         const count = reactions[emoji] || 0;
-        const myReactions = data._myReactions || [];
-        const active = myReactions.includes(emoji) ? 'active' : '';
-        return `<button class="reaction-btn ${active}" data-emoji="${emoji}" onclick="toggleReaction('${postId}','${emoji}',this)">${emoji}${count > 0 ? ' <span>' + count + '</span>' : ''}</button>`;
+        return `<button class="reaction-btn" data-emoji="${emoji}" onclick="toggleReaction('${postId}','${emoji}',this)">${emoji}${count > 0 ? ' <span>' + count + '</span>' : ''}</button>`;
       }).join('');
 
       const commCount = data.commentsCount || 0;
@@ -655,7 +696,7 @@
             <div class="post-autore">${escHtml(data.authorName || 'Anonimo')}</div>
             <div class="post-data">${formatDT(data.timestamp)}</div>
           </div>
-          <button class="post-delete-btn" title="Elimina post" onclick="deletePost('${postId}',this)" style="${canDelete ? 'display:block' : 'display:none'}">🗑️</button>
+          <button class="post-delete-btn" title="Elimina" onclick="deletePost('${postId}',this)" style="${canDelete ? 'display:block' : 'display:none'}">🗑️</button>
         </div>
         ${data.text ? `<div class="post-text">${escHtml(data.text)}</div>` : ''}
         ${mediaHtml}
@@ -673,27 +714,23 @@
     // ── Reactions ─────────────────────────────────────────────────────────
     window.toggleReaction = async (postId, emoji, btn) => {
       if (!currentUser) { alert('Fai il login per reagire!'); return; }
-      const postRef = doc(db, 'piazzetta_posts', postId);
+      const postRef     = doc(db, 'piazzetta_posts', postId);
       const reactionKey = `reactions.${emoji}`;
-      const userReactRef = doc(db, 'piazzetta_posts', postId, 'user_reactions', currentUser.uid);
-
+      const urRef       = doc(db, 'piazzetta_posts', postId, 'user_reactions', currentUser.uid);
       try {
-        const urSnap = await getDoc(userReactRef);
-        const myReactions = urSnap.exists() ? (urSnap.data().emojis || []) : [];
-        const already = myReactions.includes(emoji);
-
+        const urSnap = await getDoc(urRef);
+        const mine   = urSnap.exists() ? (urSnap.data().emojis || []) : [];
+        const already = mine.includes(emoji);
         if (already) {
           await updateDoc(postRef, { [reactionKey]: increment(-1) });
-          await updateDoc(userReactRef, { emojis: arrayRemove(emoji) });
+          await updateDoc(urRef, { emojis: arrayRemove(emoji) });
           btn.classList.remove('active');
           updateReactionCount(btn, -1);
         } else {
           await updateDoc(postRef, { [reactionKey]: increment(1) });
-          if (urSnap.exists()) {
-            await updateDoc(userReactRef, { emojis: arrayUnion(emoji) });
-          } else {
-            await setDoc(userReactRef, { emojis: [emoji] });
-          }
+          urSnap.exists()
+            ? await updateDoc(urRef, { emojis: arrayUnion(emoji) })
+            : await setDoc(urRef, { emojis: [emoji] });
           btn.classList.add('active');
           updateReactionCount(btn, 1);
         }
@@ -701,25 +738,19 @@
     };
 
     function updateReactionCount(btn, delta) {
-      const emoji = btn.dataset.emoji;
       let span = btn.querySelector('span');
       if (!span) {
-        span = document.createElement('span');
         btn.appendChild(document.createTextNode(' '));
+        span = document.createElement('span');
         btn.appendChild(span);
+        span.textContent = '0';
       }
-      const cur = parseInt(span.textContent || '0');
-      const next = cur + delta;
+      const next = (parseInt(span.textContent || '0')) + delta;
       if (next <= 0) {
-        // remove count display
-        if (btn.contains(span)) {
-          const textNode = span.previousSibling;
-          if (textNode) btn.removeChild(textNode);
-          btn.removeChild(span);
-        }
-      } else {
-        span.textContent = next;
-      }
+        const tn = span.previousSibling;
+        if (tn) btn.removeChild(tn);
+        btn.removeChild(span);
+      } else { span.textContent = next; }
     }
 
     // ── Delete post ───────────────────────────────────────────────────────
@@ -734,7 +765,7 @@
     // ── Comments ──────────────────────────────────────────────────────────
     const loadedComments = new Set();
 
-    window.toggleComments = async (postId, btn) => {
+    window.toggleComments = async (postId) => {
       const section = document.getElementById(`comments-${postId}`);
       if (!section) return;
       const isOpen = section.classList.toggle('open');
@@ -747,25 +778,51 @@
     async function loadComments(postId, section) {
       section.innerHTML = '<div style="color:#aaa;font-size:0.82rem;padding:4px 0">Caricamento…</div>';
       try {
-        const q = query(
-          collection(db, 'piazzetta_posts', postId, 'comments'),
-          orderBy('timestamp', 'asc')
-        );
+        const q = query(collection(db, 'piazzetta_posts', postId, 'comments'), orderBy('timestamp', 'asc'));
         onSnapshot(q, snap => {
-          const list = section.querySelector('.comment-list') || (() => {
-            const l = document.createElement('div');
-            l.className = 'comment-list';
-            return l;
-          })();
-          list.innerHTML = '';
+          const list = document.createElement('div');
+          list.className = 'comment-list';
           snap.forEach(d => list.appendChild(renderComment(postId, d.id, d.data())));
+          // Preserve existing input if already built
+          const existingInput = section.querySelector('.comment-input-wrap');
           section.innerHTML = '';
           section.appendChild(list);
-          section.appendChild(buildCommentInput(postId));
+          section.appendChild(existingInput || buildCommentInput(postId));
         });
       } catch(err) {
         section.innerHTML = `<div style="color:#e74c3c;font-size:0.82rem">${err.message}</div>`;
       }
+    }
+
+    function buildCommentMediaHtml(data) {
+      const mediaList = normalizeMedia(data);
+      if (!mediaList.length) return '';
+
+      const imgs   = mediaList.filter(m => m.type === 'image');
+      const vids   = mediaList.filter(m => m.type === 'video');
+      const audios = mediaList.filter(m => m.type === 'audio');
+      const visual = [...imgs, ...vids];
+      let html = '';
+
+      if (visual.length) {
+        const cls = visual.length === 1 ? 'single' : '';
+        html += `<div class="comment-media-grid ${cls}">`;
+        visual.forEach(m => {
+          if (m.type === 'image')
+            html += `<img src="${escHtml(m.url)}" loading="lazy">`;
+          else
+            html += `<video src="${escHtml(m.url)}" controls playsinline></video>`;
+        });
+        html += `</div>`;
+      }
+      if (audios.length) {
+        html += `<div class="comment-audio-list">`;
+        audios.forEach(m => {
+          html += `<div class="comment-audio-item"><span>🎵</span><audio src="${escHtml(m.url)}" controls></audio></div>`;
+        });
+        html += `</div>`;
+      }
+      return html;
     }
 
     function renderComment(postId, commentId, data) {
@@ -773,18 +830,10 @@
       item.className = 'comment-item';
 
       const avatarHtml = data.authorPhoto
-        ? `<div class="comment-avatar"><img src="${data.authorPhoto}" alt="${data.authorName}"></div>`
+        ? `<div class="comment-avatar"><img src="${escHtml(data.authorPhoto)}" alt=""></div>`
         : `<div class="comment-avatar">🧒</div>`;
 
-      let mediaHtml = '';
-      if (data.mediaUrl) {
-        if (data.mediaType === 'image')
-          mediaHtml = `<img src="${data.mediaUrl}" class="comment-media-thumb" loading="lazy">`;
-        else if (data.mediaType === 'video')
-          mediaHtml = `<video src="${data.mediaUrl}" controls style="max-width:180px;border-radius:8px;margin-top:6px;display:block;"></video>`;
-        else if (data.mediaType === 'audio')
-          mediaHtml = `<audio src="${data.mediaUrl}" controls style="width:100%;margin-top:6px;"></audio>`;
-      }
+      const mediaHtml = buildCommentMediaHtml(data);
 
       const reactions = data.reactions || {};
       const reactHtml = EMOJIS.map(emoji => {
@@ -806,23 +855,18 @@
             ${canDel ? `<button onclick="deleteComment('${postId}','${commentId}',this)" style="margin-left:8px;background:none;border:none;cursor:pointer;font-size:0.75rem;color:#ccc;">✕</button>` : ''}
           </div>
         </div>`;
-
       return item;
     }
 
     window.toggleCommentReaction = async (postId, commentId, emoji, btn) => {
       if (!currentUser) return;
       const ref = doc(db, 'piazzetta_posts', postId, 'comments', commentId);
-      const reactionKey = `reactions.${emoji}`;
+      const key = `reactions.${emoji}`;
       try {
         const snap = await getDoc(ref);
-        const reactions = snap.data()?.reactions || {};
-        // Simple toggle by tracking in userReactions sub-collection would be ideal,
-        // but for simplicity just increment (no per-user tracking on comments)
-        const cur = reactions[emoji] || 0;
-        await updateDoc(ref, { [reactionKey]: increment(1) });
+        const cur  = (snap.data()?.reactions || {})[emoji] || 0;
+        await updateDoc(ref, { [key]: increment(1) });
         btn.classList.add('active');
-        const parts = btn.textContent.split(' ');
         btn.textContent = emoji + ' ' + (cur + 1);
       } catch(err) { console.error(err); }
     };
@@ -836,109 +880,122 @@
       } catch(err) { alert(err.message); }
     };
 
+    // ── Comment input builder ─────────────────────────────────────────────
     function buildCommentInput(postId) {
       const wrap = document.createElement('div');
       wrap.className = 'comment-input-wrap';
       wrap.dataset.postId = postId;
 
-      let commentMedia = null;
-      let commentMediaRecorder = null;
-      let commentAudioChunks = [];
-      let commentRecording = false;
+      const previewId = `cprev-${postId}`;
+      let cRecorder = null, cAudioChunks = [], cRecording = false;
+
+      // Use a local media manager scoped to this comment input
+      let mgr = null; // initialized after innerHTML set
 
       wrap.innerHTML = `
         <div class="comment-input-inner">
-          <textarea class="comment-textarea" placeholder="Scrivi un commento…" rows="1" id="ctextarea-${postId}"></textarea>
+          <textarea class="comment-textarea" placeholder="Scrivi un commento…" rows="1"></textarea>
           <div class="comment-media-btns">
-            <label class="comment-media-btn">📷<input type="file" accept="image/*" style="display:none" class="c-foto-input"></label>
-            <label class="comment-media-btn">🎬<input type="file" accept="video/*" style="display:none" class="c-video-input"></label>
-            <button class="comment-media-btn c-audio-btn">🎙️</button>
-            <label class="comment-media-btn">🎵<input type="file" accept="audio/*,.mp3,.m4a,.wav,.ogg,.aac,.flac,.weba,.opus" style="display:none" class="c-audio-file-input"></label>
+            <label class="comment-media-btn">📷<input type="file" accept="image/*" multiple style="display:none" class="c-foto"></label>
+            <label class="comment-media-btn">🎬<input type="file" accept="video/*" multiple style="display:none" class="c-video"></label>
+            <button class="comment-media-btn c-rec-btn">🎙️</button>
+            <label class="comment-media-btn">🎵<input type="file" accept="audio/*,.mp3,.m4a,.wav,.ogg,.aac,.flac,.weba,.opus" multiple style="display:none" class="c-audio"></label>
           </div>
-          <div class="comment-media-preview"></div>
+          <div id="${previewId}"></div>
         </div>
         <button class="comment-send-btn">Invia</button>`;
 
-      const textarea   = wrap.querySelector(`#ctextarea-${postId}`);
-      const mediaPreview = wrap.querySelector('.comment-media-preview');
-      const fotoInput  = wrap.querySelector('.c-foto-input');
-      const videoInput = wrap.querySelector('.c-video-input');
-      const audioBtn   = wrap.querySelector('.c-audio-btn');
-      const sendBtn    = wrap.querySelector('.comment-send-btn');
+      // Create an inline media manager that renders into previewId
+      // We can't use makeMediaManager directly because it uses document.getElementById
+      // and the element may not be in DOM yet — we append first.
+      // So we set innerHTML first, then wire up.
 
-      // auto-resize textarea
+      const textarea  = wrap.querySelector('.comment-textarea');
+      const fotoInput = wrap.querySelector('.c-foto');
+      const vidInput  = wrap.querySelector('.c-video');
+      const audInput  = wrap.querySelector('.c-audio');
+      const recBtn    = wrap.querySelector('.c-rec-btn');
+      const sendBtn   = wrap.querySelector('.comment-send-btn');
+
+      // Local items list
+      const items = [];
+
+      function addItem(file, type) {
+        if (items.length >= MAX_FILES) { alert(`Massimo ${MAX_FILES} file.`); return; }
+        items.push({ file, type, name: file.name || type, previewUrl: URL.createObjectURL(file) });
+        renderPreview();
+      }
+
+      function removeItem(idx) {
+        URL.revokeObjectURL(items[idx].previewUrl);
+        items.splice(idx, 1);
+        renderPreview();
+      }
+
+      function renderPreview() {
+        const container = wrap.querySelector(`#${previewId}`);
+        if (!container) return;
+        if (!items.length) { container.innerHTML = ''; return; }
+        let html = `<div class="preview-grid" style="margin-top:6px;">`;
+        items.forEach((item, idx) => {
+          if (item.type === 'image') {
+            html += `<div class="preview-item"><img src="${item.previewUrl}"><button class="preview-remove" data-idx="${idx}">✕</button></div>`;
+          } else if (item.type === 'video') {
+            html += `<div class="preview-item"><video src="${item.previewUrl}" muted></video><button class="preview-remove" data-idx="${idx}">✕</button></div>`;
+          } else {
+            html += `<div class="preview-item audio-item"><span class="audio-icon">🎵</span><audio src="${item.previewUrl}" controls></audio><span class="audio-fname">${escHtml(item.name)}</span><button class="preview-remove" data-idx="${idx}">✕</button></div>`;
+          }
+        });
+        html += '</div>';
+        container.innerHTML = html;
+        container.querySelectorAll('.preview-remove').forEach(b => {
+          b.addEventListener('click', () => removeItem(parseInt(b.dataset.idx)));
+        });
+      }
+
       textarea.addEventListener('input', () => {
         textarea.style.height = 'auto';
         textarea.style.height = textarea.scrollHeight + 'px';
       });
 
-      function setCommentMedia(file, type, url) {
-        commentMedia = { file, type, previewUrl: url };
-        let inner = '';
-        if (type === 'image') inner = `<img src="${url}" class="comment-media-thumb">`;
-        else if (type === 'video') inner = `<video src="${url}" controls style="max-width:180px;border-radius:8px;margin-top:4px;display:block;"></video>`;
-        else if (type === 'audio') inner = `<audio src="${url}" controls style="width:100%;margin-top:4px;"></audio>`;
-        mediaPreview.innerHTML = inner + `<button onclick="this.closest('.comment-media-preview').innerHTML=''" style="background:#e74c3c;color:#fff;border:none;border-radius:6px;padding:2px 8px;font-size:0.75rem;cursor:pointer;margin-top:3px;" onclick="">✕</button>`;
-        mediaPreview.querySelector('button').addEventListener('click', () => { commentMedia = null; });
-      }
+      fotoInput.addEventListener('change', e => { Array.from(e.target.files).forEach(f => addItem(f, 'image')); e.target.value = ''; });
+      vidInput.addEventListener('change',  e => { Array.from(e.target.files).forEach(f => addItem(f, 'video')); e.target.value = ''; });
+      audInput.addEventListener('change',  e => { Array.from(e.target.files).forEach(f => addItem(f, 'audio')); e.target.value = ''; });
 
-      const audioFileInput = wrap.querySelector('.c-audio-file-input');
-
-      fotoInput.addEventListener('change', e => {
-        const f = e.target.files[0]; if (!f) return;
-        setCommentMedia(f, 'image', URL.createObjectURL(f));
-        e.target.value = '';
-      });
-      videoInput.addEventListener('change', e => {
-        const f = e.target.files[0]; if (!f) return;
-        setCommentMedia(f, 'video', URL.createObjectURL(f));
-        e.target.value = '';
-      });
-      audioFileInput.addEventListener('change', e => {
-        const f = e.target.files[0]; if (!f) return;
-        setCommentMedia(f, 'audio', URL.createObjectURL(f));
-        e.target.value = '';
-      });
-
-      audioBtn.addEventListener('click', async () => {
-        if (commentRecording) {
-          commentMediaRecorder.stop();
-          commentRecording = false;
-          audioBtn.textContent = '🎙️';
-          audioBtn.classList.remove('recording');
+      recBtn.addEventListener('click', async () => {
+        if (cRecording) {
+          cRecorder.stop(); cRecording = false;
+          recBtn.textContent = '🎙️'; recBtn.classList.remove('recording');
           return;
         }
         try {
           const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-          commentAudioChunks = [];
-          commentMediaRecorder = new MediaRecorder(stream);
-          commentMediaRecorder.ondataavailable = e => commentAudioChunks.push(e.data);
-          commentMediaRecorder.onstop = () => {
-            const blob = new Blob(commentAudioChunks, { type: 'audio/webm' });
-            const file = new File([blob], `audio_${Date.now()}.webm`, { type: 'audio/webm' });
-            setCommentMedia(file, 'audio', URL.createObjectURL(blob));
+          cAudioChunks = [];
+          cRecorder = new MediaRecorder(stream);
+          cRecorder.ondataavailable = e => cAudioChunks.push(e.data);
+          cRecorder.onstop = () => {
+            const blob = new Blob(cAudioChunks, { type: 'audio/webm' });
+            const file = new File([blob], `rec_${Date.now()}.webm`, { type: 'audio/webm' });
+            addItem(file, 'audio');
             stream.getTracks().forEach(t => t.stop());
           };
-          commentMediaRecorder.start();
-          commentRecording = true;
-          audioBtn.textContent = '⏹️';
-          audioBtn.classList.add('recording');
+          cRecorder.start(); cRecording = true;
+          recBtn.textContent = '⏹️'; recBtn.classList.add('recording');
         } catch(err) { alert('Microfono non disponibile'); }
       });
 
       sendBtn.addEventListener('click', async () => {
         if (!currentUser) { alert('Fai il login!'); return; }
         const text = textarea.value.trim();
-        if (!text && !commentMedia) return;
+        if (!text && !items.length) return;
 
         sendBtn.disabled = true; sendBtn.textContent = '…';
         try {
-          let mediaUrl = null, mediaType = null;
-          if (commentMedia) {
-            const resType = commentMedia.type === 'image' ? 'image' : 'video'; // Cloudinary usa 'video' anche per audio
-            mediaUrl  = await uploadToCloudinarySimple(commentMedia.file, resType);
-            mediaType = commentMedia.type;
-          }
+          const media = items.length
+            ? await Promise.all(items.map(item =>
+                uploadOne(item.file, item.type).then(url => ({ url, type: item.type, name: item.name }))
+              ))
+            : [];
 
           const nome = currentUserData?.nome || currentUser.displayName || 'Anonimo';
           const foto = currentUserData?.fotoProfilo || null;
@@ -947,19 +1004,17 @@
             authorName:  nome,
             authorPhoto: foto,
             text:        text,
-            mediaUrl:    mediaUrl,
-            mediaType:   mediaType,
+            media:       media,
             timestamp:   serverTimestamp(),
             reactions:   {},
           });
           await updateDoc(doc(db, 'piazzetta_posts', postId), { commentsCount: increment(1) });
 
           textarea.value = ''; textarea.style.height = 'auto';
-          commentMedia = null; mediaPreview.innerHTML = '';
+          items.forEach(i => URL.revokeObjectURL(i.previewUrl));
+          items.length = 0; renderPreview();
 
-          // update counter on button
-          const footerBtn = document.querySelector(`[data-post-id="${postId}"] .btn-comments`) ||
-                            wrap.closest('.post-card')?.querySelector('.btn-comments');
+          const footerBtn = wrap.closest('.post-card')?.querySelector('.btn-comments');
           if (footerBtn) {
             const cur = parseInt(footerBtn.textContent.match(/\d+/)?.[0] || '0');
             footerBtn.textContent = `💬 ${cur + 1} commenti`;
@@ -971,21 +1026,8 @@
       return wrap;
     }
 
-    async function uploadToCloudinarySimple(file, resourceType = 'image') {
-      const fd = new FormData();
-      fd.append('file', file);
-      fd.append('upload_preset', CLOUD_PRESET);
-      const url = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${resourceType}/upload`;
-      const res = await fetch(url, { method: 'POST', body: fd });
-      const data = await res.json();
-      if (!data.secure_url) throw new Error('Upload fallito');
-      return data.secure_url;
-    }
-
     function escHtml(s) {
-      return String(s)
-        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-        .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+      return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
   </script>
 </body>
