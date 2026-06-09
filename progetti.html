@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Progetti – Campo dei Fiori</title>
+  <meta name="theme-color" content="#e07b39">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Nunito', sans-serif; background: #f5f5f5; padding-bottom: 70px; }
+
+    .top-header {
+      background: #e07b39; color: #fff;
+      display: flex; align-items: center;
+      padding: 0 1rem; height: 56px;
+      position: sticky; top: 0; z-index: 100;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    }
+    .top-header h1 { font-size: 1.15rem; font-weight: 800; flex: 1; text-align: center; }
+
+    .placeholder {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 60px 24px; text-align: center; gap: 16px;
+      color: #aaa;
+    }
+    .placeholder .icon { font-size: 4rem; }
+    .placeholder h2 { font-size: 1.2rem; font-weight: 800; color: #555; }
+    .placeholder p { font-size: 0.9rem; line-height: 1.5; max-width: 320px; }
+
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      height: 62px; background: #fff;
+      border-top: 1px solid #e0e0e0;
+      display: flex; align-items: stretch; z-index: 100;
+      box-shadow: 0 -2px 8px rgba(0,0,0,0.07);
+    }
+    .nav-item {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-decoration: none; color: #999;
+      font-size: 0.55rem; font-weight: 600; gap: 1px;
+    }
+    .nav-item.active { color: #e07b39; }
+    .nav-item:hover  { color: #e07b39; }
+    .nav-item .nav-icon { font-size: 1.15rem; line-height: 1; }
+  </style>
+</head>
+<body>
+
+  <header class="top-header">
+    <h1>📁 Progetti</h1>
+    <div id="nav-auth-slot"></div>
+  </header>
+
+  <div class="placeholder">
+    <div class="icon">🚧</div>
+    <h2>Prossimamente</h2>
+    <p>La sezione Progetti è in costruzione. Presto qui troverai tutti i progetti e le attività di Campo dei Fiori.</p>
+  </div>
+
+  <nav class="bottom-nav">
+    <a href="index.html" class="nav-item"><img src="https://res.cloudinary.com/dxqyprtzh/image/upload/v1780171524/viso_campo_brd2ic.webp" alt="" style="width:26px;height:26px;border-radius:50%;object-fit:cover;display:block;">Home</a>
+    <a href="piazzetta.html" class="nav-item"><span class="nav-icon">🏡</span>Piazzetta</a>
+    <a href="comunita.html" class="nav-item"><span class="nav-icon">🏘️</span>Comunità</a>
+    <a href="afterus.html" class="nav-item"><span class="nav-icon">🏠</span>After Us</a>
+    <a href="staff.html" class="nav-item"><span class="nav-icon">🤡</span>Staff</a>
+    <a href="amici.html" class="nav-item"><span class="nav-icon">👥</span>Amici</a>
+    <a href="giornale.html" class="nav-item"><span class="nav-icon">📰</span>Giornale</a>
+  </nav>
+
+  <script type="module">
+    import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { setupNavAuth } from './js/nav-auth.js';
+    import { setupDocumentiNav } from './js/nav-docs.js';
+    import { setupInstallBanner } from './js/install-banner.js';
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyC18lzwqhYcW29TsEO6Oy4Bqvb2PMBUmAg",
+      authDomain: "campo-dei-fiori.firebaseapp.com",
+      projectId: "campo-dei-fiori",
+      storageBucket: "campo-dei-fiori.firebasestorage.app",
+      messagingSenderId: "928976798756",
+      appId: "1:928976798756:web:1b90027ec9f03b203e44b1"
+    };
+    getApps().length || initializeApp(firebaseConfig);
+    setupNavAuth();
+    setupDocumentiNav();
+    setupInstallBanner();
+  </script>
+</body>
+</html>

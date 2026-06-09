@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Staff Educativo – Campo dei Fiori</title>
+  <title>After Us – Campo dei Fiori</title>
   <meta name="theme-color" content="#e07b39">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
@@ -21,78 +21,52 @@
       position: sticky; top: 0; z-index: 100;
       box-shadow: 0 2px 6px rgba(0,0,0,0.15);
     }
-    .top-header h1 { font-size: 1.15rem; font-weight: 800; flex: 1; text-align: center; }
+    .top-header h1 { font-size: 1.1rem; font-weight: 800; flex: 1; }
+    .top-header .subtitle { font-size: 0.78rem; opacity: 0.85; }
 
-    /* GRIGLIA 2 COLONNE */
-    .grid-staff {
+    .list-minori {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 2px;
       padding: 2px;
     }
+    @media (min-width: 769px) {
+      .list-minori { grid-template-columns: 1fr 1fr 1fr; gap: 3px; padding: 3px; }
+    }
 
-    .card-staff {
+    .card-minore {
       background: #fff;
-      text-decoration: none;
-      color: #222;
-      display: flex;
-      flex-direction: column;
+      text-decoration: none; color: #222;
+      display: flex; flex-direction: column;
       overflow: hidden;
       transition: opacity 0.15s;
     }
-    .card-staff:hover { opacity: 0.88; }
+    .card-minore:hover { opacity: 0.88; }
 
     .card-foto {
-      width: 100%;
-      aspect-ratio: 1 / 1;
-      overflow: hidden;
-      background: #fdebd0;
+      width: 100%; aspect-ratio: 1 / 1;
+      overflow: hidden; background: #e8f4e0;
       display: flex; align-items: center; justify-content: center;
       font-size: 3rem;
     }
     .card-foto img {
       width: 100%; height: 100%;
-      object-fit: cover;
-      object-position: top center;
-      display: block;
+      object-fit: cover; object-position: top center; display: block;
     }
-
-    .card-info {
-      padding: 8px 10px 10px;
-      background: #fff;
+    .card-nome {
+      padding: 8px 10px 10px; background: #fff;
+      font-size: 0.88rem; font-weight: 700; color: #222;
     }
-    .card-info .nome {
-      font-size: 0.88rem;
-      font-weight: 800;
-      color: #222;
+    .avatar-star {
+      position: absolute; bottom: 6px; right: 6px;
+      font-size: 1.3rem; line-height: 1; z-index: 2;
+      filter: drop-shadow(0 1px 3px rgba(0,0,0,0.55));
+      pointer-events: none;
     }
-    .card-info .ruolo {
-      font-size: 0.72rem;
-      color: #e07b39;
-      font-weight: 600;
-      margin-top: 2px;
-      text-transform: capitalize;
-    }
-    .card-info .admin-badge {
-      display: inline-block; font-size: 0.65rem; font-weight: 700;
-      background: #5a8a4a; color: #fff;
-      border-radius: 8px; padding: 1px 7px; margin-top: 3px;
-    }
-    .accessi-badge {
-      font-size: 0.65rem; font-weight: 700;
-      color: #555; margin-top: 4px;
-    }
+    .accessi-badge { font-size: 0.65rem; font-weight: 700; color: #555; margin-top: 4px; }
     .interazioni-badge {
-      font-size: 0.6rem; font-weight: 600;
-      color: #777; margin-top: 4px;
-      line-height: 1.6;
-      border-top: 1px solid #f0f0f0;
-      padding-top: 4px;
-    }
-
-    /* Desktop: 3 colonne */
-    @media (min-width: 769px) {
-      .grid-staff { grid-template-columns: 1fr 1fr 1fr; gap: 3px; padding: 3px; }
+      font-size: 0.6rem; font-weight: 600; color: #777; margin-top: 4px;
+      line-height: 1.6; border-top: 1px solid #f0f0f0; padding-top: 4px;
     }
 
     .bottom-nav {
@@ -114,7 +88,7 @@
 
     .spinner {
       width: 34px; height: 34px;
-      border: 3px solid #eee; border-top-color: #e07b39;
+      border: 3px solid #eee; border-top-color: #5a8a4a;
       border-radius: 50%; animation: spin 0.7s linear infinite;
       margin: 2rem auto; grid-column: 1/-1;
     }
@@ -125,11 +99,14 @@
 <body>
 
   <header class="top-header">
-    <h1>Staff Educativo</h1>
+    <div style="flex:1">
+      <div style="font-size:1.1rem;font-weight:800" id="comunita-title">🏠 After Us</div>
+      <div class="subtitle" id="page-subtitle"></div>
+    </div>
     <div id="nav-auth-slot"></div>
   </header>
 
-  <div id="grid-staff" class="grid-staff">
+  <div id="list-minori" class="list-minori">
     <div class="spinner"></div>
   </div>
 
@@ -137,7 +114,7 @@
     <a href="index.html" class="nav-item"><img src="https://res.cloudinary.com/dxqyprtzh/image/upload/v1780171524/viso_campo_brd2ic.webp" alt="" style="width:26px;height:26px;border-radius:50%;object-fit:cover;display:block;">Home</a>
     <a href="piazzetta.html" class="nav-item"><span class="nav-icon">🏡</span>Piazzetta</a>
     <a href="comunita.html" class="nav-item"><span class="nav-icon">🏘️</span>Comunità</a>
-    <a href="afterus.html" class="nav-item"><span class="nav-icon">🏠</span>After Us</a>
+    <a href="staff.html" class="nav-item"><span class="nav-icon">🤡</span>Staff</a>
     <a href="amici.html" class="nav-item"><span class="nav-icon">👥</span>Amici</a>
     <a href="progetti.html" class="nav-item"><span class="nav-icon">📁</span>Progetti</a>
     <a href="giornale.html" class="nav-item"><span class="nav-icon">📰</span>Giornale</a>
@@ -146,7 +123,7 @@
   <script type="module">
     import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { getFirestore, collection, getDocs }
+    import { getFirestore, doc, getDoc, collection, getDocs }
       from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import { setupNavAuth } from './js/nav-auth.js';
     import { setupDocumentiNav } from './js/nav-docs.js';
@@ -167,35 +144,66 @@
     setupDocumentiNav();
     setupInstallBanner();
 
-    const ADMIN_UID = 'mCSgNMVEphVIIf4HX0bkcKq2ZKv2';
-    const grid = document.getElementById('grid-staff');
+    const ADMIN_UID  = 'mCSgNMVEphVIIf4HX0bkcKq2ZKv2';
+    const comunitaId = 'after-us';
+    const list       = document.getElementById('list-minori');
+
+    function computeBadges(allUsers) {
+      function score(u) {
+        const i = u.interazioni || {};
+        return (i.diarioScritti||0) + (i.bottigliaInviati||0) +
+               (i.commentiScritti||0) + (i.audioRegistrati||0) + (i.fotoCaricate||0);
+      }
+      const byCom = {};
+      allUsers.forEach(u => {
+        if (!u.comunitaId) return;
+        (byCom[u.comunitaId] = byCom[u.comunitaId] || []).push(u);
+      });
+      const badges = {};
+      let globalLeaderUid = null, globalMax = 0;
+      Object.values(byCom).forEach(members => {
+        let leader = null, leaderScore = 0;
+        members.forEach(u => { const s = score(u); if (s > leaderScore) { leaderScore = s; leader = u; } });
+        if (leader && leaderScore > 0) {
+          badges[leader.id] = '⭐';
+          if (leaderScore > globalMax) { globalMax = leaderScore; globalLeaderUid = leader.id; }
+        }
+      });
+      if (globalLeaderUid) badges[globalLeaderUid] = '⭐🏆';
+      return badges;
+    }
 
     onAuthStateChanged(auth, user => {
       const isAdmin = !!(user && user.uid === ADMIN_UID);
-      loadStaff(isAdmin);
+      init(isAdmin);
     });
 
-    async function loadStaff(isAdmin) {
+    async function init(isAdmin) {
       try {
-        const snap = await getDocs(collection(db, 'staff'));
-        grid.innerHTML = '';
-        if (snap.empty) { grid.innerHTML = '<p class="empty-msg">Nessun membro dello staff.</p>'; return; }
+        const snap = await getDoc(doc(db, 'comunita', comunitaId));
+        if (snap.exists()) {
+          document.getElementById('comunita-title').textContent = snap.data().nomeComunita || '🏠 After Us';
+          document.getElementById('page-subtitle').textContent  = snap.data().descrizione || '';
+        }
+      } catch (_) {}
 
-        const members = [];
-        snap.forEach(d => members.push({ id: d.id, ...d.data() }));
-        members.sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'it'));
+      try {
+        const tuttiSnap = await getDocs(collection(db, 'utenti'));
+        const tutti = [];
+        tuttiSnap.forEach(d => tutti.push({ id: d.id, ...d.data() }));
+        const badges = computeBadges(tutti);
+
+        const members = tutti.filter(u => u.comunitaId === comunitaId);
+        list.innerHTML = '';
+        if (!members.length) { list.innerHTML = '<p class="empty-msg">Nessun ragazzo/a in After Us.</p>'; return; }
 
         members.forEach(data => {
           const fotoHtml = data.fotoProfilo
             ? `<img src="${data.fotoProfilo}" alt="${data.nome}" loading="lazy">`
-            : '🤡';
-          const adminBadge = data.admin ? `<span class="admin-badge">admin</span>` : '';
-          const ruoloLabel = data.ruolo
-            ? (data.comunita ? `${data.ruolo} di ${data.comunita}` : data.ruolo)
-            : '';
+            : '🧒';
+          const star = badges[data.id] ? `<span class="avatar-star">${badges[data.id]}</span>` : '';
           const accessiBadge = isAdmin
-            ? `<div class="accessi-badge">🔑 ${data.numeroAccessi ?? 0} accessi</div>`
-            : '';
+            ? `<div class="accessi-badge">🔑 ${data.numeroAccessi ?? 0} accessi</div>` : '';
           const int = data.interazioni || {};
           const interazioniBadge = isAdmin ? `<div class="interazioni-badge">
             📝 ${int.diarioScritti??0} post &nbsp;
@@ -205,18 +213,17 @@
             🎙️ ${int.audioRegistrati??0} audio &nbsp;
             🖼️ ${int.fotoCaricate??0} foto
           </div>` : '';
-          grid.innerHTML += `
-            <a class="card-staff" href="profilo.html?uid=${data.id}">
-              <div class="card-foto">${fotoHtml}</div>
-              <div class="card-info">
-                <div class="nome">${data.nome || '—'}</div>
-                <div class="ruolo">${ruoloLabel}</div>
-                ${adminBadge}${accessiBadge}${interazioniBadge}
+          list.innerHTML += `
+            <a class="card-minore" href="profilo.html?uid=${data.id}">
+              <div class="card-foto" style="position:relative">${fotoHtml}${star}</div>
+              <div class="card-nome">
+                ${data.nome || '—'}
+                ${accessiBadge}${interazioniBadge}
               </div>
             </a>`;
         });
       } catch (e) {
-        grid.innerHTML = `<p class="empty-msg">Errore: ${e.message}</p>`;
+        list.innerHTML = `<p class="empty-msg">Errore: ${e.message}</p>`;
       }
     }
   </script>

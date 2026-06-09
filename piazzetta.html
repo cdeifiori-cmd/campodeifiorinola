@@ -219,9 +219,10 @@
       border-top: 1px solid #e0e0e0; display: flex; align-items: stretch; z-index: 100;
       box-shadow: 0 -2px 8px rgba(0,0,0,0.07);
     }
-    .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-decoration: none; color: #999; font-size: 0.62rem; font-weight: 600; gap: 2px; }
+    .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-decoration: none; color: #999; font-size: 0.55rem; font-weight: 600; gap: 1px; }
     .nav-item.active { color: var(--verde); }
-    .nav-item .nav-icon { font-size: 1.3rem; line-height: 1; }
+    .nav-item:hover  { color: var(--verde); }
+    .nav-item .nav-icon { font-size: 1.15rem; line-height: 1; }
 
     .spinner { width: 34px; height: 34px; border: 3px solid #eee; border-top-color: var(--verde); border-radius: 50%; animation: spin 0.7s linear infinite; margin: 2.5rem auto; }
     @keyframes spin { to { transform: rotate(360deg); } }
@@ -262,10 +263,12 @@
   </div>
 
   <nav class="bottom-nav">
-    <a href="index.html" class="nav-item"><img src="https://res.cloudinary.com/dxqyprtzh/image/upload/v1780171524/viso_campo_brd2ic.webp" alt="" style="width:28px;height:28px;border-radius:50%;object-fit:cover;display:block;">Home</a>
-    <a href="piazzetta.html" class="nav-item active"><span class="nav-icon">🏡</span>Piazzetta</a>
+    <a href="index.html" class="nav-item"><img src="https://res.cloudinary.com/dxqyprtzh/image/upload/v1780171524/viso_campo_brd2ic.webp" alt="" style="width:26px;height:26px;border-radius:50%;object-fit:cover;display:block;">Home</a>
     <a href="comunita.html" class="nav-item"><span class="nav-icon">🏘️</span>Comunità</a>
+    <a href="afterus.html" class="nav-item"><span class="nav-icon">🏠</span>After Us</a>
     <a href="staff.html" class="nav-item"><span class="nav-icon">🤡</span>Staff</a>
+    <a href="amici.html" class="nav-item"><span class="nav-icon">👥</span>Amici</a>
+    <a href="progetti.html" class="nav-item"><span class="nav-icon">📁</span>Progetti</a>
     <a href="giornale.html" class="nav-item"><span class="nav-icon">📰</span>Giornale</a>
   </nav>
 
