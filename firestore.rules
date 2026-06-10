@@ -83,6 +83,34 @@ service cloud.firestore {
       }
     }
 
+    // ── Piazzetta ────────────────────────────────────────────
+    match /piazzetta_posts/{postId} {
+      allow read: if true;
+      allow create: if isLoggedIn();
+      allow update: if isLoggedIn() && (
+        request.auth.uid == resource.data.authorId
+        || isAdmin()
+        || request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['reactions', 'commentsCount'])
+      );
+      allow delete: if isLoggedIn() &&
+        (request.auth.uid == resource.data.authorId || isAdmin());
+
+      match /comments/{commentId} {
+        allow read: if true;
+        allow create: if isLoggedIn();
+        allow update: if isLoggedIn() &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reactions']);
+        allow delete: if isLoggedIn() &&
+          (request.auth.uid == resource.data.authorId || isAdmin());
+      }
+
+      match /user_reactions/{userId} {
+        allow read: if isLoggedIn() && request.auth.uid == userId;
+        allow write: if isLoggedIn() && request.auth.uid == userId;
+      }
+    }
+
     // ── Messaggi in Bottiglia ────────────────────────────────
     match /messaggiBottiglia/{bottId} {
       allow read: if true;  // lettura pubblica (sola lettura per non loggati)

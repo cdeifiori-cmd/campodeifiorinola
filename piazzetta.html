@@ -303,6 +303,10 @@
     const EMOJIS       = ['❤️','😂','👏','🔥','😢'];
     const MAX_FILES    = 10;
 
+    // Cache locale reazioni: evita fetch ripetuti e ripristina active dopo re-render
+    const myPostReactions    = new Map(); // postId → Set<emoji>
+    const myCommentReactions = new Map(); // `${postId}:${commentId}` → Set<emoji>
+
     setupNavAuth('nav-auth-slot');
     setupDocumentiNav();
     setupInstallBanner();
@@ -640,7 +644,27 @@
         </div>
         <div class="comments-section" id="cs-${postId}"></div>`;
 
+      // Ripristina active state dalle reazioni già date (fetch asincrono)
+      if (currentUser) {
+        applyMyPostReactions(postId, card);
+      }
+
       return card;
+    }
+
+    async function applyMyPostReactions(postId, card) {
+      if (!myPostReactions.has(postId)) {
+        myPostReactions.set(postId, new Set()); // segnaposto anti-doppio fetch
+        try {
+          const uSnap = await getDoc(doc(db, 'piazzetta_posts', postId, 'user_reactions', currentUser.uid));
+          myPostReactions.set(postId, new Set(uSnap.exists() ? (uSnap.data().emojis || []) : []));
+        } catch(_) {}
+      }
+      const mine = myPostReactions.get(postId);
+      card.querySelectorAll('.reaction-btn').forEach(btn => {
+        if (mine.has(btn.dataset.emoji)) btn.classList.add('active');
+        else btn.classList.remove('active');
+      });
     }
 
     // ── Reactions ─────────────────────────────────────────────────────────
@@ -648,29 +672,48 @@
       if (!currentUser) { alert('Fai il login per reagire!'); return; }
       const pRef = doc(db, 'piazzetta_posts', postId);
       const uRef = doc(db, 'piazzetta_posts', postId, 'user_reactions', currentUser.uid);
+
+      // Stato ottimistico immediato
+      const wasActive = btn.classList.contains('active');
+      btn.classList.toggle('active');
+      adjCount(btn, wasActive ? -1 : 1);
+
+      // Aggiorna cache locale
+      if (!myPostReactions.has(postId)) myPostReactions.set(postId, new Set());
+      const mine = myPostReactions.get(postId);
+      wasActive ? mine.delete(emoji) : mine.add(emoji);
+
       try {
-        const uSnap = await getDoc(uRef);
-        const mine  = uSnap.exists() ? (uSnap.data().emojis || []) : [];
-        if (mine.includes(emoji)) {
+        if (wasActive) {
           await updateDoc(pRef, { [`reactions.${emoji}`]: increment(-1) });
-          uSnap.exists() && await updateDoc(uRef, { emojis: arrayRemove(emoji) });
-          btn.classList.remove('active');
-          adjCount(btn, -1);
+          await updateDoc(uRef, { emojis: arrayRemove(emoji) });
         } else {
           await updateDoc(pRef, { [`reactions.${emoji}`]: increment(1) });
-          uSnap.exists() ? await updateDoc(uRef, { emojis: arrayUnion(emoji) }) : await setDoc(uRef, { emojis: [emoji] });
-          btn.classList.add('active');
-          adjCount(btn, 1);
+          const uSnap = await getDoc(uRef);
+          uSnap.exists()
+            ? await updateDoc(uRef, { emojis: arrayUnion(emoji) })
+            : await setDoc(uRef, { emojis: [emoji] });
         }
-      } catch(err) { console.error(err); }
+      } catch(err) {
+        // Rollback visivo se fallisce
+        btn.classList.toggle('active');
+        adjCount(btn, wasActive ? 1 : -1);
+        wasActive ? mine.add(emoji) : mine.delete(emoji);
+        console.error('toggleReaction:', err.message);
+      }
     };
 
     function adjCount(btn, delta) {
       let span = btn.querySelector('span');
-      if (!span) { btn.append(' '); span = document.createElement('span'); btn.append(span); span.textContent = '0'; }
+      if (!span) { span = document.createElement('span'); btn.append(' ', span); span.textContent = '0'; }
       const next = parseInt(span.textContent || '0') + delta;
-      if (next <= 0) { const tn = span.previousSibling; tn && btn.removeChild(tn); btn.removeChild(span); }
-      else span.textContent = next;
+      if (next <= 0) {
+        const prev = span.previousSibling;
+        if (prev?.nodeType === 3) btn.removeChild(prev);
+        btn.removeChild(span);
+      } else {
+        span.textContent = next;
+      }
     }
 
     // ── Delete post ───────────────────────────────────────────────────────
@@ -711,9 +754,12 @@
         ? `<div class="comment-avatar"><img src="${esc(data.authorPhoto)}" alt=""></div>`
         : `<div class="comment-avatar">🧒</div>`;
       const mediaHtml = renderCommentMedia(data);
+      const crKey = `${postId}:${commentId}`;
+      const myCR  = myCommentReactions.get(crKey) || new Set();
       const reactHtml = EMOJIS.map(emoji => {
-        const cnt = (data.reactions || {})[emoji] || 0;
-        return `<button class="comment-reaction-btn" data-emoji="${emoji}" onclick="toggleCR('${postId}','${commentId}','${emoji}',this)">${emoji}${cnt > 0 ? ' ' + cnt : ''}</button>`;
+        const cnt    = (data.reactions || {})[emoji] || 0;
+        const active = myCR.has(emoji) ? ' active' : '';
+        return `<button class="comment-reaction-btn${active}" data-emoji="${emoji}" data-cnt="${cnt}" onclick="toggleCR('${postId}','${commentId}','${emoji}',this)">${emoji}${cnt > 0 ? ' ' + cnt : ''}</button>`;
       }).join('');
       const canDel = isAdmin || (currentUser && currentUser.uid === data.authorId);
       el.innerHTML = `${avatar}
@@ -728,15 +774,33 @@
     }
 
     window.toggleCR = async (postId, commentId, emoji, btn) => {
-      if (!currentUser) return;
-      const ref = doc(db, 'piazzetta_posts', postId, 'comments', commentId);
+      if (!currentUser) { alert('Fai il login per reagire!'); return; }
+      const ref    = doc(db, 'piazzetta_posts', postId, 'comments', commentId);
+      const crKey  = `${postId}:${commentId}`;
+      if (!myCommentReactions.has(crKey)) myCommentReactions.set(crKey, new Set());
+      const myCR   = myCommentReactions.get(crKey);
+
+      const wasActive = btn.classList.contains('active');
+      const delta     = wasActive ? -1 : 1;
+      const cur       = parseInt(btn.dataset.cnt || '0');
+      const next      = Math.max(0, cur + delta);
+
+      // Aggiornamento ottimistico
+      btn.classList.toggle('active');
+      btn.dataset.cnt = next;
+      btn.textContent = emoji + (next > 0 ? ' ' + next : '');
+      wasActive ? myCR.delete(emoji) : myCR.add(emoji);
+
       try {
-        const snap = await getDoc(ref);
-        const cur  = ((snap.data()?.reactions) || {})[emoji] || 0;
-        await updateDoc(ref, { [`reactions.${emoji}`]: increment(1) });
-        btn.classList.add('active');
-        btn.textContent = emoji + ' ' + (cur + 1);
-      } catch(err) { console.error(err); }
+        await updateDoc(ref, { [`reactions.${emoji}`]: increment(delta) });
+      } catch(err) {
+        // Rollback
+        btn.classList.toggle('active');
+        btn.dataset.cnt = cur;
+        btn.textContent = emoji + (cur > 0 ? ' ' + cur : '');
+        wasActive ? myCR.add(emoji) : myCR.delete(emoji);
+        console.error('toggleCR:', err.message);
+      }
     };
 
     window.deleteComment = async (postId, commentId, btn) => {
