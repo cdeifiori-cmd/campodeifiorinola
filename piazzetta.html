@@ -360,18 +360,19 @@
       if (!nomi.length) return;
 
       tooltipEl.textContent = emoji + ' ' + nomi.join(', ');
-      tooltipEl.classList.add('visible');
 
-      const rect = anchorEl.getBoundingClientRect();
-      const tw = tooltipEl.offsetWidth || 120;
-      let left = rect.left + rect.width / 2 - tw / 2;
-      left = Math.max(8, Math.min(left, window.innerWidth - tw - 8));
-      tooltipEl.style.left = left + 'px';
-      tooltipEl.style.top  = (rect.top - tooltipEl.offsetHeight - 8 + window.scrollY) + 'px';
-      // Ricalcola dopo render
+      // Posiziona PRIMA di mostrare, così offsetWidth/Height sono già calcolati
       requestAnimationFrame(() => {
-        const th = tooltipEl.offsetHeight;
-        tooltipEl.style.top = (rect.top + window.scrollY - th - 8) + 'px';
+        const rect = anchorEl.getBoundingClientRect();
+        const tw = tooltipEl.offsetWidth  || 120;
+        const th = tooltipEl.offsetHeight || 30;
+        let left = rect.left + rect.width / 2 - tw / 2;
+        left = Math.max(8, Math.min(left, window.innerWidth - tw - 8));
+        // Mostra sopra; se non c'è spazio, mostra sotto
+        const topAbove = rect.top - th - 8;
+        tooltipEl.style.left = left + 'px';
+        tooltipEl.style.top  = (topAbove >= 0 ? topAbove : rect.bottom + 8) + 'px';
+        tooltipEl.classList.add('visible');
       });
     }
 
