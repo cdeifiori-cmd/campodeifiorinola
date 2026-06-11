@@ -1063,6 +1063,7 @@
   <script type="module">
     import { setupNavAuth } from './js/nav-auth.js';
     import { setupDocumentiNav } from './js/nav-docs.js';
+    import { attachProfilo, invalidate as invalidateRTT } from './js/reaction-tooltip.js';
     const isMobile = window.innerWidth < 769;
     setupNavAuth(isMobile ? 'nav-auth-slot' : 'nav-auth-slot-desktop');
     setupDocumentiNav();
@@ -1090,8 +1091,9 @@
     const ADMIN_UID   = 'mCSgNMVEphVIIf4HX0bkcKq2ZKv2';
     const params      = new URLSearchParams(location.search);
     const profileUid  = params.get('uid');
-    let currentUser   = null;
-    let isOwner       = false;
+    let currentUser     = null;
+    let currentUserNome = null;
+    let isOwner         = false;
     let isAdmin       = false;
     let isAutorizzato = false;
     let profileData   = {};
@@ -1107,7 +1109,10 @@
         let usnap = await getDoc(doc(db, 'utenti', user.uid));
         if (!usnap.exists()) usnap = await getDoc(doc(db, 'staff', user.uid));
         if (!usnap.exists()) usnap = await getDoc(doc(db, 'amici', user.uid));
-        if (usnap.exists()) isAutorizzato = !!usnap.data().autorizzato;
+        if (usnap.exists()) {
+          isAutorizzato   = !!usnap.data().autorizzato;
+          currentUserNome = usnap.data().nome || null;
+        }
       }
       if (isAdmin) isAutorizzato = true;
       renderPermissions();
@@ -1557,6 +1562,7 @@
           toggleReazione('diario', p.id, btn.dataset.tipo, el, reazioni);
         });
       });
+      attachProfilo(el, db, 'diario', p.id);
       const toggle = el.querySelector('.commenti-toggle');
       const body   = el.querySelector('.commenti-body');
       const commList = el.querySelector('.commenti-list');
@@ -1602,6 +1608,7 @@
           if (span) span.textContent = Math.max(0, (parseInt(span.textContent) || 1) - 1);
         }
         try {
+          invalidateRTT(`${collName}/${docId}/reazioni`);
           await deleteDoc(reazRef);
           await updateDoc(docRef, { [`reazioni.${tipoNuovo}`]: increment(-1) });
         } catch(e) {
@@ -1631,8 +1638,10 @@
         }
 
         try {
+          const nomeReaz = currentUserNome || currentUser?.displayName || 'Anonimo';
+          invalidateRTT(`${collName}/${docId}/reazioni`);
           // Scrivi nella subcollection (permesso individuale)
-          await setDoc(reazRef, { tipo: tipoNuovo });
+          await setDoc(reazRef, { tipo: tipoNuovo, nomeAutore: nomeReaz });
           // Aggiorna contatori sul documento padre (ora consentito dalle rules)
           const updates = { [`reazioni.${tipoNuovo}`]: increment(1) };
           if (tipoPrev) updates[`reazioni.${tipoPrev}`] = increment(-1);
@@ -2088,6 +2097,7 @@
       el.querySelectorAll('.btn-reazione').forEach(btn=>{
         btn.addEventListener('click',()=>{if(!canReact()){mostraLoginPrompt();return;}toggleReazione('messaggiBottiglia',id,btn.dataset.tipo,el,reazioni);});
       });
+      attachProfilo(el, db, 'messaggiBottiglia', id);
       const toggle=el.querySelector('.commenti-toggle');
       const body=el.querySelector('.commenti-body');
       const commList=el.querySelector('.commenti-list');
