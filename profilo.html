@@ -1064,9 +1064,11 @@
     import { setupNavAuth } from './js/nav-auth.js';
     import { setupDocumentiNav } from './js/nav-docs.js';
     import { attachProfilo, invalidate as invalidateRTT } from './js/reaction-tooltip.js';
+    import { initLightbox } from './js/lightbox.js';
     const isMobile = window.innerWidth < 769;
     setupNavAuth(isMobile ? 'nav-auth-slot' : 'nav-auth-slot-desktop');
     setupDocumentiNav();
+    initLightbox();
 
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";

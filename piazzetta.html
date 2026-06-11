@@ -285,6 +285,7 @@
     import { setupDocumentiNav } from './js/nav-docs.js';
     import { setupInstallBanner } from './js/install-banner.js';
     import { attachPiazzetta, invalidate as invalidateRTT } from './js/reaction-tooltip.js';
+    import { initLightbox } from './js/lightbox.js';
 
     const firebaseConfig = {
       apiKey: "AIzaSyC18lzwqhYcW29TsEO6Oy4Bqvb2PMBUmAg",
@@ -313,6 +314,7 @@
     setupNavAuth('nav-auth-slot');
     setupDocumentiNav();
     setupInstallBanner();
+    initLightbox();
 
     let currentUser = null;
     let currentUserData = null;
