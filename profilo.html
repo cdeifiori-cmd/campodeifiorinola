@@ -1128,11 +1128,16 @@
 
     function renderPermissions() {
       const canEdit = canEditProfile();
-      if (canEdit) {
+      // Cover (hero mobile) – solo admin può modificarla
+      if (isAdmin) {
         document.getElementById('hero-foto').classList.add('is-owner');
-        document.getElementById('desktop-header').classList.add('is-owner');
       } else {
         document.getElementById('hero-foto').classList.remove('is-owner');
+      }
+      // Avatar desktop – owner o admin possono modificarlo
+      if (canEdit) {
+        document.getElementById('desktop-header').classList.add('is-owner');
+      } else {
         document.getElementById('desktop-header').classList.remove('is-owner');
       }
       document.getElementById('btn-edit-presento').classList.toggle('hidden', !canEdit);
@@ -1378,10 +1383,9 @@
       document.getElementById('desktop-nome').textContent     = nome;
       document.getElementById('desktop-comunita').textContent = com;
 
-      if (profileData.fotoProfilo) {
-        document.getElementById('hero-img').src           = profileData.fotoProfilo;
-        document.getElementById('desktop-avatar-img').src = profileData.fotoProfilo;
-      }
+      const cover = profileData.fotoCover || profileData.fotoProfilo;
+      if (cover) document.getElementById('hero-img').src = cover;
+      if (profileData.fotoProfilo) document.getElementById('desktop-avatar-img').src = profileData.fotoProfilo;
       renderSalutoUI();
 
       if (profileData.miPresento) {
@@ -2002,14 +2006,25 @@
       document.getElementById('modal-presento').classList.add('hidden');
     });
 
-    // FOTO PROFILO
-    document.getElementById('desktop-avatar-wrap').addEventListener('click',()=>{if(!canEditProfile())return;triggerFotoUpload();});
+    // FOTO COVER (hero mobile) – solo admin
     function triggerFotoUpload(){
-      // Solo admin può modificare le foto profilo
-      if (!isAdmin) {
-        showError('Solo l\'admin può modificare le foto profilo');
-        return;
-      }
+      if (!isAdmin) return;
+      const input=document.createElement('input'); input.type='file'; input.accept='image/*';
+      input.onchange=async()=>{
+        const file=input.files[0];if(!file)return;
+        const fd=new FormData(); fd.append('file',file); fd.append('upload_preset','campo_dei_fiori');
+        const res=await fetch('https://api.cloudinary.com/v1_1/dxqyprtzh/image/upload',{method:'POST',body:fd});
+        const json=await res.json();
+        await updateDoc(doc(db,profileColl,profileUid),{fotoCover:json.secure_url});
+        document.getElementById('hero-img').src=json.secure_url;
+      };
+      input.click();
+    }
+    document.getElementById('btn-edit-foto').addEventListener('click',triggerFotoUpload);
+
+    // FOTO PROFILO (avatar rotondo desktop) – owner o admin
+    document.getElementById('desktop-avatar-wrap').addEventListener('click',()=>{
+      if(!canEditProfile())return;
       const input=document.createElement('input'); input.type='file'; input.accept='image/*';
       input.onchange=async()=>{
         const file=input.files[0];if(!file)return;
@@ -2018,12 +2033,10 @@
         const json=await res.json();
         await updateDoc(doc(db,profileColl,profileUid),{fotoProfilo:json.secure_url});
         incrInt(profileUid,'fotoCaricate');
-        document.getElementById('hero-img').src=json.secure_url;
         document.getElementById('desktop-avatar-img').src=json.secure_url;
       };
       input.click();
-    }
-    document.getElementById('btn-edit-foto').addEventListener('click',triggerFotoUpload);
+    });
 
     // BOTTIGLIE
     async function loadBottiglie(){
