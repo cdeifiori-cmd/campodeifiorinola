@@ -106,7 +106,7 @@ service cloud.firestore {
       }
 
       match /user_reactions/{userId} {
-        allow read: if isLoggedIn() && request.auth.uid == userId;
+        allow read: if isLoggedIn();
         allow write: if isLoggedIn() && request.auth.uid == userId;
       }
     }

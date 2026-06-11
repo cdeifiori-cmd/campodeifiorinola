@@ -81,6 +81,19 @@
     .reaction-btn.active { background: var(--verde-light); border-color: var(--verde); color: var(--verde-scuro); }
     .reaction-btn:hover  { background: var(--verde-light); }
 
+    /* ── Tooltip reazioni ── */
+    #reaction-tooltip {
+      position: fixed; z-index: 9999;
+      background: rgba(30,30,30,0.92); color: #fff;
+      font-size: 0.8rem; font-weight: 700; font-family: 'Nunito', sans-serif;
+      padding: 6px 12px; border-radius: 10px;
+      pointer-events: none; white-space: nowrap; max-width: 260px;
+      white-space: normal; text-align: center; line-height: 1.4;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.35);
+      opacity: 0; transition: opacity 0.15s;
+    }
+    #reaction-tooltip.visible { opacity: 1; }
+
     /* ── Comments ── */
     .post-footer { border-top: 1px solid #f0f0f0; padding: 8px 14px; display: flex; align-items: center; }
     .btn-comments {
@@ -233,6 +246,8 @@
 </head>
 <body>
 
+  <div id="reaction-tooltip"></div>
+
   <header class="top-header">
     <h1>🏡 La Piazzetta</h1>
     <div id="nav-auth-slot"></div>
@@ -276,7 +291,7 @@
     import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
     import {
-      getFirestore, collection, addDoc, getDoc, doc, updateDoc,
+      getFirestore, collection, addDoc, getDoc, getDocs, doc, updateDoc,
       query, orderBy, limit, serverTimestamp, onSnapshot, deleteDoc,
       increment, setDoc, arrayUnion, arrayRemove
     } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -306,6 +321,81 @@
     // Cache locale reazioni: evita fetch ripetuti e ripristina active dopo re-render
     const myPostReactions    = new Map(); // postId → Set<emoji>
     const myCommentReactions = new Map(); // `${postId}:${commentId}` → Set<emoji>
+
+    // Cache nomi per tooltip: postId → Map<userId, {nome, emojis[]}>
+    const reactionNamesCache = new Map();
+
+    // ── Tooltip ───────────────────────────────────────────────────────────
+    const tooltipEl = document.getElementById('reaction-tooltip');
+    let tooltipTimeout = null;
+
+    function hideTooltip() {
+      tooltipEl.classList.remove('visible');
+    }
+
+    async function showTooltip(postId, emoji, anchorEl) {
+      if (!reactionNamesCache.has(postId)) {
+        reactionNamesCache.set(postId, null); // segnaposto anti-doppio fetch
+        try {
+          const snap = await getDocs(collection(db, 'piazzetta_posts', postId, 'user_reactions'));
+          const map = new Map();
+          snap.forEach(d => {
+            const data = d.data();
+            if (data.nomeAutore && Array.isArray(data.emojis)) {
+              map.set(d.id, { nome: data.nomeAutore, emojis: data.emojis });
+            }
+          });
+          reactionNamesCache.set(postId, map);
+        } catch(_) {
+          reactionNamesCache.delete(postId);
+          return;
+        }
+      }
+      // Aspetta se fetch in corso (null = in volo)
+      if (reactionNamesCache.get(postId) === null) return;
+
+      const map = reactionNamesCache.get(postId);
+      const nomi = [];
+      map.forEach(v => { if (v.emojis.includes(emoji)) nomi.push(v.nome); });
+      if (!nomi.length) return;
+
+      tooltipEl.textContent = emoji + ' ' + nomi.join(', ');
+      tooltipEl.classList.add('visible');
+
+      const rect = anchorEl.getBoundingClientRect();
+      const tw = tooltipEl.offsetWidth || 120;
+      let left = rect.left + rect.width / 2 - tw / 2;
+      left = Math.max(8, Math.min(left, window.innerWidth - tw - 8));
+      tooltipEl.style.left = left + 'px';
+      tooltipEl.style.top  = (rect.top - tooltipEl.offsetHeight - 8 + window.scrollY) + 'px';
+      // Ricalcola dopo render
+      requestAnimationFrame(() => {
+        const th = tooltipEl.offsetHeight;
+        tooltipEl.style.top = (rect.top + window.scrollY - th - 8) + 'px';
+      });
+    }
+
+    function attachTooltips(card, postId) {
+      card.querySelectorAll('.reaction-btn').forEach(btn => {
+        const emoji = btn.dataset.emoji;
+
+        // Desktop: hover
+        btn.addEventListener('mouseenter', () => showTooltip(postId, emoji, btn));
+        btn.addEventListener('mouseleave', hideTooltip);
+
+        // Mobile: long press
+        btn.addEventListener('touchstart', e => {
+          tooltipTimeout = setTimeout(() => showTooltip(postId, emoji, btn), 500);
+        }, { passive: true });
+        btn.addEventListener('touchend',   () => { clearTimeout(tooltipTimeout); });
+        btn.addEventListener('touchmove',  () => { clearTimeout(tooltipTimeout); });
+      });
+    }
+
+    // Nasconde il tooltip toccando altrove
+    document.addEventListener('touchstart', e => {
+      if (!e.target.classList.contains('reaction-btn')) hideTooltip();
+    }, { passive: true });
 
     setupNavAuth('nav-auth-slot');
     setupDocumentiNav();
@@ -649,6 +739,7 @@
         applyMyPostReactions(postId, card);
       }
 
+      attachTooltips(card, postId);
       return card;
     }
 
@@ -684,6 +775,8 @@
       wasActive ? mine.delete(emoji) : mine.add(emoji);
 
       try {
+        const nomeAutore = currentUserData?.nome || currentUser.displayName || 'Anonimo';
+        reactionNamesCache.delete(postId); // invalida cache tooltip
         if (wasActive) {
           await updateDoc(pRef, { [`reactions.${emoji}`]: increment(-1) });
           await updateDoc(uRef, { emojis: arrayRemove(emoji) });
@@ -691,8 +784,8 @@
           await updateDoc(pRef, { [`reactions.${emoji}`]: increment(1) });
           const uSnap = await getDoc(uRef);
           uSnap.exists()
-            ? await updateDoc(uRef, { emojis: arrayUnion(emoji) })
-            : await setDoc(uRef, { emojis: [emoji] });
+            ? await updateDoc(uRef, { emojis: arrayUnion(emoji), nomeAutore })
+            : await setDoc(uRef, { emojis: [emoji], nomeAutore });
         }
       } catch(err) {
         // Rollback visivo se fallisce
