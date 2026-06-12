@@ -150,14 +150,20 @@ export async function setupNotifiche(user) {
     }
 
     // Gestisci notifiche in foreground (app aperta)
+    // Usa il SW per showNotification — new Notification() è bloccato dai browser moderni
     onMessage(messaging, payload => {
-      const n = payload.notification || {};
-      if (Notification.permission === 'granted') {
-        new Notification(n.title || 'Campo dei Fiori 🌸', {
-          body: n.body || '',
-          icon: '/icons/icon-192.png'
+      const n    = payload.notification || {};
+      const data = payload.data         || {};
+      navigator.serviceWorker.ready.then(reg => {
+        reg.showNotification(n.title || 'Campo dei Fiori 🌸', {
+          body:               n.body || '',
+          icon:               '/icons/icon-192.png',
+          badge:              '/icons/icon-192.png',
+          tag:                data.tag || 'campo-foreground',
+          data:               { url: data.url || '/giornale.html' },
+          requireInteraction: false
         });
-      }
+      });
     });
 
   } catch (err) {

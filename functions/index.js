@@ -263,3 +263,39 @@ exports.onNuovoCommentoBott = onDocumentCreated(
     await inviaATokens(uniqueTokens, msgBase, `commento-bott-${commentId}`);
   }
 );
+
+// ─── TRIGGER 5: nuovo commento Piazzetta → all'autore del post ───────────
+
+exports.onNuovoCommentoPiazzetta = onDocumentCreated(
+  { document: 'piazzetta_posts/{postId}/comments/{commentId}', region: 'europe-west1' },
+  async event => {
+    const { postId, commentId } = event.params;
+    const commentData = event.data?.data();
+    if (!commentData) return;
+
+    const commentatoreUid  = commentData.authorId || commentData.uidAutore;
+    const nomeCommentatore = commentData.authorName || commentData.nomeAutore || await getNome(commentatoreUid);
+    const testoCommento    = tronca(commentData.text || commentData.testo || '', 80);
+
+    const postSnap = await db.collection('piazzetta_posts').doc(postId).get();
+    if (!postSnap.exists) return;
+    const autoreUid = postSnap.data().authorId || postSnap.data().uidAutore;
+
+    if (commentatoreUid === autoreUid) return;
+
+    const msgBase = {
+      notification: { title: `💬 ${nomeCommentatore} ha commentato`, body: testoCommento || 'Nuovo commento in Piazzetta' },
+      data: { url: '/piazzetta.html', tag: `commento-piazzetta-${commentId}` },
+      webpush: {
+        notification: { title: `💬 ${nomeCommentatore} ha commentato`, body: testoCommento || 'Nuovo commento in Piazzetta',
+          icon: '/icons/icon-192.png', badge: '/icons/icon-192.png', tag: `commento-piazzetta-${commentId}` },
+        fcmOptions: { link: '/piazzetta.html' }
+      },
+      android: { notification: { sound: 'default', channelId: 'campo_notifiche' } },
+      apns:    { payload: { aps: { sound: 'default' } } }
+    };
+
+    const tokens = await getTokensForUid(autoreUid);
+    await inviaATokens(tokens, msgBase, `commento-piazzetta-${commentId}`);
+  }
+);
