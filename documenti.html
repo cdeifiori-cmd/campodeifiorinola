@@ -321,7 +321,6 @@
 
     /* ── Constants ────────────────────────────────────────────────── */
     const ADMIN_UID      = 'mCSgNMVEphVIIf4HX0bkcKq2ZKv2';
-    const MASSIMO_UID    = '0u41pvwSTAaryAGWAG8gwuxrZ293';
     const VALID_COMUNITA = ['bella-mbriana','fortapasc','itaca','macrame','willy-coyote'];
     const EMOJI_COM      = { 'bella-mbriana':'🌸','itaca':'⚓','willy-coyote':'🐺','fortapasc':'🏠','macrame':'🧶' };
 
@@ -339,9 +338,9 @@
     ];
 
     /* ── User state ───────────────────────────────────────────────── */
-    let isAdmin = false, isMassimo = false, isCoord = false;
-    let myComunita = [];  // array: supporta coordinatrici con più comunità
-    let canWrite = false;  // admin, massimo, coordinatrice
+    let isAdmin = false, isCoord = false;
+    let myComunita = [];  // array: supporta coordinatrici/responsabili con più comunità
+    let canWrite = false;  // admin, coordinatrice, responsabile
 
     /* ── Navigation stack ─────────────────────────────────────────── */
     // Each entry: { label: string, render: () => void }
@@ -401,7 +400,7 @@
         const list = [];
         snap.forEach(d => {
           if (VALID_COMUNITA.includes(d.id) &&
-              (isAdmin || isMassimo || myComunita.includes(d.id))) {
+              (isAdmin || myComunita.includes(d.id))) {
             list.push({ id: d.id, label: d.data().nomeComunita });
           }
         });
@@ -648,7 +647,7 @@
     /* ── File row ────────────────────────────────────────────────── */
     function makeFileRow(itemRef, url, meta) {
       const fname = meta.name || itemRef.name;
-      const canDel = isAdmin || isMassimo;
+      const canDel = isAdmin;
       const row = mkEl('div', 'item-row file-row',
         `<span class="item-icon">${fileIcon(fname)}</span>
          <div class="item-info">
@@ -763,23 +762,19 @@
     onAuthStateChanged(auth, async user => {
       if (!user) { showAccessDenied(); return; }
 
-      isAdmin   = user.uid === ADMIN_UID;
-      isMassimo = user.uid === MASSIMO_UID;
+      isAdmin = user.uid === ADMIN_UID;
 
-      if (!isAdmin && !isMassimo) {
+      if (!isAdmin) {
         const snap = await getDoc(doc(db, 'staff', user.uid));
         if (snap.exists()) {
-          const ruolo = snap.data().ruolo || '';
-          isCoord = ruolo.includes('Coordinatrice');
-          // Normalizza comunitaId: può essere stringa o array
+          const ruolo = (snap.data().ruolo || '').toLowerCase();
+          isCoord = ruolo.includes('coordinat') || ruolo.includes('responsabil');
           const rawCom = snap.data().comunitaId;
-          myComunita = Array.isArray(rawCom)
-            ? rawCom
-            : (rawCom ? [rawCom] : []);
+          myComunita = Array.isArray(rawCom) ? rawCom : (rawCom ? [rawCom] : []);
         }
       }
 
-      canWrite = isAdmin || isMassimo || isCoord;
+      canWrite = isAdmin || isCoord;
       if (!canWrite) { showAccessDenied(); return; }
 
       // Boot navigation
