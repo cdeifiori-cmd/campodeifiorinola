@@ -16,16 +16,24 @@ export function setupDocumentiNav() {
     if (!user) return;
 
     const isAdmin = user.uid === ADMIN_UID;
-    let   isCoord = false;
+    let   hasAccess = isAdmin;
 
-    if (!isAdmin) {
-      const snap = await getDoc(doc(db, 'staff', user.uid));
-      if (snap.exists()) {
-        isCoord = isRuoloConAccesso(snap.data().ruolo);
+    if (!hasAccess) {
+      // Cerca il documento utente in tutte le collezioni
+      for (const coll of ['utenti', 'staff', 'amici']) {
+        try {
+          const snap = await getDoc(doc(db, coll, user.uid));
+          if (!snap.exists()) continue;
+          const data = snap.data();
+          // Accesso per ruolo coordinatrice/responsabile (solo staff)
+          if (coll === 'staff' && isRuoloConAccesso(data.ruolo)) { hasAccess = true; break; }
+          // Accesso speciale esplicito (qualsiasi collezione)
+          if (data.accessoDocumenti === true) { hasAccess = true; break; }
+        } catch (_) {}
       }
     }
 
-    if (isAdmin || isCoord) {
+    if (hasAccess) {
       document.querySelectorAll('.nav-doc-link').forEach(el => {
         el.style.display = '';
       });

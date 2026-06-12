@@ -765,12 +765,24 @@
       isAdmin = user.uid === ADMIN_UID;
 
       if (!isAdmin) {
-        const snap = await getDoc(doc(db, 'staff', user.uid));
-        if (snap.exists()) {
-          const ruolo = (snap.data().ruolo || '').toLowerCase();
-          isCoord = ruolo.includes('coordinat') || ruolo.includes('responsabil');
-          const rawCom = snap.data().comunitaId;
-          myComunita = Array.isArray(rawCom) ? rawCom : (rawCom ? [rawCom] : []);
+        for (const coll of ['utenti', 'staff', 'amici']) {
+          try {
+            const snap = await getDoc(doc(db, coll, user.uid));
+            if (!snap.exists()) continue;
+            const data = snap.data();
+            // Accesso per ruolo (solo staff)
+            if (coll === 'staff') {
+              const ruolo = (data.ruolo || '').toLowerCase();
+              if (ruolo.includes('coordinat') || ruolo.includes('responsabil')) {
+                isCoord = true;
+                const rawCom = data.comunitaId;
+                myComunita = Array.isArray(rawCom) ? rawCom : (rawCom ? [rawCom] : []);
+              }
+            }
+            // Accesso speciale esplicito
+            if (data.accessoDocumenti === true) isCoord = true;
+            if (isCoord) break;
+          } catch (_) {}
         }
       }
 
