@@ -1,14 +1,15 @@
 /**
  * Cloud Functions — Campo dei Fiori
  *
- * ARCHITETTURA SEMPLIFICATA:
- * Un solo trigger: onNuovoContenuto
- *   → si attiva quando viene creato un documento in 'diario/{postId}'
- *   → invia notifica push a TUTTI gli utenti con fcmToken (utenti + staff + amici)
- *   → esclude l'autore del post dalla lista destinatari
- *
- * Il Giornale è un feed puramente client-side (non ha una collection dedicata).
- * La sorgente principale di nuovo contenuto è la collection 'diario'.
+ * TRIGGER:
+ *  1. onNuovoContenuto   — diario/{postId} creato
+ *                          → broadcast a tutti (escluso autore)
+ *  2. onNuovaBottiglia   — messaggiBottiglia/{id} creato
+ *                          → solo al destinatario
+ *  3. onNuovoCommento    — diario/{postId}/commenti/{id} creato
+ *                          → solo al proprietario del post (se non è lui il commentatore)
+ *  4. onNuovoCommentoBott — messaggiBottiglia/{id}/commenti/{id} creato
+ *                          → a mittente + destinatario bottiglia (escluso il commentatore)
  */
 
 const { onDocumentCreated } = require('firebase-functions/v2/firestore');
@@ -16,56 +17,58 @@ const { initializeApp }     = require('firebase-admin/app');
 const { getFirestore }      = require('firebase-admin/firestore');
 const { getMessaging }      = require('firebase-admin/messaging');
 
-// Inizializzazione sincrona a livello di modulo — corretta e attesa da Firebase
 initializeApp();
 const db        = getFirestore();
 const messaging = getMessaging();
 
-// ─── Helper: raccoglie tutti i token FCM da utenti, staff, amici ──────────
+// ─── Helper: token di un singolo utente ──────────────────────────────────
+
+async function getTokensForUid(uid) {
+  for (const coll of ['utenti', 'staff', 'amici']) {
+    try {
+      const snap = await db.collection(coll).doc(uid).get();
+      if (!snap.exists) continue;
+      const d = snap.data();
+      const tokens = [];
+      if (Array.isArray(d.fcmTokens)) tokens.push(...d.fcmTokens.filter(t => t?.length > 10));
+      if (d.fcmToken?.length > 10) tokens.push(d.fcmToken);
+      return [...new Set(tokens)];
+    } catch (_) {}
+  }
+  return [];
+}
+
+// ─── Helper: tutti i token (broadcast) ───────────────────────────────────
 
 async function getAllFcmTokens(excludeUid = null) {
   console.log('[FCM] Raccolta token, escludo UID:', excludeUid);
   const tokens = [];
-
   for (const coll of ['utenti', 'staff', 'amici']) {
     try {
       const snap = await db.collection(coll).get();
       snap.forEach(docSnap => {
         if (docSnap.id === excludeUid) return;
         const d = docSnap.data();
-
-        // Nuovo campo array (più dispositivi per utente)
-        if (Array.isArray(d.fcmTokens)) {
-          d.fcmTokens.forEach(t => {
-            if (t && typeof t === 'string' && t.length > 10) tokens.push(t);
-          });
-        }
-        // Vecchio campo stringa (backward compat — aggiunge se non già in array)
-        if (d.fcmToken && typeof d.fcmToken === 'string' && d.fcmToken.length > 10) {
-          tokens.push(d.fcmToken);
-        }
+        if (Array.isArray(d.fcmTokens)) d.fcmTokens.forEach(t => { if (t?.length > 10) tokens.push(t); });
+        if (d.fcmToken?.length > 10) tokens.push(d.fcmToken);
       });
       console.log(`[FCM] Collezione '${coll}': ${snap.size} doc letti`);
     } catch (err) {
       console.error(`[FCM] Errore lettura '${coll}':`, err.message);
     }
   }
-
   const unique = [...new Set(tokens)];
-  console.log(`[FCM] Token validi trovati: ${unique.length} (su ${tokens.length} totali)`);
+  console.log(`[FCM] Token validi trovati: ${unique.length}`);
   return unique;
 }
 
 // ─── Helper: nome autore ──────────────────────────────────────────────────
 
 async function getNome(uid) {
-  for (const coll of ['utenti', 'staff']) {
+  for (const coll of ['utenti', 'staff', 'amici']) {
     try {
       const snap = await db.collection(coll).doc(uid).get();
-      if (snap.exists) {
-        const nome = snap.data().nome;
-        if (nome) return nome;
-      }
+      if (snap.exists) { const n = snap.data().nome; if (n) return n; }
     } catch (_) {}
   }
   return 'Qualcuno';
@@ -76,74 +79,36 @@ function tronca(testo, max = 80) {
   return testo.length > max ? testo.slice(0, max) + '…' : testo;
 }
 
-// ─── TRIGGER 2: nuovo messaggio in bottiglia → broadcast a tutti ─────────
+// ─── Helper: invia a lista di token con pulizia stale ────────────────────
 
-exports.onNuovaBottiglia = onDocumentCreated(
-  { document: 'messaggiBottiglia/{bottigliaId}', region: 'europe-west1' },
-  async event => {
-    const bottigliaId = event.params.bottigliaId;
-    console.log('[FCM] Trigger onNuovaBottiglia — id:', bottigliaId);
-
-    const data = event.data?.data();
-    if (!data) { console.warn('[FCM] Documento vuoto, uscita.'); return; }
-
-    const mittente = data.uidMittente;
-    console.log('[FCM] Mittente UID:', mittente);
-
-    const tokens = await getAllFcmTokens(mittente); // escludi mittente
-    if (!tokens.length) { console.warn('[FCM] Nessun token trovato.'); return; }
-
-    const msgBase = {
-      notification: { title: '💌 Nuovo messaggio in bottiglia', body: 'Qualcuno ti ha scritto su Campo dei Fiori' },
-      data: { url: '/giornale.html', tag: `bottiglia-${bottigliaId}` }, // letto dal SW al click
-      webpush: {
-        notification: {
-          title: '💌 Nuovo messaggio in bottiglia',
-          body:  'Qualcuno ti ha scritto su Campo dei Fiori',
-          icon:  '/icons/icon-192.png',
-          badge: '/icons/icon-192.png',
-          tag:   `bottiglia-${bottigliaId}`
-        },
-        fcmOptions: { link: '/giornale.html' }
-      },
-      android: { notification: { sound: 'default', channelId: 'campo_notifiche' } },
-      apns:    { payload: { aps: { sound: 'default' } } }
-    };
-
-    console.log(`[FCM] Invio bottiglia a ${tokens.length} token...`);
-    const staleTokens = [];
-    const results = await Promise.all(
-      tokens.map(async (token, idx) => {
-        try {
-          const msgId = await messaging.send({ ...msgBase, token });
-          console.log(`[FCM] ✓ Token[${idx}] OK — ${msgId}`);
-          return { success: true };
-        } catch (err) {
-          const code = err.code || String(err);
-          console.error(`[FCM] ✗ Token[${idx}] ERRORE — ${code}: ${err.message}`);
-          if (code.includes('registration-token-not-registered') || code.includes('invalid-registration-token')) {
-            staleTokens.push(token);
-          }
-          return { success: false };
-        }
-      })
-    );
-    const ok = results.filter(r => r.success).length;
-    console.log(`[FCM] Bottiglia completata — Successi: ${ok}, Falliti: ${results.length - ok}`);
-
-    // Pulizia token stale
-    for (const st of staleTokens) {
-      for (const coll of ['utenti', 'staff', 'amici']) {
-        try {
-          const s = await db.collection(coll).where('fcmTokens', 'array-contains', st).get();
-          for (const d of s.docs) { await d.ref.update({ fcmTokens: (d.data().fcmTokens||[]).filter(t=>t!==st) }); }
-          const s2 = await db.collection(coll).where('fcmToken', '==', st).get();
-          for (const d of s2.docs) { await d.ref.update({ fcmToken: null }); }
-        } catch (e) { console.warn(`[FCM] Pulizia ${coll}:`, e.message); }
-      }
+async function inviaATokens(tokens, msgBase, label) {
+  if (!tokens.length) { console.warn(`[FCM] ${label}: nessun token.`); return; }
+  const stale = [];
+  const results = await Promise.all(tokens.map(async (token, idx) => {
+    try {
+      const id = await messaging.send({ ...msgBase, token });
+      console.log(`[FCM] ✓ ${label} token[${idx}] — ${id}`);
+      return { ok: true };
+    } catch (err) {
+      const code = err.code || String(err);
+      console.error(`[FCM] ✗ ${label} token[${idx}] — ${code}: ${err.message}`);
+      if (code.includes('registration-token-not-registered') || code.includes('invalid-registration-token')) stale.push(token);
+      return { ok: false };
+    }
+  }));
+  console.log(`[FCM] ${label} — OK: ${results.filter(r=>r.ok).length}, KO: ${results.filter(r=>!r.ok).length}`);
+  // Pulizia token stale
+  for (const st of stale) {
+    for (const coll of ['utenti', 'staff', 'amici']) {
+      try {
+        const s1 = await db.collection(coll).where('fcmTokens', 'array-contains', st).get();
+        for (const d of s1.docs) await d.ref.update({ fcmTokens: (d.data().fcmTokens||[]).filter(t=>t!==st) });
+        const s2 = await db.collection(coll).where('fcmToken', '==', st).get();
+        for (const d of s2.docs) await d.ref.update({ fcmToken: null });
+      } catch (e) { console.warn(`[FCM] Pulizia stale ${coll}:`, e.message); }
     }
   }
-);
+}
 
 // ─── TRIGGER 1: nuovo post nel diario → broadcast a tutti ────────────────
 
@@ -151,123 +116,150 @@ exports.onNuovoContenuto = onDocumentCreated(
   { document: 'diario/{postId}', region: 'europe-west1' },
   async event => {
     const postId = event.params.postId;
-    console.log('[FCM] Trigger onNuovoContenuto — postId:', postId);
-
-    const data = event.data?.data();
-    if (!data) {
-      console.warn('[FCM] Documento vuoto, uscita.');
-      return;
-    }
+    const data   = event.data?.data();
+    if (!data) return;
+    if (!data.testo && !data.immagineUrl && !data.audioUrl && !data.videoUrl) return;
 
     const autoreUid = data.uidRagazzo;
-    console.log('[FCM] Autore UID:', autoreUid);
-
-    // Salta post senza contenuto reale
-    if (!data.testo && !data.immagineUrl && !data.audioUrl && !data.videoUrl) {
-      console.log('[FCM] Post senza contenuto, skip.');
-      return;
-    }
-
-    // Anteprima testo per il body della notifica
     const anteprima = data.testo
       ? tronca(data.testo)
       : data.immagineUrl ? '📷 Ha condiviso una foto'
       : data.audioUrl    ? '🎙️ Ha condiviso un audio'
-      : data.videoUrl    ? '🎬 Ha condiviso un video'
-      : 'Nuovo contenuto!';
-
-    // Nome autore
+      : '🎬 Ha condiviso un video';
     const nomeAutore = await getNome(autoreUid);
-    console.log('[FCM] Nome autore:', nomeAutore, '| Anteprima:', anteprima);
+    const profiloUrl = `/profilo.html?uid=${autoreUid}`;
 
-    // Raccogli tutti i token
-    const tokens = await getAllFcmTokens(autoreUid);
-    if (!tokens.length) {
-      console.warn('[FCM] Nessun token trovato, nessuna notifica inviata.');
-      return;
-    }
-
-    // Costruisci il messaggio
     const msgBase = {
-      notification: {
-        title: '🗞️ Campo dei Fiori',
-        body:  `${nomeAutore}: ${anteprima}`
-      },
-      data: { url: '/giornale.html', tag: `giornale-${postId}` }, // letto dal SW al click
+      notification: { title: '🗞️ Campo dei Fiori', body: `${nomeAutore}: ${anteprima}` },
+      data: { url: profiloUrl, tag: `diario-${postId}` },
       webpush: {
-        notification: {
-          title:  '🗞️ Campo dei Fiori',
-          body:   `${nomeAutore}: ${anteprima}`,
-          icon:   '/icons/icon-192.png',
-          badge:  '/icons/icon-192.png',
-          tag:    `giornale-${postId}`
-        },
-        fcmOptions: { link: '/giornale.html' }
+        notification: { title: '🗞️ Campo dei Fiori', body: `${nomeAutore}: ${anteprima}`,
+          icon: '/icons/icon-192.png', badge: '/icons/icon-192.png', tag: `diario-${postId}` },
+        fcmOptions: { link: profiloUrl }
       },
-      android: {
-        notification: { sound: 'default', channelId: 'campo_notifiche' }
-      },
-      apns: {
-        payload: { aps: { sound: 'default', badge: 1 } }
-      }
+      android: { notification: { sound: 'default', channelId: 'campo_notifiche' } },
+      apns:    { payload: { aps: { sound: 'default', badge: 1 } } }
     };
 
-    // Invia a ogni token con messaging.send() individuale (più affidabile di sendEachForMulticast)
-    // Promise.all invia tutti in parallelo senza bloccarsi su singoli errori
-    console.log(`[FCM] Avvio invio a ${tokens.length} token in parallelo...`);
+    const tokens = await getAllFcmTokens(autoreUid);
+    await inviaATokens(tokens, msgBase, `diario-${postId}`);
+  }
+);
 
-    const staleTokens = [];
+// ─── TRIGGER 2: nuovo messaggio in bottiglia → solo al destinatario ───────
 
-    const results = await Promise.all(
-      tokens.map(async (token, idx) => {
-        try {
-          console.log(`[FCM] Invio a token[${idx}]: ${token.slice(0,20)}…`);
-          const msgId = await messaging.send({ ...msgBase, token });
-          console.log(`[FCM] ✓ Token[${idx}] OK — messageId: ${msgId}`);
-          return { success: true };
-        } catch (err) {
-          const code = err.code || err.errorInfo?.code || String(err);
-          console.error(`[FCM] ✗ Token[${idx}] ERRORE — code: ${code} | msg: ${err.message}`);
-          if (
-            code.includes('registration-token-not-registered') ||
-            code.includes('invalid-registration-token') ||
-            code.includes('invalid-argument')
-          ) {
-            staleTokens.push(token);
-          }
-          return { success: false, code };
-        }
-      })
-    );
+exports.onNuovaBottiglia = onDocumentCreated(
+  { document: 'messaggiBottiglia/{bottigliaId}', region: 'europe-west1' },
+  async event => {
+    const bottigliaId = event.params.bottigliaId;
+    const data        = event.data?.data();
+    if (!data) return;
 
-    const totalSuccess = results.filter(r => r.success).length;
-    const totalFail    = results.filter(r => !r.success).length;
-    console.log(`[FCM] Completato — Successi: ${totalSuccess}, Falliti: ${totalFail}`);
+    const mittente    = data.uidMittente;
+    const destinatario = data.uidDestinatario;
+    if (!destinatario) { console.warn('[FCM] Bottiglia senza destinatario.'); return; }
 
-    // Rimuovi token stale da tutte le collezioni
-    if (staleTokens.length > 0) {
-      console.log(`[FCM] Rimozione ${staleTokens.length} token stale da Firestore`);
-      for (const staleToken of staleTokens) {
-        for (const coll of ['utenti', 'staff', 'amici']) {
-          try {
-            const arrSnap = await db.collection(coll)
-              .where('fcmTokens', 'array-contains', staleToken).get();
-            for (const docSnap of arrSnap.docs) {
-              const filtered = (docSnap.data().fcmTokens || []).filter(t => t !== staleToken);
-              await docSnap.ref.update({ fcmTokens: filtered });
-              console.log(`[FCM] Token stale rimosso array ${coll}/${docSnap.id}`);
-            }
-            const strSnap = await db.collection(coll)
-              .where('fcmToken', '==', staleToken).get();
-            for (const docSnap of strSnap.docs) {
-              await docSnap.ref.update({ fcmToken: null });
-              console.log(`[FCM] Token stale rimosso stringa ${coll}/${docSnap.id}`);
-            }
-          } catch (e) {
-            console.warn(`[FCM] Errore pulizia ${coll}:`, e.message);
-          }
-        }
-      }
-    }
+    const nomeMittente  = data.nomeMittente || await getNome(mittente);
+    const anteprima     = data.testo ? tronca(data.testo, 60)
+      : data.audioUrl   ? '🎙️ Ha inviato un audio'
+      : data.immagineUrl ? '📷 Ha inviato una foto'
+      : data.videoUrl   ? '🎬 Ha inviato un video'
+      : '✉️ Hai ricevuto un messaggio';
+    const profiloUrl = `/profilo.html?uid=${destinatario}`;
+
+    const msgBase = {
+      notification: { title: `💌 ${nomeMittente} ti ha scritto`, body: anteprima },
+      data: { url: profiloUrl, tag: `bottiglia-${bottigliaId}` },
+      webpush: {
+        notification: { title: `💌 ${nomeMittente} ti ha scritto`, body: anteprima,
+          icon: '/icons/icon-192.png', badge: '/icons/icon-192.png', tag: `bottiglia-${bottigliaId}` },
+        fcmOptions: { link: profiloUrl }
+      },
+      android: { notification: { sound: 'default', channelId: 'campo_notifiche' } },
+      apns:    { payload: { aps: { sound: 'default' } } }
+    };
+
+    const tokens = await getTokensForUid(destinatario);
+    await inviaATokens(tokens, msgBase, `bottiglia-${bottigliaId}`);
+  }
+);
+
+// ─── TRIGGER 3: nuovo commento al diario → al proprietario del post ───────
+
+exports.onNuovoCommento = onDocumentCreated(
+  { document: 'diario/{postId}/commenti/{commentId}', region: 'europe-west1' },
+  async event => {
+    const { postId, commentId } = event.params;
+    const commentData = event.data?.data();
+    if (!commentData) return;
+
+    const commentatoreUid = commentData.uidAutore;
+    const nomeCommentatore = commentData.nomeAutore || await getNome(commentatoreUid);
+    const testoCommento    = tronca(commentData.testo || commentData.trascrizione || '', 80);
+
+    // Recupera proprietario del post
+    const postSnap = await db.collection('diario').doc(postId).get();
+    if (!postSnap.exists) return;
+    const proprietarioUid = postSnap.data().uidRagazzo;
+
+    // Non notificare se l'autore commenta il proprio post
+    if (commentatoreUid === proprietarioUid) return;
+
+    const profiloUrl = `/profilo.html?uid=${proprietarioUid}`;
+    const msgBase = {
+      notification: { title: `💬 ${nomeCommentatore} ha commentato`, body: testoCommento || 'Nuovo commento' },
+      data: { url: profiloUrl, tag: `commento-${commentId}` },
+      webpush: {
+        notification: { title: `💬 ${nomeCommentatore} ha commentato`, body: testoCommento || 'Nuovo commento',
+          icon: '/icons/icon-192.png', badge: '/icons/icon-192.png', tag: `commento-${commentId}` },
+        fcmOptions: { link: profiloUrl }
+      },
+      android: { notification: { sound: 'default', channelId: 'campo_notifiche' } },
+      apns:    { payload: { aps: { sound: 'default' } } }
+    };
+
+    const tokens = await getTokensForUid(proprietarioUid);
+    await inviaATokens(tokens, msgBase, `commento-diario-${commentId}`);
+  }
+);
+
+// ─── TRIGGER 4: nuovo commento a bottiglia → a mittente + destinatario ───
+
+exports.onNuovoCommentoBott = onDocumentCreated(
+  { document: 'messaggiBottiglia/{bottigliaId}/commenti/{commentId}', region: 'europe-west1' },
+  async event => {
+    const { bottigliaId, commentId } = event.params;
+    const commentData = event.data?.data();
+    if (!commentData) return;
+
+    const commentatoreUid  = commentData.uidAutore;
+    const nomeCommentatore = commentData.nomeAutore || await getNome(commentatoreUid);
+    const testoCommento    = tronca(commentData.testo || '', 80);
+
+    // Recupera mittente e destinatario della bottiglia
+    const bottSnap = await db.collection('messaggiBottiglia').doc(bottigliaId).get();
+    if (!bottSnap.exists) return;
+    const { uidMittente, uidDestinatario } = bottSnap.data();
+
+    // Destinatari = mittente + destinatario bottiglia, escluso il commentatore
+    const destinatariUid = [uidMittente, uidDestinatario]
+      .filter(uid => uid && uid !== commentatoreUid);
+    const uniqueUid = [...new Set(destinatariUid)];
+
+    const msgBase = {
+      notification: { title: `💬 ${nomeCommentatore} ha risposto`, body: testoCommento || 'Nuovo commento in bottiglia' },
+      data: { url: `/profilo.html?uid=${uidDestinatario}`, tag: `commento-bott-${commentId}` },
+      webpush: {
+        notification: { title: `💬 ${nomeCommentatore} ha risposto`, body: testoCommento || 'Nuovo commento in bottiglia',
+          icon: '/icons/icon-192.png', badge: '/icons/icon-192.png', tag: `commento-bott-${commentId}` },
+        fcmOptions: { link: `/profilo.html?uid=${uidDestinatario}` }
+      },
+      android: { notification: { sound: 'default', channelId: 'campo_notifiche' } },
+      apns:    { payload: { aps: { sound: 'default' } } }
+    };
+
+    const allTokens = (await Promise.all(uniqueUid.map(getTokensForUid))).flat();
+    const uniqueTokens = [...new Set(allTokens)];
+    await inviaATokens(uniqueTokens, msgBase, `commento-bott-${commentId}`);
   }
 );
