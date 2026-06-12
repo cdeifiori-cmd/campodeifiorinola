@@ -1969,7 +1969,7 @@
       const btn=document.getElementById('btn-save-diario'); btn.disabled=true;
       let imgUrl=null,videoUrl=null,audioUrl=null;
       try{
-        if(recBlob){showProgress('Caricamento audio…');const af=new File([recBlob],'audio.webm',{type:'audio/webm'});audioUrl=await uploadToCloudinary(af,'video');recBlob=null;}
+        if(recBlob){showProgress('Caricamento audio…');const _ext=recBlob.type.includes('mp4')?'mp4':recBlob.type.includes('ogg')?'ogg':'webm';const af=new File([recBlob],`audio.${_ext}`,{type:recBlob.type});audioUrl=await uploadToCloudinary(af,'video');recBlob=null;}
         else if(pendingMediaType==='image')imgUrl=pendingMediaUrl;
         else if(pendingMediaType==='video')videoUrl=pendingMediaUrl;
         else if(pendingMediaType==='audio')audioUrl=pendingMediaUrl;
@@ -2139,6 +2139,7 @@
     function bottShowProgress(label){document.getElementById('bott-upload-progress').style.display='';document.getElementById('bott-upload-label').textContent=label;document.getElementById('bott-upload-bar').style.width='0%';}
     function bottHideProgress(){document.getElementById('bott-upload-progress').style.display='none';}
     async function bottUpload(file,resourceType){
+      if(!file||file.size===0)throw new Error('File audio vuoto — riprova la registrazione');
       bottShowProgress('Caricamento…');
       const fd=new FormData();fd.append('file',file);fd.append('upload_preset',CLOUD_PRESET);
       const url=`https://api.cloudinary.com/v1_1/dxqyprtzh/${resourceType}/upload`;
@@ -2192,11 +2193,11 @@
 
     document.getElementById('btn-save-bottiglia').addEventListener('click',async()=>{
       const testo=document.getElementById('modal-bottiglia-text').value.trim();
-      if(!canSendBottiglia())return;
+      if(!canSendBottiglia()){alert('Non hai il permesso di inviare messaggi in bottiglia. Contatta un operatore.');return;}
       const btn=document.getElementById('btn-save-bottiglia');btn.disabled=true;
       let imgUrl=null,audioUrl=null,videoUrl=null;
       try{
-        if(bottRecBlob){const f=new File([bottRecBlob],'audio.webm',{type:'audio/webm'});audioUrl=await bottUpload(f,'video');bottRecBlob=null;}
+        if(bottRecBlob){const _ext=bottRecBlob.type.includes('mp4')?'mp4':bottRecBlob.type.includes('ogg')?'ogg':'webm';const f=new File([bottRecBlob],`audio.${_ext}`,{type:bottRecBlob.type});audioUrl=await bottUpload(f,'video');bottRecBlob=null;}
         else if(bottMediaType==='image')imgUrl=bottMediaUrl;
         else if(bottMediaType==='audio')audioUrl=bottMediaUrl;
         else if(bottMediaType==='video')videoUrl=bottMediaUrl;
