@@ -4,17 +4,20 @@
  * Funziona su contenuto aggiunto dinamicamente (nessuna chiamata attachTo necessaria).
  */
 
-// ── Selettori da SALTARE (avatar, icone nav, ecc.) ───────────────────────────
+// ── Selettori da SALTARE (avatar, icone nav, card-link, ecc.) ────────────────
 const SKIP_SEL = [
   'nav', '.bottom-nav', '.top-nav-desktop', '.top-header',
   '.index-nav', '.nav-item',
   '.post-avatar', '.comment-avatar', '.bott-avatar',
   '.card-autore', '.brand',
+  // Card utente: il click deve navigare alla pagina profilo, non aprire il lightbox
+  '.card-staff', '.card-minore', '.card-ragazzo', '.card-comunita', '.card-amico',
+  '.evento-avatar',
   '[data-no-lb]',
 ].join(',');
 
-// Contenitori che definiscono un "gruppo" di navigazione
-const GROUP_SEL = '.post-card,.card-post,.card-bottiglia,.media-grid,.mgitem,.grid-staff,.grid-comunita,.list-minori,#grid-staff,#grid-comunita,#list-minori,#ragazzi-grid';
+// Contenitori che definiscono un "gruppo" di navigazione (solo post/media)
+const GROUP_SEL = '.post-card,.card-post,.card-bottiglia,.media-grid,.mgitem';
 
 // ── Stato ────────────────────────────────────────────────────────────────────
 let lb     = null;
@@ -78,16 +81,12 @@ function createLB() {
       font-family: 'Nunito', sans-serif; z-index: 10001; pointer-events: none;
     }
 
-    /* Cursor zoom-in sulle foto di contenuto */
+    /* Cursor zoom-in sulle foto di contenuto (non sulle card-link profilo) */
     .post-card .mgitem img,
     .post-card .media-grid img,
     .card-post .post-img,
     .card-bottiglia .bott-media,
-    .card-bottiglia img:not(.bott-avatar img),
-    .card-staff .card-foto img,
-    .card-minore .card-foto img,
-    .card-comunita .card-thumb img,
-    .card-amico img {
+    .card-bottiglia img:not(.bott-avatar img) {
       cursor: zoom-in;
     }
   `;
