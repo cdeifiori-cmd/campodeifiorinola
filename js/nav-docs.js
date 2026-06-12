@@ -14,7 +14,7 @@ export function setupDocumentiNav() {
 
   // Nasconde il nav finché i dati utente non sono pronti,
   // così Documenti appare (o resta nascosta) senza riflussare il layout.
-  const nav = document.querySelector('.bottom-nav');
+  const nav = document.querySelector('.bottom-nav, .bottom-nav-mobile');
   if (nav) {
     nav.style.opacity    = '0';
     nav.style.transition = 'opacity 0.15s';
