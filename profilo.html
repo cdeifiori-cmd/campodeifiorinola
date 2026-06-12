@@ -1095,10 +1095,9 @@
     const profileUid  = params.get('uid');
     let currentUser     = null;
     let currentUserNome = null;
-    let isOwner         = false;
-    let isAdmin       = false;
-    let isAutorizzato = false;
-    let profileData   = {};
+    let isOwner     = false;
+    let isAdmin     = false;
+    let profileData = {};
     let profileColl   = 'utenti';
     let allPosts      = [];
     const utentiCache = {};
@@ -1112,17 +1111,15 @@
         if (!usnap.exists()) usnap = await getDoc(doc(db, 'staff', user.uid));
         if (!usnap.exists()) usnap = await getDoc(doc(db, 'amici', user.uid));
         if (usnap.exists()) {
-          isAutorizzato   = !!usnap.data().autorizzato;
           currentUserNome = usnap.data().nome || null;
         }
       }
-      if (isAdmin) isAutorizzato = true;
       renderPermissions();
     });
 
     function canEditProfile()   { return isOwner || isAdmin; }
     function canWriteDiary()    { return isOwner || isAdmin; }
-    function canSendBottiglia() { return !!currentUser && !isOwner && (isAutorizzato || isAdmin); }
+    function canSendBottiglia() { return !!currentUser && !isOwner; }
     function canReact()         { return !!currentUser; }
     function canComment()       { return !!currentUser; }
 
