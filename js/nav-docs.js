@@ -12,31 +12,49 @@ export function setupDocumentiNav() {
   const auth = getAuth();
   const db   = getFirestore();
 
+  // Nasconde il nav finché i dati utente non sono pronti,
+  // così Documenti appare (o resta nascosta) senza riflussare il layout.
+  const nav = document.querySelector('.bottom-nav');
+  if (nav) {
+    nav.style.opacity    = '0';
+    nav.style.transition = 'opacity 0.15s';
+  }
+  const showNav = () => { if (nav) nav.style.opacity = ''; };
+
+  // Fallback: mostra comunque dopo 2 s se onAuthStateChanged non si attiva
+  const timer = setTimeout(showNav, 2000);
+
+  let handled = false;
+
   onAuthStateChanged(auth, async user => {
-    if (!user) return;
+    if (handled) return;
+    handled = true;
+    try {
+      if (!user) return;
 
-    const isAdmin = user.uid === ADMIN_UID;
-    let   hasAccess = isAdmin;
+      const isAdmin   = user.uid === ADMIN_UID;
+      let   hasAccess = isAdmin;
 
-    if (!hasAccess) {
-      // Cerca il documento utente in tutte le collezioni
-      for (const coll of ['utenti', 'staff', 'amici']) {
-        try {
-          const snap = await getDoc(doc(db, coll, user.uid));
-          if (!snap.exists()) continue;
-          const data = snap.data();
-          // Accesso per ruolo coordinatrice/responsabile (solo staff)
-          if (coll === 'staff' && isRuoloConAccesso(data.ruolo)) { hasAccess = true; break; }
-          // Accesso speciale esplicito (qualsiasi collezione)
-          if (data.accessoDocumenti === true) { hasAccess = true; break; }
-        } catch (_) {}
+      if (!hasAccess) {
+        for (const coll of ['utenti', 'staff', 'amici']) {
+          try {
+            const snap = await getDoc(doc(db, coll, user.uid));
+            if (!snap.exists()) continue;
+            const data = snap.data();
+            if (coll === 'staff' && isRuoloConAccesso(data.ruolo)) { hasAccess = true; break; }
+            if (data.accessoDocumenti === true)                     { hasAccess = true; break; }
+          } catch (_) {}
+        }
       }
-    }
 
-    if (hasAccess) {
-      document.querySelectorAll('.nav-doc-link').forEach(el => {
-        el.style.display = '';
-      });
+      if (hasAccess) {
+        document.querySelectorAll('.nav-doc-link').forEach(el => {
+          el.style.display = '';
+        });
+      }
+    } finally {
+      clearTimeout(timer);
+      showNav();
     }
   });
 }
