@@ -2137,13 +2137,22 @@
     function bottHideProgress(){document.getElementById('bott-upload-progress').style.display='none';}
     async function bottUpload(file,resourceType){
       if(!file||file.size===0)throw new Error('File audio vuoto — riprova la registrazione');
+      // [DEBUG] — rimuovere dopo diagnosi
+      alert(`[DEBUG] bottUpload START\nNome: ${file.name}\nSize: ${file.size} byte\nType: ${file.type}\nresourceType: ${resourceType}`);
       bottShowProgress('Caricamento…');
       const fd=new FormData();fd.append('file',file);fd.append('upload_preset',CLOUD_PRESET);
       const url=`https://api.cloudinary.com/v1_1/dxqyprtzh/${resourceType}/upload`;
       let pct=0;const bar=document.getElementById('bott-upload-bar');
       const t=setInterval(()=>{pct=Math.min(pct+6,80);bar.style.width=pct+'%';},250);
-      try{const res=await fetch(url,{method:'POST',body:fd});const json=await res.json();clearInterval(t);bar.style.width='100%';setTimeout(bottHideProgress,500);if(json.error)throw new Error(json.error.message);return json.secure_url;}
-      catch(e){clearInterval(t);bottHideProgress();throw e;}
+      try{
+        const res=await fetch(url,{method:'POST',body:fd});
+        const json=await res.json();
+        clearInterval(t);bar.style.width='100%';setTimeout(bottHideProgress,500);
+        // [DEBUG] — rimuovere dopo diagnosi
+        if(json.error){alert(`[DEBUG] Cloudinary ERRORE: ${json.error.message}`);throw new Error(json.error.message);}
+        alert(`[DEBUG] Cloudinary OK\nURL: ${json.secure_url}`);
+        return json.secure_url;
+      }catch(e){clearInterval(t);bottHideProgress();throw e;}
     }
     function resetBottMedia(){
       bottMediaUrl=null;bottMediaType=null;bottRecBlob=null;
@@ -2172,7 +2181,16 @@
         const stream=await navigator.mediaDevices.getUserMedia({audio:true});
         bottRecChunks=[]; bottRecorder=new MediaRecorder(stream,{mimeType,audioBitsPerSecond:32000});
         bottRecorder.ondataavailable=e=>{if(e.data.size>0)bottRecChunks.push(e.data);};
-        bottRecorder.onstop=()=>{stream.getTracks().forEach(t=>t.stop());bottRecBlob=new Blob(bottRecChunks,{type:mimeType});document.getElementById('bott-rec-audio-preview').src=URL.createObjectURL(bottRecBlob);document.getElementById('bott-rec-active').style.display='none';document.getElementById('bott-rec-preview').style.display='';clearInterval(bottRecTimer);};
+        bottRecorder.onstop=()=>{
+          stream.getTracks().forEach(t=>t.stop());
+          bottRecBlob=new Blob(bottRecChunks,{type:mimeType});
+          // [DEBUG] — rimuovere dopo diagnosi
+          alert(`[DEBUG] Registrazione completata\nChunks: ${bottRecChunks.length}\nBlob size: ${bottRecBlob.size} byte\nMIME type: ${mimeType}`);
+          document.getElementById('bott-rec-audio-preview').src=URL.createObjectURL(bottRecBlob);
+          document.getElementById('bott-rec-active').style.display='none';
+          document.getElementById('bott-rec-preview').style.display='';
+          clearInterval(bottRecTimer);
+        };
         bottRecorder.start();
         let secs=0;bottRecTimer=setInterval(()=>{secs++;const m=Math.floor(secs/60),s=secs%60;document.getElementById('bott-rec-timer').textContent=`${m}:${s.toString().padStart(2,'0')}`;},1000);
       }catch(e){document.getElementById('bott-rec-ui').style.display='none';alert(e.name==='NotAllowedError'?'Permesso microfono negato. Vai nelle impostazioni del browser > Sito > Microfono e consentilo, poi riprova.':e.name==='NotFoundError'?'Nessun microfono trovato sul dispositivo.':'Errore microfono: '+e.message);}
@@ -2194,6 +2212,8 @@
       const btn=document.getElementById('btn-save-bottiglia');btn.disabled=true;
       let imgUrl=null,audioUrl=null,videoUrl=null;
       try{
+        // [DEBUG] — rimuovere dopo diagnosi
+        alert(`[DEBUG] Save handler START\nUID: ${currentUser?.uid}\ncanSend: ${canSendBottiglia()}\nbottRecBlob: ${bottRecBlob?`${bottRecBlob.size}B / ${bottRecBlob.type}`:'null'}`);
         if(bottRecBlob){const _ext=bottRecBlob.type.includes('mp4')?'mp4':bottRecBlob.type.includes('ogg')?'ogg':'webm';const f=new File([bottRecBlob],`audio.${_ext}`,{type:bottRecBlob.type});audioUrl=await bottUpload(f,'video');bottRecBlob=null;}
         else if(bottMediaType==='image')imgUrl=bottMediaUrl;
         else if(bottMediaType==='audio')audioUrl=bottMediaUrl;
@@ -2203,7 +2223,11 @@
         let nomeMittente=currentUser.displayName||currentUser.email||'Anonimo';
         let fotoMittente=null;
         try{let ms=await getDoc(doc(db,'utenti',currentUser.uid));if(!ms.exists())ms=await getDoc(doc(db,'staff',currentUser.uid));if(!ms.exists())ms=await getDoc(doc(db,'amici',currentUser.uid));if(ms.exists()){nomeMittente=ms.data().nome||nomeMittente;fotoMittente=ms.data().fotoProfilo||null;}}catch(_){}
+        // [DEBUG] — rimuovere dopo diagnosi
+        alert(`[DEBUG] Prima di addDoc\naudioUrl: ${audioUrl||'null'}\nuidMittente: ${currentUser.uid}\nuidDestinatario: ${profileUid}`);
         const ref=await addDoc(collection(db,'messaggiBottiglia'),{uidMittente:currentUser.uid,nomeMittente,uidDestinatario:profileUid,testo:testo||null,immagineUrl:imgUrl,audioUrl,videoUrl,createdAt:serverTimestamp()});
+        // [DEBUG] — rimuovere dopo diagnosi
+        alert(`[DEBUG] addDoc OK — ID: ${ref.id}`);
         incrInt(currentUser.uid,'bottigliaInviati');
         incrInt(profileUid,'bottigliaRicevuti');
         resetBottMedia(); document.getElementById('modal-bottiglia').classList.add('hidden');
