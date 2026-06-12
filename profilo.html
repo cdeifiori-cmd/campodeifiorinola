@@ -579,6 +579,8 @@
       font-family: 'Nunito', sans-serif; cursor: pointer; transition: background 0.15s;
     }
     .btn-media:hover { background: #e0e0e0; }
+    .btn-camera { display: none; }
+    @media (pointer: coarse) { .btn-camera { display: inline-flex; } }
 
     /* ===== MODAL ===== */
     .modal-overlay {
@@ -920,12 +922,16 @@
       <h3>✏️ Cosa stai pensando?</h3>
       <textarea id="modal-diario-text" placeholder="Scrivi qualcosa…" rows="4"></textarea>
       <div class="media-upload-row">
-        <button class="btn-media" id="btn-upload-foto" type="button">📷 Foto</button>
-        <button class="btn-media" id="btn-upload-video" type="button">🎥 Video</button>
+        <button class="btn-media" id="btn-upload-foto" type="button">🖼️ Foto</button>
+        <button class="btn-media btn-camera" id="btn-scatta-foto" type="button">📷 Scatta</button>
+        <button class="btn-media" id="btn-upload-video" type="button">📹 Video</button>
+        <button class="btn-media btn-camera" id="btn-registra-video" type="button">🎬 Registra</button>
         <button class="btn-media" id="btn-record-audio" type="button">🎙️ Registra audio</button>
         <button class="btn-media" id="btn-video-url" type="button">🔗 URL video</button>
         <input type="file" id="input-foto" accept="image/*" style="display:none">
         <input type="file" id="input-video" accept="video/*" style="display:none">
+        <input type="file" id="input-foto-cam" accept="image/*" capture="environment" style="display:none">
+        <input type="file" id="input-video-cam" accept="video/*" capture="environment" style="display:none">
       </div>
       <div id="video-url-input" style="display:none;margin-top:8px">
         <input type="text" id="input-video-url" placeholder="Incolla URL video (YouTube, mp4…)"
@@ -982,14 +988,18 @@
       <h3>🍾 Manda un messaggio in bottiglia</h3>
       <textarea id="modal-bottiglia-text" class="nunito" placeholder="Scrivi il tuo messaggio…" rows="4"></textarea>
       <div class="media-upload-row">
-        <button class="btn-media" id="btn-bott-foto" type="button">📷 Foto</button>
-        <button class="btn-media" id="btn-bott-video" type="button">🎥 Video</button>
+        <button class="btn-media" id="btn-bott-foto" type="button">🖼️ Foto</button>
+        <button class="btn-media btn-camera" id="btn-bott-scatta" type="button">📷 Scatta</button>
+        <button class="btn-media" id="btn-bott-video" type="button">📹 Video</button>
+        <button class="btn-media btn-camera" id="btn-bott-registra" type="button">🎬 Registra</button>
         <button class="btn-media" id="btn-bott-audio-rec" type="button">🎙️ Registra audio</button>
         <button class="btn-media" id="btn-bott-audio-file" type="button">🎵 Carica audio</button>
         <button class="btn-media" id="btn-bott-video-url" type="button">🔗 URL video</button>
         <input type="file" id="input-bott-foto" accept="image/*" style="display:none">
         <input type="file" id="input-bott-video" accept="video/*" style="display:none">
         <input type="file" id="input-bott-audio" accept="audio/*" style="display:none">
+        <input type="file" id="input-bott-foto-cam" accept="image/*" capture="environment" style="display:none">
+        <input type="file" id="input-bott-video-cam" accept="video/*" capture="environment" style="display:none">
       </div>
       <div id="bott-video-url-input" style="display:none;margin-top:8px">
         <input type="text" id="input-bott-video-url" placeholder="Incolla URL video"
@@ -1878,23 +1888,27 @@
     }
 
     document.getElementById('btn-upload-foto').addEventListener('click',()=>document.getElementById('input-foto').click());
-    document.getElementById('input-foto').addEventListener('change',async e=>{
-      const file=e.target.files[0];if(!file)return;
+    document.getElementById('btn-scatta-foto').addEventListener('click',()=>document.getElementById('input-foto-cam').click());
+    async function handleDiarioFoto(file){
+      if(!file)return;
       try{const url=await uploadToCloudinary(file,'image');pendingMediaUrl=url;pendingMediaType='image';
         document.getElementById('preview-img').src=url;document.getElementById('preview-img').style.display='block';
         document.getElementById('media-preview-label').textContent='📷 '+file.name;
         document.getElementById('media-preview').style.display='';}catch(e){showError('Errore foto: '+e.message);}
-      e.target.value='';
-    });
+    }
+    document.getElementById('input-foto').addEventListener('change',async e=>{await handleDiarioFoto(e.target.files[0]);e.target.value='';});
+    document.getElementById('input-foto-cam').addEventListener('change',async e=>{await handleDiarioFoto(e.target.files[0]);e.target.value='';});
     document.getElementById('btn-upload-video').addEventListener('click',()=>document.getElementById('input-video').click());
-    document.getElementById('input-video').addEventListener('change',async e=>{
-      const file=e.target.files[0];if(!file)return;
+    document.getElementById('btn-registra-video').addEventListener('click',()=>document.getElementById('input-video-cam').click());
+    async function handleDiarioVideo(file){
+      if(!file)return;
       try{const url=await uploadToCloudinary(file,'video');pendingMediaUrl=url;pendingMediaType='video';
         document.getElementById('preview-video').src=url;document.getElementById('preview-video').style.display='block';
         document.getElementById('media-preview-label').textContent='🎥 '+file.name;
         document.getElementById('media-preview').style.display='';}catch(e){showError('Errore video: '+e.message);}
-      e.target.value='';
-    });
+    }
+    document.getElementById('input-video').addEventListener('change',async e=>{await handleDiarioVideo(e.target.files[0]);e.target.value='';});
+    document.getElementById('input-video-cam').addEventListener('change',async e=>{await handleDiarioVideo(e.target.files[0]);e.target.value='';});
     document.getElementById('btn-video-url').addEventListener('click',()=>{
       const wrap=document.getElementById('video-url-input');
       wrap.style.display=wrap.style.display==='none'?'':'none';
@@ -2154,9 +2168,15 @@
       document.getElementById('bott-rec-preview').style.display='none';
     }
     document.getElementById('btn-bott-foto').addEventListener('click',()=>document.getElementById('input-bott-foto').click());
-    document.getElementById('input-bott-foto').addEventListener('change',async e=>{const file=e.target.files[0];if(!file)return;try{const url=await bottUpload(file,'image');bottMediaUrl=url;bottMediaType='image';document.getElementById('bott-preview-img').src=url;document.getElementById('bott-preview-img').style.display='block';document.getElementById('bott-preview-label').textContent='📷 '+file.name;document.getElementById('bott-media-preview').style.display='';}catch(e){alert('Errore foto: '+e.message);}e.target.value='';});
+    document.getElementById('btn-bott-scatta').addEventListener('click',()=>document.getElementById('input-bott-foto-cam').click());
+    async function handleBottFoto(file){if(!file)return;try{const url=await bottUpload(file,'image');bottMediaUrl=url;bottMediaType='image';document.getElementById('bott-preview-img').src=url;document.getElementById('bott-preview-img').style.display='block';document.getElementById('bott-preview-label').textContent='📷 '+file.name;document.getElementById('bott-media-preview').style.display='';}catch(e){alert('Errore foto: '+e.message);}}
+    document.getElementById('input-bott-foto').addEventListener('change',async e=>{await handleBottFoto(e.target.files[0]);e.target.value='';});
+    document.getElementById('input-bott-foto-cam').addEventListener('change',async e=>{await handleBottFoto(e.target.files[0]);e.target.value='';});
     document.getElementById('btn-bott-video').addEventListener('click',()=>document.getElementById('input-bott-video').click());
-    document.getElementById('input-bott-video').addEventListener('change',async e=>{const file=e.target.files[0];if(!file)return;try{const url=await bottUpload(file,'video');bottMediaUrl=url;bottMediaType='video';document.getElementById('bott-preview-video').src=url;document.getElementById('bott-preview-video').style.display='block';document.getElementById('bott-preview-label').textContent='🎥 '+file.name;document.getElementById('bott-media-preview').style.display='';}catch(e){alert('Errore video: '+e.message);}e.target.value='';});
+    document.getElementById('btn-bott-registra').addEventListener('click',()=>document.getElementById('input-bott-video-cam').click());
+    async function handleBottVideo(file){if(!file)return;try{const url=await bottUpload(file,'video');bottMediaUrl=url;bottMediaType='video';document.getElementById('bott-preview-video').src=url;document.getElementById('bott-preview-video').style.display='block';document.getElementById('bott-preview-label').textContent='🎥 '+file.name;document.getElementById('bott-media-preview').style.display='';}catch(e){alert('Errore video: '+e.message);}}
+    document.getElementById('input-bott-video').addEventListener('change',async e=>{await handleBottVideo(e.target.files[0]);e.target.value='';});
+    document.getElementById('input-bott-video-cam').addEventListener('change',async e=>{await handleBottVideo(e.target.files[0]);e.target.value='';});
     document.getElementById('btn-bott-audio-file').addEventListener('click',()=>document.getElementById('input-bott-audio').click());
     document.getElementById('input-bott-audio').addEventListener('change',async e=>{const file=e.target.files[0];if(!file)return;try{const url=await bottUpload(file,'video');bottMediaUrl=url;bottMediaType='audio';document.getElementById('bott-preview-audio').src=url;document.getElementById('bott-preview-audio').style.display='block';document.getElementById('bott-preview-label').textContent='🎵 '+file.name;document.getElementById('bott-media-preview').style.display='';}catch(e){alert('Errore audio: '+e.message);}e.target.value='';});
     document.getElementById('btn-bott-remove').addEventListener('click',resetBottMedia);

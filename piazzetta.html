@@ -202,6 +202,8 @@
       cursor: pointer; transition: background 0.15s, border-color 0.15s;
     }
     .media-btn:hover { background: var(--verde-light); border-color: var(--verde); }
+    .btn-camera { display: none; }
+    @media (pointer: coarse) { .btn-camera { display: inline-flex; } }
     .media-btn.recording { background: #ffe5e5; border-color: #e74c3c; color: #e74c3c; animation: pulse 1s infinite; }
     @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.6} }
     .upload-progress { height: 4px; background: #e0e0e0; border-radius: 2px; margin: 8px 0; display: none; }
@@ -252,8 +254,10 @@
       </div>
       <textarea class="form-textarea" id="post-text" placeholder="Cosa vuoi condividere in piazzetta?" rows="4"></textarea>
       <div class="media-btns">
-        <label class="media-btn">📷 Foto<input type="file" accept="image/*" id="input-foto" multiple style="display:none"></label>
-        <label class="media-btn">🎬 Video<input type="file" accept="video/*" id="input-video" multiple style="display:none"></label>
+        <label class="media-btn">🖼️ Foto<input type="file" accept="image/*" id="input-foto" multiple style="display:none"></label>
+        <label class="media-btn btn-camera">📷 Scatta<input type="file" accept="image/*" id="input-foto-cam" capture="environment" style="display:none"></label>
+        <label class="media-btn">📹 Video<input type="file" accept="video/*" id="input-video" multiple style="display:none"></label>
+        <label class="media-btn btn-camera">🎬 Registra<input type="file" accept="video/*" id="input-video-cam" capture="environment" style="display:none"></label>
         <button class="media-btn" id="btn-audio">🎙️ Registra</button>
         <label class="media-btn">🎵 Audio<input type="file" accept="audio/*,.mp3,.m4a,.wav,.ogg,.aac,.flac,.weba,.opus" id="input-audio-file" multiple style="display:none"></label>
       </div>
@@ -524,7 +528,15 @@
       Array.from(e.target.files).forEach(f => postAddFile(f, 'image'));
       e.target.value = '';
     });
+    document.getElementById('input-foto-cam').addEventListener('change', e => {
+      Array.from(e.target.files).forEach(f => postAddFile(f, 'image'));
+      e.target.value = '';
+    });
     document.getElementById('input-video').addEventListener('change', e => {
+      Array.from(e.target.files).forEach(f => postAddFile(f, 'video'));
+      e.target.value = '';
+    });
+    document.getElementById('input-video-cam').addEventListener('change', e => {
       Array.from(e.target.files).forEach(f => postAddFile(f, 'video'));
       e.target.value = '';
     });
@@ -838,7 +850,9 @@
           <textarea class="comment-textarea" placeholder="Scrivi un commento…" rows="1"></textarea>
           <div class="comment-media-btns">
             <label class="comment-media-btn">📷<input type="file" accept="image/*" multiple style="display:none" class="ci-foto"></label>
+            <label class="comment-media-btn btn-camera">📸<input type="file" accept="image/*" capture="environment" style="display:none" class="ci-foto-cam"></label>
             <label class="comment-media-btn">🎬<input type="file" accept="video/*" multiple style="display:none" class="ci-vid"></label>
+            <label class="comment-media-btn btn-camera">🎥<input type="file" accept="video/*" capture="environment" style="display:none" class="ci-vid-cam"></label>
             <button class="comment-media-btn ci-rec">🎙️</button>
             <label class="comment-media-btn">🎵<input type="file" accept="audio/*,.mp3,.m4a,.wav,.ogg,.aac,.flac,.weba,.opus" multiple style="display:none" class="ci-aud"></label>
           </div>
@@ -866,9 +880,11 @@
 
       function cRedraw() { renderPreview(cItems, previewId, cRemoveFile); }
 
-      wrap.querySelector('.ci-foto').addEventListener('change', e => { Array.from(e.target.files).forEach(f => cAddFile(f, 'image')); e.target.value = ''; });
-      wrap.querySelector('.ci-vid').addEventListener('change',  e => { Array.from(e.target.files).forEach(f => cAddFile(f, 'video')); e.target.value = ''; });
-      wrap.querySelector('.ci-aud').addEventListener('change',  e => { Array.from(e.target.files).forEach(f => cAddFile(f, 'audio')); e.target.value = ''; });
+      wrap.querySelector('.ci-foto').addEventListener('change',     e => { Array.from(e.target.files).forEach(f => cAddFile(f, 'image')); e.target.value = ''; });
+      wrap.querySelector('.ci-foto-cam').addEventListener('change', e => { Array.from(e.target.files).forEach(f => cAddFile(f, 'image')); e.target.value = ''; });
+      wrap.querySelector('.ci-vid').addEventListener('change',      e => { Array.from(e.target.files).forEach(f => cAddFile(f, 'video')); e.target.value = ''; });
+      wrap.querySelector('.ci-vid-cam').addEventListener('change',  e => { Array.from(e.target.files).forEach(f => cAddFile(f, 'video')); e.target.value = ''; });
+      wrap.querySelector('.ci-aud').addEventListener('change',      e => { Array.from(e.target.files).forEach(f => cAddFile(f, 'audio')); e.target.value = ''; });
 
       recBtn.addEventListener('click', async () => {
         if (cRecording) {
