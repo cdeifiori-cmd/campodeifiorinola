@@ -697,9 +697,45 @@
     /* ===== NAV AUTH ===== */
     #nav-auth-slot { position: absolute; top: 12px; right: 12px; z-index: 10; }
     #nav-auth-slot-desktop { margin-left: auto; }
+    /* ===== LIGHTBOX FOTO PROFILO ===== */
+    #foto-lightbox {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.88);
+      z-index: 9999;
+      align-items: center; justify-content: center;
+      cursor: zoom-out;
+    }
+    #foto-lightbox.open { display: flex; }
+    #foto-lightbox-img {
+      max-width: 92vw; max-height: 92vh;
+      object-fit: contain;
+      border-radius: 12px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+      cursor: default;
+      animation: lb-in 0.18s ease;
+    }
+    @keyframes lb-in { from { opacity:0; transform:scale(0.92); } to { opacity:1; transform:scale(1); } }
+    #foto-lightbox-close {
+      position: absolute; top: 18px; right: 18px;
+      background: rgba(255,255,255,0.18); border: none;
+      color: #fff; font-size: 1.4rem;
+      width: 44px; height: 44px; border-radius: 50%;
+      cursor: pointer; display: flex;
+      align-items: center; justify-content: center;
+      backdrop-filter: blur(4px);
+      transition: background 0.15s;
+    }
+    #foto-lightbox-close:hover { background: rgba(255,255,255,0.32); }
+    .hero-foto img { cursor: pointer; }
   </style>
 </head>
 <body>
+
+  <!-- LIGHTBOX FOTO PROFILO -->
+  <div id="foto-lightbox">
+    <img id="foto-lightbox-img" src="" alt="Foto profilo ingrandita">
+    <button id="foto-lightbox-close" aria-label="Chiudi">✕</button>
+  </div>
 
   <!-- ===== MOBILE LAYOUT ===== -->
   <div class="hero-foto" id="hero-foto">
@@ -2033,9 +2069,34 @@
     }
     document.getElementById('btn-edit-foto').addEventListener('click',triggerFotoUpload);
 
+    // LIGHTBOX FOTO PROFILO
+    function openFotoLightbox(src) {
+      if (!src) return;
+      document.getElementById('foto-lightbox-img').src = src;
+      document.getElementById('foto-lightbox').classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeFotoLightbox() {
+      document.getElementById('foto-lightbox').classList.remove('open');
+      document.body.style.overflow = '';
+    }
+    document.getElementById('foto-lightbox').addEventListener('click', e => {
+      if (e.target !== document.getElementById('foto-lightbox-img')) closeFotoLightbox();
+    });
+    document.getElementById('foto-lightbox-close').addEventListener('click', closeFotoLightbox);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeFotoLightbox(); });
+
+    // Mobile hero — lightbox per tutti (il pulsante edit è separato)
+    document.getElementById('hero-img').addEventListener('click', () => {
+      openFotoLightbox(document.getElementById('hero-img').src);
+    });
+
     // FOTO PROFILO (avatar rotondo desktop) – owner o admin
     document.getElementById('desktop-avatar-wrap').addEventListener('click',()=>{
-      if(!canEditProfile())return;
+      if(!canEditProfile()){
+        openFotoLightbox(document.getElementById('desktop-avatar-img').src);
+        return;
+      }
       const input=document.createElement('input'); input.type='file'; input.accept='image/*';
       input.onchange=async()=>{
         const file=input.files[0];if(!file)return;
