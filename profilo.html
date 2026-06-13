@@ -1148,28 +1148,38 @@
     const db   = getFirestore(app);
 
     const ADMIN_UID   = 'mCSgNMVEphVIIf4HX0bkcKq2ZKv2';
-    const TONI = ['😊','😂','😢','😡','😍','🤔','😎','😳','🥺','😤','🙏','❤️'];
-    const TONI_HTML = TONI.map(t => `<button type="button" class="tono-btn" data-tono="${t}">${t}</button>`).join('');
-    const COMMENTO_FORM = `<div class="commento-form"><div class="tono-picker">${TONI_HTML}</div><div class="commento-input-row"><textarea placeholder="Scrivi un commento…" rows="1"></textarea><button type="button" class="commento-send-btn">Invia</button></div></div>`;
+    const TONI_LIST = ['😊','😂','😢','😡','😍','🤔','😎','😳','🥺','😤','🙏','❤️'];
+    // COMMENTO_FORM senza il tono-picker: viene aggiunto via DOM in attachCommentoForm
+    const COMMENTO_FORM = `<div class="commento-form"><div class="commento-input-row"><textarea placeholder="Scrivi un commento…" rows="1"></textarea><button type="button" class="commento-send-btn">Invia</button></div></div>`;
     function attachCommentoForm(el, collName, docId, commList, toggle) {
       const form = el.querySelector('.commento-form');
       if (!form) return;
+
+      // Crea il tono-picker via DOM (più affidabile di innerHTML con emoji)
       let selectedTono = '';
-      form.querySelectorAll('.tono-btn').forEach(btn => {
+      const picker = document.createElement('div');
+      picker.className = 'tono-picker';
+      TONI_LIST.forEach(t => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'tono-btn';
+        btn.textContent = t;
         btn.addEventListener('click', () => {
           const same = btn.classList.contains('selected');
-          form.querySelectorAll('.tono-btn').forEach(b => b.classList.remove('selected'));
-          selectedTono = same ? '' : btn.textContent.trim();
+          picker.querySelectorAll('.tono-btn').forEach(b => b.classList.remove('selected'));
+          selectedTono = same ? '' : t;
           if (!same) btn.classList.add('selected');
         });
+        picker.appendChild(btn);
       });
+      form.insertBefore(picker, form.firstChild);
+
       const ta   = form.querySelector('textarea');
       const btnI = form.querySelector('.commento-send-btn');
       btnI.addEventListener('click', () => {
         const tono = selectedTono;
-        console.log('[TONO] selectedTono al click Invia:', JSON.stringify(tono));
         selectedTono = '';
-        form.querySelectorAll('.tono-btn').forEach(b => b.classList.remove('selected'));
+        picker.querySelectorAll('.tono-btn').forEach(b => b.classList.remove('selected'));
         addCommento(collName, docId, ta, tono, commList, toggle);
       });
       ta.addEventListener('keydown', e => { if (e.key==='Enter'&&!e.shiftKey){e.preventDefault();btnI.click();} });
@@ -1847,7 +1857,6 @@
     }
 
     function buildCommentoEl(collName, docId, c, listEl) {
-      console.log('[TONO] buildCommentoEl c.tono:', JSON.stringify(c.tono), '| c.testo:', c.testo);
       const canDel = isOwner || isAdmin || (currentUser && currentUser.uid === c.uidAutore);
       const data   = c.createdAt?.toDate ? formatDate(c.createdAt.toDate()) : '';
       const el     = document.createElement('div');
@@ -1871,7 +1880,6 @@
 
     async function addCommento(collName, docId, ta, tono, listEl, toggleBtn) {
       const testo = ta.value.trim();
-      console.log('[TONO] addCommento ricevuto tono:', JSON.stringify(tono), '| testo:', testo);
       if (!testo) return;
       if (!canComment()) { mostraLoginPrompt(); return; }
       ta.value = '';
@@ -1883,7 +1891,6 @@
         if (!s.exists()) s = await getDoc(doc(db,'amici',currentUser.uid));
         if (s.exists()) { nomeAutore = s.data().nome || nomeAutore; fotoAutore = s.data().fotoProfilo || null; }
       } catch(_) {}
-      console.log('[TONO] salvo su Firestore tono:', JSON.stringify(tono));
       const ref = await addDoc(collection(db, collName, docId, 'commenti'), {
         uidAutore: currentUser.uid, nomeAutore, fotoAutore, testo, tono, createdAt: serverTimestamp()
       });

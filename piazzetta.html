@@ -849,10 +849,8 @@
       const wrap = document.createElement('div');
       wrap.className = 'comment-input-wrap';
 
-      const TONI_P = ['😊','😂','😢','😡','😍','🤔','😎','😳','🥺','😤','🙏','❤️'];
       wrap.innerHTML = `
         <div class="comment-input-inner">
-          <div class="tono-picker">${TONI_P.map(t=>`<button type="button" class="tono-btn" data-tono="${t}">${t}</button>`).join('')}</div>
           <textarea class="comment-textarea" placeholder="Scrivi un commento…" rows="1"></textarea>
           <div class="comment-media-btns">
             <label class="comment-media-btn">📷<input type="file" accept="image/*" multiple style="display:none" class="ci-foto"></label>
@@ -869,16 +867,27 @@
       const textarea = wrap.querySelector('.comment-textarea');
       const recBtn   = wrap.querySelector('.ci-rec');
       const sendBtn  = wrap.querySelector('.comment-send-btn');
+      const inner    = wrap.querySelector('.comment-input-inner');
 
+      // Tono picker creato via DOM (no innerHTML con emoji — più affidabile)
       let selectedTono = '';
-      wrap.querySelectorAll('.tono-btn').forEach(btn => {
+      const TONI_P = ['😊','😂','😢','😡','😍','🤔','😎','😳','🥺','😤','🙏','❤️'];
+      const picker = document.createElement('div');
+      picker.className = 'tono-picker';
+      TONI_P.forEach(t => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'tono-btn';
+        btn.textContent = t;
         btn.addEventListener('click', () => {
           const same = btn.classList.contains('selected');
-          wrap.querySelectorAll('.tono-btn').forEach(b => b.classList.remove('selected'));
-          selectedTono = same ? '' : btn.textContent.trim();
+          picker.querySelectorAll('.tono-btn').forEach(b => b.classList.remove('selected'));
+          selectedTono = same ? '' : t;
           if (!same) btn.classList.add('selected');
         });
+        picker.appendChild(btn);
       });
+      inner.insertBefore(picker, inner.firstChild);
 
       textarea.addEventListener('input', () => { textarea.style.height = 'auto'; textarea.style.height = textarea.scrollHeight + 'px'; });
 
