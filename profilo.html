@@ -657,20 +657,29 @@
     }
     .commento-del:hover { color: #e74c3c; }
     .commento-form {
-      display: flex; gap: 6px; margin-top: 8px; align-items: center;
+      display: flex; flex-direction: column; gap: 6px; margin-top: 8px;
     }
+    .commento-input-row { display: flex; gap: 6px; align-items: center; }
     .commento-form textarea {
       flex: 1; border: 2px solid #e0e0e0; border-radius: 20px;
       padding: 7px 12px; font-family: 'Nunito',sans-serif; font-size: 0.85rem;
       resize: none; outline: none; min-height: 36px; max-height: 80px; line-height: 1.4;
     }
     .commento-form textarea:focus { border-color: var(--verde); }
-    .commento-form button {
+    .commento-send-btn {
       background: var(--verde); color: #fff; border: none; border-radius: 20px;
       padding: 7px 14px; font-family: 'Nunito',sans-serif; font-weight: 800;
       font-size: 0.82rem; cursor: pointer; white-space: nowrap;
     }
-    .commento-form button:hover { background: var(--verde-scuro); }
+    .commento-send-btn:hover { background: var(--verde-scuro); }
+    .tono-picker { display: flex; gap: 2px; flex-wrap: wrap; }
+    .tono-btn {
+      background: none; border: 2px solid transparent; border-radius: 8px;
+      font-size: 1.25rem; padding: 2px 3px; cursor: pointer; line-height: 1;
+      transition: border-color 0.12s, background 0.12s;
+    }
+    .tono-btn.selected { border-color: #e07b39; background: #fff3ec; }
+    .tono-tag { font-size: 1.1em; margin-right: 3px; }
 
     /* ===== MEDIA UPLOAD ===== */
     .media-upload-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
@@ -1139,6 +1148,24 @@
     const db   = getFirestore(app);
 
     const ADMIN_UID   = 'mCSgNMVEphVIIf4HX0bkcKq2ZKv2';
+    const TONI = ['😊','😂','😢','😡','😍','🤔','😎','😳','🥺','😤','🙏','❤️'];
+    const TONI_HTML = TONI.map(t => `<button type="button" class="tono-btn" data-tono="${t}">${t}</button>`).join('');
+    const COMMENTO_FORM = `<div class="commento-form"><div class="tono-picker">${TONI_HTML}</div><div class="commento-input-row"><textarea placeholder="Scrivi un commento…" rows="1"></textarea><button type="button" class="commento-send-btn">Invia</button></div></div>`;
+    function attachCommentoForm(el, collName, docId, commList, toggle) {
+      const form = el.querySelector('.commento-form');
+      if (!form) return;
+      form.querySelectorAll('.tono-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const already = btn.classList.contains('selected');
+          form.querySelectorAll('.tono-btn').forEach(b => b.classList.remove('selected'));
+          if (!already) btn.classList.add('selected');
+        });
+      });
+      const ta   = form.querySelector('textarea');
+      const btnI = form.querySelector('.commento-send-btn');
+      btnI.addEventListener('click', () => addCommento(collName, docId, ta, form, commList, toggle));
+      ta.addEventListener('keydown', e => { if (e.key==='Enter'&&!e.shiftKey){e.preventDefault();btnI.click();} });
+    }
     const params      = new URLSearchParams(location.search);
     const profileUid  = params.get('uid');
     let currentUser     = null;
@@ -1599,7 +1626,7 @@
           <button class="commenti-toggle">💬 <span class="commenti-count">Commenti</span></button>
           <div class="commenti-body" style="display:none">
             <div class="commenti-list"></div>
-            ${currentUser ? '<div class="commento-form"><textarea placeholder="Scrivi un commento…" rows="1"></textarea><button type="button">Invia</button></div>' : ''}
+            ${currentUser ? COMMENTO_FORM : ''}
           </div>
         </div>`;
       if (canDelete) el.querySelector('.post-delete-btn').addEventListener('click', () => deletePost(p.id));
@@ -1627,13 +1654,7 @@
         body.style.display = open ? '' : 'none';
         if (open && !loaded) { loaded = true; await loadCommenti('diario', p.id, commList, toggle); }
       });
-      if (currentUser) {
-        const form = el.querySelector('.commento-form');
-        const ta   = form?.querySelector('textarea');
-        const btnI = form?.querySelector('button');
-        btnI?.addEventListener('click', () => addCommento('diario', p.id, ta, commList, toggle));
-        ta?.addEventListener('keydown', e => { if (e.key==='Enter'&&!e.shiftKey){e.preventDefault();btnI.click();} });
-      }
+      if (currentUser) attachCommentoForm(el, 'diario', p.id, commList, toggle);
       return el;
     }
 
@@ -1827,7 +1848,7 @@
         <div class="commento-bubble">
           ${canDel ? `<button class="commento-del" title="Elimina">✕</button>` : ''}
           <div class="commento-autore">${c.nomeAutore || 'Anonimo'}</div>
-          <div class="commento-testo">${c.testo || ''}</div>
+          <div class="commento-testo">${c.tono ? `<span class="tono-tag">${c.tono}</span>` : ''}${c.testo || ''}</div>
           <div class="commento-data">${data}</div>
         </div>`;
       if (canDel) {
@@ -1839,11 +1860,14 @@
       return el;
     }
 
-    async function addCommento(collName, docId, ta, listEl, toggleBtn) {
+    async function addCommento(collName, docId, ta, form, listEl, toggleBtn) {
       const testo = ta.value.trim();
       if (!testo) return;
       if (!canComment()) { mostraLoginPrompt(); return; }
+      const tonoBtn = form.querySelector('.tono-btn.selected');
+      const tono = tonoBtn?.dataset.tono || '';
       ta.value = '';
+      form.querySelectorAll('.tono-btn').forEach(b => b.classList.remove('selected'));
       let nomeAutore = currentUser.displayName || currentUser.email || 'Anonimo';
       let fotoAutore = null;
       try {
@@ -1853,11 +1877,11 @@
         if (s.exists()) { nomeAutore = s.data().nome || nomeAutore; fotoAutore = s.data().fotoProfilo || null; }
       } catch(_) {}
       const ref = await addDoc(collection(db, collName, docId, 'commenti'), {
-        uidAutore: currentUser.uid, nomeAutore, fotoAutore, testo, createdAt: serverTimestamp()
+        uidAutore: currentUser.uid, nomeAutore, fotoAutore, testo, tono, createdAt: serverTimestamp()
       });
       incrInt(currentUser.uid,'commentiScritti');
       incrInt(profileUid,'commentiRicevuti');
-      const newC = { id:ref.id, uidAutore:currentUser.uid, nomeAutore, fotoAutore, testo, createdAt:null };
+      const newC = { id:ref.id, uidAutore:currentUser.uid, nomeAutore, fotoAutore, testo, tono, createdAt:null };
       const emptyMsg = listEl.querySelector('p');
       if (emptyMsg) emptyMsg.remove();
       listEl.appendChild(buildCommentoEl(collName, docId, newC, listEl));
@@ -2178,7 +2202,7 @@
           <button class="commenti-toggle">💬 <span class="commenti-count">Commenti</span></button>
           <div class="commenti-body" style="display:none">
             <div class="commenti-list"></div>
-            ${currentUser ? '<div class="commento-form"><textarea placeholder="Scrivi un commento…" rows="1"></textarea><button type="button">Invia</button></div>' : ''}
+            ${currentUser ? COMMENTO_FORM : ''}
           </div>
         </div>`;
       if(canDel)el.querySelector('.bott-delete').addEventListener('click',()=>deleteBottiglia(id));
@@ -2196,13 +2220,7 @@
       const commList=el.querySelector('.commenti-list');
       let loaded=false;
       toggle.addEventListener('click',async()=>{const open=body.style.display==='none';body.style.display=open?'':'none';if(open&&!loaded){loaded=true;await loadCommenti('messaggiBottiglia',id,commList,toggle);}});
-      if(currentUser){
-        const form=el.querySelector('.commento-form');
-        const ta=form?.querySelector('textarea');
-        const btnI=form?.querySelector('button');
-        btnI?.addEventListener('click',()=>addCommento('messaggiBottiglia',id,ta,commList,toggle));
-        ta?.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();btnI.click();}});
-      }
+      if(currentUser) attachCommentoForm(el,'messaggiBottiglia',id,commList,toggle);
       return el;
     }
 

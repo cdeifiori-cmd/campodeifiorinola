@@ -122,6 +122,14 @@
 
     /* comment input */
     .comment-input-wrap { display: flex; gap: 8px; align-items: flex-end; }
+    .tono-picker { display: flex; gap: 2px; flex-wrap: wrap; margin-bottom: 5px; }
+    .tono-btn {
+      background: none; border: 2px solid transparent; border-radius: 8px;
+      font-size: 1.25rem; padding: 2px 3px; cursor: pointer; line-height: 1;
+      transition: border-color 0.12s, background 0.12s;
+    }
+    .tono-btn.selected { border-color: #e07b39; background: #fff3ec; }
+    .comment-text .tono-tag { font-size: 1.1em; margin-right: 3px; }
     .comment-input-inner { flex: 1; }
     .comment-textarea {
       width: 100%; border: 1.5px solid #ddd; border-radius: 12px;
@@ -782,7 +790,7 @@
       el.innerHTML = `${avatar}
         <div class="comment-bubble">
           <div class="comment-autore">${esc(data.authorName || 'Anonimo')}</div>
-          ${data.text ? `<div class="comment-text">${esc(data.text)}</div>` : ''}
+          ${data.text ? `<div class="comment-text">${data.tono ? `<span class="tono-tag">${data.tono}</span>` : ''}${esc(data.text)}</div>` : ''}
           ${mediaHtml}
           <div class="comment-reactions">${reactHtml}</div>
           <div class="comment-data">${fmtDate(data.timestamp)}${canDel ? ` <button onclick="deleteComment('${postId}','${commentId}',this)" style="margin-left:8px;background:none;border:none;cursor:pointer;font-size:0.75rem;color:#ccc;">✕</button>` : ''}</div>
@@ -841,8 +849,10 @@
       const wrap = document.createElement('div');
       wrap.className = 'comment-input-wrap';
 
+      const TONI_P = ['😊','😂','😢','😡','😍','🤔','😎','😳','🥺','😤','🙏','❤️'];
       wrap.innerHTML = `
         <div class="comment-input-inner">
+          <div class="tono-picker">${TONI_P.map(t=>`<button type="button" class="tono-btn" data-tono="${t}">${t}</button>`).join('')}</div>
           <textarea class="comment-textarea" placeholder="Scrivi un commento…" rows="1"></textarea>
           <div class="comment-media-btns">
             <label class="comment-media-btn">📷<input type="file" accept="image/*" multiple style="display:none" class="ci-foto"></label>
@@ -859,6 +869,14 @@
       const textarea = wrap.querySelector('.comment-textarea');
       const recBtn   = wrap.querySelector('.ci-rec');
       const sendBtn  = wrap.querySelector('.comment-send-btn');
+
+      wrap.querySelectorAll('.tono-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const already = btn.classList.contains('selected');
+          wrap.querySelectorAll('.tono-btn').forEach(b => b.classList.remove('selected'));
+          if (!already) btn.classList.add('selected');
+        });
+      });
 
       textarea.addEventListener('input', () => { textarea.style.height = 'auto'; textarea.style.height = textarea.scrollHeight + 'px'; });
 
@@ -907,6 +925,10 @@
         const text = textarea.value.trim();
         if (!text && cItems.length === 0) return;
 
+        const tonoBtn = wrap.querySelector('.tono-btn.selected');
+        const tono = tonoBtn?.dataset.tono || '';
+        wrap.querySelectorAll('.tono-btn').forEach(b => b.classList.remove('selected'));
+
         sendBtn.disabled = true; sendBtn.textContent = '…';
         try {
           // Copia snapshot dell'array prima dell'upload
@@ -920,7 +942,7 @@
 
           await addDoc(collection(db, 'piazzetta_posts', postId, 'comments'), {
             authorId: currentUser.uid, authorName: nome, authorPhoto: foto,
-            text, media,
+            text, tono, media,
             timestamp: serverTimestamp(), reactions: {},
           });
           await updateDoc(doc(db, 'piazzetta_posts', postId), { commentsCount: increment(1) });
