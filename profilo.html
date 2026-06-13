@@ -1167,6 +1167,7 @@
       const btnI = form.querySelector('.commento-send-btn');
       btnI.addEventListener('click', () => {
         const tono = selectedTono;
+        console.log('[TONO] selectedTono al click Invia:', JSON.stringify(tono));
         selectedTono = '';
         form.querySelectorAll('.tono-btn').forEach(b => b.classList.remove('selected'));
         addCommento(collName, docId, ta, tono, commList, toggle);
@@ -1846,6 +1847,7 @@
     }
 
     function buildCommentoEl(collName, docId, c, listEl) {
+      console.log('[TONO] buildCommentoEl c.tono:', JSON.stringify(c.tono), '| c.testo:', c.testo);
       const canDel = isOwner || isAdmin || (currentUser && currentUser.uid === c.uidAutore);
       const data   = c.createdAt?.toDate ? formatDate(c.createdAt.toDate()) : '';
       const el     = document.createElement('div');
@@ -1869,6 +1871,7 @@
 
     async function addCommento(collName, docId, ta, tono, listEl, toggleBtn) {
       const testo = ta.value.trim();
+      console.log('[TONO] addCommento ricevuto tono:', JSON.stringify(tono), '| testo:', testo);
       if (!testo) return;
       if (!canComment()) { mostraLoginPrompt(); return; }
       ta.value = '';
@@ -1880,6 +1883,7 @@
         if (!s.exists()) s = await getDoc(doc(db,'amici',currentUser.uid));
         if (s.exists()) { nomeAutore = s.data().nome || nomeAutore; fotoAutore = s.data().fotoProfilo || null; }
       } catch(_) {}
+      console.log('[TONO] salvo su Firestore tono:', JSON.stringify(tono));
       const ref = await addDoc(collection(db, collName, docId, 'commenti'), {
         uidAutore: currentUser.uid, nomeAutore, fotoAutore, testo, tono, createdAt: serverTimestamp()
       });
