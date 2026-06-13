@@ -1429,6 +1429,10 @@
       const cover = profileData.fotoCover || profileData.fotoProfilo;
       if (cover) document.getElementById('hero-img').src = cover;
       if (profileData.fotoProfilo) document.getElementById('desktop-avatar-img').src = profileData.fotoProfilo;
+      if (profileData.fotoPosition) {
+        document.getElementById('hero-img').style.objectPosition = profileData.fotoPosition;
+        document.getElementById('desktop-avatar-img').style.objectPosition = profileData.fotoPosition;
+      }
       renderSalutoUI();
 
       if (profileData.miPresento) {

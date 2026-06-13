@@ -216,8 +216,9 @@
         if (!members.length) { list.innerHTML = '<p class="empty-msg">Nessun ragazzo/a in questa comunità.</p>'; return; }
 
         members.forEach(data => {
+          const fotoStyle = data.fotoPosition ? ` style="object-position:${data.fotoPosition}"` : '';
           const fotoHtml = data.fotoProfilo
-            ? `<img src="${data.fotoProfilo}" alt="${data.nome}" loading="lazy">`
+            ? `<img src="${data.fotoProfilo}" alt="${data.nome}" loading="lazy"${fotoStyle}>`
             : '🧒';
           const star = badges[data.id] ? `<span class="avatar-star">${badges[data.id]}</span>` : '';
           const accessiBadge = isAdmin
