@@ -327,20 +327,16 @@
 
     // ── Auth ──────────────────────────────────────────────────────────────
     onAuthStateChanged(auth, async user => {
-      if (!user) {
-        document.getElementById('feed').innerHTML =
-          `<div class="login-required"><p>Devi essere loggato per vedere la Piazzetta.<br>
-           <a href="login.html">Accedi →</a></p></div>`;
-        return;
-      }
       currentUser = user;
-      isAdmin = user.uid === ADMIN_UID;
-      try {
-        let snap = await getDoc(doc(db, 'utenti', user.uid));
-        if (!snap.exists()) snap = await getDoc(doc(db, 'staff', user.uid));
-        if (snap.exists()) currentUserData = snap.data();
-      } catch(_) {}
-      document.getElementById('fab-new-post').style.display = 'flex';
+      if (user) {
+        isAdmin = user.uid === ADMIN_UID;
+        try {
+          let snap = await getDoc(doc(db, 'utenti', user.uid));
+          if (!snap.exists()) snap = await getDoc(doc(db, 'staff', user.uid));
+          if (snap.exists()) currentUserData = snap.data();
+        } catch(_) {}
+        document.getElementById('fab-new-post').style.display = 'flex';
+      }
       loadFeed();
     });
 
