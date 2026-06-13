@@ -45,6 +45,7 @@
       transition: transform 0.12s;
     }
     .card-evento:hover { transform: translateY(-2px); }
+    .card-evento.card-benvenuto { border: 2px solid #e07b39; background: linear-gradient(135deg,#fff8f4,#fff); }
 
     .btn-delete-post {
       margin-left: auto;
@@ -230,6 +231,7 @@
             testo: data.testo || (data.immagineUrl ? '📷 Foto' : data.videoUrl ? '🎥 Video' : data.audioUrl ? '🎵 Audio' : ''),
             ts: data.createdAt,
             link: `profilo.html?uid=${data.uidRagazzo}#post-${d.id}`,
+            isWelcome: data.isWelcome || false,
           });
         });
       } catch(_) {}
@@ -340,7 +342,7 @@
           : `<div class="evento-avatar">${ICONE[e.tipo]}</div>`;
 
         const card = document.createElement('a');
-        card.className = 'card-evento';
+        card.className = 'card-evento' + (e.isWelcome ? ' card-benvenuto' : '');
         card.href      = e.link;
 
         const deleteBtn = (isAdmin && e.tipo === 'diario' && e.id)

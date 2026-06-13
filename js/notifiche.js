@@ -60,6 +60,44 @@ async function getFcmServiceWorker() {
   return swReg;
 }
 
+function showWelcomeToast(title, body, url) {
+  const existing = document.getElementById('welcome-toast');
+  if (existing) existing.remove();
+
+  const toast = document.createElement('div');
+  toast.id = 'welcome-toast';
+  toast.innerHTML = `<div style="font-size:1.6rem;margin-bottom:6px">🎉🌸🎊</div>
+    <div style="font-weight:800;font-size:1rem;margin-bottom:4px">${title}</div>
+    <div style="font-size:0.88rem;opacity:0.9">${body}</div>`;
+  Object.assign(toast.style, {
+    position:     'fixed',
+    bottom:       '80px',
+    left:         '50%',
+    transform:    'translateX(-50%)',
+    background:   'linear-gradient(135deg,#e07b39,#f0a060)',
+    color:        '#fff',
+    padding:      '16px 24px',
+    borderRadius: '16px',
+    boxShadow:    '0 8px 32px rgba(0,0,0,0.22)',
+    zIndex:       '99999',
+    textAlign:    'center',
+    maxWidth:     '88vw',
+    animation:    'toast-in 0.35s ease',
+    cursor:       url ? 'pointer' : 'default'
+  });
+
+  if (!document.getElementById('welcome-toast-css')) {
+    const s = document.createElement('style');
+    s.id = 'welcome-toast-css';
+    s.textContent = '@keyframes toast-in{from{opacity:0;transform:translateX(-50%) translateY(30px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}';
+    document.head.appendChild(s);
+  }
+
+  if (url) toast.addEventListener('click', () => { location.href = url; });
+  document.body.appendChild(toast);
+  setTimeout(() => { toast.style.transition = 'opacity 0.5s'; toast.style.opacity = '0'; setTimeout(() => toast.remove(), 500); }, 6000);
+}
+
 export async function setupNotifiche(user) {
   if (!user) return;
   // Azzera badge con tutti i metodi disponibili (compatibilità Android/Samsung)
@@ -150,10 +188,16 @@ export async function setupNotifiche(user) {
     }
 
     // Gestisci notifiche in foreground (app aperta)
-    // Usa il SW per showNotification — new Notification() è bloccato dai browser moderni
     onMessage(messaging, payload => {
       const n    = payload.notification || {};
       const data = payload.data         || {};
+
+      // Toast festoso per notifiche di benvenuto
+      if (data.isWelcome === 'true') {
+        showWelcomeToast(n.title || '🎉 Benvenuto!', n.body || '', data.url);
+        return;
+      }
+
       navigator.serviceWorker.ready.then(reg => {
         reg.showNotification(n.title || 'Campo dei Fiori 🌸', {
           body:               n.body || '',

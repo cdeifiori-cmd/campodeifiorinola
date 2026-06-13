@@ -1,7 +1,7 @@
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getFirestore, doc, getDoc }
+import { getFirestore, doc, getDoc, updateDoc, serverTimestamp }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -120,8 +120,16 @@ export function setupNavAuth(slotId = 'nav-auth-slot') {
       let snap = await getDoc(doc(db, 'utenti', user.uid));
       if (!snap.exists()) snap = await getDoc(doc(db, 'staff', user.uid));
       if (snap.exists()) {
-        foto = snap.data().fotoProfilo || null;
-        nome = snap.data().nome || nome;
+        const d = snap.data();
+        foto = d.fotoProfilo || null;
+        nome = d.nome || nome;
+        // Primo accesso: imposta timestamp se non già presente
+        if (!d.primoAccesso) {
+          const coll = snap.ref.parent.id;
+          if (coll === 'utenti') {
+            updateDoc(doc(db, 'utenti', user.uid), { primoAccesso: serverTimestamp() }).catch(() => {});
+          }
+        }
       }
     } catch (_) {}
 

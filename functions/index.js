@@ -2,19 +2,23 @@
  * Cloud Functions — Campo dei Fiori
  *
  * TRIGGER:
- *  1. onNuovoContenuto   — diario/{postId} creato
- *                          → broadcast a tutti (escluso autore)
- *  2. onNuovaBottiglia   — messaggiBottiglia/{id} creato
- *                          → solo al destinatario
- *  3. onNuovoCommento    — diario/{postId}/commenti/{id} creato
- *                          → solo al proprietario del post (se non è lui il commentatore)
- *  4. onNuovoCommentoBott — messaggiBottiglia/{id}/commenti/{id} creato
- *                          → a mittente + destinatario bottiglia (escluso il commentatore)
+ *  1. onNuovoContenuto      — diario/{postId} creato (skip isWelcome)
+ *                             → broadcast a tutti (escluso autore)
+ *  2. onNuovaBottiglia      — messaggiBottiglia/{id} creato
+ *                             → solo al destinatario
+ *  3. onNuovoCommento       — diario/{postId}/commenti/{id} creato
+ *                             → solo al proprietario del post
+ *  4. onNuovoCommentoBott   — messaggiBottiglia/{id}/commenti/{id} creato
+ *                             → a mittente + destinatario bottiglia
+ *  5. onNuovoCommentoPiazzetta — piazzetta_posts/{postId}/comments/{id} creato
+ *                             → all'autore del post
+ *  6. onPrimoAccesso        — utenti/{uid} aggiornato con primoAccesso
+ *                             → crea post benvenuto + FCM festoso a tutti
  */
 
-const { onDocumentCreated } = require('firebase-functions/v2/firestore');
+const { onDocumentCreated, onDocumentUpdated } = require('firebase-functions/v2/firestore');
 const { initializeApp }     = require('firebase-admin/app');
-const { getFirestore }      = require('firebase-admin/firestore');
+const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const { getMessaging }      = require('firebase-admin/messaging');
 
 initializeApp();
@@ -118,6 +122,7 @@ exports.onNuovoContenuto = onDocumentCreated(
     const postId = event.params.postId;
     const data   = event.data?.data();
     if (!data) return;
+    if (data.isWelcome) return; // la notifica benvenuto la gestisce onPrimoAccesso
     if (!data.testo && !data.immagineUrl && !data.audioUrl && !data.videoUrl) return;
 
     const autoreUid = data.uidRagazzo;
@@ -297,5 +302,66 @@ exports.onNuovoCommentoPiazzetta = onDocumentCreated(
 
     const tokens = await getTokensForUid(autoreUid);
     await inviaATokens(tokens, msgBase, `commento-piazzetta-${commentId}`);
+  }
+);
+
+// ─── TRIGGER 6: primo accesso utente → post benvenuto + FCM festoso ──────
+
+exports.onPrimoAccesso = onDocumentUpdated(
+  { document: 'utenti/{uid}', region: 'europe-west1' },
+  async event => {
+    const before = event.data.before.data();
+    const after  = event.data.after.data();
+
+    // Triggera solo quando primoAccesso viene impostato per la prima volta
+    if (before.primoAccesso || !after.primoAccesso) return;
+
+    const uid  = event.params.uid;
+    const nome = after.nome || 'Nuovo membro';
+    const foto = after.fotoProfilo || null;
+
+    // 1. Crea post di benvenuto nel diario
+    try {
+      await db.collection('diario').add({
+        uidRagazzo:  uid,
+        testo:       `🎉 Benvenuto/a nella famiglia di Campo dei Fiori, ${nome}! Siamo felicissimi che tu sia con noi! 🌸✨🎊`,
+        immagineUrl: foto,
+        isWelcome:   true,
+        createdAt:   FieldValue.serverTimestamp(),
+      });
+      console.log(`[Benvenuto] Post diario creato per ${nome} (${uid})`);
+    } catch (err) {
+      console.error('[Benvenuto] Errore creazione post:', err.message);
+    }
+
+    // 2. Notifica FCM festosa a tutti gli altri utenti
+    const profiloUrl = `/profilo.html?uid=${uid}`;
+    const msgBase = {
+      notification: {
+        title: `🎉 ${nome} è entrato/a in Campo dei Fiori!`,
+        body:  `Dai il benvenuto a ${nome}! 🌟🎊 Clicca per vedere il suo profilo.`
+      },
+      data: {
+        url:       profiloUrl,
+        tag:       `benvenuto-${uid}`,
+        isWelcome: 'true'
+      },
+      webpush: {
+        notification: {
+          title:  `🎉 ${nome} è entrato/a in Campo dei Fiori!`,
+          body:   `Dai il benvenuto a ${nome}! 🌟🎊`,
+          icon:   '/icons/icon-192.png',
+          badge:  '/icons/icon-192.png',
+          tag:    `benvenuto-${uid}`,
+          image:  foto || undefined
+        },
+        fcmOptions: { link: profiloUrl }
+      },
+      android: { notification: { sound: 'default', channelId: 'campo_notifiche' } },
+      apns:    { payload: { aps: { sound: 'default' } } }
+    };
+
+    const tokens = await getAllFcmTokens(uid);
+    await inviaATokens(tokens, msgBase, `benvenuto-${uid}`);
   }
 );

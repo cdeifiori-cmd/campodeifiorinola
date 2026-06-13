@@ -436,6 +436,8 @@
       transition: border-color 0.2s;
     }
     .card-post:hover { border-color: var(--verde); }
+    .card-post.card-benvenuto { border-color: #e07b39; background: linear-gradient(135deg,#fff8f4,#fff); }
+    .card-post.card-benvenuto .post-header { background: linear-gradient(135deg,#e07b3915,#e07b3908); }
     .card-post .post-header {
       display: flex; align-items: center; gap: 10px;
       padding: 12px 14px 8px;
@@ -1571,7 +1573,7 @@
       const audioHtml = p.audioUrl    ? `<div class="post-audio">${buildAudioPlayer(p.audioUrl)}</div>` : '';
       const reazioni  = p.reazioni || { cuore:0, like:0, dislike:0 };
       const el = document.createElement('div');
-      el.className = 'card-post'; el.id = `post-${p.id}`; el.dataset.id = p.id;
+      el.className = 'card-post' + (p.isWelcome ? ' card-benvenuto' : ''); el.id = `post-${p.id}`; el.dataset.id = p.id;
       el.innerHTML = `
         <div class="post-header">
           ${avatar}
