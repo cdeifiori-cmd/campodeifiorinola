@@ -1154,16 +1154,23 @@
     function attachCommentoForm(el, collName, docId, commList, toggle) {
       const form = el.querySelector('.commento-form');
       if (!form) return;
+      let selectedTono = '';
       form.querySelectorAll('.tono-btn').forEach(btn => {
         btn.addEventListener('click', () => {
-          const already = btn.classList.contains('selected');
+          const same = btn.classList.contains('selected');
           form.querySelectorAll('.tono-btn').forEach(b => b.classList.remove('selected'));
-          if (!already) btn.classList.add('selected');
+          selectedTono = same ? '' : btn.textContent.trim();
+          if (!same) btn.classList.add('selected');
         });
       });
       const ta   = form.querySelector('textarea');
       const btnI = form.querySelector('.commento-send-btn');
-      btnI.addEventListener('click', () => addCommento(collName, docId, ta, form, commList, toggle));
+      btnI.addEventListener('click', () => {
+        const tono = selectedTono;
+        selectedTono = '';
+        form.querySelectorAll('.tono-btn').forEach(b => b.classList.remove('selected'));
+        addCommento(collName, docId, ta, tono, commList, toggle);
+      });
       ta.addEventListener('keydown', e => { if (e.key==='Enter'&&!e.shiftKey){e.preventDefault();btnI.click();} });
     }
     const params      = new URLSearchParams(location.search);
@@ -1860,14 +1867,11 @@
       return el;
     }
 
-    async function addCommento(collName, docId, ta, form, listEl, toggleBtn) {
+    async function addCommento(collName, docId, ta, tono, listEl, toggleBtn) {
       const testo = ta.value.trim();
       if (!testo) return;
       if (!canComment()) { mostraLoginPrompt(); return; }
-      const tonoBtn = form.querySelector('.tono-btn.selected');
-      const tono = tonoBtn?.dataset.tono || '';
       ta.value = '';
-      form.querySelectorAll('.tono-btn').forEach(b => b.classList.remove('selected'));
       let nomeAutore = currentUser.displayName || currentUser.email || 'Anonimo';
       let fotoAutore = null;
       try {

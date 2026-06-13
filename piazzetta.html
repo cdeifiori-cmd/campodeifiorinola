@@ -870,11 +870,13 @@
       const recBtn   = wrap.querySelector('.ci-rec');
       const sendBtn  = wrap.querySelector('.comment-send-btn');
 
+      let selectedTono = '';
       wrap.querySelectorAll('.tono-btn').forEach(btn => {
         btn.addEventListener('click', () => {
-          const already = btn.classList.contains('selected');
+          const same = btn.classList.contains('selected');
           wrap.querySelectorAll('.tono-btn').forEach(b => b.classList.remove('selected'));
-          if (!already) btn.classList.add('selected');
+          selectedTono = same ? '' : btn.textContent.trim();
+          if (!same) btn.classList.add('selected');
         });
       });
 
@@ -925,8 +927,8 @@
         const text = textarea.value.trim();
         if (!text && cItems.length === 0) return;
 
-        const tonoBtn = wrap.querySelector('.tono-btn.selected');
-        const tono = tonoBtn?.dataset.tono || '';
+        const tono = selectedTono;
+        selectedTono = '';
         wrap.querySelectorAll('.tono-btn').forEach(b => b.classList.remove('selected'));
 
         sendBtn.disabled = true; sendBtn.textContent = '…';
