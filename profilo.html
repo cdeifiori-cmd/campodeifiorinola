@@ -497,6 +497,26 @@
       border-radius: 50%; transition: all 0.15s;
     }
     .post-delete-btn:hover { color: #e74c3c; background: #ffeaea; }
+    .post-options-wrap { margin-left: auto; position: relative; }
+    .post-options-btn { background: none; border: none; color: #bbb; font-size: 1.2rem; cursor: pointer; padding: 2px 8px; border-radius: 8px; transition: all 0.15s; line-height: 1; }
+    .post-options-btn:hover { color: #555; background: #f0f0f0; }
+    .post-options-menu { position: absolute; right: 0; top: calc(100% + 4px); background: #fff; border-radius: 10px; box-shadow: 0 4px 18px rgba(0,0,0,0.15); min-width: 160px; z-index: 200; display: none; overflow: hidden; }
+    .post-options-menu.open { display: block; }
+    .post-options-menu button { display: block; width: 100%; padding: 10px 14px; background: none; border: none; text-align: left; font-family: 'Nunito', sans-serif; font-size: 0.88rem; font-weight: 600; cursor: pointer; transition: background 0.12s; }
+    .post-options-menu button:hover { background: #f5f5f5; }
+    .post-options-menu .opt-delete { color: #e74c3c; }
+    .edit-media-panel { background: #fafafa; border: 1px solid #eee; border-radius: 12px; padding: 12px; margin-top: 8px; }
+    .edit-media-panel h4 { margin: 0 0 10px; font-size: 0.9rem; font-weight: 700; color: #555; }
+    .edit-media-existing { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; min-height: 20px; }
+    .edit-media-item { position: relative; width: 72px; height: 72px; border-radius: 8px; overflow: visible; background: #ddd; flex-shrink: 0; }
+    .edit-media-item img, .edit-media-item video { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; }
+    .edit-media-item .remove-media-btn { position: absolute; top: -6px; right: -6px; background: rgba(0,0,0,0.65); color: #fff; border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 0.7rem; cursor: pointer; line-height: 1; display: flex; align-items: center; justify-content: center; z-index: 1; }
+    .edit-media-add-btns { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+    .edit-media-add-btns button { font-size: 0.8rem; padding: 5px 10px; border-radius: 8px; border: 1px solid #ddd; background: #fff; cursor: pointer; font-family: 'Nunito', sans-serif; font-weight: 600; }
+    .edit-media-add-btns button:hover { background: #f5f5f5; }
+    .edit-media-save-btn { background: #e07b39; color: #fff; border: none; border-radius: 10px; padding: 8px 18px; font-family: 'Nunito', sans-serif; font-weight: 700; font-size: 0.88rem; cursor: pointer; }
+    .edit-media-save-btn:hover { background: #c96628; }
+    .edit-media-cancel-btn { background: none; border: 1px solid #ddd; border-radius: 10px; padding: 8px 14px; cursor: pointer; font-family: 'Nunito', sans-serif; font-weight: 600; font-size: 0.88rem; }
 
     /* ===== BOTTIGLIA ===== */
     .bottiglia-list { display: flex; flex-direction: column; gap: 12px; }
@@ -1626,7 +1646,7 @@
             <div class="post-autore">${profileData.nome || ''}</div>
             <div class="post-data">${data}</div>
           </div>
-          ${canDelete ? `<button class="post-delete-btn" title="Elimina">🗑️</button>` : ''}
+          ${canDelete ? `<div class="post-options-wrap"><button class="post-options-btn" title="Opzioni">⋮</button><div class="post-options-menu"><button class="opt-edit-media">✏️ Modifica media</button><button class="opt-delete">🗑️ Elimina</button></div></div>` : ''}
         </div>
         <div class="post-testo">${p.testo || ''}</div>
         ${imgHtml}${videoHtml}${audioHtml}
@@ -1647,7 +1667,17 @@
             ${currentUser ? COMMENTO_FORM : ''}
           </div>
         </div>`;
-      if (canDelete) el.querySelector('.post-delete-btn').addEventListener('click', () => deletePost(p.id));
+      if (canDelete) {
+        const optBtn  = el.querySelector('.post-options-btn');
+        const optMenu = el.querySelector('.post-options-menu');
+        optBtn.addEventListener('click', e => {
+          e.stopPropagation();
+          document.querySelectorAll('.post-options-menu.open').forEach(m => m.classList.remove('open'));
+          optMenu.classList.toggle('open');
+        });
+        el.querySelector('.opt-delete').addEventListener('click', () => { optMenu.classList.remove('open'); deletePost(p.id); });
+        el.querySelector('.opt-edit-media').addEventListener('click', () => { optMenu.classList.remove('open'); openEditMediaDiario(p, el); });
+      }
       if (currentUser) {
         getDoc(doc(db,'diario',p.id,'reazioni',currentUser.uid)).then(snap => {
           if (snap.exists()) {
@@ -1917,6 +1947,121 @@
       if (!confirm('Eliminare questo post?')) return;
       await deleteDoc(doc(db,'diario',id));
       document.querySelectorAll(`.card-post[data-id="${id}"]`).forEach(el => el.remove());
+    }
+
+    document.addEventListener('click', () => {
+      document.querySelectorAll('.post-options-menu.open').forEach(m => m.classList.remove('open'));
+    });
+
+    function openEditMediaDiario(p, cardEl) {
+      cardEl.querySelector('.edit-media-panel')?.remove();
+      let imgUrl   = p.immagineUrl || null;
+      let videoUrl = p.videoUrl    || null;
+      let audioUrl = p.audioUrl    || null;
+      let newFiles = [];
+
+      const panel = document.createElement('div');
+      panel.className = 'edit-media-panel';
+
+      function renderPanel() {
+        panel.innerHTML = '';
+        const h4 = document.createElement('h4');
+        h4.textContent = '✏️ Modifica media';
+        panel.appendChild(h4);
+
+        const existing = document.createElement('div');
+        existing.className = 'edit-media-existing';
+
+        function makeItem(previewEl, onRemove) {
+          const item = document.createElement('div');
+          item.className = 'edit-media-item';
+          item.appendChild(previewEl);
+          const rm = document.createElement('button');
+          rm.className = 'remove-media-btn'; rm.textContent = '✕';
+          rm.addEventListener('click', onRemove);
+          item.appendChild(rm);
+          return item;
+        }
+
+        if (imgUrl) {
+          const img = document.createElement('img'); img.src = imgUrl;
+          existing.appendChild(makeItem(img, () => { imgUrl = null; renderPanel(); }));
+        }
+        if (videoUrl) {
+          const v = document.createElement('video'); v.src = videoUrl; v.muted = true;
+          existing.appendChild(makeItem(v, () => { videoUrl = null; renderPanel(); }));
+        }
+        if (audioUrl) {
+          const ico = document.createElement('div');
+          ico.style.cssText = 'width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#f0f4ff;border-radius:8px;font-size:2rem;';
+          ico.textContent = '🎵';
+          existing.appendChild(makeItem(ico, () => { audioUrl = null; renderPanel(); }));
+        }
+        newFiles.forEach((nf, i) => {
+          let prev;
+          if (nf.type === 'video') { prev = document.createElement('video'); prev.src = URL.createObjectURL(nf.file); prev.muted = true; }
+          else { prev = document.createElement('img'); prev.src = URL.createObjectURL(nf.file); }
+          existing.appendChild(makeItem(prev, () => { newFiles.splice(i, 1); renderPanel(); }));
+        });
+        panel.appendChild(existing);
+
+        const addBtns = document.createElement('div');
+        addBtns.className = 'edit-media-add-btns';
+        function addFileBtn(label, accept, type, capture) {
+          const btn = document.createElement('button');
+          btn.textContent = label;
+          const inp = document.createElement('input'); inp.type = 'file'; inp.accept = accept; inp.style.display = 'none';
+          if (capture) inp.capture = capture;
+          inp.addEventListener('change', () => { if (inp.files[0]) { newFiles.push({ file: inp.files[0], type }); renderPanel(); } });
+          btn.addEventListener('click', () => inp.click());
+          addBtns.appendChild(btn); addBtns.appendChild(inp);
+        }
+        addFileBtn('🖼️ Foto',    'image/*', 'image', null);
+        addFileBtn('📹 Video',   'video/*', 'video', null);
+        addFileBtn('📷 Scatta',  'image/*', 'image', 'environment');
+        addFileBtn('🎬 Registra','video/*', 'video', 'environment');
+        panel.appendChild(addBtns);
+
+        const btnRow = document.createElement('div');
+        btnRow.style.cssText = 'display:flex;gap:8px;';
+        const saveBtn = document.createElement('button');
+        saveBtn.className = 'edit-media-save-btn'; saveBtn.textContent = 'Salva';
+        saveBtn.addEventListener('click', () => saveEditDiario(saveBtn));
+        const cancelBtn = document.createElement('button');
+        cancelBtn.className = 'edit-media-cancel-btn'; cancelBtn.textContent = 'Annulla';
+        cancelBtn.addEventListener('click', () => panel.remove());
+        btnRow.appendChild(saveBtn); btnRow.appendChild(cancelBtn);
+        panel.appendChild(btnRow);
+      }
+
+      async function saveEditDiario(saveBtn) {
+        saveBtn.disabled = true; saveBtn.textContent = 'Salvataggio…';
+        try {
+          for (const nf of newFiles) {
+            const resType = nf.type === 'video' ? 'video' : 'image';
+            const url = await uploadToCloudinary(nf.file, resType);
+            if (nf.type === 'image') imgUrl = url;
+            else videoUrl = url;
+          }
+          newFiles = [];
+          await updateDoc(doc(db, 'diario', p.id), { immagineUrl: imgUrl || null, videoUrl: videoUrl || null, audioUrl: audioUrl || null });
+          p.immagineUrl = imgUrl; p.videoUrl = videoUrl; p.audioUrl = audioUrl;
+          cardEl.querySelectorAll('.post-img, .post-audio').forEach(e => e.remove());
+          const reazioni = cardEl.querySelector('.post-reazioni');
+          const tmp = document.createElement('div');
+          tmp.innerHTML = (imgUrl ? `<img class="post-img" src="${imgUrl}" alt="">` : '')
+            + (videoUrl ? `<video class="post-img" src="${videoUrl}" controls></video>` : '')
+            + (audioUrl ? `<div class="post-audio">${buildAudioPlayer(audioUrl)}</div>` : '');
+          while (tmp.firstChild) reazioni.before(tmp.firstChild);
+          panel.remove();
+        } catch (e) {
+          saveBtn.disabled = false; saveBtn.textContent = 'Salva';
+          alert('Errore: ' + e.message);
+        }
+      }
+
+      renderPanel();
+      cardEl.querySelector('.post-testo').after(panel);
     }
 
     // MODAL diario

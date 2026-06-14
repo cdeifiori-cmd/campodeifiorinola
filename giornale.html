@@ -57,6 +57,14 @@
       flex-shrink: 0;
     }
     .btn-delete-post:hover { opacity: 1; background: #fdebd0; }
+    .post-options-wrap { margin-left: auto; position: relative; flex-shrink: 0; }
+    .post-options-btn { background: none; border: none; color: #bbb; font-size: 1.2rem; cursor: pointer; padding: 2px 8px; border-radius: 8px; transition: all 0.15s; line-height: 1; }
+    .post-options-btn:hover { color: #555; background: #f0f0f0; }
+    .post-options-menu { position: absolute; right: 0; top: calc(100% + 4px); background: #fff; border-radius: 10px; box-shadow: 0 4px 18px rgba(0,0,0,0.15); min-width: 160px; z-index: 200; display: none; overflow: hidden; }
+    .post-options-menu.open { display: block; }
+    .post-options-menu a, .post-options-menu button { display: block; width: 100%; padding: 10px 14px; background: none; border: none; text-align: left; font-family: 'Nunito', sans-serif; font-size: 0.88rem; font-weight: 600; cursor: pointer; transition: background 0.12s; color: #333; text-decoration: none; box-sizing: border-box; }
+    .post-options-menu a:hover, .post-options-menu button:hover { background: #f5f5f5; }
+    .post-options-menu .opt-delete { color: #e74c3c; }
 
     .evento-header {
       display: flex; align-items: center; gap: 10px;
@@ -164,6 +172,9 @@
     setupNavAuth();
     setupDocumentiNav();
     setupInstallBanner();
+    document.addEventListener('click', () => {
+      document.querySelectorAll('.post-options-menu.open').forEach(m => m.classList.remove('open'));
+    });
     // Azzera badge notifiche quando si apre il giornale
     localStorage.setItem('fcm_unread', '0');
     if (navigator.clearAppBadge) navigator.clearAppBadge().catch(() => {});
@@ -171,8 +182,9 @@
 
 
     const ADMIN_UID = 'mCSgNMVEphVIIf4HX0bkcKq2ZKv2';
-    let   isAdmin   = false;
-    onAuthStateChanged(auth, user => { isAdmin = !!(user && user.uid === ADMIN_UID); });
+    let   isAdmin      = false;
+    let   currentUser  = null;
+    onAuthStateChanged(auth, user => { currentUser = user; isAdmin = !!(user && user.uid === ADMIN_UID); });
 
     const feed   = document.getElementById('feed');
     const ora    = Date.now();
@@ -345,9 +357,15 @@
         card.className = 'card-evento' + (e.isWelcome ? ' card-benvenuto' : '');
         card.href      = e.link;
 
-        const deleteBtn = (isAdmin && e.tipo === 'diario' && e.id)
-          ? `<button class="btn-delete-post" title="Elimina post" data-id="${e.id}">🗑️</button>`
-          : '';
+        const canEdit = e.tipo === 'diario' && e.id && (isAdmin || (currentUser && currentUser.uid === e.uid));
+        const optionsMenu = canEdit ? `
+          <div class="post-options-wrap">
+            <button class="post-options-btn" data-menuid="gmenu-${e.id}">⋮</button>
+            <div class="post-options-menu" id="gmenu-${e.id}">
+              <a href="profilo.html?uid=${e.uid}#post-${e.id}">✏️ Modifica media</a>
+              ${isAdmin ? `<button class="opt-delete" data-delid="${e.id}">🗑️ Elimina</button>` : ''}
+            </div>
+          </div>` : '';
 
         card.innerHTML = `
           <div class="evento-header">
@@ -357,23 +375,28 @@
               <div class="evento-data">${formatDT(e.ts)}</div>
             </div>
             <span class="evento-tipo ${CLASSI[e.tipo]}">${ICONE[e.tipo]} ${LABEL[e.tipo]}</span>
-            ${deleteBtn}
+            ${optionsMenu}
           </div>
           <div class="evento-testo">${e.testo || ''}</div>`;
 
-        // Listener eliminazione (stopPropagation per non aprire il link)
-        if (isAdmin && e.tipo === 'diario' && e.id) {
-          card.querySelector('.btn-delete-post').addEventListener('click', async ev => {
-            ev.preventDefault();
-            ev.stopPropagation();
-            if (!confirm('Sei sicuro di voler eliminare questo post?')) return;
-            try {
-              await deleteDoc(doc(db, 'diario', e.id));
-              card.remove();
-            } catch(err) {
-              alert('Errore eliminazione: ' + err.message);
-            }
+        if (canEdit) {
+          const optBtn  = card.querySelector('.post-options-btn');
+          const optMenu = card.querySelector('.post-options-menu');
+          optBtn.addEventListener('click', ev => {
+            ev.preventDefault(); ev.stopPropagation();
+            const wasOpen = optMenu.classList.contains('open');
+            document.querySelectorAll('.post-options-menu.open').forEach(m => m.classList.remove('open'));
+            if (!wasOpen) optMenu.classList.add('open');
           });
+          if (isAdmin) {
+            card.querySelector('.opt-delete')?.addEventListener('click', async ev => {
+              ev.preventDefault(); ev.stopPropagation();
+              optMenu.classList.remove('open');
+              if (!confirm('Sei sicuro di voler eliminare questo post?')) return;
+              try { await deleteDoc(doc(db, 'diario', e.id)); card.remove(); }
+              catch(err) { alert('Errore eliminazione: ' + err.message); }
+            });
+          }
         }
 
         feed.appendChild(card);
