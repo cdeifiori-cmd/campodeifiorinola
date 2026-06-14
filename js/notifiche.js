@@ -117,11 +117,11 @@ export async function setupNotifiche(user) {
       console.log('[Badge] ✅ documento esiste:', JSON.stringify(data));
       const contatore = data?.contatore || 0;
       console.log('[Badge] contatore =', contatore);
-      if (contatore > 0) {
-        if (navigator.setAppBadge) navigator.setAppBadge(contatore).catch(() => {});
+      if (contatore === 0) {
+        navigator.clearAppBadge?.().catch(() => {});
+        navigator.setAppBadge?.(0).catch(() => {});
       } else {
-        if (navigator.clearAppBadge) navigator.clearAppBadge().catch(() => {});
-        if (navigator.setAppBadge)   navigator.setAppBadge(0).catch(() => {});
+        navigator.setAppBadge?.(contatore).catch(() => {});
       }
     },
     err => console.error('[Badge] ❌ onSnapshot ERRORE (probabilmente Rules):', err.code, err.message)
