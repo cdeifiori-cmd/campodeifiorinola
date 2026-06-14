@@ -11,7 +11,7 @@
 
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js";
-import { getFirestore, doc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, doc, updateDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const VAPID_KEY = 'BIUkTONw1oYZnDjfYX26iLF77yrX10mbHVEtBFwrXRldPzeRD1hFk-3KzC4hc9j9Ne0Zi8BCrUro-J2Hw2xREgU';
 const SW_URL    = '/firebase-messaging-sw.js';
@@ -186,6 +186,17 @@ export async function setupNotifiche(user) {
     if (!saved) {
       console.warn('[FCM] Utente non trovato in nessuna collezione:', user.uid);
     }
+
+    // Sottoscrivi contatore notifiche non lette → aggiorna badge PWA
+    onSnapshot(doc(db, 'notifiche', user.uid), snap => {
+      const contatore = (snap.exists() ? snap.data()?.contatore : 0) || 0;
+      if (contatore > 0) {
+        if (navigator.setAppBadge) navigator.setAppBadge(contatore).catch(() => {});
+      } else {
+        if (navigator.clearAppBadge) navigator.clearAppBadge().catch(() => {});
+        if (navigator.setAppBadge)   navigator.setAppBadge(0).catch(() => {});
+      }
+    });
 
     // Gestisci notifiche in foreground (app aperta)
     onMessage(messaging, payload => {

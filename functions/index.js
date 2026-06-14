@@ -42,6 +42,37 @@ async function getTokensForUid(uid) {
   return [];
 }
 
+// ─── Helper: incrementa contatore notifiche non lette ────────────────────
+
+async function incrementaContatori(uids) {
+  await Promise.all(uids.map(uid =>
+    db.collection('notifiche').doc(uid).set(
+      { contatore: FieldValue.increment(1) },
+      { merge: true }
+    ).catch(e => console.warn('[FCM] contatore error ' + uid + ':', e.message))
+  ));
+}
+
+// ─── Helper: tutti gli UID con token (broadcast) ──────────────────────────
+
+async function getAllUidsWithTokens(excludeUid = null) {
+  const result = [];
+  for (const coll of ['utenti', 'staff', 'amici']) {
+    try {
+      const snap = await db.collection(coll).get();
+      snap.forEach(docSnap => {
+        if (docSnap.id === excludeUid) return;
+        const d = docSnap.data();
+        const tkns = Array.isArray(d.fcmTokens) ? [...d.fcmTokens] : [];
+        if (d.fcmToken?.length > 10 && !tkns.includes(d.fcmToken)) tkns.push(d.fcmToken);
+        const valid = [...new Set(tkns.filter(t => t?.length > 10))];
+        if (valid.length) result.push({ uid: docSnap.id, tokens: valid });
+      });
+    } catch (_) {}
+  }
+  return result;
+}
+
 // ─── Helper: tutti i token (broadcast) ───────────────────────────────────
 
 async function getAllFcmTokens(excludeUid = null) {
@@ -146,8 +177,10 @@ exports.onNuovoContenuto = onDocumentCreated(
       apns:    { payload: { aps: { sound: 'default', badge: 1 } } }
     };
 
-    const tokens = await getAllFcmTokens(autoreUid);
-    await inviaATokens(tokens, msgBase, `diario-${postId}`);
+    const recipients = await getAllUidsWithTokens(autoreUid);
+    const allTokens = [...new Set(recipients.flatMap(r => r.tokens))];
+    await inviaATokens(allTokens, msgBase, `diario-${postId}`);
+    await incrementaContatori(recipients.map(r => r.uid));
   }
 );
 
@@ -186,6 +219,7 @@ exports.onNuovaBottiglia = onDocumentCreated(
 
     const tokens = await getTokensForUid(destinatario);
     await inviaATokens(tokens, msgBase, `bottiglia-${bottigliaId}`);
+    if (tokens.length) await incrementaContatori([destinatario]);
   }
 );
 
@@ -225,6 +259,7 @@ exports.onNuovoCommento = onDocumentCreated(
 
     const tokens = await getTokensForUid(proprietarioUid);
     await inviaATokens(tokens, msgBase, `commento-diario-${commentId}`);
+    if (tokens.length) await incrementaContatori([proprietarioUid]);
   }
 );
 
@@ -266,6 +301,7 @@ exports.onNuovoCommentoBott = onDocumentCreated(
     const allTokens = (await Promise.all(uniqueUid.map(getTokensForUid))).flat();
     const uniqueTokens = [...new Set(allTokens)];
     await inviaATokens(uniqueTokens, msgBase, `commento-bott-${commentId}`);
+    if (uniqueTokens.length) await incrementaContatori(uniqueUid);
   }
 );
 
@@ -302,6 +338,7 @@ exports.onNuovoCommentoPiazzetta = onDocumentCreated(
 
     const tokens = await getTokensForUid(autoreUid);
     await inviaATokens(tokens, msgBase, `commento-piazzetta-${commentId}`);
+    if (tokens.length) await incrementaContatori([autoreUid]);
   }
 );
 
@@ -361,7 +398,9 @@ exports.onPrimoAccesso = onDocumentUpdated(
       apns:    { payload: { aps: { sound: 'default' } } }
     };
 
-    const tokens = await getAllFcmTokens(uid);
-    await inviaATokens(tokens, msgBase, `benvenuto-${uid}`);
+    const recipients = await getAllUidsWithTokens(uid);
+    const allTokens = [...new Set(recipients.flatMap(r => r.tokens))];
+    await inviaATokens(allTokens, msgBase, `benvenuto-${uid}`);
+    await incrementaContatori(recipients.map(r => r.uid));
   }
 );

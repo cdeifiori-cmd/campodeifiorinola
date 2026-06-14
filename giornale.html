@@ -152,7 +152,7 @@
     import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
     import { getFirestore, collection, getDocs, query, orderBy, limit,
-             deleteDoc, doc }
+             deleteDoc, doc, getDoc, setDoc, serverTimestamp }
       from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import { setupNavAuth } from './js/nav-auth.js';
     import { setupDocumentiNav } from './js/nav-docs.js';
@@ -182,9 +182,28 @@
 
 
     const ADMIN_UID = 'mCSgNMVEphVIIf4HX0bkcKq2ZKv2';
-    let   isAdmin      = false;
-    let   currentUser  = null;
-    onAuthStateChanged(auth, user => { currentUser = user; isAdmin = !!(user && user.uid === ADMIN_UID); });
+    let   isAdmin                = false;
+    let   currentUser            = null;
+    let   ultimaLetturaPrecedente = 0; // ms — letta prima di azzerare
+
+    onAuthStateChanged(auth, async user => {
+      currentUser = user;
+      isAdmin = !!(user && user.uid === ADMIN_UID);
+      if (user) {
+        // Leggi ultima lettura precedente prima di azzerare
+        try {
+          const snap = await getDoc(doc(db, 'notifiche', user.uid));
+          if (snap.exists()) {
+            const ul = snap.data().ultimaLettura;
+            ultimaLetturaPrecedente = ul?.toMillis ? ul.toMillis() : 0;
+          }
+        } catch (_) {}
+        // Azzera contatore e aggiorna ultimaLettura a ora
+        setDoc(doc(db, 'notifiche', user.uid), { contatore: 0, ultimaLettura: serverTimestamp() }, { merge: true }).catch(() => {});
+        if (navigator.clearAppBadge) navigator.clearAppBadge().catch(() => {});
+        if (navigator.setAppBadge)   navigator.setAppBadge(0).catch(() => {});
+      }
+    });
 
     const feed   = document.getElementById('feed');
     const ora    = Date.now();
@@ -331,11 +350,14 @@
       // Ordina: più recenti prima
       eventi.sort((a, b) => msOf(b.ts) - msOf(a.ts));
 
-      // Badge 24h
-      const novita = eventi.filter(e => ora - msOf(e.ts) < H24).length;
+      // Badge novità: usa ultimaLettura precedente se disponibile, altrimenti 24h
+      const soglia = ultimaLetturaPrecedente > 0 ? ultimaLetturaPrecedente : ora - H24;
+      const novita = eventi.filter(e => msOf(e.ts) > soglia).length;
       const wrap = document.getElementById('novita-wrap');
       if (novita > 0) {
-        wrap.innerHTML = `<div class="novita-badge">🔴 ${novita} novità nelle ultime 24 ore</div>`;
+        wrap.innerHTML = `<div class="novita-badge">🔴 ${novita} novità da leggere</div>`;
+      } else {
+        wrap.innerHTML = '';
       }
 
       // Render
