@@ -104,16 +104,28 @@ export async function setupNotifiche(user) {
   // Sottoscrivi contatore notifiche non lette → aggiorna badge PWA.
   // Fatto PRIMA di qualsiasi check su permessi FCM: funziona anche se
   // l'utente ha negato le notifiche push.
-  onSnapshot(doc(db, 'notifiche', user.uid), snap => {
-    const contatore = (snap.exists() ? snap.data()?.contatore : 0) || 0;
-    console.log('[Badge] contatore Firestore:', contatore);
-    if (contatore > 0) {
-      if (navigator.setAppBadge) navigator.setAppBadge(contatore).catch(() => {});
-    } else {
-      if (navigator.clearAppBadge) navigator.clearAppBadge().catch(() => {});
-      if (navigator.setAppBadge)   navigator.setAppBadge(0).catch(() => {});
-    }
-  });
+  console.log('[Badge] Registro onSnapshot per uid:', user.uid);
+  onSnapshot(
+    doc(db, 'notifiche', user.uid),
+    snap => {
+      if (!snap.exists()) {
+        console.log('[Badge] ❌ documento notifiche/' + user.uid + ' NON ESISTE');
+        if (navigator.clearAppBadge) navigator.clearAppBadge().catch(() => {});
+        return;
+      }
+      const data = snap.data();
+      console.log('[Badge] ✅ documento esiste:', JSON.stringify(data));
+      const contatore = data?.contatore || 0;
+      console.log('[Badge] contatore =', contatore);
+      if (contatore > 0) {
+        if (navigator.setAppBadge) navigator.setAppBadge(contatore).catch(() => {});
+      } else {
+        if (navigator.clearAppBadge) navigator.clearAppBadge().catch(() => {});
+        if (navigator.setAppBadge)   navigator.setAppBadge(0).catch(() => {});
+      }
+    },
+    err => console.error('[Badge] ❌ onSnapshot ERRORE (probabilmente Rules):', err.code, err.message)
+  );
 
   // FCM richiede Notification API e Service Worker
   if (!('Notification' in window)) {

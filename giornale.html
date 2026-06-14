@@ -190,16 +190,25 @@
       currentUser = user;
       isAdmin = !!(user && user.uid === ADMIN_UID);
       if (user) {
+        console.log('[Giornale] Auth OK, uid:', user.uid);
         // Leggi ultima lettura precedente prima di azzerare
         try {
           const snap = await getDoc(doc(db, 'notifiche', user.uid));
           if (snap.exists()) {
+            console.log('[Giornale] doc notifiche esiste:', JSON.stringify(snap.data()));
             const ul = snap.data().ultimaLettura;
             ultimaLetturaPrecedente = ul?.toMillis ? ul.toMillis() : 0;
+          } else {
+            console.log('[Giornale] ❌ doc notifiche/' + user.uid + ' NON ESISTE');
           }
-        } catch (_) {}
+        } catch (e) {
+          console.error('[Giornale] ❌ getDoc ERRORE (Rules?):', e.code, e.message);
+        }
         // Azzera contatore e aggiorna ultimaLettura a ora
-        setDoc(doc(db, 'notifiche', user.uid), { contatore: 0, ultimaLettura: serverTimestamp() }, { merge: true }).catch(() => {});
+        console.log('[Giornale] Chiamo setDoc contatore=0...');
+        setDoc(doc(db, 'notifiche', user.uid), { contatore: 0, ultimaLettura: serverTimestamp() }, { merge: true })
+          .then(() => console.log('[Giornale] ✅ setDoc OK — contatore azzerato'))
+          .catch(e => console.error('[Giornale] ❌ setDoc ERRORE (Rules?):', e.code, e.message));
         if (navigator.clearAppBadge) navigator.clearAppBadge().catch(() => {});
         if (navigator.setAppBadge)   navigator.setAppBadge(0).catch(() => {});
       }
