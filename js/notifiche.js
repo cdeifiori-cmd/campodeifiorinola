@@ -100,9 +100,20 @@ function showWelcomeToast(title, body, url) {
 
 export async function setupNotifiche(user) {
   if (!user) return;
-  // Azzera badge con tutti i metodi disponibili (compatibilità Android/Samsung)
-  if (navigator.clearAppBadge) navigator.clearAppBadge().catch(() => {});
-  if (navigator.setAppBadge)   navigator.setAppBadge(0).catch(() => {});
+
+  // Sottoscrivi contatore notifiche non lette → aggiorna badge PWA.
+  // Fatto PRIMA di qualsiasi check su permessi FCM: funziona anche se
+  // l'utente ha negato le notifiche push.
+  onSnapshot(doc(db, 'notifiche', user.uid), snap => {
+    const contatore = (snap.exists() ? snap.data()?.contatore : 0) || 0;
+    console.log('[Badge] contatore Firestore:', contatore);
+    if (contatore > 0) {
+      if (navigator.setAppBadge) navigator.setAppBadge(contatore).catch(() => {});
+    } else {
+      if (navigator.clearAppBadge) navigator.clearAppBadge().catch(() => {});
+      if (navigator.setAppBadge)   navigator.setAppBadge(0).catch(() => {});
+    }
+  });
 
   // FCM richiede Notification API e Service Worker
   if (!('Notification' in window)) {
@@ -133,7 +144,7 @@ export async function setupNotifiche(user) {
       console.log('[FCM] Permesso dopo richiesta:', permission);
     }
     if (permission !== 'granted') {
-      console.log('[FCM] Permesso non concesso — skip');
+      console.log('[FCM] Permesso non concesso — skip FCM token');
       return;
     }
 
@@ -186,17 +197,6 @@ export async function setupNotifiche(user) {
     if (!saved) {
       console.warn('[FCM] Utente non trovato in nessuna collezione:', user.uid);
     }
-
-    // Sottoscrivi contatore notifiche non lette → aggiorna badge PWA
-    onSnapshot(doc(db, 'notifiche', user.uid), snap => {
-      const contatore = (snap.exists() ? snap.data()?.contatore : 0) || 0;
-      if (contatore > 0) {
-        if (navigator.setAppBadge) navigator.setAppBadge(contatore).catch(() => {});
-      } else {
-        if (navigator.clearAppBadge) navigator.clearAppBadge().catch(() => {});
-        if (navigator.setAppBadge)   navigator.setAppBadge(0).catch(() => {});
-      }
-    });
 
     // Gestisci notifiche in foreground (app aperta)
     onMessage(messaging, payload => {
