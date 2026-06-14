@@ -244,17 +244,36 @@
     const db   = getFirestore(app);
     const auth = getAuth(app);
 
-    // Badge notifiche non lette nel widget "Dal giornale"
-    let unsubNotifiche = null;
+    // ultimaLettura: ms dell'ultima visita al Giornale (0 = mai visitato)
+    // Usato da renderWidget() per filtrare i post già visti.
+    let ultimaLetturaMsec = 0;
+    let unsubNotifiche    = null;
+
     onAuthStateChanged(auth, user => {
       if (unsubNotifiche) { unsubNotifiche(); unsubNotifiche = null; }
       const badge = document.getElementById('notif-badge');
-      if (!badge) return;
-      if (!user) { badge.style.display = 'none'; return; }
+      if (!user) {
+        ultimaLetturaMsec = 0;
+        if (badge) badge.style.display = 'none';
+        renderWidget();
+        return;
+      }
       unsubNotifiche = onSnapshot(doc(db, 'notifiche', user.uid), snap => {
-        const n = (snap.exists() ? snap.data()?.contatore : 0) || 0;
-        if (n > 0) { badge.textContent = n; badge.style.display = 'inline'; }
-        else        { badge.style.display = 'none'; }
+        const data = snap.exists() ? snap.data() : {};
+        // Aggiorna soglia e ri-renderizza il widget
+        const ul = data.ultimaLettura;
+        ultimaLetturaMsec = ul?.toMillis ? ul.toMillis() : 0;
+        renderWidget();
+        // Aggiorna badge numerico
+        const n = data.contatore || 0;
+        if (badge) {
+          if (n > 0) { badge.textContent = n; badge.style.display = 'inline'; }
+          else        { badge.style.display = 'none'; }
+        }
+      }, () => {
+        // Errore (utente non ancora in notifiche): mostra tutto
+        ultimaLetturaMsec = 0;
+        renderWidget();
       });
     });
 
@@ -290,15 +309,27 @@
       const list = document.getElementById('ultimi-post-list');
       if (!list) return;
 
-      // Unisci, ordina per timestamp decrescente, prendi i primi 3
-      const tutti = [...diaroPosts, ...piazzettaPosts]
-        .sort((a, b) => b.tsMs - a.tsMs)
-        .slice(0, 3);
+      // Unisci e ordina per timestamp decrescente
+      const ordinati = [...diaroPosts, ...piazzettaPosts]
+        .sort((a, b) => b.tsMs - a.tsMs);
+
+      // Filtra: mostra solo i post nuovi (dopo ultimaLettura).
+      // Se ultimaLetturaMsec è 0 (mai visitato o non loggato) mostra i 3 più recenti.
+      const nuovi = ultimaLetturaMsec > 0
+        ? ordinati.filter(item => item.tsMs > ultimaLetturaMsec)
+        : ordinati.slice(0, 3);
 
       list.innerHTML = '';
-      if (!tutti.length) return;
 
-      tutti.forEach(item => {
+      if (!nuovi.length) {
+        // Niente di nuovo da leggere
+        if (ultimaLetturaMsec > 0) {
+          list.innerHTML = '<p style="color:#aaa;font-size:0.85rem;padding:8px 0;margin:0">✅ Sei aggiornato — nessuna novità dal tuo ultimo accesso al Giornale.</p>';
+        }
+        return;
+      }
+
+      nuovi.slice(0, 3).forEach(item => {
         const card = document.createElement('a');
         card.className = 'post-card';
         card.href = item.href;
