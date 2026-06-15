@@ -271,7 +271,6 @@
 
   <div id="feed" class="feed"><div class="spinner"></div></div>
 
-  <button id="btn-ripara-nomi" onclick="riparaNomiAnonimi()" style="display:none;position:fixed;bottom:80px;right:16px;z-index:200;background:#e53935;color:#fff;border:none;border-radius:20px;padding:8px 14px;font-size:13px;cursor:pointer;align-items:center;gap:6px;">🔧 Ripara nomi anonimi</button>
 
   <button class="fab" id="fab-new-post" title="Nuovo post" style="display:none">＋</button>
 
@@ -366,7 +365,6 @@
           if (snap.exists()) currentUserData = snap.data();
         } catch(_) {}
         document.getElementById('fab-new-post').style.display = 'flex';
-        if (isAdmin) document.getElementById('btn-ripara-nomi')?.style.setProperty('display', 'inline-flex');
       }
       loadFeed();
     });
@@ -412,32 +410,6 @@
       }
       _nomiCache[uid] = '';
       return '';
-    }
-
-    async function riparaNomiAnonimi() {
-      const btn = document.getElementById('btn-ripara-nomi');
-      if (btn) btn.disabled = true;
-      try {
-        const snap = await getDocs(collection(db, 'piazzetta_posts'));
-        let riparati = 0;
-        for (const d of snap.docs) {
-          const post = d.data();
-          const nome = post.authorName;
-          if (!nome || nome === 'Anonimo') {
-            const uid = post.authorId;
-            if (!uid) continue;
-            const nomeReale = await risolviNome(uid);
-            if (nomeReale) {
-              await updateDoc(doc(db, 'piazzetta_posts', d.id), { authorName: nomeReale });
-              riparati++;
-            }
-          }
-        }
-        alert(`Riparati ${riparati} post.`);
-      } catch(e) {
-        alert('Errore: ' + e.message);
-      }
-      if (btn) btn.disabled = false;
     }
 
     // ── Cloudinary ────────────────────────────────────────────────────────
