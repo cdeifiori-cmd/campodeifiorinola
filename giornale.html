@@ -378,7 +378,7 @@
       const CLASSI = { diario:'tipo-diario', bottiglia:'tipo-bottiglia', commento:'tipo-commento', presento:'tipo-presento', piazzetta:'tipo-piazzetta' };
 
       eventi.slice(0, 60).forEach(e => {
-        const autore = e.nomeOverride || getAutore(e.uid).nome || 'Qualcuno';
+        const autore = (e.nomeOverride && e.nomeOverride !== 'Anonimo') ? e.nomeOverride : getAutore(e.uid).nome || 'Qualcuno';
         const foto   = e.fotoOverride || utentiCache[e.uid]?.fotoProfilo || null;
         const avatarEl = foto
           ? `<div class="evento-avatar"><img src="${foto}" alt="${autore}"></div>`

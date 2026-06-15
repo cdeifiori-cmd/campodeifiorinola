@@ -271,6 +271,8 @@
 
   <div id="feed" class="feed"><div class="spinner"></div></div>
 
+  <button id="btn-ripara-nomi" onclick="riparaNomiAnonimi()" style="display:none;position:fixed;bottom:80px;right:16px;z-index:200;background:#e53935;color:#fff;border:none;border-radius:20px;padding:8px 14px;font-size:13px;cursor:pointer;align-items:center;gap:6px;">🔧 Ripara nomi anonimi</button>
+
   <button class="fab" id="fab-new-post" title="Nuovo post" style="display:none">＋</button>
 
   <!-- Modal nuovo post -->
@@ -364,9 +366,75 @@
           if (snap.exists()) currentUserData = snap.data();
         } catch(_) {}
         document.getElementById('fab-new-post').style.display = 'flex';
+        if (isAdmin) document.getElementById('btn-ripara-nomi')?.style.setProperty('display', 'inline-flex');
       }
       loadFeed();
     });
+
+    // ── Helper: ricava nome e foto dell'utente corrente (con fallback Firestore) ──
+    async function getDatiAutore() {
+      let nome = currentUserData?.nome || currentUserData?.nomeCompleto || currentUserData?.displayName || currentUser?.displayName || '';
+      let foto = currentUserData?.fotoProfilo || null;
+      // Race condition: currentUserData non ancora caricato → rifetch
+      if (!nome && currentUser) {
+        try {
+          let snap = await getDoc(doc(db, 'utenti', currentUser.uid));
+          if (!snap.exists()) snap = await getDoc(doc(db, 'staff', currentUser.uid));
+          if (snap.exists()) {
+            const d = snap.data();
+            currentUserData = d;
+            nome = d.nome || d.nomeCompleto || d.displayName || currentUser.displayName || '';
+            foto = d.fotoProfilo || null;
+          }
+        } catch(_) {}
+      }
+      return { nome: nome || 'Utente', foto: foto || '' };
+    }
+
+    // ── Cache nomi per fallback display (uid → nome) ──────────────────────
+    const _nomiCache = {};
+
+    async function risolviNome(uid) {
+      if (_nomiCache[uid] !== undefined) return _nomiCache[uid];
+      try {
+        let snap = await getDoc(doc(db, 'utenti', uid));
+        if (!snap.exists()) snap = await getDoc(doc(db, 'staff', uid));
+        if (snap.exists()) {
+          const d = snap.data();
+          const n = d.nome || d.nomeCompleto || d.displayName || '';
+          _nomiCache[uid] = n;
+          return n;
+        }
+      } catch(_) {}
+      _nomiCache[uid] = '';
+      return '';
+    }
+
+    async function riparaNomiAnonimi() {
+      const btn = document.getElementById('btn-ripara-nomi');
+      if (btn) btn.disabled = true;
+      try {
+        const snap = await getDocs(collection(db, 'piazzetta_posts'));
+        let riparati = 0;
+        for (const d of snap.docs) {
+          const post = d.data();
+          const nome = post.authorName;
+          if (!nome || nome === 'Anonimo') {
+            const uid = post.authorId;
+            if (!uid) continue;
+            const nomeReale = await risolviNome(uid);
+            if (nomeReale) {
+              await updateDoc(doc(db, 'piazzetta_posts', d.id), { authorName: nomeReale });
+              riparati++;
+            }
+          }
+        }
+        alert(`Riparati ${riparati} post.`);
+      } catch(e) {
+        alert('Errore: ' + e.message);
+      }
+      if (btn) btn.disabled = false;
+    }
 
     // ── Cloudinary ────────────────────────────────────────────────────────
     async function uploadOne(file, type) {
@@ -610,8 +678,7 @@
         const progEl = document.getElementById('upload-progress');
         const media  = itemsToUpload.length ? await uploadAll(itemsToUpload, barEl, progEl) : [];
 
-        const nome = currentUserData?.nome || currentUser.displayName || 'Anonimo';
-        const foto = currentUserData?.fotoProfilo || null;
+        const { nome, foto } = await getDatiAutore();
 
         await addDoc(collection(db, 'piazzetta_posts'), {
           authorId:      currentUser.uid,
@@ -673,7 +740,7 @@
         <div class="post-header">
           ${avatar}
           <div class="post-meta">
-            <div class="post-autore">${esc(data.authorName || 'Anonimo')}</div>
+            <div class="post-autore" data-uid="${esc(data.authorId || '')}">${esc(data.authorName && data.authorName !== 'Anonimo' ? data.authorName : '')}</div>
             <div class="post-data">${fmtDate(data.timestamp)}</div>
           </div>
           ${canDel ? `<div class="post-options-wrap"><button class="post-options-btn" onclick="togglePostMenu(event,'${postId}')">⋮</button><div class="post-options-menu" id="pmenu-${postId}"><button onclick="openEditMediaPiazzetta('${postId}',this)">✏️ Modifica media</button><button class="opt-delete" onclick="closePostMenu('${postId}');deletePost('${postId}',this)">🗑️ Elimina</button></div></div>` : ''}
@@ -685,6 +752,12 @@
           <button class="btn-comments" onclick="toggleComments('${postId}')">💬 ${commCnt > 0 ? commCnt + ' commenti' : 'Commenta'}</button>
         </div>
         <div class="comments-section" id="cs-${postId}"></div>`;
+
+      // Fallback asincrono: se authorName mancante/Anonimo, cerca in Firestore
+      const nomeEl = card.querySelector('.post-autore');
+      if (nomeEl && !nomeEl.textContent.trim() && data.authorId) {
+        risolviNome(data.authorId).then(n => { if (n) nomeEl.textContent = n; });
+      }
 
       // Ripristina active state dalle reazioni già date (fetch asincrono)
       if (currentUser) {
@@ -1072,8 +1145,7 @@
             ? await Promise.all(snapshot.map(item => uploadOne(item.file, item.type).then(url => ({ url, type: item.type, name: item.name }))))
             : [];
 
-          const nome = currentUserData?.nome || currentUser.displayName || 'Anonimo';
-          const foto = currentUserData?.fotoProfilo || null;
+          const { nome, foto } = await getDatiAutore();
 
           await addDoc(collection(db, 'piazzetta_posts', postId, 'comments'), {
             authorId: currentUser.uid, authorName: nome, authorPhoto: foto,
