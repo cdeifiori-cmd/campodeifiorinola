@@ -397,15 +397,19 @@
     async function risolviNome(uid) {
       if (_nomiCache[uid] !== undefined) return _nomiCache[uid];
       try {
-        let snap = await getDoc(doc(db, 'utenti', uid));
-        if (!snap.exists()) snap = await getDoc(doc(db, 'staff', uid));
-        if (snap.exists()) {
-          const d = snap.data();
-          const n = d.nome || d.nomeCompleto || d.displayName || '';
-          _nomiCache[uid] = n;
-          return n;
-        }
-      } catch(_) {}
+        const [snapUtenti, snapStaff] = await Promise.all([
+          getDoc(doc(db, 'utenti', uid)),
+          getDoc(doc(db, 'staff', uid))
+        ]);
+        const du = snapUtenti.exists() ? snapUtenti.data() : null;
+        const ds = snapStaff.exists()  ? snapStaff.data()  : null;
+        console.log('risolviNome', uid, 'utenti:', du, 'staff:', ds);
+        const n = du?.nome || ds?.nome || ds?.nomeCompleto || ds?.displayName || du?.nomeCompleto || du?.displayName || '';
+        _nomiCache[uid] = n;
+        return n;
+      } catch(e) {
+        console.warn('risolviNome errore', uid, e);
+      }
       _nomiCache[uid] = '';
       return '';
     }
