@@ -174,6 +174,18 @@ export function attachPiazzetta(container, db, postId) {
 }
 
 /**
+ * Generico per qualsiasi collezione post con user_reactions/{uid} → { emojis:[...], nomeAutore }
+ */
+export function attachPostReactions(container, db, collName, postId) {
+  const colPath = `${collName}/${postId}/user_reactions`;
+  container.querySelectorAll('.reaction-btn').forEach(btn => {
+    const emoji = btn.dataset.emoji;
+    addListeners(btn, db, colPath, emoji,
+      d => Array.isArray(d.emojis) && d.emojis.includes(emoji));
+  });
+}
+
+/**
  * Profilo (diario / messaggiBottiglia): reazioni/{uid} → { tipo, nomeAutore }
  */
 export function attachProfilo(container, db, collName, docId) {

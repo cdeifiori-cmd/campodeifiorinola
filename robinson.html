@@ -1,0 +1,1163 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Robinson – il diario di bordo</title>
+  <meta name="theme-color" content="#1a3a5c">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Lora:ital,wght@0,400;0,600;1,400;1,600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:        #1a3a5c;
+      --navy-scuro:  #122840;
+      --oro:         #c8860a;
+      --oro-light:   #f5e9ce;
+      --carta:       #f5f0e8;
+      --carta-scura: #ede8dc;
+      --post-bg:     #faf7f0;
+      --inchiostro:  #2c1e0f;
+      --testo-muted: #7a6a55;
+    }
+
+    body { font-family: 'Lora', Georgia, serif; background: var(--carta); color: var(--inchiostro); padding-bottom: 160px; }
+
+    /* ── Header ── */
+    .top-header {
+      background: var(--navy); color: #fff; display: flex; align-items: center;
+      padding: 0 1rem; min-height: 70px; position: sticky; top: 0; z-index: 100;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+      /* Bordura ornamentale stile cornice mappa */
+      outline: 3px solid var(--oro);
+      outline-offset: -6px;
+    }
+    .header-titles {
+      flex: 1; text-align: center; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 2px; padding: 10px 0;
+    }
+    .header-title-main {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 1.6rem; font-weight: 900; color: #fff;
+      letter-spacing: 0.04em; line-height: 1.1;
+    }
+    .header-title-sub {
+      font-family: 'Lora', Georgia, serif;
+      font-size: 0.82rem; font-style: italic; font-weight: 400;
+      color: var(--oro); letter-spacing: 0.06em;
+    }
+
+    /* ── Feed ── */
+    .feed { padding: 14px 12px; display: flex; flex-direction: column; gap: 14px; max-width: 640px; margin: 0 auto; }
+
+    /* ── Post card ── */
+    .post-card {
+      background: var(--post-bg);
+      border-left: 5px solid var(--navy);
+      border-radius: 4px 12px 12px 4px;
+      box-shadow: 2px 3px 14px rgba(26,58,92,0.10);
+      overflow: hidden;
+    }
+    .post-header { display: flex; align-items: center; gap: 10px; padding: 12px 14px 8px; }
+    .post-avatar {
+      width: 40px; height: 40px; border-radius: 50%; overflow: hidden; flex-shrink: 0;
+      background: var(--oro-light); display: flex; align-items: center; justify-content: center; font-size: 1.3rem;
+      border: 2px solid var(--oro);
+    }
+    .post-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .post-meta { flex: 1; min-width: 0; }
+    .post-autore { font-size: 0.9rem; font-weight: 700; font-family: 'Lora', serif; }
+    .post-data   { font-size: 0.72rem; color: var(--testo-muted); margin-top: 1px; font-style: italic; }
+    .post-delete-btn {
+      background: none; border: none; font-size: 1rem; cursor: pointer; opacity: 0.4; padding: 4px;
+      border-radius: 8px; flex-shrink: 0; transition: opacity 0.15s, background 0.15s;
+    }
+    .post-delete-btn:hover { opacity: 1; background: #fdebd0; }
+    .post-options-wrap { position: relative; flex-shrink: 0; }
+    .post-options-btn { background: none; border: none; color: #bbb; font-size: 1.2rem; cursor: pointer; padding: 2px 8px; border-radius: 8px; transition: all 0.15s; line-height: 1; }
+    .post-options-btn:hover { color: var(--navy); background: var(--oro-light); }
+    .post-options-menu { position: absolute; right: 0; top: calc(100% + 4px); background: #fff; border-radius: 10px; box-shadow: 0 4px 18px rgba(0,0,0,0.15); min-width: 160px; z-index: 200; display: none; overflow: hidden; border: 1px solid var(--oro-light); }
+    .post-options-menu.open { display: block; }
+    .post-options-menu button { display: block; width: 100%; padding: 10px 14px; background: none; border: none; text-align: left; font-family: 'Lora', serif; font-size: 0.88rem; font-weight: 600; cursor: pointer; transition: background 0.12s; }
+    .post-options-menu button:hover { background: var(--oro-light); }
+    .post-options-menu .opt-delete { color: #c0392b; }
+    .edit-media-panel { background: var(--carta-scura); border: 1px solid #ddd; border-radius: 12px; padding: 12px; margin: 0 14px 10px; }
+    .edit-media-panel h4 { margin: 0 0 10px; font-size: 0.9rem; font-weight: 700; color: #555; }
+    .edit-media-existing { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; min-height: 20px; }
+    .edit-media-item { position: relative; width: 72px; height: 72px; border-radius: 8px; overflow: visible; background: #ddd; flex-shrink: 0; }
+    .edit-media-item img, .edit-media-item video { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; }
+    .edit-media-item .remove-media-btn { position: absolute; top: -6px; right: -6px; background: rgba(0,0,0,0.65); color: #fff; border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 0.7rem; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 1; }
+    .edit-media-add-btns { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+    .edit-media-add-btns button { font-size: 0.8rem; padding: 5px 10px; border-radius: 8px; border: 1px solid #ddd; background: #fff; cursor: pointer; font-family: 'Lora', serif; font-weight: 600; }
+    .edit-media-add-btns button:hover { background: var(--oro-light); }
+    .edit-media-save-btn { background: var(--navy); color: var(--oro); border: none; border-radius: 10px; padding: 8px 18px; font-family: 'Lora', serif; font-weight: 700; font-size: 0.88rem; cursor: pointer; }
+    .edit-media-save-btn:hover { background: var(--navy-scuro); }
+    .edit-media-cancel-btn { background: none; border: 1px solid #ddd; border-radius: 10px; padding: 8px 14px; cursor: pointer; font-family: 'Lora', serif; font-weight: 600; font-size: 0.88rem; }
+    .post-text { font-size: 0.95rem; line-height: 1.65; padding: 0 14px 10px; white-space: pre-wrap; word-break: break-word; }
+
+    /* ── Media grid (feed) ── */
+    .media-grid { display: grid; gap: 3px; }
+    .media-grid.c1 { grid-template-columns: 1fr; }
+    .media-grid.c2 { grid-template-columns: 1fr 1fr; }
+    .media-grid.c3 { grid-template-columns: 1fr 1fr; }
+    .media-grid.c3 .mgitem:first-child { grid-column: 1 / -1; }
+    .media-grid.cmany { grid-template-columns: 1fr 1fr; }
+    .mgitem { background: #000; position: relative; }
+    .mgitem img, .mgitem video { width: 100%; display: block; object-fit: contain; height: auto; }
+    .mgitem video { background: #000; }
+
+    .audio-list { padding: 4px 14px; display: flex; flex-direction: column; gap: 6px; }
+    .audio-row {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--oro-light); border-radius: 10px; padding: 7px 10px;
+      border: 1px solid rgba(200,134,10,0.3);
+    }
+    .audio-row .aico { font-size: 1.1rem; flex-shrink: 0; }
+    .audio-row audio { flex: 1; height: 32px; min-width: 0; }
+
+    /* ── Reactions ── */
+    .post-reactions { display: flex; align-items: center; gap: 4px; padding: 8px 14px; flex-wrap: wrap; }
+    .reaction-btn {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: var(--carta); border: 1.5px solid #d5c9b5; border-radius: 20px; padding: 4px 10px;
+      font-size: 0.88rem; font-weight: 700; cursor: pointer; transition: background 0.15s, border-color 0.15s; color: var(--inchiostro);
+    }
+    .reaction-btn.active { background: var(--oro-light); border-color: var(--oro); color: var(--navy); }
+    .reaction-btn:hover  { background: var(--oro-light); }
+
+    /* ── Comments ── */
+    .post-footer { border-top: 1px solid #e0d8c8; padding: 8px 14px; display: flex; align-items: center; }
+    .btn-comments {
+      background: none; border: none; font-size: 0.82rem; font-weight: 700;
+      color: var(--testo-muted); cursor: pointer; padding: 4px 0; transition: color 0.15s; font-family: 'Lora', serif;
+    }
+    .btn-comments:hover { color: var(--navy); }
+    .comments-section { padding: 0 14px 12px; display: none; }
+    .comments-section.open { display: block; }
+    .comment-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+    .comment-item { display: flex; gap: 8px; align-items: flex-start; }
+    .comment-avatar {
+      width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
+      background: var(--oro-light); display: flex; align-items: center; justify-content: center; font-size: 1rem; overflow: hidden;
+      border: 1.5px solid var(--oro);
+    }
+    .comment-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .comment-bubble { background: var(--carta); border-radius: 12px; padding: 7px 10px; flex: 1; min-width: 0; font-size: 0.85rem; border: 1px solid #e0d8c8; }
+    .comment-autore { font-weight: 700; font-size: 0.78rem; margin-bottom: 2px; color: var(--navy); }
+    .comment-text   { color: var(--inchiostro); white-space: pre-wrap; word-break: break-word; }
+    .comment-data   { font-size: 0.68rem; color: #bbb; margin-top: 3px; font-style: italic; }
+
+    /* comment media */
+    .cmedia-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: 6px; }
+    .cmedia-grid.single { grid-template-columns: 1fr; }
+    .cmedia-grid img  { width: 100%; border-radius: 8px; display: block; height: auto; object-fit: contain; }
+    .cmedia-grid video { width: 100%; border-radius: 8px; display: block; height: auto; }
+    .caudio-list { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
+    .caudio-row  { display: flex; align-items: center; gap: 6px; background: var(--oro-light); border-radius: 8px; padding: 5px 8px; }
+    .caudio-row audio { flex: 1; height: 28px; min-width: 0; }
+
+    /* comment reactions */
+    .comment-reactions { display: flex; gap: 3px; flex-wrap: wrap; margin-top: 4px; }
+    .comment-reaction-btn {
+      background: var(--carta); border: 1px solid #d5c9b5; border-radius: 14px; padding: 2px 7px;
+      font-size: 0.78rem; font-weight: 700; cursor: pointer; color: var(--inchiostro); transition: background 0.12s;
+    }
+    .comment-reaction-btn.active { background: var(--oro-light); border-color: var(--oro); }
+
+    /* comment input */
+    .comment-input-wrap { display: flex; gap: 8px; align-items: flex-end; }
+    .tono-picker { display: flex; gap: 2px; flex-wrap: wrap; margin-bottom: 5px; }
+    .tono-btn {
+      background: none; border: 2px solid transparent; border-radius: 8px;
+      font-size: 1.25rem; padding: 2px 3px; cursor: pointer; line-height: 1;
+      transition: border-color 0.12s, background 0.12s;
+    }
+    .tono-btn.selected { border-color: var(--oro); background: var(--oro-light); }
+    .comment-text .tono-tag { font-size: 1.1em; margin-right: 3px; }
+    .comment-input-inner { flex: 1; }
+    .comment-textarea {
+      width: 100%; border: 1.5px solid #c8b89a; border-radius: 12px;
+      padding: 8px 10px; font-family: 'Lora', serif; font-size: 0.88rem;
+      resize: none; outline: none; transition: border-color 0.15s; min-height: 36px; max-height: 120px;
+      background: var(--carta);
+    }
+    .comment-textarea:focus { border-color: var(--navy); }
+    .comment-media-btns { display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap; }
+    .comment-media-btn {
+      background: none; border: 1.5px solid #c8b89a; border-radius: 20px;
+      padding: 3px 9px; font-size: 0.78rem; cursor: pointer; font-family: 'Lora', serif;
+      transition: background 0.12s, border-color 0.12s;
+    }
+    .comment-media-btn:hover { background: var(--oro-light); border-color: var(--oro); }
+    .comment-media-btn.recording { background: #ffe5e5; border-color: #e74c3c; color: #e74c3c; animation: pulse 1s infinite; }
+    .comment-send-btn {
+      background: var(--navy); color: var(--oro); border: none; border-radius: 12px;
+      padding: 8px 14px; font-size: 0.88rem; font-weight: 700;
+      cursor: pointer; white-space: nowrap; transition: background 0.15s; flex-shrink: 0;
+      font-family: 'Lora', serif;
+    }
+    .comment-send-btn:hover { background: var(--navy-scuro); }
+
+    /* ── Preview allegati (modal + commenti) ── */
+    .preview-wrap { margin: 8px 0; }
+    .preview-count { font-size: 0.78rem; color: var(--testo-muted); font-weight: 700; margin-bottom: 4px; }
+    .preview-grid  { display: flex; flex-wrap: wrap; gap: 8px; }
+    .prev-item     { position: relative; border-radius: 10px; overflow: visible; }
+    .prev-item img, .prev-item video { display: block; width: 90px; height: auto; object-fit: contain; border-radius: 10px; background: #f0f0f0; }
+    .prev-item.audio {
+      display: flex; align-items: center; gap: 6px;
+      background: var(--oro-light); border-radius: 10px; padding: 6px 10px; width: 100%;
+    }
+    .prev-item.audio .aico { font-size: 1.1rem; }
+    .prev-item.audio audio { flex: 1; height: 30px; }
+    .prev-item.audio .aname { font-size: 0.72rem; font-weight: 700; color: var(--navy); max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .prev-remove {
+      position: absolute; top: -6px; right: -6px; width: 20px; height: 20px; border-radius: 50%;
+      background: #c0392b; color: #fff; border: none; font-size: 0.7rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; z-index: 5;
+    }
+    .prev-item.audio .prev-remove { position: static; flex-shrink: 0; }
+
+    /* ── FAB ── */
+    .fab {
+      position: fixed; bottom: 80px; right: 18px; width: 56px; height: 56px;
+      background: var(--navy); color: var(--oro); font-size: 1.8rem; border: none; border-radius: 50%;
+      box-shadow: 0 4px 16px rgba(26,58,92,0.35); cursor: pointer; z-index: 200;
+      display: flex; align-items: center; justify-content: center; transition: background 0.15s, transform 0.15s;
+    }
+    .fab:hover { background: var(--navy-scuro); transform: scale(1.08); }
+
+    /* ── Modal ── */
+    .modal-backdrop {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 500;
+      display: flex; align-items: flex-end; justify-content: center;
+      opacity: 0; pointer-events: none; transition: opacity 0.2s;
+    }
+    .modal-backdrop.open { opacity: 1; pointer-events: all; }
+    .modal-sheet {
+      background: var(--post-bg); border-radius: 20px 20px 0 0; width: 100%; max-width: 640px;
+      padding: 20px 18px 24px; max-height: 90vh; overflow-y: auto;
+      transform: translateY(100%); transition: transform 0.25s ease;
+      /* Box inserimento post: sfondo più scuro, bordo tratteggiato oro, ombra morbida */
+      border: 2px dashed var(--oro);
+      box-shadow: 0 -4px 20px rgba(26,58,92,0.2);
+    }
+    .modal-backdrop.open .modal-sheet { transform: translateY(0); }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    .modal-title  { font-size: 1.05rem; font-weight: 700; font-family: 'Playfair Display', serif; color: var(--navy); }
+    .modal-close  { background: var(--oro-light); border: 1px solid var(--oro); border-radius: 50%; width: 32px; height: 32px; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--navy); }
+    .form-textarea {
+      width: 100%; border: 1.5px solid #c8b89a; border-radius: 12px;
+      padding: 10px 12px; font-family: 'Lora', serif; font-size: 0.95rem;
+      resize: none; outline: none; min-height: 100px; transition: border-color 0.15s;
+      background: var(--carta-scura);
+    }
+    .form-textarea:focus { border-color: var(--navy); }
+    .media-btns { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0 6px; }
+    .media-btn {
+      display: flex; align-items: center; gap: 5px; background: var(--carta); border: 1.5px solid #c8b89a;
+      border-radius: 20px; padding: 6px 14px; font-family: 'Lora', serif; font-size: 0.85rem; font-weight: 600;
+      cursor: pointer; transition: background 0.15s, border-color 0.15s; color: var(--inchiostro);
+    }
+    .media-btn:hover { background: var(--oro-light); border-color: var(--oro); }
+    .btn-camera { display: none; }
+    @media (pointer: coarse) { .btn-camera { display: inline-flex; } }
+    .media-btn.recording { background: #ffe5e5; border-color: #e74c3c; color: #e74c3c; animation: pulse 1s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.6} }
+    .upload-progress { height: 4px; background: #e0d8c8; border-radius: 2px; margin: 8px 0; display: none; }
+    .upload-progress-bar { height: 100%; background: var(--oro); border-radius: 2px; transition: width 0.3s; }
+    .btn-pubblica {
+      width: 100%; background: var(--navy); color: var(--oro); border: none; border-radius: 14px;
+      padding: 12px; font-family: 'Lora', serif; font-size: 1rem; font-weight: 700;
+      cursor: pointer; margin-top: 10px; transition: background 0.15s; letter-spacing: 0.04em;
+    }
+    .btn-pubblica:hover:not(:disabled) { background: var(--navy-scuro); }
+    .btn-pubblica:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* ── Bottom nav ── */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0; height: 62px; background: #fff;
+      border-top: 1px solid #e0e0e0; display: flex; align-items: stretch; z-index: 100;
+      box-shadow: 0 -2px 8px rgba(0,0,0,0.07);
+    }
+    .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-decoration: none; color: #999; font-size: 0.55rem; font-weight: 600; gap: 1px; }
+    .nav-item.active { color: var(--navy); }
+    .nav-item:hover  { color: var(--navy); }
+    .nav-item .nav-icon { font-size: 1.15rem; line-height: 1; }
+
+    .spinner { width: 34px; height: 34px; border: 3px solid #e0d8c8; border-top-color: var(--oro); border-radius: 50%; animation: spin 0.7s linear infinite; margin: 2.5rem auto; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .empty-msg { color: var(--testo-muted); text-align: center; padding: 2rem; font-style: italic; }
+    .login-required { text-align: center; padding: 3rem 1rem; color: var(--testo-muted); }
+    .login-required a { color: var(--navy); font-weight: 700; text-decoration: none; }
+  </style>
+</head>
+<body>
+
+  <header class="top-header">
+    <div class="header-titles">
+      <div class="header-title-main">Robinson</div>
+      <div class="header-title-sub">il diario di bordo</div>
+    </div>
+    <div id="nav-auth-slot"></div>
+  </header>
+
+  <div id="feed" class="feed"><div class="spinner"></div></div>
+
+  <button class="fab" id="fab-new-post" title="Nuovo post" style="display:none">＋</button>
+
+  <!-- Modal nuovo post -->
+  <div class="modal-backdrop" id="modal-backdrop">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <span class="modal-title">✍️ Scrivi nel diario…</span>
+        <button class="modal-close" id="modal-close">✕</button>
+      </div>
+      <textarea class="form-textarea" id="post-text" placeholder="Cosa vuoi annotare nel diario di bordo?" rows="4"></textarea>
+      <div class="media-btns">
+        <label class="media-btn">🖼️ Foto<input type="file" accept="image/*" id="input-foto" multiple style="display:none"></label>
+        <label class="media-btn btn-camera">📷 Scatta<input type="file" accept="image/*" id="input-foto-cam" capture="environment" style="display:none"></label>
+        <label class="media-btn">📹 Video<input type="file" accept="video/*" id="input-video" multiple style="display:none"></label>
+        <label class="media-btn btn-camera">🎬 Registra<input type="file" accept="video/*" id="input-video-cam" capture="environment" style="display:none"></label>
+        <button class="media-btn" id="btn-audio">🎙️ Registra</button>
+        <label class="media-btn">🎵 Audio<input type="file" accept="audio/*,.mp3,.m4a,.wav,.ogg,.aac,.flac,.weba,.opus" id="input-audio-file" multiple style="display:none"></label>
+      </div>
+      <div id="post-preview"></div>
+      <div class="upload-progress" id="upload-progress"><div class="upload-progress-bar" id="upload-bar" style="width:0%"></div></div>
+      <button class="btn-pubblica" id="btn-pubblica">Pubblica</button>
+    </div>
+  </div>
+
+  <nav class="bottom-nav">
+    <a href="index.html" class="nav-item"><img src="https://res.cloudinary.com/dxqyprtzh/image/upload/v1780171524/viso_campo_brd2ic.webp" alt="" style="width:26px;height:26px;border-radius:50%;object-fit:cover;display:block;">Home</a>
+    <a href="comunita.html" class="nav-item"><span class="nav-icon">🏘️</span>Comunità</a>
+    <a href="afterus.html" class="nav-item"><span class="nav-icon">🏠</span>After Us</a>
+    <a href="staff.html" class="nav-item"><span class="nav-icon">🤡</span>Staff</a>
+    <a href="amici.html" class="nav-item"><span class="nav-icon">👥</span>Amici</a>
+    <a href="progetti.html" class="nav-item"><span class="nav-icon">📁</span>Progetti</a>
+    <a href="giornale.html" class="nav-item"><span class="nav-icon">📰</span>Giornale</a>
+    <a href="documenti.html" class="nav-item nav-doc-link" style="display:none"><span class="nav-icon">📋</span>Documenti</a>
+  </nav>
+
+  <script type="module">
+    import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import {
+      getFirestore, collection, addDoc, getDoc, getDocs, doc, updateDoc,
+      query, orderBy, limit, serverTimestamp, onSnapshot, deleteDoc,
+      increment, setDoc, arrayUnion, arrayRemove
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { setupNavAuth }      from './js/nav-auth.js';
+    import { setupDocumentiNav } from './js/nav-docs.js';
+    import { setupInstallBanner } from './js/install-banner.js';
+    import { attachPostReactions, invalidate as invalidateRTT } from './js/reaction-tooltip.js';
+    import { initLightbox } from './js/lightbox.js';
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyC18lzwqhYcW29TsEO6Oy4Bqvb2PMBUmAg",
+      authDomain: "campo-dei-fiori.firebaseapp.com",
+      projectId: "campo-dei-fiori",
+      storageBucket: "campo-dei-fiori.firebasestorage.app",
+      messagingSenderId: "928976798756",
+      appId: "1:928976798756:web:1b90027ec9f03b203e44b1"
+    };
+
+    const app  = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+    const db   = getFirestore(app);
+    const auth = getAuth(app);
+
+    const CLOUD_NAME   = 'dxqyprtzh';
+    const CLOUD_PRESET = 'campo_dei_fiori';
+    const ADMIN_UID    = 'mCSgNMVEphVIIf4HX0bkcKq2ZKv2';
+    const EMOJIS       = ['❤️','😂','👏','🔥','😢'];
+    const MAX_FILES    = 10;
+    const COLL         = 'robinson_posts';
+
+    const myPostReactions    = new Map();
+    const myCommentReactions = new Map();
+
+    setupNavAuth('nav-auth-slot');
+    setupDocumentiNav();
+    setupInstallBanner();
+    initLightbox();
+
+    let currentUser = null;
+    let currentUserData = null;
+    let isAdmin = false;
+
+    // ── Auth ──────────────────────────────────────────────────────────────
+    onAuthStateChanged(auth, async user => {
+      currentUser = user;
+      if (user) {
+        isAdmin = user.uid === ADMIN_UID;
+        try {
+          let snap = await getDoc(doc(db, 'utenti', user.uid));
+          if (!snap.exists()) snap = await getDoc(doc(db, 'staff', user.uid));
+          if (snap.exists()) currentUserData = snap.data();
+        } catch(_) {}
+        document.getElementById('fab-new-post').style.display = 'flex';
+      }
+      loadFeed();
+    });
+
+    async function getDatiAutore() {
+      let nome = currentUserData?.nome || currentUserData?.nomeCompleto || currentUserData?.displayName || currentUser?.displayName || '';
+      let foto = currentUserData?.fotoProfilo || null;
+      if (!nome && currentUser) {
+        try {
+          let snap = await getDoc(doc(db, 'utenti', currentUser.uid));
+          if (!snap.exists()) snap = await getDoc(doc(db, 'staff', currentUser.uid));
+          if (snap.exists()) {
+            const d = snap.data();
+            currentUserData = d;
+            nome = d.nome || d.nomeCompleto || d.displayName || currentUser.displayName || '';
+            foto = d.fotoProfilo || null;
+          }
+        } catch(_) {}
+      }
+      return { nome: nome || 'Utente', foto: foto || '' };
+    }
+
+    const _nomiCache = {};
+
+    async function risolviNome(uid) {
+      if (_nomiCache[uid] !== undefined) return _nomiCache[uid];
+      try {
+        const [snapUtenti, snapStaff] = await Promise.all([
+          getDoc(doc(db, 'utenti', uid)),
+          getDoc(doc(db, 'staff', uid))
+        ]);
+        const du = snapUtenti.exists() ? snapUtenti.data() : null;
+        const ds = snapStaff.exists()  ? snapStaff.data()  : null;
+        const n = du?.nome || ds?.nome || ds?.nomeCompleto || ds?.displayName || du?.nomeCompleto || du?.displayName || '';
+        _nomiCache[uid] = n;
+        return n;
+      } catch(e) {
+        console.warn('risolviNome errore', uid, e);
+      }
+      _nomiCache[uid] = '';
+      return '';
+    }
+
+    // ── Cloudinary ────────────────────────────────────────────────────────
+    async function uploadOne(file, type) {
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('upload_preset', CLOUD_PRESET);
+      const resType = type === 'image' ? 'image' : 'video';
+      const res  = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${resType}/upload`, { method:'POST', body:fd });
+      const data = await res.json();
+      if (!data.secure_url) throw new Error('Upload fallito: ' + (data.error?.message || file.name));
+      return data.secure_url;
+    }
+
+    async function uploadAll(items, barEl, progEl) {
+      if (progEl) progEl.style.display = 'block';
+      let done = 0;
+      const results = await Promise.all(
+        items.map(item => uploadOne(item.file, item.type).then(url => {
+          done++;
+          if (barEl) barEl.style.width = Math.round(done / items.length * 100) + '%';
+          return { url, type: item.type, name: item.name };
+        }))
+      );
+      setTimeout(() => { if (progEl) progEl.style.display = 'none'; if (barEl) barEl.style.width = '0%'; }, 500);
+      return results;
+    }
+
+    function normalizeMedia(data) {
+      if (Array.isArray(data.media) && data.media.length > 0) return data.media;
+      if (data.mediaUrl) return [{ url: data.mediaUrl, type: data.mediaType || 'image', name: '' }];
+      return [];
+    }
+
+    function renderMediaGrid(mediaList) {
+      if (!mediaList.length) return '';
+      const imgs   = mediaList.filter(m => m.type === 'image');
+      const vids   = mediaList.filter(m => m.type === 'video');
+      const audios = mediaList.filter(m => m.type === 'audio');
+      const visual = [...imgs, ...vids];
+      let html = '';
+
+      if (visual.length) {
+        const n = visual.length;
+        const cls = n === 1 ? 'c1' : n === 2 ? 'c2' : n === 3 ? 'c3' : 'cmany';
+        html += `<div class="media-grid ${cls}">`;
+        visual.forEach(m => {
+          html += `<div class="mgitem">`;
+          if (m.type === 'image')
+            html += `<img src="${esc(m.url)}" loading="lazy" alt="foto">`;
+          else
+            html += `<video src="${esc(m.url)}" controls playsinline></video>`;
+          html += `</div>`;
+        });
+        html += `</div>`;
+      }
+
+      if (audios.length) {
+        html += `<div class="audio-list">`;
+        audios.forEach(m => {
+          html += `<div class="audio-row"><span class="aico">🎵</span><audio src="${esc(m.url)}" controls></audio></div>`;
+        });
+        html += `</div>`;
+      }
+      return html;
+    }
+
+    function renderCommentMedia(data) {
+      const list = normalizeMedia(data);
+      if (!list.length) return '';
+      const imgs   = list.filter(m => m.type === 'image');
+      const vids   = list.filter(m => m.type === 'video');
+      const audios = list.filter(m => m.type === 'audio');
+      const visual = [...imgs, ...vids];
+      let html = '';
+      if (visual.length) {
+        html += `<div class="cmedia-grid${visual.length === 1 ? ' single' : ''}">`;
+        visual.forEach(m => {
+          if (m.type === 'image') html += `<img src="${esc(m.url)}" loading="lazy">`;
+          else html += `<video src="${esc(m.url)}" controls playsinline></video>`;
+        });
+        html += `</div>`;
+      }
+      if (audios.length) {
+        html += `<div class="caudio-list">`;
+        audios.forEach(m => {
+          html += `<div class="caudio-row"><span>🎵</span><audio src="${esc(m.url)}" controls></audio></div>`;
+        });
+        html += `</div>`;
+      }
+      return html;
+    }
+
+    function renderPreview(items, containerId, onRemove) {
+      const wrap = document.getElementById(containerId);
+      if (!wrap) return;
+      if (!items.length) { wrap.innerHTML = ''; return; }
+
+      let html = `<div class="preview-wrap">
+        <div class="preview-count">${items.length} allegat${items.length === 1 ? 'o' : 'i'}</div>
+        <div class="preview-grid">`;
+
+      items.forEach((item, idx) => {
+        if (item.type === 'image') {
+          html += `<div class="prev-item">
+            <img src="${esc(item.previewUrl)}" alt="">
+            <button class="prev-remove" data-idx="${idx}">✕</button>
+          </div>`;
+        } else if (item.type === 'video') {
+          html += `<div class="prev-item">
+            <video src="${esc(item.previewUrl)}" muted playsinline></video>
+            <button class="prev-remove" data-idx="${idx}">✕</button>
+          </div>`;
+        } else {
+          html += `<div class="prev-item audio">
+            <span class="aico">🎵</span>
+            <audio src="${esc(item.previewUrl)}" controls></audio>
+            <span class="aname">${esc(item.name)}</span>
+            <button class="prev-remove" data-idx="${idx}">✕</button>
+          </div>`;
+        }
+      });
+
+      html += `</div></div>`;
+      wrap.innerHTML = html;
+
+      wrap.querySelectorAll('.prev-remove').forEach(btn => {
+        btn.addEventListener('click', () => onRemove(parseInt(btn.dataset.idx)));
+      });
+    }
+
+    // ── Modal nuovo post ──────────────────────────────────────────────────
+    const postItems = [];
+
+    function postAddFile(file, type) {
+      if (postItems.length >= MAX_FILES) { alert(`Massimo ${MAX_FILES} allegati per post.`); return; }
+      postItems.push({ file, type, name: file.name || type, previewUrl: URL.createObjectURL(file) });
+      redrawPostPreview();
+    }
+
+    function postRemoveFile(idx) {
+      URL.revokeObjectURL(postItems[idx].previewUrl);
+      postItems.splice(idx, 1);
+      redrawPostPreview();
+    }
+
+    function postClear() {
+      postItems.forEach(i => URL.revokeObjectURL(i.previewUrl));
+      postItems.length = 0;
+      redrawPostPreview();
+    }
+
+    function redrawPostPreview() {
+      renderPreview(postItems, 'post-preview', postRemoveFile);
+    }
+
+    let postRecorder = null, postAudioChunks = [], postRecording = false;
+
+    const fab      = document.getElementById('fab-new-post');
+    const backdrop = document.getElementById('modal-backdrop');
+
+    fab.addEventListener('click', () => backdrop.classList.add('open'));
+    document.getElementById('modal-close').addEventListener('click', closePostModal);
+    backdrop.addEventListener('click', e => { if (e.target === backdrop) closePostModal(); });
+
+    function closePostModal() {
+      backdrop.classList.remove('open');
+      document.getElementById('post-text').value = '';
+      postClear();
+      if (postRecording) stopPostRec();
+    }
+
+    document.getElementById('input-foto').addEventListener('change', e => {
+      Array.from(e.target.files).forEach(f => postAddFile(f, 'image'));
+      e.target.value = '';
+    });
+    document.getElementById('input-foto-cam').addEventListener('change', e => {
+      Array.from(e.target.files).forEach(f => postAddFile(f, 'image'));
+      e.target.value = '';
+    });
+    document.getElementById('input-video').addEventListener('change', e => {
+      Array.from(e.target.files).forEach(f => postAddFile(f, 'video'));
+      e.target.value = '';
+    });
+    document.getElementById('input-video-cam').addEventListener('change', e => {
+      Array.from(e.target.files).forEach(f => postAddFile(f, 'video'));
+      e.target.value = '';
+    });
+    document.getElementById('input-audio-file').addEventListener('change', e => {
+      Array.from(e.target.files).forEach(f => postAddFile(f, 'audio'));
+      e.target.value = '';
+    });
+
+    const btnAudio = document.getElementById('btn-audio');
+    btnAudio.addEventListener('click', async () => {
+      if (postRecording) { stopPostRec(); return; }
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        postAudioChunks = [];
+        postRecorder = new MediaRecorder(stream);
+        postRecorder.ondataavailable = e => postAudioChunks.push(e.data);
+        postRecorder.onstop = () => {
+          const blob = new Blob(postAudioChunks, { type: 'audio/webm' });
+          postAddFile(new File([blob], `rec_${Date.now()}.webm`, { type: 'audio/webm' }), 'audio');
+          stream.getTracks().forEach(t => t.stop());
+        };
+        postRecorder.start();
+        postRecording = true;
+        btnAudio.textContent = '⏹️ Stop'; btnAudio.classList.add('recording');
+      } catch(err) { alert('Microfono non disponibile: ' + err.message); }
+    });
+
+    function stopPostRec() {
+      if (postRecorder && postRecording) {
+        postRecorder.stop(); postRecording = false;
+        btnAudio.textContent = '🎙️ Registra'; btnAudio.classList.remove('recording');
+      }
+    }
+
+    document.getElementById('btn-pubblica').addEventListener('click', async () => {
+      if (!currentUser) return;
+      const text = document.getElementById('post-text').value.trim();
+      if (!text && postItems.length === 0) { alert('Scrivi qualcosa o aggiungi un allegato!'); return; }
+
+      const btn = document.getElementById('btn-pubblica');
+      btn.disabled = true; btn.textContent = 'Pubblicazione…';
+
+      try {
+        const itemsToUpload = [...postItems];
+        const barEl  = document.getElementById('upload-bar');
+        const progEl = document.getElementById('upload-progress');
+        const media  = itemsToUpload.length ? await uploadAll(itemsToUpload, barEl, progEl) : [];
+
+        const { nome, foto } = await getDatiAutore();
+
+        await addDoc(collection(db, COLL), {
+          authorId:      currentUser.uid,
+          authorName:    nome,
+          authorPhoto:   foto,
+          text:          text,
+          media:         media,
+          timestamp:     serverTimestamp(),
+          reactions:     {},
+          commentsCount: 0,
+        });
+        closePostModal();
+      } catch(err) {
+        alert('Errore: ' + err.message);
+      } finally {
+        btn.disabled = false; btn.textContent = 'Pubblica';
+      }
+    });
+
+    // ── Feed ──────────────────────────────────────────────────────────────
+    function loadFeed() {
+      const feedEl = document.getElementById('feed');
+      feedEl.innerHTML = '<div class="spinner"></div>';
+      const q = query(collection(db, COLL), orderBy('timestamp', 'desc'), limit(40));
+      onSnapshot(q, snap => {
+        feedEl.innerHTML = '';
+        if (snap.empty) { feedEl.innerHTML = '<p class="empty-msg">Ancora nessuna annotazione. Inizia il diario! ⚓</p>'; return; }
+        snap.forEach(d => feedEl.appendChild(buildPostCard(d.id, d.data())));
+      }, err => { feedEl.innerHTML = '<p class="empty-msg">Errore caricamento.</p>'; console.error(err); });
+    }
+
+    function fmtDate(ts) {
+      if (!ts?.toDate) return '';
+      const d = ts.toDate();
+      return d.toLocaleDateString('it-IT', { day:'numeric', month:'long' }) +
+             ' · ' + d.toLocaleTimeString('it-IT', { hour:'2-digit', minute:'2-digit' });
+    }
+
+    function buildPostCard(postId, data) {
+      const card = document.createElement('div');
+      card.className = 'post-card';
+      card.dataset.postId = postId;
+
+      const avatar = data.authorPhoto
+        ? `<div class="post-avatar"><img src="${esc(data.authorPhoto)}" alt=""></div>`
+        : `<div class="post-avatar">🧒</div>`;
+
+      const mediaHtml = renderMediaGrid(normalizeMedia(data));
+
+      const reactHtml = EMOJIS.map(emoji => {
+        const cnt = (data.reactions || {})[emoji] || 0;
+        return `<button class="reaction-btn" data-emoji="${emoji}" onclick="toggleReaction('${postId}','${emoji}',this)">${emoji}${cnt > 0 ? ' <span>' + cnt + '</span>' : ''}</button>`;
+      }).join('');
+
+      const canDel = isAdmin || (currentUser && currentUser.uid === data.authorId);
+      const commCnt = data.commentsCount || 0;
+
+      card.innerHTML = `
+        <div class="post-header">
+          ${avatar}
+          <div class="post-meta">
+            <div class="post-autore" data-uid="${esc(data.authorId || '')}">${esc(data.authorName && data.authorName !== 'Anonimo' ? data.authorName : '')}</div>
+            <div class="post-data">${fmtDate(data.timestamp)}</div>
+          </div>
+          ${canDel ? `<div class="post-options-wrap"><button class="post-options-btn" onclick="togglePostMenu(event,'${postId}')">⋮</button><div class="post-options-menu" id="pmenu-${postId}"><button onclick="openEditMediaRobinson('${postId}',this)">✏️ Modifica media</button><button class="opt-delete" onclick="closePostMenu('${postId}');deletePost('${postId}',this)">🗑️ Elimina</button></div></div>` : ''}
+        </div>
+        ${data.text ? `<div class="post-text">${esc(data.text)}</div>` : ''}
+        ${mediaHtml}
+        <div class="post-reactions">${reactHtml}</div>
+        <div class="post-footer">
+          <button class="btn-comments" onclick="toggleComments('${postId}')">💬 ${commCnt > 0 ? commCnt + ' commenti' : 'Commenta'}</button>
+        </div>
+        <div class="comments-section" id="cs-${postId}"></div>`;
+
+      const nomeEl = card.querySelector('.post-autore');
+      if (nomeEl && !nomeEl.textContent.trim() && data.authorId) {
+        risolviNome(data.authorId).then(n => { if (n) nomeEl.textContent = n; });
+      }
+
+      if (currentUser) {
+        applyMyPostReactions(postId, card);
+      }
+
+      card._postData = data;
+      attachPostReactions(card, db, COLL, postId);
+      return card;
+    }
+
+    async function applyMyPostReactions(postId, card) {
+      if (!myPostReactions.has(postId)) {
+        myPostReactions.set(postId, new Set());
+        try {
+          const uSnap = await getDoc(doc(db, COLL, postId, 'user_reactions', currentUser.uid));
+          myPostReactions.set(postId, new Set(uSnap.exists() ? (uSnap.data().emojis || []) : []));
+        } catch(_) {}
+      }
+      const mine = myPostReactions.get(postId);
+      card.querySelectorAll('.reaction-btn').forEach(btn => {
+        if (mine.has(btn.dataset.emoji)) btn.classList.add('active');
+        else btn.classList.remove('active');
+      });
+    }
+
+    // ── Reactions ─────────────────────────────────────────────────────────
+    window.toggleReaction = async (postId, emoji, btn) => {
+      if (!currentUser) { alert('Fai il login per reagire!'); return; }
+      const pRef = doc(db, COLL, postId);
+      const uRef = doc(db, COLL, postId, 'user_reactions', currentUser.uid);
+
+      const wasActive = btn.classList.contains('active');
+      btn.classList.toggle('active');
+      adjCount(btn, wasActive ? -1 : 1);
+
+      if (!myPostReactions.has(postId)) myPostReactions.set(postId, new Set());
+      const mine = myPostReactions.get(postId);
+      wasActive ? mine.delete(emoji) : mine.add(emoji);
+
+      try {
+        const nomeAutore = currentUserData?.nome || currentUser.displayName || 'Anonimo';
+        invalidateRTT(`${COLL}/${postId}/user_reactions`);
+        if (wasActive) {
+          await updateDoc(pRef, { [`reactions.${emoji}`]: increment(-1) });
+          await updateDoc(uRef, { emojis: arrayRemove(emoji) });
+        } else {
+          await updateDoc(pRef, { [`reactions.${emoji}`]: increment(1) });
+          const uSnap = await getDoc(uRef);
+          uSnap.exists()
+            ? await updateDoc(uRef, { emojis: arrayUnion(emoji), nomeAutore })
+            : await setDoc(uRef, { emojis: [emoji], nomeAutore });
+        }
+      } catch(err) {
+        btn.classList.toggle('active');
+        adjCount(btn, wasActive ? 1 : -1);
+        wasActive ? mine.add(emoji) : mine.delete(emoji);
+        console.error('toggleReaction:', err.message);
+      }
+    };
+
+    function adjCount(btn, delta) {
+      let span = btn.querySelector('span');
+      if (!span) { span = document.createElement('span'); btn.append(' ', span); span.textContent = '0'; }
+      const next = parseInt(span.textContent || '0') + delta;
+      if (next <= 0) {
+        const prev = span.previousSibling;
+        if (prev?.nodeType === 3) btn.removeChild(prev);
+        btn.removeChild(span);
+      } else {
+        span.textContent = next;
+      }
+    }
+
+    // ── Delete post ───────────────────────────────────────────────────────
+    window.deletePost = async (postId, btn) => {
+      if (!confirm('Eliminare questa annotazione?')) return;
+      try { await deleteDoc(doc(db, COLL, postId)); btn.closest('.post-card')?.remove(); }
+      catch(err) { alert(err.message); }
+    };
+
+    // ── Post options menu ─────────────────────────────────────────────────
+    document.addEventListener('click', () => {
+      document.querySelectorAll('.post-options-menu.open').forEach(m => m.classList.remove('open'));
+    });
+    window.togglePostMenu = (e, postId) => {
+      e.stopPropagation();
+      const menu = document.getElementById(`pmenu-${postId}`);
+      if (!menu) return;
+      const wasOpen = menu.classList.contains('open');
+      document.querySelectorAll('.post-options-menu.open').forEach(m => m.classList.remove('open'));
+      if (!wasOpen) menu.classList.add('open');
+    };
+    window.closePostMenu = postId => {
+      document.getElementById(`pmenu-${postId}`)?.classList.remove('open');
+    };
+
+    // ── Edit media (robinson) ─────────────────────────────────────────────
+    window.openEditMediaRobinson = (postId, triggerBtn) => {
+      closePostMenu(postId);
+      const cardEl = triggerBtn.closest('.post-card');
+      if (!cardEl) return;
+      cardEl.querySelector('.edit-media-panel')?.remove();
+
+      const snap = cardEl._postData || {};
+      let mediaArr = normalizeMedia(snap).map(m => ({ ...m }));
+      let newFiles  = [];
+
+      const panel = document.createElement('div');
+      panel.className = 'edit-media-panel';
+
+      function renderPanel() {
+        panel.innerHTML = '';
+        const h4 = document.createElement('h4'); h4.textContent = '✏️ Modifica media'; panel.appendChild(h4);
+        const existing = document.createElement('div'); existing.className = 'edit-media-existing';
+
+        function makeItem(previewEl, onRemove) {
+          const item = document.createElement('div'); item.className = 'edit-media-item';
+          item.appendChild(previewEl);
+          const rm = document.createElement('button'); rm.className = 'remove-media-btn'; rm.textContent = '✕';
+          rm.addEventListener('click', onRemove); item.appendChild(rm); return item;
+        }
+
+        mediaArr.forEach((m, i) => {
+          let prev;
+          if (m.type === 'video') { prev = document.createElement('video'); prev.src = m.url; prev.muted = true; }
+          else if (m.type === 'audio') {
+            prev = document.createElement('div');
+            prev.style.cssText = 'width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#f0f4ff;border-radius:8px;font-size:2rem;'; prev.textContent = '🎵';
+          } else { prev = document.createElement('img'); prev.src = m.url; }
+          existing.appendChild(makeItem(prev, () => { mediaArr.splice(i, 1); renderPanel(); }));
+        });
+        newFiles.forEach((nf, i) => {
+          let prev;
+          if (nf.type === 'video') { prev = document.createElement('video'); prev.src = URL.createObjectURL(nf.file); prev.muted = true; }
+          else { prev = document.createElement('img'); prev.src = URL.createObjectURL(nf.file); }
+          existing.appendChild(makeItem(prev, () => { newFiles.splice(i, 1); renderPanel(); }));
+        });
+        panel.appendChild(existing);
+
+        const addBtns = document.createElement('div'); addBtns.className = 'edit-media-add-btns';
+        function addFileBtn(label, accept, type, capture) {
+          const btn = document.createElement('button'); btn.textContent = label;
+          const inp = document.createElement('input'); inp.type = 'file'; inp.accept = accept; inp.style.display = 'none';
+          if (capture) inp.capture = capture;
+          inp.addEventListener('change', () => { if (inp.files[0]) { newFiles.push({ file: inp.files[0], type, name: inp.files[0].name }); renderPanel(); } });
+          btn.addEventListener('click', () => inp.click());
+          addBtns.appendChild(btn); addBtns.appendChild(inp);
+        }
+        addFileBtn('🖼️ Foto',    'image/*', 'image', null);
+        addFileBtn('📹 Video',   'video/*', 'video', null);
+        addFileBtn('📷 Scatta',  'image/*', 'image', 'environment');
+        addFileBtn('🎬 Registra','video/*', 'video', 'environment');
+        panel.appendChild(addBtns);
+
+        const btnRow = document.createElement('div'); btnRow.style.cssText = 'display:flex;gap:8px;';
+        const saveBtn = document.createElement('button'); saveBtn.className = 'edit-media-save-btn'; saveBtn.textContent = 'Salva';
+        saveBtn.addEventListener('click', () => saveEdit(saveBtn));
+        const cancelBtn = document.createElement('button'); cancelBtn.className = 'edit-media-cancel-btn'; cancelBtn.textContent = 'Annulla';
+        cancelBtn.addEventListener('click', () => panel.remove());
+        btnRow.appendChild(saveBtn); btnRow.appendChild(cancelBtn); panel.appendChild(btnRow);
+      }
+
+      async function saveEdit(saveBtn) {
+        saveBtn.disabled = true; saveBtn.textContent = 'Salvataggio…';
+        try {
+          const uploaded = await Promise.all(newFiles.map(nf =>
+            uploadOne(nf.file, nf.type).then(url => ({ url, type: nf.type, name: nf.name }))
+          ));
+          const finalMedia = [...mediaArr, ...uploaded];
+          await updateDoc(doc(db, COLL, postId), { media: finalMedia, mediaUrl: null, mediaType: null });
+          panel.remove();
+        } catch(e) {
+          saveBtn.disabled = false; saveBtn.textContent = 'Salva';
+          alert('Errore: ' + e.message);
+        }
+      }
+
+      renderPanel();
+      const mediaGrid = cardEl.querySelector('.media-grid, .audio-list');
+      if (mediaGrid) mediaGrid.after(panel);
+      else { const postText = cardEl.querySelector('.post-text'); (postText || cardEl).after(panel); }
+    };
+
+    // ── Comments ──────────────────────────────────────────────────────────
+    const loadedCs = new Set();
+
+    window.toggleComments = async postId => {
+      const sec = document.getElementById(`cs-${postId}`);
+      if (!sec) return;
+      const open = sec.classList.toggle('open');
+      if (open && !loadedCs.has(postId)) { loadedCs.add(postId); loadComments(postId, sec); }
+    };
+
+    function loadComments(postId, sec) {
+      sec.innerHTML = '<div style="color:#aaa;font-size:0.82rem;padding:4px 0">Caricamento…</div>';
+      const q = query(collection(db, COLL, postId, 'comments'), orderBy('timestamp', 'asc'));
+      onSnapshot(q, snap => {
+        const list = document.createElement('div');
+        list.className = 'comment-list';
+        snap.forEach(d => list.appendChild(buildCommentEl(postId, d.id, d.data())));
+        const existing = sec.querySelector('.comment-input-wrap');
+        sec.innerHTML = '';
+        sec.appendChild(list);
+        sec.appendChild(existing || buildCommentInput(postId));
+      }, err => { sec.innerHTML = `<p style="color:#c0392b;font-size:0.82rem">${err.message}</p>`; });
+    }
+
+    function buildCommentEl(postId, commentId, data) {
+      const el = document.createElement('div');
+      el.className = 'comment-item';
+      const avatar = data.authorPhoto
+        ? `<div class="comment-avatar"><img src="${esc(data.authorPhoto)}" alt=""></div>`
+        : `<div class="comment-avatar">🧒</div>`;
+      const mediaHtml = renderCommentMedia(data);
+      const crKey = `${postId}:${commentId}`;
+      const myCR  = myCommentReactions.get(crKey) || new Set();
+      const reactHtml = EMOJIS.map(emoji => {
+        const cnt    = (data.reactions || {})[emoji] || 0;
+        const active = myCR.has(emoji) ? ' active' : '';
+        return `<button class="comment-reaction-btn${active}" data-emoji="${emoji}" data-cnt="${cnt}" onclick="toggleCR('${postId}','${commentId}','${emoji}',this)">${emoji}${cnt > 0 ? ' ' + cnt : ''}</button>`;
+      }).join('');
+      const canDel = isAdmin || (currentUser && currentUser.uid === data.authorId);
+      el.innerHTML = `${avatar}
+        <div class="comment-bubble">
+          <div class="comment-autore">${esc(data.authorName || 'Anonimo')}</div>
+          ${data.text ? `<div class="comment-text">${data.tono ? `<span class="tono-tag">${data.tono}</span>` : ''}${esc(data.text)}</div>` : ''}
+          ${mediaHtml}
+          <div class="comment-reactions">${reactHtml}</div>
+          <div class="comment-data">${fmtDate(data.timestamp)}${canDel ? ` <button onclick="deleteComment('${postId}','${commentId}',this)" style="margin-left:8px;background:none;border:none;cursor:pointer;font-size:0.75rem;color:#ccc;">✕</button>` : ''}</div>
+        </div>`;
+      return el;
+    }
+
+    window.toggleCR = async (postId, commentId, emoji, btn) => {
+      if (!currentUser) { alert('Fai il login per reagire!'); return; }
+      const ref    = doc(db, COLL, postId, 'comments', commentId);
+      const crKey  = `${postId}:${commentId}`;
+      if (!myCommentReactions.has(crKey)) myCommentReactions.set(crKey, new Set());
+      const myCR   = myCommentReactions.get(crKey);
+
+      const wasActive = btn.classList.contains('active');
+      const delta     = wasActive ? -1 : 1;
+      const cur       = parseInt(btn.dataset.cnt || '0');
+      const next      = Math.max(0, cur + delta);
+
+      btn.classList.toggle('active');
+      btn.dataset.cnt = next;
+      btn.textContent = emoji + (next > 0 ? ' ' + next : '');
+      wasActive ? myCR.delete(emoji) : myCR.add(emoji);
+
+      try {
+        await updateDoc(ref, { [`reactions.${emoji}`]: increment(delta) });
+      } catch(err) {
+        btn.classList.toggle('active');
+        btn.dataset.cnt = cur;
+        btn.textContent = emoji + (cur > 0 ? ' ' + cur : '');
+        wasActive ? myCR.add(emoji) : myCR.delete(emoji);
+        console.error('toggleCR:', err.message);
+      }
+    };
+
+    window.deleteComment = async (postId, commentId, btn) => {
+      if (!confirm('Eliminare commento?')) return;
+      try {
+        await deleteDoc(doc(db, COLL, postId, 'comments', commentId));
+        await updateDoc(doc(db, COLL, postId), { commentsCount: increment(-1) });
+        btn.closest('.comment-item')?.remove();
+      } catch(err) { alert(err.message); }
+    };
+
+    // ── Comment input ─────────────────────────────────────────────────────
+    function buildCommentInput(postId) {
+      const cItems = [];
+      const previewId = `cprev-${postId}-${Date.now()}`;
+
+      let cRec = null, cAudioChunks = [], cRecording = false;
+
+      const wrap = document.createElement('div');
+      wrap.className = 'comment-input-wrap';
+
+      wrap.innerHTML = `
+        <div class="comment-input-inner">
+          <textarea class="comment-textarea" placeholder="Scrivi un commento…" rows="1"></textarea>
+          <div class="comment-media-btns">
+            <label class="comment-media-btn">📷<input type="file" accept="image/*" multiple style="display:none" class="ci-foto"></label>
+            <label class="comment-media-btn btn-camera">📸<input type="file" accept="image/*" capture="environment" style="display:none" class="ci-foto-cam"></label>
+            <label class="comment-media-btn">🎬<input type="file" accept="video/*" multiple style="display:none" class="ci-vid"></label>
+            <label class="comment-media-btn btn-camera">🎥<input type="file" accept="video/*" capture="environment" style="display:none" class="ci-vid-cam"></label>
+            <button class="comment-media-btn ci-rec">🎙️</button>
+            <label class="comment-media-btn">🎵<input type="file" accept="audio/*,.mp3,.m4a,.wav,.ogg,.aac,.flac,.weba,.opus" multiple style="display:none" class="ci-aud"></label>
+          </div>
+          <div id="${previewId}"></div>
+        </div>
+        <button class="comment-send-btn">Invia</button>`;
+
+      const textarea = wrap.querySelector('.comment-textarea');
+      const recBtn   = wrap.querySelector('.ci-rec');
+      const sendBtn  = wrap.querySelector('.comment-send-btn');
+      const inner    = wrap.querySelector('.comment-input-inner');
+
+      let selectedTono = '';
+      const TONI_P = ['😊','😂','😢','😡','😍','🤔','😎','😳','🥺','😤','🙏','❤️'];
+      const picker = document.createElement('div');
+      picker.className = 'tono-picker';
+      TONI_P.forEach(t => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'tono-btn';
+        btn.textContent = t;
+        btn.addEventListener('click', () => {
+          const same = btn.classList.contains('selected');
+          picker.querySelectorAll('.tono-btn').forEach(b => b.classList.remove('selected'));
+          selectedTono = same ? '' : t;
+          if (!same) btn.classList.add('selected');
+        });
+        picker.appendChild(btn);
+      });
+      inner.insertBefore(picker, inner.firstChild);
+
+      textarea.addEventListener('input', () => { textarea.style.height = 'auto'; textarea.style.height = textarea.scrollHeight + 'px'; });
+
+      function cAddFile(file, type) {
+        if (cItems.length >= MAX_FILES) { alert(`Massimo ${MAX_FILES} allegati.`); return; }
+        cItems.push({ file, type, name: file.name || type, previewUrl: URL.createObjectURL(file) });
+        cRedraw();
+      }
+
+      function cRemoveFile(idx) {
+        URL.revokeObjectURL(cItems[idx].previewUrl);
+        cItems.splice(idx, 1);
+        cRedraw();
+      }
+
+      function cRedraw() { renderPreview(cItems, previewId, cRemoveFile); }
+
+      wrap.querySelector('.ci-foto').addEventListener('change',     e => { Array.from(e.target.files).forEach(f => cAddFile(f, 'image')); e.target.value = ''; });
+      wrap.querySelector('.ci-foto-cam').addEventListener('change', e => { Array.from(e.target.files).forEach(f => cAddFile(f, 'image')); e.target.value = ''; });
+      wrap.querySelector('.ci-vid').addEventListener('change',      e => { Array.from(e.target.files).forEach(f => cAddFile(f, 'video')); e.target.value = ''; });
+      wrap.querySelector('.ci-vid-cam').addEventListener('change',  e => { Array.from(e.target.files).forEach(f => cAddFile(f, 'video')); e.target.value = ''; });
+      wrap.querySelector('.ci-aud').addEventListener('change',      e => { Array.from(e.target.files).forEach(f => cAddFile(f, 'audio')); e.target.value = ''; });
+
+      recBtn.addEventListener('click', async () => {
+        if (cRecording) {
+          cRec.stop(); cRecording = false;
+          recBtn.textContent = '🎙️'; recBtn.classList.remove('recording'); return;
+        }
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          cAudioChunks = [];
+          cRec = new MediaRecorder(stream);
+          cRec.ondataavailable = e => cAudioChunks.push(e.data);
+          cRec.onstop = () => {
+            const blob = new Blob(cAudioChunks, { type: 'audio/webm' });
+            cAddFile(new File([blob], `rec_${Date.now()}.webm`, { type: 'audio/webm' }), 'audio');
+            stream.getTracks().forEach(t => t.stop());
+          };
+          cRec.start(); cRecording = true;
+          recBtn.textContent = '⏹️'; recBtn.classList.add('recording');
+        } catch(err) { alert('Microfono non disponibile'); }
+      });
+
+      sendBtn.addEventListener('click', async () => {
+        if (!currentUser) { alert('Fai il login!'); return; }
+        const text = textarea.value.trim();
+        if (!text && cItems.length === 0) return;
+
+        const tono = selectedTono;
+        selectedTono = '';
+        wrap.querySelectorAll('.tono-btn').forEach(b => b.classList.remove('selected'));
+
+        sendBtn.disabled = true; sendBtn.textContent = '…';
+        try {
+          const snapshot = [...cItems];
+          const media = snapshot.length
+            ? await Promise.all(snapshot.map(item => uploadOne(item.file, item.type).then(url => ({ url, type: item.type, name: item.name }))))
+            : [];
+
+          const { nome, foto } = await getDatiAutore();
+
+          await addDoc(collection(db, COLL, postId, 'comments'), {
+            authorId: currentUser.uid, authorName: nome, authorPhoto: foto,
+            text, tono, media,
+            timestamp: serverTimestamp(), reactions: {},
+          });
+          await updateDoc(doc(db, COLL, postId), { commentsCount: increment(1) });
+
+          textarea.value = ''; textarea.style.height = 'auto';
+          cItems.forEach(i => URL.revokeObjectURL(i.previewUrl));
+          cItems.length = 0; cRedraw();
+
+          const footerBtn = wrap.closest('.post-card')?.querySelector('.btn-comments');
+          if (footerBtn) {
+            const cur = parseInt(footerBtn.textContent.match(/\d+/)?.[0] || '0');
+            footerBtn.textContent = `💬 ${cur + 1} commenti`;
+          }
+        } catch(err) { alert('Errore: ' + err.message); }
+        finally { sendBtn.disabled = false; sendBtn.textContent = 'Invia'; }
+      });
+
+      return wrap;
+    }
+
+    function esc(s) {
+      return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+  </script>
+</body>
+</html>
