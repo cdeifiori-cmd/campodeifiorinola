@@ -3,165 +3,96 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Appunti di Viaggio – Robinson</title>
-  <meta name="theme-color" content="#1a3a5c">
+  <title>Appunti – Robinson</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/robinson.css">
-  <style>
-    body { padding-bottom: 70px; }
-
-    .card-appunto {
-      background: var(--post-bg);
-      border-left: 5px solid var(--navy);
-      border-radius: 4px 12px 12px 4px;
-      padding: 12px 14px;
-      text-decoration: none;
-      color: var(--inchiostro);
-      display: block;
-      box-shadow: 2px 2px 10px rgba(26,58,92,0.08);
-      transition: transform 0.12s;
-    }
-    .card-appunto:hover { transform: translateY(-2px); }
-
-    .appunto-header {
-      display: flex; align-items: center; gap: 10px; margin-bottom: 6px;
-    }
-    .appunto-avatar {
-      width: 36px; height: 36px; border-radius: 50%;
-      overflow: hidden; flex-shrink: 0;
-      background: var(--oro-light); border: 2px solid var(--oro);
-      display: flex; align-items: center; justify-content: center; font-size: 1.1rem;
-    }
-    .appunto-avatar img { width: 100%; height: 100%; object-fit: cover; }
-    .appunto-meta { flex: 1; min-width: 0; }
-    .appunto-autore { font-size: 0.88rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .appunto-data   { font-size: 0.7rem; color: var(--muted); margin-top: 1px; font-style: italic; }
-    .appunto-testo  { font-size: 0.9rem; color: #555; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-  </style>
 </head>
 <body>
 
-  <header class="top-header">
-    <div class="header-titles">
-      <div class="header-title-main">Appunti di Viaggio</div>
-      <div class="header-title-sub">tutto quello che succede sull'isola</div>
-    </div>
-    <div id="nav-auth-slot"></div>
-  </header>
+<header class="top-header">
+  <div>
+    <div class="header-title-main">📔 Gli Appunti</div>
+    <div class="header-title-sub">tutto quello che è stato scritto</div>
+  </div>
+  <div id="nav-auth-slot"></div>
+</header>
 
-  <div id="feed" class="feed"><div class="spinner"></div></div>
+<div id="lista" style="max-width:640px;margin:0 auto;padding:12px 8px 80px;">
+  <div class="spinner"></div>
+</div>
 
-  <nav class="bottom-nav">
-    <a href="index.html"      class="nav-item"><span class="nav-icon">🏝️</span>Robinson</a>
-    <a href="spiaggia.html"   class="nav-item"><span class="nav-icon">🏖️</span>Spiaggia</a>
-    <a href="naufraghi.html"  class="nav-item"><span class="nav-icon">👥</span>Naufraghi</a>
-    <a href="ciurma.html"     class="nav-item"><span class="nav-icon">⚓</span>Ciurma</a>
-    <a href="appunti.html"    class="nav-item active"><span class="nav-icon">📓</span>Appunti</a>
-  </nav>
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item"><span class="nav-icon">🏝️</span><span>Home</span></a>
+  <a href="spiaggia.html" class="nav-item"><span class="nav-icon">🏖️</span><span>Spiaggia</span></a>
+  <a href="naufraghi.html" class="nav-item"><span class="nav-icon">👤</span><span>Naufraghi</span></a>
+  <a href="ciurma.html" class="nav-item"><span class="nav-icon">⚓</span><span>Ciurma</span></a>
+  <a href="appunti.html" class="nav-item active"><span class="nav-icon">📔</span><span>Appunti</span></a>
+</nav>
 
-  <script type="module">
-    import { db } from './js/robinson-firebase.js';
-    import { setupNavAuth } from './js/robinson-nav.js';
-    import { esc, fmtDate, risolviNome } from './js/robinson-utils.js';
-    import {
-      collection, getDocs, query, orderBy, limit, collectionGroup
-    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+<script type="module">
+import { db, auth } from './js/robinson-firebase.js';
+import { setupNavAuth } from './js/robinson-nav.js';
+import { esc, fmtDate, risolviNome, renderMediaGrid, normalizeMedia } from './js/robinson-utils.js';
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { collection, collectionGroup, getDocs, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-    setupNavAuth('nav-auth-slot');
+setupNavAuth('nav-auth-slot');
 
-    const feed = document.getElementById('feed');
+onAuthStateChanged(auth, async user => {
+  if (!user) { location.href = 'https://campodeifiori.org/login.html'; return; }
+  await loadAppunti();
+});
 
-    function msOf(ts) { return ts?.toMillis ? ts.toMillis() : 0; }
+async function loadAppunti() {
+  const lista = document.getElementById('lista');
+  try {
+    // 1) Post spiaggia
+    const spSnap = await getDocs(query(collection(db, 'robinson_spiaggia'), orderBy('timestamp', 'desc'), limit(40)));
+    const spiaggiaPosts = spSnap.docs.map(d => ({
+      id: d.id, fonte: 'spiaggia', badge: '🏖️', badgeClass: 'badge-navy', ...d.data()
+    }));
 
-    function trunca(s, n=120) {
-      if (!s) return '';
-      return s.length > n ? s.slice(0, n) + '…' : s;
+    // 2) Diari (collectionGroup 'posts' sotto robinson_diari)
+    const diariSnap = await getDocs(query(collectionGroup(db, 'posts'), orderBy('timestamp', 'desc'), limit(40)));
+    const diariPosts = diariSnap.docs
+      .filter(d => d.ref.path.startsWith('robinson_diari/'))
+      .map(d => ({
+        id: d.id, fonte: 'diario', badge: '📔', badgeClass: 'badge-oro', ...d.data()
+      }));
+
+    // Merge e sort per timestamp
+    const tutti = [...spiaggiaPosts, ...diariPosts].sort((a, b) => {
+      const ta = a.timestamp?.toMillis?.() || 0;
+      const tb = b.timestamp?.toMillis?.() || 0;
+      return tb - ta;
+    }).slice(0, 80);
+
+    if (!tutti.length) {
+      lista.innerHTML = '<div class="empty-msg">📔 Nessun appunto ancora.</div>';
+      return;
     }
 
-    async function loadFeed() {
-      const eventi = [];
-
-      // 1. Post spiaggia
-      try {
-        const snap = await getDocs(query(collection(db, 'robinson_spiaggia'), orderBy('timestamp', 'desc'), limit(50)));
-        snap.forEach(d => {
-          const data = d.data();
-          const hasMedia = Array.isArray(data.media) && data.media.length > 0;
-          eventi.push({
-            tipo: 'spiaggia',
-            uid: data.authorId,
-            nome: data.authorName,
-            foto: data.authorPhoto,
-            testo: data.text || (hasMedia ? (data.media[0].type === 'image' ? '📷 Foto' : data.media[0].type === 'video' ? '🎥 Video' : '🎵 Audio') : ''),
-            ts: data.timestamp,
-            link: 'spiaggia.html',
-          });
-        });
-      } catch(_) {}
-
-      // 2. Post diari naufraghi (collectionGroup)
-      try {
-        const snap = await getDocs(query(collectionGroup(db, 'posts'), orderBy('timestamp', 'desc'), limit(50)));
-        snap.forEach(d => {
-          // filtra solo i documenti dentro robinson_diari/*/posts
-          const pathParts = d.ref.path.split('/');
-          if (pathParts[0] !== 'robinson_diari') return;
-          const uid = pathParts[1];
-          const data = d.data();
-          const hasMedia = Array.isArray(data.media) && data.media.length > 0;
-          eventi.push({
-            tipo: 'diario',
-            uid: data.authorId || uid,
-            nome: data.authorName,
-            foto: data.authorPhoto,
-            testo: data.text || (hasMedia ? '📷 Contenuto multimediale' : ''),
-            ts: data.timestamp,
-            link: `naufrago.html?uid=${uid}`,
-            diariUid: uid,
-          });
-        });
-      } catch(_) {}
-
-      // Ordina per data decrescente
-      eventi.sort((a, b) => msOf(b.ts) - msOf(a.ts));
-
-      feed.innerHTML = '';
-      if (!eventi.length) {
-        feed.innerHTML = '<p class="empty-msg">Nessun appunto ancora. L\'isola è silenziosa… 🏝️</p>';
-        return;
-      }
-
-      for (const e of eventi.slice(0, 80)) {
-        // Risolvi nome se mancante
-        let nome = (e.nome && e.nome !== 'Anonimo') ? e.nome : '';
-        if (!nome && e.uid) nome = await risolviNome(e.uid);
-        if (!nome) nome = 'Naufrago';
-
-        const avatar = e.foto
-          ? `<div class="appunto-avatar"><img src="${esc(e.foto)}" alt="${esc(nome)}"></div>`
-          : `<div class="appunto-avatar">${e.tipo === 'spiaggia' ? '🏖️' : '📔'}</div>`;
-
-        const badge = e.tipo === 'spiaggia'
-          ? `<span class="badge-sezione badge-spiaggia">🏖️ Spiaggia</span>`
-          : `<span class="badge-sezione badge-diario">📔 Diario</span>`;
-
-        const card = document.createElement('a');
-        card.className = 'card-appunto';
-        card.href = e.link;
-        card.innerHTML = `
-          <div class="appunto-header">
-            ${avatar}
-            <div class="appunto-meta">
-              <div class="appunto-autore">${esc(nome)}</div>
-              <div class="appunto-data">${fmtDate(e.ts)}</div>
-            </div>
-            ${badge}
-          </div>
-          <div class="appunto-testo">${esc(trunca(e.testo))}</div>`;
-        feed.appendChild(card);
-      }
+    lista.innerHTML = '';
+    for (const p of tutti) {
+      const nome = p.authorName || await risolviNome(p.authorId) || 'Anonimo';
+      const media = normalizeMedia(p);
+      const testo = p.text || p.titolo || p.approdo || '';
+      const div = document.createElement('div');
+      div.className = 'appunto-card';
+      div.innerHTML = `
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+          <span class="badge ${esc(p.badgeClass)}">${p.badge} ${p.fonte === 'spiaggia' ? 'Spiaggia' : 'Diario'}</span>
+          <span style="font-size:0.75rem;font-weight:600;color:var(--navy);">${esc(nome)}</span>
+          <span style="font-size:0.68rem;color:var(--muted);margin-left:auto;">${fmtDate(p.timestamp)}</span>
+        </div>
+        ${testo ? `<div style="font-size:0.88rem;line-height:1.55;color:var(--inchiostro);">${esc(testo.slice(0, 200))}${testo.length > 200 ? '…' : ''}</div>` : ''}
+        ${renderMediaGrid(media)}`;
+      lista.appendChild(div);
     }
-
-    loadFeed();
-  </script>
+  } catch(e) {
+    lista.innerHTML = `<div style="text-align:center;padding:20px;color:var(--rosso);">Errore: ${esc(e.message)}</div>`;
+  }
+}
+</script>
 </body>
 </html>

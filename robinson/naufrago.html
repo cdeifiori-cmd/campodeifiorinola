@@ -3,433 +3,890 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Naufrago – Robinson</title>
-  <meta name="theme-color" content="#1a3a5c">
+  <title>Il Naufrago – Robinson</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/robinson.css">
   <style>
-    body { padding-bottom: 70px; }
-
-    .feed-diario { padding: 12px; display: flex; flex-direction: column; gap: 14px; max-width: 640px; margin: 0 auto; }
-
-    /* FAB diario */
-    .fab-diario {
-      position: fixed; bottom: 80px; right: 18px;
-      width: 52px; height: 52px;
-      background: var(--navy); color: var(--oro);
-      font-size: 1.6rem; border: none; border-radius: 50%;
-      box-shadow: 0 4px 16px rgba(26,58,92,0.35);
-      cursor: pointer; z-index: 200;
-      display: none; align-items: center; justify-content: center;
-      transition: background 0.15s, transform 0.15s;
-    }
-    .fab-diario:hover { background: var(--navy-scuro); transform: scale(1.08); }
+    /* Stelle emozioni */
+    .stelle-row { display:flex; flex-direction:column; gap:10px; margin-top:8px; }
+    .stella-item { display:flex; align-items:center; gap:8px; }
+    .stella-label { min-width:140px; font-size:0.8rem; color:var(--navy); font-weight:600; }
+    .stella-stars { display:flex; gap:3px; }
+    .stella-star { font-size:1.2rem; cursor:pointer; opacity:0.25; transition:opacity 0.1s; }
+    .stella-star.active { opacity:1; }
+    /* Forziere */
+    .ricordo-list { display:flex; flex-direction:column; gap:6px; }
+    /* Bottiglia */
+    .bottiglia-msg { background:var(--post-bg); border-left:4px solid var(--oro); border-radius:4px 10px 10px 4px; padding:10px 12px; margin-bottom:8px; }
+    /* Isola read-only */
+    .zona-card.readonly { cursor:default; }
+    /* Media recorder */
+    .rec-btn { background:var(--rosso); color:#fff; border:none; border-radius:8px; padding:6px 12px; cursor:pointer; font-family:'Lora',serif; font-size:0.78rem; }
+    .rec-btn.recording { animation: pulse 1s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+    /* Profilo edit form */
+    .profilo-edit { background:var(--post-bg); border:2px dashed var(--oro); border-radius:12px; padding:16px; margin:12px; }
+    /* Radio label style */
+    .rg label { cursor:pointer; display:flex; align-items:center; gap:5px; font-size:0.82rem; background:var(--carta-scura); border:1.5px solid #c8b89a; border-radius:8px; padding:5px 10px; }
+    .rg input[type=radio]:checked + .rl { font-weight:700; color:var(--navy); }
+    .rg { display:flex; flex-wrap:wrap; gap:6px; }
+    .rg input[type=radio] { accent-color:var(--oro); }
+    /* Tab padding */
+    .tab-panel { padding:14px 12px 90px; }
   </style>
 </head>
 <body>
 
-  <header class="top-header">
-    <div class="header-titles" id="header-titles">
-      <div class="header-title-main" id="header-nome">Robinson</div>
-      <div class="header-title-sub" id="header-numero">il diario di bordo</div>
+<!-- Profilo header -->
+<div id="profilo-header" class="profilo-header">
+  <img id="ph-avatar" class="profilo-avatar" src="" alt="avatar" style="background:var(--oro-light);">
+  <div id="ph-nome" class="profilo-nome">…</div>
+  <div id="ph-soprannome" class="profilo-soprannome"></div>
+  <div id="ph-pronomi" class="profilo-pronomi"></div>
+  <div id="ph-rank" style="margin-top:6px;font-size:1.4rem;"></div>
+  <div id="ph-punti" class="punti-badge" style="display:none;margin:6px auto 0;">⭐ <span id="ph-punti-val">0</span> punti</div>
+</div>
+
+<!-- Tabs nav -->
+<div class="tabs" id="tabs-nav">
+  <button class="tab-btn active" data-tab="diario">📜 Diario</button>
+  <button class="tab-btn" data-tab="emozioni">🧭 Emozioni</button>
+  <button class="tab-btn" data-tab="riflessioni">🌴 Riflessioni</button>
+  <button class="tab-btn" data-tab="tesori">📸 Tesori</button>
+  <button class="tab-btn" data-tab="isola">🗺️ Isola</button>
+  <button class="tab-btn" data-tab="forziere">🏴‍☠️ Forziere</button>
+  <button class="tab-btn" data-tab="bottiglia">🍾 Bottiglia</button>
+</div>
+
+<!-- TAB A: Diario -->
+<div class="tab-panel active" id="tab-diario">
+  <div id="diario-giorno" style="font-size:0.78rem;color:var(--muted);margin-bottom:10px;font-style:italic;"></div>
+  <div id="diario-form">
+    <div class="campo-diario">
+      <label>⚓ Approdo del giorno</label>
+      <textarea id="d-approdo" placeholder="Come sei arrivato/a sull'isola stamattina?"></textarea>
     </div>
-    <div id="nav-auth-slot"></div>
-  </header>
-
-  <!-- Profile header -->
-  <div class="profile-header" id="profile-header" style="display:none">
-    <div class="profile-foto-wrap" id="profile-foto-wrap">⚓</div>
-    <div class="profile-nome" id="profile-nome">—</div>
-    <div class="profile-numero" id="profile-numero">Naufrago</div>
+    <div class="campo-diario">
+      <label>📌 Titolo della giornata</label>
+      <input type="text" id="d-titolo" placeholder="Una frase che la descrive...">
+    </div>
+    <div class="campo-diario">
+      <label>🌤️ Meteo del cuore</label>
+      <div class="meteo-picker" id="d-meteo">
+        <span class="meteo-opt" data-v="🌞">🌞</span>
+        <span class="meteo-opt" data-v="🌤️">🌤️</span>
+        <span class="meteo-opt" data-v="⛅">⛅</span>
+        <span class="meteo-opt" data-v="🌧️">🌧️</span>
+        <span class="meteo-opt" data-v="⛈️">⛈️</span>
+        <span class="meteo-opt" data-v="🌪️">🌪️</span>
+        <span class="meteo-opt" data-v="🌈">🌈</span>
+        <span class="meteo-opt" data-v="⭐">⭐</span>
+      </div>
+    </div>
+    <div class="campo-diario">
+      <label>💬 Sensazione</label>
+      <textarea id="d-sensazione" placeholder="Oggi mi sono sentito/a…"></textarea>
+    </div>
+    <button class="btn btn-primary" id="btn-salva-diario">💾 Salva diario</button>
+    <div id="diario-msg" style="margin-top:8px;font-size:0.8rem;"></div>
+    <button id="btn-sblocca-diario" style="display:none;margin-top:8px;" class="btn btn-sm" style="background:var(--carta-scura);">🔓 Sblocca per modifica</button>
   </div>
+</div>
 
-  <!-- Tabs -->
-  <div class="tabs">
-    <button class="tab-btn active" data-tab="diario">📔 Diario</button>
-    <button class="tab-btn"        data-tab="chisono">🧭 Chi sono</button>
-    <button class="tab-btn"        data-tab="ricordi">🖼️ Ricordi</button>
-  </div>
-
-  <!-- Tab: Diario -->
-  <div class="tab-panel active" id="tab-diario">
-    <div id="feed-diario" class="feed-diario"><div class="spinner"></div></div>
-  </div>
-
-  <!-- Tab: Chi sono -->
-  <div class="tab-panel" id="tab-chisono">
-    <form class="chisono-form" id="chisono-form">
-      <div class="form-group">
-        <label>⚓ Soprannome sull'isola</label>
-        <input type="text" id="cs-soprannome" placeholder="Come ti chiamano i naufraghi?">
-      </div>
-      <div class="form-group">
-        <label>🏝️ La mia isola preferita</label>
-        <textarea id="cs-isola" rows="3" placeholder="Descrivi la tua isola dei sogni…"></textarea>
-      </div>
-      <div class="form-group">
-        <label>⚡ Il mio superpotere da naufrago</label>
-        <textarea id="cs-superpotere" rows="3" placeholder="Cosa sai fare meglio sull'isola?"></textarea>
-      </div>
-      <div class="form-group">
-        <label>🎒 Cosa porto con me</label>
-        <textarea id="cs-bagaglio" rows="3" placeholder="3 cose che non abbandoneresti mai…"></textarea>
-      </div>
-      <button type="submit" class="btn-salva-profilo" id="btn-salva" style="display:none">Salva nel diario</button>
-      <p id="chisono-readonly" style="color:var(--muted);font-style:italic;font-size:0.85rem;padding-top:6px;display:none">
-        Solo il naufrago può modificare la propria scheda.
-      </p>
-    </form>
-  </div>
-
-  <!-- Tab: Ricordi -->
-  <div class="tab-panel" id="tab-ricordi">
-    <div id="galleria" class="galleria-grid"></div>
-    <p id="galleria-empty" class="empty-msg" style="display:none">Nessun ricordo ancora… 📷</p>
-  </div>
-
-  <!-- FAB nuovo post diario -->
-  <button class="fab-diario" id="fab-diario" title="Nuovo post nel diario">＋</button>
-
-  <!-- Modal nuovo post diario -->
-  <div class="modal-backdrop" id="modal-backdrop">
-    <div class="modal-sheet">
-      <div class="modal-header">
-        <span class="modal-title">📔 Scrivi nel diario…</span>
-        <button class="modal-close" id="modal-close">✕</button>
-      </div>
-      <textarea class="form-textarea" id="post-text" placeholder="Cosa vuoi annotare oggi?" rows="4"></textarea>
-      <div class="media-btns">
-        <label class="media-btn">🖼️ Foto<input type="file" accept="image/*" id="input-foto" multiple style="display:none"></label>
-        <label class="media-btn btn-camera">📷 Scatta<input type="file" accept="image/*" id="input-foto-cam" capture="environment" style="display:none"></label>
-        <label class="media-btn">📹 Video<input type="file" accept="video/*" id="input-video" multiple style="display:none"></label>
-        <label class="media-btn btn-camera">🎬 Registra<input type="file" accept="video/*" id="input-video-cam" capture="environment" style="display:none"></label>
-        <button class="media-btn" id="btn-audio">🎙️ Registra</button>
-        <label class="media-btn">🎵 Audio<input type="file" accept="audio/*,.mp3,.m4a,.wav,.ogg,.aac,.flac,.weba,.opus" id="input-audio-file" multiple style="display:none"></label>
-      </div>
-      <div id="post-preview"></div>
-      <div class="upload-progress" id="upload-progress"><div class="upload-progress-bar" id="upload-bar" style="width:0%"></div></div>
-      <button class="btn-pubblica" id="btn-pubblica">Salva nel diario</button>
+<!-- TAB B: Emozioni -->
+<div class="tab-panel" id="tab-emozioni">
+  <div class="campo-diario">
+    <label>🧭 Bussola delle emozioni (1–5 stelle)</label>
+    <div class="stelle-row" id="bussola-stelle">
+      <div class="stella-item" data-cat="felicita"><div class="stella-label">😊 Felicità</div><div class="stella-stars"></div></div>
+      <div class="stella-item" data-cat="tranquillita"><div class="stella-label">🌊 Tranquillità</div><div class="stella-stars"></div></div>
+      <div class="stella-item" data-cat="energia"><div class="stella-label">⚡ Energia</div><div class="stella-stars"></div></div>
+      <div class="stella-item" data-cat="rabbia"><div class="stella-label">🔥 Rabbia</div><div class="stella-stars"></div></div>
+      <div class="stella-item" data-cat="fiducia"><div class="stella-label">🤝 Fiducia nel gruppo</div><div class="stella-stars"></div></div>
     </div>
   </div>
+  <div class="campo-diario">
+    <label>🌊 Se fossi stato/a il mare...</label>
+    <div class="rg" id="e-mare">
+      <label><input type="radio" name="mare" value="calmo"><span class="rl">🌊 Calmo</span></label>
+      <label><input type="radio" name="mare" value="onde"><span class="rl">〰️ Con le onde</span></label>
+      <label><input type="radio" name="mare" value="agitato"><span class="rl">⛈️ Agitato</span></label>
+      <label><input type="radio" name="mare" value="tempesta"><span class="rl">🌪️ Tempesta</span></label>
+    </div>
+  </div>
+  <div class="campo-diario">
+    <label>🦁 Se fossi stato/a un animale...</label>
+    <div class="rg" id="e-animale">
+      <label><input type="radio" name="animale" value="delfino"><span class="rl">🐬 Delfino</span></label>
+      <label><input type="radio" name="animale" value="aquila"><span class="rl">🦅 Aquila</span></label>
+      <label><input type="radio" name="animale" value="tartaruga"><span class="rl">🐢 Tartaruga</span></label>
+      <label><input type="radio" name="animale" value="leone"><span class="rl">🦁 Leone</span></label>
+      <label><input type="radio" name="animale" value="gatto"><span class="rl">🐱 Gatto selvatico</span></label>
+    </div>
+    <div class="campo-diario" style="margin-top:8px;">
+      <label>Perché?</label>
+      <input type="text" id="e-animale-perche" placeholder="…perché oggi mi sono sentito/a…">
+    </div>
+  </div>
+  <div class="campo-diario">
+    <label>🧭 La bussola ha puntato verso...</label>
+    <div class="rg" id="e-bussola">
+      <label><input type="radio" name="bussola" value="Amicizia"><span class="rl">🤝 Amicizia</span></label>
+      <label><input type="radio" name="bussola" value="Coraggio"><span class="rl">💪 Coraggio</span></label>
+      <label><input type="radio" name="bussola" value="Calma"><span class="rl">🌊 Calma</span></label>
+      <label><input type="radio" name="bussola" value="Avventura"><span class="rl">🗺️ Avventura</span></label>
+      <label><input type="radio" name="bussola" value="Casa"><span class="rl">🏡 Casa</span></label>
+    </div>
+  </div>
+  <button class="btn btn-primary" id="btn-salva-emozioni">💾 Salva emozioni</button>
+  <div id="emozioni-msg" style="margin-top:8px;font-size:0.8rem;"></div>
+</div>
 
-  <nav class="bottom-nav">
-    <a href="index.html"      class="nav-item"><span class="nav-icon">🏝️</span>Robinson</a>
-    <a href="spiaggia.html"   class="nav-item"><span class="nav-icon">🏖️</span>Spiaggia</a>
-    <a href="naufraghi.html"  class="nav-item"><span class="nav-icon">👥</span>Naufraghi</a>
-    <a href="ciurma.html"     class="nav-item"><span class="nav-icon">⚓</span>Ciurma</a>
-    <a href="appunti.html"    class="nav-item"><span class="nav-icon">📓</span>Appunti</a>
-  </nav>
+<!-- TAB C: Riflessioni -->
+<div class="tab-panel" id="tab-riflessioni">
+  <div class="campo-diario">
+    <label>💡 Oggi ho scoperto che...</label>
+    <textarea id="r-scoperto" placeholder="…"></textarea>
+  </div>
+  <div class="campo-diario">
+    <label>✨ Il momento più bello è stato...</label>
+    <textarea id="r-bello" placeholder="…"></textarea>
+  </div>
+  <div class="campo-diario">
+    <label>🪨 Lo scoglio incontrato è stato...</label>
+    <textarea id="r-scoglio" placeholder="…"></textarea>
+  </div>
+  <div class="campo-diario">
+    <label>💎 Il tesoro che mi porto con me è...</label>
+    <textarea id="r-tesoro" placeholder="…"></textarea>
+  </div>
+  <div class="campo-diario">
+    <label>🔥 Falò della sera – cosa brucio stanotte?</label>
+    <div class="falo-check" id="r-falo">
+      <label><input type="checkbox" value="paura"><span>La paura di sbagliare</span></label>
+      <label><input type="checkbox" value="rabbia"><span>La rabbia verso qualcuno</span></label>
+      <label><input type="checkbox" value="pensieri"><span>I pensieri negativi su di me</span></label>
+      <label><input type="checkbox" value="brutto"><span>Un momento brutto</span></label>
+    </div>
+  </div>
+  <div class="campo-diario">
+    <label>🗺️ La rotta di domani...</label>
+    <textarea id="r-rotta" placeholder="Cosa vuoi portare con te domani?"></textarea>
+  </div>
+  <button class="btn btn-primary" id="btn-salva-riflessioni">💾 Salva riflessioni</button>
+  <div id="riflessioni-msg" style="margin-top:8px;font-size:0.8rem;"></div>
+</div>
 
-  <script type="module">
-    import { auth, db, ADMIN_UID, EMOJIS, MAX_FILES } from './js/robinson-firebase.js';
-    import { setupNavAuth } from './js/robinson-nav.js';
-    import {
-      esc, fmtDate, risolviNome, uploadOne, uploadAll,
-      normalizeMedia, renderMediaGrid, renderCommentMedia, renderPreview
-    } from './js/robinson-utils.js';
-    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import {
-      collection, addDoc, getDoc, setDoc, doc, updateDoc,
-      query, orderBy, getDocs, serverTimestamp, deleteDoc, increment
-    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+<!-- TAB D: Tesori -->
+<div class="tab-panel" id="tab-tesori">
+  <div style="margin-bottom:14px;">
+    <div style="font-size:0.78rem;color:var(--muted);margin-bottom:8px;">📎 Aggiungi foto, video o audio del giorno</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+      <label style="background:var(--carta-scura);border:1.5px solid #c8b89a;border-radius:8px;padding:7px 12px;font-size:0.8rem;cursor:pointer;">
+        📷 Scatta/carica
+        <input type="file" id="t-foto" accept="image/*" multiple style="display:none;">
+      </label>
+      <label style="background:var(--carta-scura);border:1.5px solid #c8b89a;border-radius:8px;padding:7px 12px;font-size:0.8rem;cursor:pointer;">
+        🎥 Registra/carica
+        <input type="file" id="t-video" accept="video/*" multiple style="display:none;">
+      </label>
+      <button class="rec-btn" id="t-audio-rec">🎵 Registra audio</button>
+      <label style="background:var(--carta-scura);border:1.5px solid #c8b89a;border-radius:8px;padding:7px 12px;font-size:0.8rem;cursor:pointer;">
+        📁 Carica audio
+        <input type="file" id="t-audio-file" accept="audio/*" multiple style="display:none;">
+      </label>
+    </div>
+    <div id="t-preview"></div>
+    <div id="t-prog-wrap" style="display:none;background:var(--carta-scura);border-radius:4px;height:6px;margin-top:6px;overflow:hidden;">
+      <div id="t-prog-bar" style="height:100%;background:var(--oro);width:0%;transition:width 0.3s;border-radius:4px;"></div>
+    </div>
+    <button class="btn btn-oro" id="btn-carica-tesori" style="margin-top:10px;">☁️ Carica su isola</button>
+    <div id="tesori-msg" style="margin-top:8px;font-size:0.8rem;"></div>
+  </div>
+  <div id="galleria-tesori">
+    <div style="font-size:0.82rem;color:var(--muted);font-style:italic;">Nessun media ancora per oggi.</div>
+  </div>
+</div>
 
-    setupNavAuth('nav-auth-slot');
+<!-- TAB E: Isola Interiore -->
+<div class="tab-panel" id="tab-isola">
+  <div style="font-size:0.82rem;color:var(--muted);margin-bottom:10px;padding:0 4px;">Conquista le zone della tua isola interiore!</div>
+  <div class="isola-grid" id="isola-grid">
+    <div class="zona-card" data-zona="spiaggia"><span class="zona-icon">🌴</span><div class="zona-nome">Spiaggia della Fiducia</div></div>
+    <div class="zona-card" data-zona="promontorio"><span class="zona-icon">🧭</span><div class="zona-nome">Promontorio del Coraggio</div></div>
+    <div class="zona-card" data-zona="baia"><span class="zona-icon">🌊</span><div class="zona-nome">Baia della Calma</div></div>
+    <div class="zona-card" data-zona="villaggio"><span class="zona-icon">🤝</span><div class="zona-nome">Villaggio dell'Amicizia</div></div>
+    <div class="zona-card" data-zona="faro"><span class="zona-icon">⭐</span><div class="zona-nome">Faro dei Sogni</div></div>
+    <div class="zona-card" data-zona="vulcano"><span class="zona-icon">🔥</span><div class="zona-nome">Vulcano della Rabbia</div></div>
+    <div class="zona-card" data-zona="laguna"><span class="zona-icon">🐢</span><div class="zona-nome">Laguna della Pazienza</div></div>
+  </div>
+</div>
 
-    const params  = new URLSearchParams(location.search);
-    const pageUid = params.get('uid') || '';
+<!-- TAB F: Forziere -->
+<div class="tab-panel" id="tab-forziere">
+  <div style="font-size:0.82rem;color:var(--muted);margin-bottom:10px;padding:0 4px;">🔒 I giorni passati – sola lettura</div>
+  <div class="ricordo-list" id="forziere-list">
+    <div class="spinner"></div>
+  </div>
+</div>
 
-    let currentUser     = null;
-    let currentUserData = null;
-    let isAdmin         = false;
-    let isOwner         = false;
-    let naufragoData    = null;
-    let naufragoNumero  = 1;
+<!-- TAB G: Bottiglia -->
+<div class="tab-panel" id="tab-bottiglia">
+  <div id="bottiglia-section">
+    <div class="spinner"></div>
+  </div>
+</div>
 
-    // ── Tabs ──────────────────────────────────────────────────────────────
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-        btn.classList.add('active');
-        document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+<!-- Modal forziere -->
+<div class="modal-overlay" id="modal-forziere">
+  <div class="modal-box">
+    <div class="modal-title" id="mf-titolo">📜 Giorno —</div>
+    <div id="mf-body"></div>
+    <button class="btn btn-sm" style="background:var(--carta-scura);margin-top:14px;" id="mf-close">Chiudi</button>
+  </div>
+</div>
+
+<!-- Nav profilo edit (solo proprietario) -->
+<div id="profilo-edit-section" style="display:none;">
+  <div style="font-size:0.8rem;font-weight:700;color:var(--navy);padding:12px 12px 4px;font-family:'Playfair Display',serif;">⚙️ Il mio profilo</div>
+  <div class="profilo-edit">
+    <div class="campo-diario"><label>Nome</label><input type="text" id="pe-nome"></div>
+    <div class="campo-diario"><label>Soprannome sull'isola</label><input type="text" id="pe-soprannome"></div>
+    <div class="campo-diario">
+      <label>Mi identifico come</label>
+      <div class="rg">
+        <label><input type="radio" name="genere" value="ragazzo"><span class="rl">♂️ Ragazzo</span></label>
+        <label><input type="radio" name="genere" value="ragazza"><span class="rl">♀️ Ragazza</span></label>
+        <label><input type="radio" name="genere" value="persona"><span class="rl">🌈 Persona</span></label>
+        <label><input type="radio" name="genere" value="preferisco_non_dire"><span class="rl">🤐 Preferisco non dire</span></label>
+      </div>
+    </div>
+    <div class="campo-diario">
+      <label>Pronomi</label>
+      <div class="rg">
+        <label><input type="radio" name="pronomi" value="lui/lui"><span class="rl">lui/lui</span></label>
+        <label><input type="radio" name="pronomi" value="lei/lei"><span class="rl">lei/lei</span></label>
+        <label><input type="radio" name="pronomi" value="loro/loro"><span class="rl">loro/loro</span></label>
+      </div>
+    </div>
+    <div class="campo-diario"><label>🦸 Il mio superpotere</label><input type="text" id="pe-superpotere" placeholder="cosa sai fare meglio?"></div>
+    <div class="campo-diario"><label>🏝️ Cosa porterei su un'isola deserta</label><input type="text" id="pe-cosa" placeholder="un oggetto, una persona, un'idea..."></div>
+    <button class="btn btn-primary" id="btn-salva-profilo">💾 Salva profilo</button>
+    <div id="profilo-msg" style="margin-top:8px;font-size:0.8rem;"></div>
+  </div>
+</div>
+
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item"><span class="nav-icon">🏝️</span><span>Home</span></a>
+  <a href="spiaggia.html" class="nav-item"><span class="nav-icon">🏖️</span><span>Spiaggia</span></a>
+  <a href="naufraghi.html" class="nav-item"><span class="nav-icon">👤</span><span>Naufraghi</span></a>
+  <a href="ciurma.html" class="nav-item"><span class="nav-icon">⚓</span><span>Ciurma</span></a>
+  <a href="appunti.html" class="nav-item"><span class="nav-icon">📔</span><span>Appunti</span></a>
+</nav>
+
+<script type="module">
+import { db, auth, ADMIN_UID } from './js/robinson-firebase.js';
+import { aggiungiPunteggio } from './js/robinson-punteggio.js';
+import { esc, fmtDate, fmtDateShort, risolviNome, uploadOne, renderMediaGrid, renderPreview } from './js/robinson-utils.js';
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import {
+  doc, getDoc, setDoc, addDoc, deleteDoc,
+  collection, getDocs, query, orderBy, serverTimestamp, onSnapshot
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { setupNavAuth } from './js/robinson-nav.js';
+
+setupNavAuth(null); // no slot, gestione manuale header
+
+const params = new URLSearchParams(location.search);
+const pageUid = params.get('uid');
+if (!pageUid) { location.href = 'naufraghi.html'; }
+
+let currentUser = null;
+let isOwner = false;
+let isAdmin = false;
+const oggi = new Date();
+const oggiKey = `${oggi.getFullYear()}-${String(oggi.getMonth()+1).padStart(2,'0')}-${String(oggi.getDate()).padStart(2,'0')}`;
+let meteoSel = '';
+let tesoriAllegati = []; // {file, type, previewUrl}
+let mediaRecorder = null;
+let recChunks = [];
+let isolaZone = {};
+
+// ── Auth ────────────────────────────────────────────────────────────────
+onAuthStateChanged(auth, async user => {
+  if (!user) { location.href = 'https://campodeifiori.org/login.html'; return; }
+  currentUser = user;
+  isOwner = user.uid === pageUid;
+  isAdmin = user.uid === ADMIN_UID;
+
+  await loadProfilo();
+  await loadRank();
+  loadDiario();
+  loadIsola();
+  loadForziere();
+  setupBottiglia();
+  setupEmozioniStars();
+  if (isOwner || isAdmin) setupProfiloEdit();
+  if (!isOwner && !isAdmin) lockAllForms();
+});
+
+// ── Tabs ─────────────────────────────────────────────────────────────────
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+// ── Profilo header ────────────────────────────────────────────────────────
+async function loadProfilo() {
+  let d = null;
+  try {
+    let snap = await getDoc(doc(db, 'robinson_naufraghi', pageUid));
+    if (!snap.exists()) snap = await getDoc(doc(db, 'utenti', pageUid));
+    if (!snap.exists()) snap = await getDoc(doc(db, 'staff', pageUid));
+    if (snap.exists()) d = snap.data();
+  } catch(_) {}
+
+  // Try profilo dati
+  try {
+    const ps = await getDoc(doc(db, 'robinson_naufraghi', pageUid, 'profilo', 'dati'));
+    if (ps.exists()) { const pd = ps.data(); d = { ...(d||{}), ...pd }; }
+  } catch(_) {}
+
+  const foto = d?.fotoProfilo || d?.photoURL || '';
+  const nome = d?.nome || d?.displayName || 'Naufrago';
+  const soprannome = d?.soprannome || '';
+  const pronomi = d?.pronomi || '';
+
+  const av = document.getElementById('ph-avatar');
+  if (foto) av.src = foto; else av.style.display = 'none';
+  document.getElementById('ph-nome').textContent = nome;
+  document.getElementById('ph-soprannome').textContent = soprannome ? `"${soprannome}"` : '';
+  document.getElementById('ph-pronomi').textContent = pronomi;
+
+  // Giorno sull'isola
+  const dataInizio = d?.dataInizio?.toDate?.() || null;
+  if (dataInizio) {
+    const giorni = Math.floor((oggi - dataInizio) / 86400000) + 1;
+    document.getElementById('diario-giorno').textContent = `🌅 Giorno ${giorni} sull'isola · Oggi: ${oggiKey}`;
+  } else {
+    document.getElementById('diario-giorno').textContent = `📅 Oggi: ${oggiKey}`;
+  }
+
+  if (isOwner) document.getElementById('profilo-edit-section').style.display = 'block';
+
+  // Prefill profilo edit
+  if (isOwner && d) {
+    document.getElementById('pe-nome').value = d.nome || '';
+    document.getElementById('pe-soprannome').value = d.soprannome || '';
+    document.getElementById('pe-superpotere').value = d.superpotere || '';
+    document.getElementById('pe-cosa').value = d.cosa || '';
+    if (d.genere) { const r = document.querySelector(`input[name=genere][value="${d.genere}"]`); if(r) r.checked = true; }
+    if (d.pronomi) { const r = document.querySelector(`input[name=pronomi][value="${d.pronomi}"]`); if(r) r.checked = true; }
+  }
+}
+
+async function loadRank() {
+  if (!isAdmin && !isOwner) return;
+  try {
+    const snap = await getDocs(collection(db, 'robinson_punteggi'));
+    const tutti = snap.docs.map(d => ({ uid: d.id, ...d.data() })).sort((a,b) => (b.totale||0) - (a.totale||0));
+    const idx = tutti.findIndex(x => x.uid === pageUid);
+    const me = tutti[idx];
+    if (me) {
+      document.getElementById('ph-punti').style.display = 'flex';
+      document.getElementById('ph-punti-val').textContent = me.totale || 0;
+    }
+    if (idx === 0) document.getElementById('ph-rank').textContent = '🥇';
+    else if (idx === 1) document.getElementById('ph-rank').textContent = '🥈';
+    else if (idx === 2) document.getElementById('ph-rank').textContent = '🥉';
+  } catch(_) {}
+}
+
+// ── Diario ────────────────────────────────────────────────────────────────
+async function loadDiario() {
+  const dRef = doc(db, 'robinson_diari', pageUid, 'posts', oggiKey);
+  try {
+    const snap = await getDoc(dRef);
+    if (snap.exists()) {
+      const d = snap.data();
+      document.getElementById('d-approdo').value = d.approdo || '';
+      document.getElementById('d-titolo').value = d.titolo || '';
+      document.getElementById('d-sensazione').value = d.sensazione || '';
+      if (d.meteo) selMeteo(d.meteo);
+      // Carica emozioni
+      if (d.emozioni) prefillEmozioni(d.emozioni);
+      // Carica riflessioni
+      if (d.riflessioni) prefillRiflessioni(d.riflessioni);
+      // Tesori
+      if (d.media?.length) renderGalleriaTesori(d.media);
+
+      if (!isOwner && !isAdmin) lockAllForms();
+      if (!isAdmin && !isOwner) {
+        // Blocca per altri
+        document.getElementById('btn-salva-diario').style.display = 'none';
+      }
+    }
+  } catch(_) {}
+}
+
+function selMeteo(v) {
+  meteoSel = v;
+  document.querySelectorAll('.meteo-opt').forEach(o => {
+    o.classList.toggle('sel', o.dataset.v === v);
+  });
+}
+
+document.querySelectorAll('.meteo-opt').forEach(o => {
+  o.addEventListener('click', () => {
+    if (!isOwner && !isAdmin) return;
+    selMeteo(o.dataset.v);
+  });
+});
+
+document.getElementById('btn-salva-diario').addEventListener('click', async () => {
+  if (!isOwner && !isAdmin) return;
+  const dRef = doc(db, 'robinson_diari', pageUid, 'posts', oggiKey);
+  const data = {
+    approdo: document.getElementById('d-approdo').value.trim(),
+    titolo: document.getElementById('d-titolo').value.trim(),
+    meteo: meteoSel,
+    sensazione: document.getElementById('d-sensazione').value.trim(),
+    timestamp: serverTimestamp()
+  };
+  try {
+    await setDoc(dRef, data, { merge: true });
+    const msg = document.getElementById('diario-msg');
+    msg.style.color = 'var(--oro)';
+    msg.textContent = '✅ Diario salvato!';
+    setTimeout(() => msg.textContent = '', 2000);
+  } catch(e) {
+    document.getElementById('diario-msg').textContent = 'Errore: ' + e.message;
+  }
+});
+
+document.getElementById('btn-sblocca-diario')?.addEventListener('click', () => {
+  if (!isAdmin) return;
+  lockAllForms(false);
+  document.getElementById('btn-sblocca-diario').style.display = 'none';
+});
+
+// ── Emozioni stelle ───────────────────────────────────────────────────────
+function setupEmozioniStars() {
+  document.querySelectorAll('.stella-item').forEach(item => {
+    const starsDiv = item.querySelector('.stella-stars');
+    starsDiv.innerHTML = '';
+    for (let i = 1; i <= 5; i++) {
+      const s = document.createElement('span');
+      s.className = 'stella-star';
+      s.textContent = '⭐';
+      s.dataset.val = i;
+      s.addEventListener('click', () => {
+        if (!isOwner && !isAdmin) return;
+        const val = parseInt(s.dataset.val);
+        item.dataset.val = val;
+        starsDiv.querySelectorAll('.stella-star').forEach((st, idx) => {
+          st.classList.toggle('active', idx < val);
+        });
       });
-    });
-
-    // ── Auth ──────────────────────────────────────────────────────────────
-    onAuthStateChanged(auth, async user => {
-      currentUser = user;
-      if (user) {
-        isAdmin = user.uid === ADMIN_UID;
-        isOwner = user.uid === pageUid;
-        try {
-          let snap = await getDoc(doc(db, 'utenti', user.uid));
-          if (!snap.exists()) snap = await getDoc(doc(db, 'staff', user.uid));
-          if (snap.exists()) currentUserData = snap.data();
-        } catch(_) {}
-        if (isOwner) {
-          document.getElementById('fab-diario').style.display = 'flex';
-          document.getElementById('btn-salva').style.display = 'inline-block';
-        } else {
-          document.getElementById('chisono-readonly').style.display = 'block';
-          document.querySelectorAll('#chisono-form input, #chisono-form textarea').forEach(el => el.disabled = true);
-        }
-      }
-      loadProfile();
-    });
-
-    // ── Carica profilo naufrago ───────────────────────────────────────────
-    async function loadProfile() {
-      if (!pageUid) {
-        document.getElementById('header-nome').textContent = 'Naufrago non trovato';
-        document.getElementById('feed-diario').innerHTML = '<p class="empty-msg">UID mancante nell\'URL.</p>';
-        return;
-      }
-
-      try {
-        // Dati base: da robinson_naufraghi o utenti
-        let snap = await getDoc(doc(db, 'robinson_naufraghi', pageUid));
-        if (!snap.exists()) snap = await getDoc(doc(db, 'utenti', pageUid));
-        if (!snap.exists()) snap = await getDoc(doc(db, 'staff', pageUid));
-        naufragoData = snap.exists() ? snap.data() : { nome: 'Naufrago' };
-      } catch(_) { naufragoData = { nome: 'Naufrago' }; }
-
-      // Numero naufrago (posizione nella lista robinson_naufraghi)
-      try {
-        const tutti = await getDocs(query(collection(db, 'robinson_naufraghi'), orderBy('nome')));
-        let idx = 1;
-        tutti.forEach((d, i) => { if (d.id === pageUid) naufragoNumero = idx; idx++; });
-      } catch(_) {}
-
-      const nome = naufragoData.nome || 'Naufrago';
-      const foto = naufragoData.fotoProfilo || null;
-
-      document.title = `${nome} – Robinson`;
-      document.getElementById('header-nome').textContent = nome;
-      document.getElementById('header-numero').textContent = 'il diario di bordo';
-
-      // Profile header
-      const ph = document.getElementById('profile-header');
-      ph.style.display = 'flex';
-      document.getElementById('profile-nome').textContent = nome;
-      document.getElementById('profile-numero').textContent = `Naufrago N° ${naufragoNumero}`;
-      const fw = document.getElementById('profile-foto-wrap');
-      if (foto) {
-        fw.innerHTML = `<img src="${esc(foto)}" alt="${esc(nome)}">`;
-      }
-
-      loadDiario();
-      loadChiSono();
-      loadGalleria();
+      starsDiv.appendChild(s);
     }
+  });
+}
 
-    // ── Diario ────────────────────────────────────────────────────────────
-    function loadDiario() {
-      const feedEl = document.getElementById('feed-diario');
-      feedEl.innerHTML = '<div class="spinner"></div>';
-      const DIARIO = `robinson_diari/${pageUid}/posts`;
-      getDocs(query(collection(db, 'robinson_diari', pageUid, 'posts'), orderBy('timestamp', 'desc')))
-        .then(snap => {
-          feedEl.innerHTML = '';
-          if (snap.empty) { feedEl.innerHTML = '<p class="empty-msg">Il diario è ancora vuoto… ✍️</p>'; return; }
-          snap.forEach(d => feedEl.appendChild(buildPostCard(d.id, d.data())));
-        })
-        .catch(err => { feedEl.innerHTML = `<p class="empty-msg">Errore: ${err.message}</p>`; });
+function setStelle(cat, val) {
+  const item = document.querySelector(`.stella-item[data-cat="${cat}"]`);
+  if (!item) return;
+  item.dataset.val = val;
+  item.querySelectorAll('.stella-star').forEach((s, i) => s.classList.toggle('active', i < val));
+}
+
+function prefillEmozioni(em) {
+  if (em.stelle) {
+    Object.entries(em.stelle).forEach(([k,v]) => setStelle(k, v));
+  }
+  if (em.mare) { const r = document.querySelector(`input[name=mare][value="${em.mare}"]`); if(r) r.checked = true; }
+  if (em.animale) { const r = document.querySelector(`input[name=animale][value="${em.animale}"]`); if(r) r.checked = true; }
+  if (em.animalePerche) document.getElementById('e-animale-perche').value = em.animalePerche;
+  if (em.bussola) { const r = document.querySelector(`input[name=bussola][value="${em.bussola}"]`); if(r) r.checked = true; }
+}
+
+document.getElementById('btn-salva-emozioni').addEventListener('click', async () => {
+  if (!isOwner && !isAdmin) return;
+  const stelle = {};
+  document.querySelectorAll('.stella-item').forEach(item => {
+    stelle[item.dataset.cat] = parseInt(item.dataset.val || 0);
+  });
+  const emozioni = {
+    stelle,
+    mare: document.querySelector('input[name=mare]:checked')?.value || '',
+    animale: document.querySelector('input[name=animale]:checked')?.value || '',
+    animalePerche: document.getElementById('e-animale-perche').value.trim(),
+    bussola: document.querySelector('input[name=bussola]:checked')?.value || ''
+  };
+  try {
+    await setDoc(doc(db, 'robinson_diari', pageUid, 'posts', oggiKey), { emozioni, timestamp: serverTimestamp() }, { merge: true });
+    const msg = document.getElementById('emozioni-msg');
+    msg.style.color = 'var(--oro)';
+    msg.textContent = '✅ Salvato!';
+    setTimeout(() => msg.textContent = '', 2000);
+  } catch(e) {
+    document.getElementById('emozioni-msg').textContent = 'Errore: ' + e.message;
+  }
+});
+
+// ── Riflessioni ───────────────────────────────────────────────────────────
+function prefillRiflessioni(r) {
+  if (r.scoperto) document.getElementById('r-scoperto').value = r.scoperto;
+  if (r.bello) document.getElementById('r-bello').value = r.bello;
+  if (r.scoglio) document.getElementById('r-scoglio').value = r.scoglio;
+  if (r.tesoro) document.getElementById('r-tesoro').value = r.tesoro;
+  if (r.falo && Array.isArray(r.falo)) {
+    document.querySelectorAll('#r-falo input[type=checkbox]').forEach(cb => {
+      cb.checked = r.falo.includes(cb.value);
+    });
+  }
+  if (r.rotta) document.getElementById('r-rotta').value = r.rotta;
+}
+
+document.getElementById('btn-salva-riflessioni').addEventListener('click', async () => {
+  if (!isOwner && !isAdmin) return;
+  const falo = Array.from(document.querySelectorAll('#r-falo input[type=checkbox]:checked')).map(c => c.value);
+  const riflessioni = {
+    scoperto: document.getElementById('r-scoperto').value.trim(),
+    bello: document.getElementById('r-bello').value.trim(),
+    scoglio: document.getElementById('r-scoglio').value.trim(),
+    tesoro: document.getElementById('r-tesoro').value.trim(),
+    falo,
+    rotta: document.getElementById('r-rotta').value.trim()
+  };
+  try {
+    await setDoc(doc(db, 'robinson_diari', pageUid, 'posts', oggiKey), { riflessioni, timestamp: serverTimestamp() }, { merge: true });
+    const msg = document.getElementById('riflessioni-msg');
+    msg.style.color = 'var(--oro)';
+    msg.textContent = '✅ Salvato!';
+    setTimeout(() => msg.textContent = '', 2000);
+  } catch(e) {
+    document.getElementById('riflessioni-msg').textContent = 'Errore: ' + e.message;
+  }
+});
+
+// ── Tesori / Media ─────────────────────────────────────────────────────────
+function renderGalleriaTesori(media) {
+  const g = document.getElementById('galleria-tesori');
+  g.innerHTML = media?.length
+    ? `<div style="font-size:0.82rem;font-weight:600;color:var(--navy);margin-bottom:6px;">📸 Media di oggi</div>` + renderMediaGrid(media)
+    : `<div style="font-size:0.82rem;color:var(--muted);font-style:italic;">Nessun media ancora per oggi.</div>`;
+}
+
+['foto','video'].forEach(tipo => {
+  document.getElementById('t-' + tipo).addEventListener('change', e => {
+    if (!isOwner && !isAdmin) return;
+    Array.from(e.target.files).forEach(f => {
+      tesoriAllegati.push({ file: f, type: tipo === 'foto' ? 'image' : 'video', previewUrl: URL.createObjectURL(f) });
+    });
+    e.target.value = '';
+    aggPreview();
+  });
+});
+
+document.getElementById('t-audio-file').addEventListener('change', e => {
+  if (!isOwner && !isAdmin) return;
+  Array.from(e.target.files).forEach(f => {
+    tesoriAllegati.push({ file: f, type: 'audio', previewUrl: URL.createObjectURL(f) });
+  });
+  e.target.value = '';
+  aggPreview();
+});
+
+function aggPreview() {
+  const c = document.getElementById('t-preview');
+  renderPreview(tesoriAllegati, c);
+  c.querySelectorAll('.prev-rm').forEach(btn => {
+    btn.addEventListener('click', () => {
+      tesoriAllegati.splice(parseInt(btn.dataset.idx), 1);
+      aggPreview();
+    });
+  });
+}
+
+// Audio recorder
+const recBtn = document.getElementById('t-audio-rec');
+recBtn.addEventListener('click', async () => {
+  if (!isOwner && !isAdmin) return;
+  if (mediaRecorder && mediaRecorder.state === 'recording') {
+    mediaRecorder.stop();
+    recBtn.textContent = '🎵 Registra audio';
+    recBtn.classList.remove('recording');
+  } else {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mime = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4';
+      mediaRecorder = new MediaRecorder(stream, { mimeType: mime });
+      recChunks = [];
+      mediaRecorder.ondataavailable = e => recChunks.push(e.data);
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(recChunks, { type: mime });
+        const ext = mime.includes('webm') ? 'webm' : 'mp4';
+        const f = new File([blob], `registrazione-${Date.now()}.${ext}`, { type: mime });
+        tesoriAllegati.push({ file: f, type: 'audio', previewUrl: URL.createObjectURL(f) });
+        aggPreview();
+        stream.getTracks().forEach(t => t.stop());
+      };
+      mediaRecorder.start();
+      recBtn.textContent = '⏹️ Ferma registrazione';
+      recBtn.classList.add('recording');
+    } catch(e) {
+      alert('Impossibile accedere al microfono: ' + e.message);
     }
+  }
+});
 
-    function buildPostCard(postId, data) {
-      const card = document.createElement('div');
-      card.className = 'post-card';
-      const foto = naufragoData?.fotoProfilo || null;
-      const nome = naufragoData?.nome || 'Naufrago';
-      const avatar = foto
-        ? `<div class="post-avatar"><img src="${esc(foto)}" alt="${esc(nome)}"></div>`
-        : `<div class="post-avatar">📔</div>`;
-      const mediaHtml = renderMediaGrid(normalizeMedia(data));
-      const canDel = isAdmin || isOwner;
-      card.innerHTML = `
-        <div class="post-header">
-          ${avatar}
-          <div class="post-meta">
-            <div class="post-autore">${esc(nome)}</div>
-            <div class="post-data">${fmtDate(data.timestamp)}</div>
-          </div>
-          ${canDel ? `<button class="post-options-btn" onclick="deleteDiarioPost('${postId}',this)" title="Elimina">🗑️</button>` : ''}
+document.getElementById('btn-carica-tesori').addEventListener('click', async () => {
+  if (!isOwner && !isAdmin) return;
+  if (!tesoriAllegati.length) { document.getElementById('tesori-msg').textContent = 'Nessun file selezionato.'; return; }
+  const btn = document.getElementById('btn-carica-tesori');
+  btn.disabled = true;
+  const prog = document.getElementById('t-prog-wrap');
+  const bar = document.getElementById('t-prog-bar');
+  prog.style.display = 'block';
+  const msg = document.getElementById('tesori-msg');
+  msg.textContent = 'Caricamento in corso...';
+  try {
+    let done = 0;
+    const nuoviMedia = await Promise.all(tesoriAllegati.map(a =>
+      uploadOne(a.file, a.type).then(r => {
+        done++;
+        bar.style.width = Math.round(done / tesoriAllegati.length * 100) + '%';
+        return r;
+      })
+    ));
+    // Carica punteggi
+    nuoviMedia.forEach(m => {
+      if (m.type === 'image') aggiungiPunteggio(currentUser.uid, 'foto');
+      else if (m.type === 'video') aggiungiPunteggio(currentUser.uid, 'video');
+      else if (m.type === 'audio') aggiungiPunteggio(currentUser.uid, 'audio');
+    });
+    // Merge con media esistenti
+    const dRef = doc(db, 'robinson_diari', pageUid, 'posts', oggiKey);
+    const snap = await getDoc(dRef);
+    const esistenti = snap.exists() ? (snap.data().media || []) : [];
+    const tutti = [...esistenti, ...nuoviMedia];
+    await setDoc(dRef, { media: tutti, timestamp: serverTimestamp() }, { merge: true });
+    renderGalleriaTesori(tutti);
+    tesoriAllegati = [];
+    renderPreview([], document.getElementById('t-preview'));
+    msg.style.color = 'var(--oro)';
+    msg.textContent = '✅ Caricato!';
+    setTimeout(() => { msg.textContent = ''; prog.style.display = 'none'; bar.style.width = '0%'; }, 2000);
+  } catch(e) {
+    msg.textContent = 'Errore: ' + e.message;
+    prog.style.display = 'none';
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+// ── Isola Interiore ───────────────────────────────────────────────────────
+async function loadIsola() {
+  try {
+    const snap = await getDoc(doc(db, 'robinson_naufraghi', pageUid, 'isola', 'zone'));
+    if (snap.exists()) isolaZone = snap.data();
+  } catch(_) {}
+  renderIsola();
+}
+
+function renderIsola() {
+  document.querySelectorAll('.zona-card').forEach(card => {
+    const zona = card.dataset.zona;
+    card.classList.toggle('conquistata', !!isolaZone[zona]);
+    if (!isOwner && !isAdmin) {
+      card.classList.add('readonly');
+    } else {
+      card.addEventListener('click', () => toggleZona(zona, card));
+    }
+  });
+}
+
+async function toggleZona(zona, card) {
+  if (!isOwner && !isAdmin) return;
+  isolaZone[zona] = !isolaZone[zona];
+  card.classList.toggle('conquistata', !!isolaZone[zona]);
+  try {
+    await setDoc(doc(db, 'robinson_naufraghi', pageUid, 'isola', 'zone'), isolaZone);
+  } catch(e) { console.error(e); }
+}
+
+// ── Forziere ─────────────────────────────────────────────────────────────
+async function loadForziere() {
+  const list = document.getElementById('forziere-list');
+  try {
+    const snap = await getDocs(query(collection(db, 'robinson_diari', pageUid, 'posts'), orderBy('__name__', 'desc')));
+    if (snap.empty) { list.innerHTML = '<div class="empty-msg">Nessun giorno nel forziere ancora.</div>'; return; }
+    list.innerHTML = snap.docs.map(d => {
+      const data = d.data();
+      return `<div class="ricordo-item" data-id="${esc(d.id)}">
+        <span class="ricordo-data">🔒 ${esc(d.id)}</span>
+        <span class="ricordo-titolo">${data.meteo ? esc(data.meteo) + ' ' : ''}${esc(data.titolo || data.approdo || '…')}</span>
+      </div>`;
+    }).join('');
+    list.querySelectorAll('.ricordo-item').forEach(item => {
+      item.addEventListener('click', () => apriForziere(item.dataset.id, snap.docs.find(d => d.id === item.dataset.id)?.data()));
+    });
+  } catch(e) {
+    list.innerHTML = `<div style="color:var(--rosso);padding:12px;">Errore: ${esc(e.message)}</div>`;
+  }
+}
+
+function apriForziere(dataId, d) {
+  if (!d) return;
+  document.getElementById('mf-titolo').textContent = `📜 ${dataId}`;
+  const em = d.emozioni || {};
+  const rif = d.riflessioni || {};
+  document.getElementById('mf-body').innerHTML = `
+    ${d.meteo ? `<div class="forziere-campo"><div class="fc-label">Meteo del cuore</div><div class="fc-val" style="font-size:1.5rem;">${esc(d.meteo)}</div></div>` : ''}
+    ${d.titolo ? `<div class="forziere-campo"><div class="fc-label">Titolo</div><div class="fc-val">${esc(d.titolo)}</div></div>` : ''}
+    ${d.approdo ? `<div class="forziere-campo"><div class="fc-label">Approdo</div><div class="fc-val">${esc(d.approdo)}</div></div>` : ''}
+    ${d.sensazione ? `<div class="forziere-campo"><div class="fc-label">Sensazione</div><div class="fc-val">${esc(d.sensazione)}</div></div>` : ''}
+    ${rif.scoperto ? `<div class="forziere-campo"><div class="fc-label">Ho scoperto che…</div><div class="fc-val">${esc(rif.scoperto)}</div></div>` : ''}
+    ${rif.bello ? `<div class="forziere-campo"><div class="fc-label">Il momento più bello</div><div class="fc-val">${esc(rif.bello)}</div></div>` : ''}
+    ${rif.scoglio ? `<div class="forziere-campo"><div class="fc-label">Lo scoglio</div><div class="fc-val">${esc(rif.scoglio)}</div></div>` : ''}
+    ${rif.tesoro ? `<div class="forziere-campo"><div class="fc-label">Il tesoro</div><div class="fc-val">${esc(rif.tesoro)}</div></div>` : ''}
+    ${rif.rotta ? `<div class="forziere-campo"><div class="fc-label">La rotta di domani</div><div class="fc-val">${esc(rif.rotta)}</div></div>` : ''}
+    ${d.media?.length ? `<div class="forziere-campo"><div class="fc-label">Media</div>${renderMediaGrid(d.media)}</div>` : ''}`;
+  document.getElementById('modal-forziere').classList.add('open');
+}
+
+document.getElementById('mf-close').addEventListener('click', () => {
+  document.getElementById('modal-forziere').classList.remove('open');
+});
+
+// ── Bottiglia ─────────────────────────────────────────────────────────────
+function setupBottiglia() {
+  const section = document.getElementById('bottiglia-section');
+  if (isOwner) {
+    // Mostra messaggi ricevuti
+    section.innerHTML = `
+      <div style="font-size:0.88rem;font-weight:700;color:var(--navy);margin-bottom:10px;font-family:'Playfair Display',serif;">🍾 Messaggi ricevuti</div>
+      <div id="bottiglie-list"><div class="spinner"></div></div>`;
+    loadBottiglie();
+  } else {
+    // Form per inviare
+    section.innerHTML = `
+      <div style="font-size:0.88rem;color:var(--muted);margin-bottom:10px;">Invia un messaggio segreto in bottiglia a questo naufrago.</div>
+      <div class="bottiglia-form">
+        <div class="campo-diario">
+          <label>Il tuo messaggio</label>
+          <textarea id="b-testo" placeholder="Scrivi il tuo messaggio nella bottiglia…" rows="4"></textarea>
         </div>
-        ${data.text ? `<div class="post-text">${esc(data.text)}</div>` : ''}
-        ${mediaHtml}`;
-      return card;
-    }
+        <label style="display:flex;align-items:center;gap:8px;font-size:0.82rem;margin-bottom:12px;cursor:pointer;">
+          <input type="checkbox" id="b-anonimo"> Invia in modo anonimo
+        </label>
+        <button class="btn btn-oro" id="btn-invia-bottiglia">🍾 Lancia la bottiglia</button>
+        <div id="b-msg" style="margin-top:8px;font-size:0.8rem;"></div>
+      </div>`;
+    document.getElementById('btn-invia-bottiglia').addEventListener('click', inviaBottiglia);
+  }
+}
 
-    window.deleteDiarioPost = async (postId, btn) => {
-      if (!confirm('Eliminare questo post dal diario?')) return;
-      try {
-        await deleteDoc(doc(db, 'robinson_diari', pageUid, 'posts', postId));
-        btn.closest('.post-card')?.remove();
-      } catch(err) { alert(err.message); }
+async function loadBottiglie() {
+  const list = document.getElementById('bottiglie-list');
+  try {
+    const snap = await getDocs(query(collection(db, 'robinson_bottiglie', pageUid, 'messaggi'), orderBy('timestamp', 'desc')));
+    if (snap.empty) { list.innerHTML = '<div class="empty-msg">Nessun messaggio ricevuto ancora.</div>'; return; }
+    list.innerHTML = snap.docs.map(d => {
+      const m = d.data();
+      return `<div class="bottiglia-msg">
+        <div style="font-size:0.72rem;color:var(--muted);margin-bottom:4px;">
+          Da: ${m.anonimo ? '🎭 Anonimo' : esc(m.nomeMittente || 'Sconosciuto')} · ${fmtDate(m.timestamp)}
+        </div>
+        <div style="font-size:0.88rem;">${esc(m.testo)}</div>
+        <button data-del="${esc(d.id)}" style="background:none;border:none;color:var(--rosso);cursor:pointer;font-size:0.72rem;margin-top:4px;">🗑️ Elimina</button>
+      </div>`;
+    }).join('');
+    list.querySelectorAll('[data-del]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        await deleteDoc(doc(db, 'robinson_bottiglie', pageUid, 'messaggi', btn.dataset.del));
+        await loadBottiglie();
+      });
+    });
+  } catch(e) {
+    list.innerHTML = `<div style="color:var(--rosso);">Errore: ${esc(e.message)}</div>`;
+  }
+}
+
+async function inviaBottiglia() {
+  if (!currentUser) return;
+  const testo = document.getElementById('b-testo')?.value?.trim();
+  const msg = document.getElementById('b-msg');
+  if (!testo) { msg.textContent = 'Scrivi un messaggio prima.'; return; }
+  const anonimo = document.getElementById('b-anonimo')?.checked || false;
+  const btn = document.getElementById('btn-invia-bottiglia');
+  btn.disabled = true;
+  try {
+    const nomeMittente = anonimo ? '' : (currentUser.displayName || await risolviNome(currentUser.uid) || 'Naufrago');
+    await addDoc(collection(db, 'robinson_bottiglie', pageUid, 'messaggi'), {
+      testo,
+      uidMittente: currentUser.uid,
+      nomeMittente,
+      anonimo,
+      timestamp: serverTimestamp()
+    });
+    aggiungiPunteggio(currentUser.uid, 'bottiglia');
+    msg.style.color = 'var(--oro)';
+    msg.textContent = '✅ Bottiglia lanciata in mare!';
+    document.getElementById('b-testo').value = '';
+  } catch(e) {
+    msg.textContent = 'Errore: ' + e.message;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ── Profilo edit ──────────────────────────────────────────────────────────
+function setupProfiloEdit() {
+  document.getElementById('btn-salva-profilo').addEventListener('click', async () => {
+    const dati = {
+      nome: document.getElementById('pe-nome').value.trim(),
+      soprannome: document.getElementById('pe-soprannome').value.trim(),
+      genere: document.querySelector('input[name=genere]:checked')?.value || '',
+      pronomi: document.querySelector('input[name=pronomi]:checked')?.value || '',
+      superpotere: document.getElementById('pe-superpotere').value.trim(),
+      cosa: document.getElementById('pe-cosa').value.trim()
     };
-
-    // ── Chi sono ──────────────────────────────────────────────────────────
-    async function loadChiSono() {
-      try {
-        const snap = await getDoc(doc(db, 'robinson_naufraghi', pageUid, 'profilo', 'scheda'));
-        if (snap.exists()) {
-          const d = snap.data();
-          document.getElementById('cs-soprannome').value   = d.soprannome || '';
-          document.getElementById('cs-isola').value        = d.isola || '';
-          document.getElementById('cs-superpotere').value  = d.superpotere || '';
-          document.getElementById('cs-bagaglio').value     = d.bagaglio || '';
-        }
-      } catch(_) {}
+    try {
+      await setDoc(doc(db, 'robinson_naufraghi', pageUid, 'profilo', 'dati'), dati, { merge: true });
+      // Aggiorna anche nome in robinson_naufraghi root
+      if (dati.nome) await setDoc(doc(db, 'robinson_naufraghi', pageUid), { nome: dati.nome, soprannome: dati.soprannome }, { merge: true });
+      const msg = document.getElementById('profilo-msg');
+      msg.style.color = 'var(--oro)';
+      msg.textContent = '✅ Profilo salvato!';
+      document.getElementById('ph-nome').textContent = dati.nome || 'Naufrago';
+      document.getElementById('ph-soprannome').textContent = dati.soprannome ? `"${dati.soprannome}"` : '';
+      document.getElementById('ph-pronomi').textContent = dati.pronomi;
+      setTimeout(() => msg.textContent = '', 2000);
+    } catch(e) {
+      document.getElementById('profilo-msg').textContent = 'Errore: ' + e.message;
     }
+  });
+}
 
-    document.getElementById('chisono-form').addEventListener('submit', async e => {
-      e.preventDefault();
-      if (!isOwner && !isAdmin) return;
-      const btn = document.getElementById('btn-salva');
-      btn.disabled = true; btn.textContent = 'Salvataggio…';
-      try {
-        await setDoc(doc(db, 'robinson_naufraghi', pageUid, 'profilo', 'scheda'), {
-          soprannome:  document.getElementById('cs-soprannome').value.trim(),
-          isola:       document.getElementById('cs-isola').value.trim(),
-          superpotere: document.getElementById('cs-superpotere').value.trim(),
-          bagaglio:    document.getElementById('cs-bagaglio').value.trim(),
-          updatedAt:   serverTimestamp(),
-        }, { merge: true });
-        btn.textContent = '✓ Salvato!';
-        setTimeout(() => { btn.textContent = 'Salva nel diario'; btn.disabled = false; }, 1800);
-      } catch(err) { alert('Errore: ' + err.message); btn.disabled = false; btn.textContent = 'Salva nel diario'; }
-    });
-
-    // ── Galleria ricordi ──────────────────────────────────────────────────
-    async function loadGalleria() {
-      const galleria = document.getElementById('galleria');
-      const emptyMsg = document.getElementById('galleria-empty');
-      galleria.innerHTML = '';
-      try {
-        const snap = await getDocs(query(collection(db, 'robinson_diari', pageUid, 'posts'), orderBy('timestamp', 'desc')));
-        let hasMedia = false;
-        snap.forEach(d => {
-          const mediaList = normalizeMedia(d.data());
-          mediaList.forEach(m => {
-            hasMedia = true;
-            if (m.type === 'image') {
-              const item = document.createElement('div'); item.className = 'galleria-item';
-              item.innerHTML = `<img src="${esc(m.url)}" loading="lazy" alt="ricordo">`;
-              galleria.appendChild(item);
-            } else if (m.type === 'video') {
-              const item = document.createElement('div'); item.className = 'galleria-item';
-              item.innerHTML = `<video src="${esc(m.url)}" muted playsinline loop></video>`;
-              item.addEventListener('mouseenter', () => item.querySelector('video')?.play());
-              item.addEventListener('mouseleave', () => item.querySelector('video')?.pause());
-              galleria.appendChild(item);
-            } else if (m.type === 'audio') {
-              const item = document.createElement('div'); item.className = 'galleria-audio';
-              item.innerHTML = `<span>🎵</span><audio src="${esc(m.url)}" controls></audio>`;
-              galleria.appendChild(item);
-            }
-          });
-        });
-        if (!hasMedia) emptyMsg.style.display = 'block';
-      } catch(err) {
-        galleria.innerHTML = `<p class="empty-msg">Errore: ${err.message}</p>`;
-      }
-    }
-
-    // ── Modal nuovo post diario ───────────────────────────────────────────
-    const postItems = [];
-
-    function postAddFile(file, type) {
-      if (postItems.length >= MAX_FILES) { alert(`Massimo ${MAX_FILES} allegati.`); return; }
-      postItems.push({ file, type, name: file.name || type, previewUrl: URL.createObjectURL(file) });
-      renderPreview(postItems, 'post-preview', postRemoveFile);
-    }
-    function postRemoveFile(idx) {
-      URL.revokeObjectURL(postItems[idx].previewUrl); postItems.splice(idx, 1);
-      renderPreview(postItems, 'post-preview', postRemoveFile);
-    }
-    function postClear() {
-      postItems.forEach(i => URL.revokeObjectURL(i.previewUrl)); postItems.length = 0;
-      renderPreview(postItems, 'post-preview', postRemoveFile);
-    }
-
-    let postRecorder = null, postAudioChunks = [], postRecording = false;
-    const fab      = document.getElementById('fab-diario');
-    const backdrop = document.getElementById('modal-backdrop');
-
-    fab.addEventListener('click', () => backdrop.classList.add('open'));
-    document.getElementById('modal-close').addEventListener('click', closeModal);
-    backdrop.addEventListener('click', e => { if (e.target === backdrop) closeModal(); });
-
-    function closeModal() {
-      backdrop.classList.remove('open');
-      document.getElementById('post-text').value = '';
-      postClear();
-      if (postRecording) stopRec();
-    }
-
-    ['input-foto','input-foto-cam'].forEach(id => {
-      document.getElementById(id)?.addEventListener('change', e => {
-        Array.from(e.target.files).forEach(f => postAddFile(f, 'image')); e.target.value = '';
-      });
-    });
-    ['input-video','input-video-cam'].forEach(id => {
-      document.getElementById(id)?.addEventListener('change', e => {
-        Array.from(e.target.files).forEach(f => postAddFile(f, 'video')); e.target.value = '';
-      });
-    });
-    document.getElementById('input-audio-file')?.addEventListener('change', e => {
-      Array.from(e.target.files).forEach(f => postAddFile(f, 'audio')); e.target.value = '';
-    });
-
-    const btnAudio = document.getElementById('btn-audio');
-    btnAudio?.addEventListener('click', async () => {
-      if (postRecording) { stopRec(); return; }
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        postAudioChunks = [];
-        const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4';
-        postRecorder = new MediaRecorder(stream, { mimeType });
-        postRecorder.ondataavailable = e => postAudioChunks.push(e.data);
-        postRecorder.onstop = () => {
-          const ext  = mimeType.includes('mp4') ? 'mp4' : 'webm';
-          const blob = new Blob(postAudioChunks, { type: mimeType });
-          postAddFile(new File([blob], `rec_${Date.now()}.${ext}`, { type: mimeType }), 'audio');
-          stream.getTracks().forEach(t => t.stop());
-        };
-        postRecorder.start(); postRecording = true;
-        btnAudio.textContent = '⏹️ Stop'; btnAudio.classList.add('recording');
-      } catch(err) { alert('Microfono non disponibile: ' + err.message); }
-    });
-
-    function stopRec() {
-      if (postRecorder && postRecording) {
-        postRecorder.stop(); postRecording = false;
-        btnAudio.textContent = '🎙️ Registra'; btnAudio.classList.remove('recording');
-      }
-    }
-
-    document.getElementById('btn-pubblica').addEventListener('click', async () => {
-      if (!currentUser || !isOwner) return;
-      const text = document.getElementById('post-text').value.trim();
-      if (!text && postItems.length === 0) { alert('Scrivi qualcosa o aggiungi un allegato!'); return; }
-      const btn = document.getElementById('btn-pubblica');
-      btn.disabled = true; btn.textContent = 'Salvataggio…';
-      try {
-        const items = [...postItems];
-        const media = items.length
-          ? await uploadAll(items, document.getElementById('upload-bar'), document.getElementById('upload-progress'))
-          : [];
-        const nome = currentUserData?.nome || currentUser.displayName || 'Naufrago';
-        const foto = currentUserData?.fotoProfilo || '';
-        await addDoc(collection(db, 'robinson_diari', pageUid, 'posts'), {
-          authorId: currentUser.uid, authorName: nome, authorPhoto: foto,
-          text, media, timestamp: serverTimestamp(),
-        });
-        closeModal();
-        loadDiario();
-        loadGalleria();
-      } catch(err) { alert('Errore: ' + err.message); }
-      finally { btn.disabled = false; btn.textContent = 'Salva nel diario'; }
-    });
-  </script>
+// ── Lock forms per visitatori ─────────────────────────────────────────────
+function lockAllForms(lock = true) {
+  const selectors = ['#d-approdo','#d-titolo','#d-sensazione','#r-scoperto','#r-bello','#r-scoglio','#r-tesoro','#r-rotta','#e-animale-perche'];
+  selectors.forEach(s => {
+    const el = document.querySelector(s);
+    if (el) el.readOnly = lock;
+  });
+  ['btn-salva-diario','btn-salva-emozioni','btn-salva-riflessioni','btn-carica-tesori','t-audio-rec'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = lock ? 'none' : '';
+  });
+  if (lock) document.getElementById('btn-sblocca-diario').style.display = isAdmin ? 'inline-block' : 'none';
+}
+</script>
 </body>
 </html>

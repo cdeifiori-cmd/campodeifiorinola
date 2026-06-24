@@ -4,574 +4,319 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>La Spiaggia – Robinson</title>
-  <meta name="theme-color" content="#1a3a5c">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/robinson.css">
   <style>
-    body { padding-bottom: 80px; }
+    .delete-btn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; }
+    .delete-btn:hover { color: var(--rosso); }
+    .upload-area { border: 2px dashed #c8b89a; border-radius: 8px; padding: 10px; margin-top: 8px; }
+    .upload-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+    .upload-btn { background: var(--carta-scura); border: 1.5px solid #c8b89a; border-radius: 8px; padding: 6px 12px; font-size: 0.78rem; cursor: pointer; font-family: 'Lora', serif; }
+    .progress-wrap { display:none; background: var(--carta-scura); border-radius: 4px; height: 6px; margin-top: 6px; overflow: hidden; }
+    .progress-bar { height: 100%; background: var(--oro); width: 0%; transition: width 0.3s; border-radius: 4px; }
   </style>
 </head>
 <body>
 
-  <header class="top-header">
-    <div class="header-titles">
-      <div class="header-title-main">La Spiaggia</div>
-      <div class="header-title-sub">il punto d'incontro</div>
-    </div>
-    <div id="nav-auth-slot"></div>
-  </header>
-
-  <div id="feed" class="feed"><div class="spinner"></div></div>
-
-  <button class="fab" id="fab-new-post" title="Nuovo post" style="display:none">＋</button>
-
-  <!-- Modal nuovo post -->
-  <div class="modal-backdrop" id="modal-backdrop">
-    <div class="modal-sheet">
-      <div class="modal-header">
-        <span class="modal-title">✍️ Scrivi sulla spiaggia…</span>
-        <button class="modal-close" id="modal-close">✕</button>
-      </div>
-      <textarea class="form-textarea" id="post-text" placeholder="Cosa vuoi condividere sulla spiaggia?" rows="4"></textarea>
-      <div class="media-btns">
-        <label class="media-btn">🖼️ Foto<input type="file" accept="image/*" id="input-foto" multiple style="display:none"></label>
-        <label class="media-btn btn-camera">📷 Scatta<input type="file" accept="image/*" id="input-foto-cam" capture="environment" style="display:none"></label>
-        <label class="media-btn">📹 Video<input type="file" accept="video/*" id="input-video" multiple style="display:none"></label>
-        <label class="media-btn btn-camera">🎬 Registra<input type="file" accept="video/*" id="input-video-cam" capture="environment" style="display:none"></label>
-        <button class="media-btn" id="btn-audio">🎙️ Registra</button>
-        <label class="media-btn">🎵 Audio<input type="file" accept="audio/*,.mp3,.m4a,.wav,.ogg,.aac,.flac,.weba,.opus" id="input-audio-file" multiple style="display:none"></label>
-      </div>
-      <div id="post-preview"></div>
-      <div class="upload-progress" id="upload-progress"><div class="upload-progress-bar" id="upload-bar" style="width:0%"></div></div>
-      <button class="btn-pubblica" id="btn-pubblica">Pubblica</button>
-    </div>
+<header class="top-header">
+  <div>
+    <div class="header-title-main">🏖️ La Spiaggia</div>
+    <div class="header-title-sub">messaggi e voci dell'isola</div>
   </div>
+  <div id="nav-auth-slot"></div>
+</header>
 
-  <nav class="bottom-nav">
-    <a href="index.html"      class="nav-item"><span class="nav-icon">🏝️</span>Robinson</a>
-    <a href="spiaggia.html"   class="nav-item active"><span class="nav-icon">🏖️</span>Spiaggia</a>
-    <a href="naufraghi.html"  class="nav-item"><span class="nav-icon">👥</span>Naufraghi</a>
-    <a href="ciurma.html"     class="nav-item"><span class="nav-icon">⚓</span>Ciurma</a>
-    <a href="appunti.html"    class="nav-item"><span class="nav-icon">📓</span>Appunti</a>
-  </nav>
+<div id="feed" class="feed">
+  <div class="spinner"></div>
+</div>
 
-  <script type="module">
-    import { auth, db, ADMIN_UID, EMOJIS, MAX_FILES } from './js/robinson-firebase.js';
-    import { setupNavAuth } from './js/robinson-nav.js';
-    import {
-      esc, fmtDate, risolviNome, uploadOne, uploadAll,
-      normalizeMedia, renderMediaGrid, renderCommentMedia, renderPreview
-    } from './js/robinson-utils.js';
-    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import {
-      collection, addDoc, getDoc, doc, updateDoc, query, orderBy,
-      limit, serverTimestamp, onSnapshot, deleteDoc,
-      increment, setDoc, arrayUnion, arrayRemove
-    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+<button class="fab" id="fab-new" title="Nuovo post">+</button>
 
-    const COLL = 'robinson_spiaggia';
+<!-- Modal nuovo post -->
+<div class="modal-overlay" id="modal-post">
+  <div class="modal-box">
+    <div class="modal-title">🏖️ Scrivi sulla Spiaggia</div>
+    <div class="form-group">
+      <textarea id="post-text" placeholder="Cosa vuoi condividere con l'isola?" rows="4" style="width:100%;padding:9px 12px;border:1.5px solid #c8b89a;border-radius:8px;font-family:'Lora',serif;font-size:0.9rem;background:var(--post-bg);resize:vertical;"></textarea>
+    </div>
+    <div class="upload-area">
+      <div style="font-size:0.78rem;color:var(--muted);margin-bottom:6px;">📎 Allegati (facoltativo)</div>
+      <div class="upload-row">
+        <label class="upload-btn">📷 Foto <input type="file" id="inp-foto" accept="image/*" multiple style="display:none;"></label>
+        <label class="upload-btn">🎥 Video <input type="file" id="inp-video" accept="video/*" multiple style="display:none;"></label>
+        <label class="upload-btn">🎵 Audio <input type="file" id="inp-audio" accept="audio/*" multiple style="display:none;"></label>
+      </div>
+      <div id="preview-allegati"></div>
+      <div class="progress-wrap" id="prog-wrap"><div class="progress-bar" id="prog-bar"></div></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:14px;">
+      <button class="btn btn-primary" id="btn-pubblica">Pubblica 🌊</button>
+      <button class="btn" style="background:var(--carta-scura);" id="btn-annulla">Annulla</button>
+    </div>
+    <div id="post-err" style="color:var(--rosso);font-size:0.8rem;margin-top:8px;"></div>
+  </div>
+</div>
 
-    setupNavAuth('nav-auth-slot');
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item"><span class="nav-icon">🏝️</span><span>Home</span></a>
+  <a href="spiaggia.html" class="nav-item active"><span class="nav-icon">🏖️</span><span>Spiaggia</span></a>
+  <a href="naufraghi.html" class="nav-item"><span class="nav-icon">👤</span><span>Naufraghi</span></a>
+  <a href="ciurma.html" class="nav-item"><span class="nav-icon">⚓</span><span>Ciurma</span></a>
+  <a href="appunti.html" class="nav-item"><span class="nav-icon">📔</span><span>Appunti</span></a>
+</nav>
 
-    const myPostReactions    = new Map();
-    const myCommentReactions = new Map();
+<script type="module">
+import { db, auth, EMOJIS, ADMIN_UID } from './js/robinson-firebase.js';
+import { setupNavAuth } from './js/robinson-nav.js';
+import { aggiungiPunteggio } from './js/robinson-punteggio.js';
+import { esc, fmtDate, risolviNome, uploadAll, renderMediaGrid, normalizeMedia, renderPreview } from './js/robinson-utils.js';
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import {
+  collection, addDoc, deleteDoc, doc, onSnapshot,
+  query, orderBy, limit, getDoc, setDoc, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-    let currentUser = null;
-    let currentUserData = null;
-    let isAdmin = false;
+setupNavAuth('nav-auth-slot');
 
-    onAuthStateChanged(auth, async user => {
-      currentUser = user;
-      if (user) {
-        isAdmin = user.uid === ADMIN_UID;
-        try {
-          let snap = await getDoc(doc(db, 'utenti', user.uid));
-          if (!snap.exists()) snap = await getDoc(doc(db, 'staff', user.uid));
-          if (snap.exists()) currentUserData = snap.data();
-        } catch(_) {}
-        document.getElementById('fab-new-post').style.display = 'flex';
-      }
-      loadFeed();
+const COL = 'robinson_spiaggia';
+let currentUser = null;
+let allegati = []; // {file, type, previewUrl}
+
+onAuthStateChanged(auth, user => {
+  if (!user) { location.href = 'https://campodeifiori.org/login.html'; return; }
+  currentUser = user;
+  loadFeed();
+});
+
+// ── Feed ────────────────────────────────────────────────────────────────
+function loadFeed() {
+  const feed = document.getElementById('feed');
+  const q = query(collection(db, COL), orderBy('timestamp', 'desc'), limit(50));
+  onSnapshot(q, async snap => {
+    if (snap.empty) { feed.innerHTML = '<div class="empty-msg">🌊 Nessun post ancora. Sii il primo!</div>'; return; }
+    const posts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    feed.innerHTML = '';
+    for (const p of posts) {
+      const div = document.createElement('div');
+      div.className = 'post-card';
+      div.id = 'post-' + p.id;
+      div.innerHTML = await buildPostHTML(p);
+      feed.appendChild(div);
+      attachPostEvents(div, p);
+    }
+  });
+}
+
+async function buildPostHTML(p) {
+  const media = normalizeMedia(p);
+  const isAuthor = currentUser && (currentUser.uid === p.authorId || currentUser.uid === ADMIN_UID);
+  const avatar = p.authorPhoto ? `<img src="${esc(p.authorPhoto)}" class="post-avatar">` : `<div class="post-avatar" style="display:flex;align-items:center;justify-content:center;font-size:1.2rem;">⚓</div>`;
+  return `
+    <div class="post-header">
+      ${avatar}
+      <div class="post-meta">
+        <div class="post-author">${esc(p.authorName || 'Naufrago')}</div>
+        <div class="post-time">${fmtDate(p.timestamp)}</div>
+      </div>
+      ${isAuthor ? `<button class="delete-btn" data-id="${esc(p.id)}">🗑️</button>` : ''}
+    </div>
+    ${p.text ? `<div class="post-text">${esc(p.text)}</div>` : ''}
+    ${renderMediaGrid(media)}
+    <div class="reaction-bar" id="reactions-${esc(p.id)}">
+      ${EMOJIS.map(e => `<button class="reaction-btn" data-emoji="${esc(e)}" data-pid="${esc(p.id)}">${e} <span class="rcount">0</span></button>`).join('')}
+    </div>
+    <div class="post-actions">
+      <button class="btn btn-sm" style="background:var(--carta-scura);" data-toggle-comments="${esc(p.id)}">💬 Commenti</button>
+    </div>
+    <div id="comments-${esc(p.id)}" style="display:none;">
+      <div class="comments-list" id="clist-${esc(p.id)}"></div>
+      <div class="comment-form">
+        <input type="text" placeholder="Scrivi un commento..." id="cinp-${esc(p.id)}">
+        <button class="btn btn-sm btn-primary" data-send-comment="${esc(p.id)}">Invia</button>
+      </div>
+    </div>`;
+}
+
+function attachPostEvents(div, p) {
+  // Delete
+  div.querySelector('.delete-btn')?.addEventListener('click', async () => {
+    if (!confirm('Eliminare questo post?')) return;
+    await deleteDoc(doc(db, COL, p.id));
+  });
+
+  // Reactions
+  loadReactions(p.id);
+  div.querySelectorAll('.reaction-btn').forEach(btn => {
+    btn.addEventListener('click', () => toggleReaction(p.id, btn.dataset.emoji));
+  });
+
+  // Comments toggle
+  div.querySelector(`[data-toggle-comments]`)?.addEventListener('click', () => {
+    const box = document.getElementById('comments-' + p.id);
+    if (!box) return;
+    if (box.style.display === 'none') {
+      box.style.display = 'block';
+      loadComments(p.id);
+    } else {
+      box.style.display = 'none';
+    }
+  });
+
+  // Send comment
+  div.querySelector(`[data-send-comment]`)?.addEventListener('click', () => sendComment(p.id));
+  div.querySelector(`#cinp-${p.id}`)?.addEventListener('keydown', e => { if (e.key === 'Enter') sendComment(p.id); });
+}
+
+// ── Reactions ───────────────────────────────────────────────────────────
+async function loadReactions(pid) {
+  const rRef = collection(db, COL, pid, 'user_reactions');
+  onSnapshot(rRef, snap => {
+    const counts = {};
+    EMOJIS.forEach(e => counts[e] = 0);
+    let myEmojis = [];
+    snap.forEach(d => {
+      const data = d.data();
+      (data.emojis || []).forEach(e => { if (counts[e] !== undefined) counts[e]++; });
+      if (currentUser && d.id === currentUser.uid) myEmojis = data.emojis || [];
+    });
+    const bar = document.getElementById('reactions-' + pid);
+    if (!bar) return;
+    bar.querySelectorAll('.reaction-btn').forEach(btn => {
+      const e = btn.dataset.emoji;
+      btn.querySelector('.rcount').textContent = counts[e] || 0;
+      btn.classList.toggle('mine', myEmojis.includes(e));
+    });
+  });
+}
+
+async function toggleReaction(pid, emoji) {
+  if (!currentUser) return;
+  const rDoc = doc(db, COL, pid, 'user_reactions', currentUser.uid);
+  const snap = await getDoc(rDoc);
+  let emojis = snap.exists() ? (snap.data().emojis || []) : [];
+  const had = emojis.includes(emoji);
+  emojis = had ? emojis.filter(e => e !== emoji) : [...emojis, emoji];
+  await setDoc(rDoc, { emojis });
+  if (!had) aggiungiPunteggio(currentUser.uid, 'reazione');
+}
+
+// ── Comments ────────────────────────────────────────────────────────────
+function loadComments(pid) {
+  const list = document.getElementById('clist-' + pid);
+  if (!list) return;
+  const q = query(collection(db, COL, pid, 'commenti'), orderBy('timestamp', 'asc'));
+  onSnapshot(q, snap => {
+    list.innerHTML = snap.docs.map(d => {
+      const c = d.data();
+      return `<div class="comment-item"><span class="comment-author">${esc(c.authorName || 'Naufrago')}</span>: ${esc(c.text)}<span style="float:right;font-size:0.68rem;color:var(--muted);">${fmtDate(c.timestamp)}</span></div>`;
+    }).join('');
+  });
+}
+
+async function sendComment(pid) {
+  if (!currentUser) return;
+  const inp = document.getElementById('cinp-' + pid);
+  const text = inp?.value?.trim();
+  if (!text) return;
+  inp.value = '';
+  await addDoc(collection(db, COL, pid, 'commenti'), {
+    text,
+    authorId: currentUser.uid,
+    authorName: currentUser.displayName || 'Naufrago',
+    authorPhoto: currentUser.photoURL || null,
+    timestamp: serverTimestamp()
+  });
+  aggiungiPunteggio(currentUser.uid, 'commento');
+}
+
+// ── Nuovo post ──────────────────────────────────────────────────────────
+document.getElementById('fab-new').addEventListener('click', () => {
+  document.getElementById('modal-post').classList.add('open');
+});
+document.getElementById('btn-annulla').addEventListener('click', () => {
+  document.getElementById('modal-post').classList.remove('open');
+  allegati = [];
+  renderPreview([], document.getElementById('preview-allegati'));
+});
+
+// File inputs
+['foto', 'video', 'audio'].forEach(tipo => {
+  document.getElementById('inp-' + tipo).addEventListener('change', e => {
+    const files = Array.from(e.target.files);
+    files.forEach(f => {
+      allegati.push({ file: f, type: tipo === 'foto' ? 'image' : tipo, previewUrl: URL.createObjectURL(f) });
+    });
+    e.target.value = '';
+    aggiPreview();
+  });
+});
+
+function aggiPreview() {
+  const container = document.getElementById('preview-allegati');
+  renderPreview(allegati, container);
+  container.querySelectorAll('.prev-rm').forEach(btn => {
+    btn.addEventListener('click', () => {
+      allegati.splice(parseInt(btn.dataset.idx), 1);
+      aggiPreview();
+    });
+  });
+}
+
+document.getElementById('btn-pubblica').addEventListener('click', async () => {
+  if (!currentUser) return;
+  const text = document.getElementById('post-text').value.trim();
+  const err = document.getElementById('post-err');
+  if (!text && !allegati.length) { err.textContent = 'Scrivi qualcosa o aggiungi un allegato.'; return; }
+  err.textContent = '';
+
+  const btn = document.getElementById('btn-pubblica');
+  btn.disabled = true;
+  btn.textContent = 'Pubblicazione...';
+
+  try {
+    let media = [];
+    if (allegati.length) {
+      const prog = document.getElementById('prog-wrap');
+      const bar = document.getElementById('prog-bar');
+      prog.style.display = 'block';
+      let done = 0;
+      media = await Promise.all(allegati.map(a =>
+        uploadAll([a]).then(r => {
+          done++;
+          bar.style.width = Math.round(done / allegati.length * 100) + '%';
+          return r[0];
+        })
+      ));
+      setTimeout(() => { prog.style.display = 'none'; bar.style.width = '0%'; }, 500);
+    }
+
+    await addDoc(collection(db, COL), {
+      text,
+      authorId: currentUser.uid,
+      authorName: currentUser.displayName || 'Naufrago',
+      authorPhoto: currentUser.photoURL || null,
+      media,
+      timestamp: serverTimestamp()
     });
 
-    async function getDatiAutore() {
-      let nome = currentUserData?.nome || currentUserData?.nomeCompleto || currentUser?.displayName || '';
-      let foto = currentUserData?.fotoProfilo || null;
-      if (!nome && currentUser) {
-        try {
-          let snap = await getDoc(doc(db, 'utenti', currentUser.uid));
-          if (!snap.exists()) snap = await getDoc(doc(db, 'staff', currentUser.uid));
-          if (snap.exists()) {
-            const d = snap.data(); currentUserData = d;
-            nome = d.nome || d.nomeCompleto || d.displayName || currentUser.displayName || '';
-            foto = d.fotoProfilo || null;
-          }
-        } catch(_) {}
-      }
-      return { nome: nome || 'Naufrago', foto: foto || '' };
-    }
-
-    // ── Modal nuovo post ──────────────────────────────────────────────────
-    const postItems = [];
-
-    function postAddFile(file, type) {
-      if (postItems.length >= MAX_FILES) { alert(`Massimo ${MAX_FILES} allegati per post.`); return; }
-      postItems.push({ file, type, name: file.name || type, previewUrl: URL.createObjectURL(file) });
-      renderPreview(postItems, 'post-preview', postRemoveFile);
-    }
-    function postRemoveFile(idx) {
-      URL.revokeObjectURL(postItems[idx].previewUrl); postItems.splice(idx, 1);
-      renderPreview(postItems, 'post-preview', postRemoveFile);
-    }
-    function postClear() {
-      postItems.forEach(i => URL.revokeObjectURL(i.previewUrl)); postItems.length = 0;
-      renderPreview(postItems, 'post-preview', postRemoveFile);
-    }
-
-    let postRecorder = null, postAudioChunks = [], postRecording = false;
-    const fab      = document.getElementById('fab-new-post');
-    const backdrop = document.getElementById('modal-backdrop');
-
-    fab.addEventListener('click', () => backdrop.classList.add('open'));
-    document.getElementById('modal-close').addEventListener('click', closePostModal);
-    backdrop.addEventListener('click', e => { if (e.target === backdrop) closePostModal(); });
-
-    function closePostModal() {
-      backdrop.classList.remove('open');
-      document.getElementById('post-text').value = '';
-      postClear();
-      if (postRecording) stopPostRec();
-    }
-
-    ['input-foto','input-foto-cam'].forEach(id => {
-      document.getElementById(id).addEventListener('change', e => {
-        Array.from(e.target.files).forEach(f => postAddFile(f, 'image')); e.target.value = '';
-      });
-    });
-    ['input-video','input-video-cam'].forEach(id => {
-      document.getElementById(id).addEventListener('change', e => {
-        Array.from(e.target.files).forEach(f => postAddFile(f, 'video')); e.target.value = '';
-      });
-    });
-    document.getElementById('input-audio-file').addEventListener('change', e => {
-      Array.from(e.target.files).forEach(f => postAddFile(f, 'audio')); e.target.value = '';
+    aggiungiPunteggio(currentUser.uid, 'post');
+    media.forEach(m => {
+      if (m.type === 'image') aggiungiPunteggio(currentUser.uid, 'foto');
+      else if (m.type === 'video') aggiungiPunteggio(currentUser.uid, 'video');
+      else if (m.type === 'audio') aggiungiPunteggio(currentUser.uid, 'audio');
     });
 
-    const btnAudio = document.getElementById('btn-audio');
-    btnAudio.addEventListener('click', async () => {
-      if (postRecording) { stopPostRec(); return; }
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        postAudioChunks = [];
-        postRecorder = new MediaRecorder(stream);
-        postRecorder.ondataavailable = e => postAudioChunks.push(e.data);
-        postRecorder.onstop = () => {
-          const blob = new Blob(postAudioChunks, { type: 'audio/webm' });
-          postAddFile(new File([blob], `rec_${Date.now()}.webm`, { type: 'audio/webm' }), 'audio');
-          stream.getTracks().forEach(t => t.stop());
-        };
-        postRecorder.start(); postRecording = true;
-        btnAudio.textContent = '⏹️ Stop'; btnAudio.classList.add('recording');
-      } catch(err) { alert('Microfono non disponibile: ' + err.message); }
-    });
-
-    function stopPostRec() {
-      if (postRecorder && postRecording) {
-        postRecorder.stop(); postRecording = false;
-        btnAudio.textContent = '🎙️ Registra'; btnAudio.classList.remove('recording');
-      }
-    }
-
-    document.getElementById('btn-pubblica').addEventListener('click', async () => {
-      if (!currentUser) return;
-      const text = document.getElementById('post-text').value.trim();
-      if (!text && postItems.length === 0) { alert('Scrivi qualcosa o aggiungi un allegato!'); return; }
-      const btn = document.getElementById('btn-pubblica');
-      btn.disabled = true; btn.textContent = 'Pubblicazione…';
-      try {
-        const items = [...postItems];
-        const media = items.length ? await uploadAll(items, document.getElementById('upload-bar'), document.getElementById('upload-progress')) : [];
-        const { nome, foto } = await getDatiAutore();
-        await addDoc(collection(db, COLL), {
-          authorId: currentUser.uid, authorName: nome, authorPhoto: foto,
-          text, media, timestamp: serverTimestamp(), reactions: {}, commentsCount: 0,
-        });
-        closePostModal();
-      } catch(err) { alert('Errore: ' + err.message); }
-      finally { btn.disabled = false; btn.textContent = 'Pubblica'; }
-    });
-
-    // ── Feed ──────────────────────────────────────────────────────────────
-    function loadFeed() {
-      const feedEl = document.getElementById('feed');
-      feedEl.innerHTML = '<div class="spinner"></div>';
-      const q = query(collection(db, COLL), orderBy('timestamp', 'desc'), limit(40));
-      onSnapshot(q, snap => {
-        feedEl.innerHTML = '';
-        if (snap.empty) { feedEl.innerHTML = '<p class="empty-msg">La spiaggia è silenziosa… scrivi il primo messaggio! 🏖️</p>'; return; }
-        snap.forEach(d => feedEl.appendChild(buildPostCard(d.id, d.data())));
-      }, err => { feedEl.innerHTML = '<p class="empty-msg">Errore caricamento.</p>'; console.error(err); });
-    }
-
-    function buildPostCard(postId, data) {
-      const card = document.createElement('div');
-      card.className = 'post-card';
-      card.dataset.postId = postId;
-
-      const avatar = data.authorPhoto
-        ? `<div class="post-avatar"><img src="${esc(data.authorPhoto)}" alt=""></div>`
-        : `<div class="post-avatar">⚓</div>`;
-
-      const mediaHtml = renderMediaGrid(normalizeMedia(data));
-      const reactHtml = EMOJIS.map(emoji => {
-        const cnt = (data.reactions || {})[emoji] || 0;
-        return `<button class="reaction-btn" data-emoji="${emoji}" onclick="toggleReaction('${postId}','${emoji}',this)">${emoji}${cnt > 0 ? ' <span>' + cnt + '</span>' : ''}</button>`;
-      }).join('');
-
-      const canDel  = isAdmin || (currentUser && currentUser.uid === data.authorId);
-      const commCnt = data.commentsCount || 0;
-
-      card.innerHTML = `
-        <div class="post-header">
-          ${avatar}
-          <div class="post-meta">
-            <div class="post-autore" data-uid="${esc(data.authorId || '')}">${esc(data.authorName && data.authorName !== 'Anonimo' ? data.authorName : '')}</div>
-            <div class="post-data">${fmtDate(data.timestamp)}</div>
-          </div>
-          ${canDel ? `<div class="post-options-wrap"><button class="post-options-btn" onclick="togglePostMenu(event,'${postId}')">⋮</button><div class="post-options-menu" id="pmenu-${postId}"><button onclick="openEditMedia('${postId}',this)">✏️ Modifica media</button><button class="opt-delete" onclick="closePostMenu('${postId}');deletePost('${postId}',this)">🗑️ Elimina</button></div></div>` : ''}
-        </div>
-        ${data.text ? `<div class="post-text">${esc(data.text)}</div>` : ''}
-        ${mediaHtml}
-        <div class="post-reactions">${reactHtml}</div>
-        <div class="post-footer">
-          <button class="btn-comments" onclick="toggleComments('${postId}')">💬 ${commCnt > 0 ? commCnt + ' commenti' : 'Commenta'}</button>
-        </div>
-        <div class="comments-section" id="cs-${postId}"></div>`;
-
-      const nomeEl = card.querySelector('.post-autore');
-      if (nomeEl && !nomeEl.textContent.trim() && data.authorId) {
-        risolviNome(data.authorId).then(n => { if (n) nomeEl.textContent = n; });
-      }
-      if (currentUser) applyMyPostReactions(postId, card);
-      card._postData = data;
-      return card;
-    }
-
-    async function applyMyPostReactions(postId, card) {
-      if (!myPostReactions.has(postId)) {
-        myPostReactions.set(postId, new Set());
-        try {
-          const uSnap = await getDoc(doc(db, COLL, postId, 'user_reactions', currentUser.uid));
-          myPostReactions.set(postId, new Set(uSnap.exists() ? (uSnap.data().emojis || []) : []));
-        } catch(_) {}
-      }
-      const mine = myPostReactions.get(postId);
-      card.querySelectorAll('.reaction-btn').forEach(btn => {
-        btn.classList.toggle('active', mine.has(btn.dataset.emoji));
-      });
-    }
-
-    window.toggleReaction = async (postId, emoji, btn) => {
-      if (!currentUser) { alert('Fai il login per reagire!'); return; }
-      const pRef = doc(db, COLL, postId);
-      const uRef = doc(db, COLL, postId, 'user_reactions', currentUser.uid);
-      const wasActive = btn.classList.contains('active');
-      btn.classList.toggle('active'); adjCount(btn, wasActive ? -1 : 1);
-      if (!myPostReactions.has(postId)) myPostReactions.set(postId, new Set());
-      const mine = myPostReactions.get(postId);
-      wasActive ? mine.delete(emoji) : mine.add(emoji);
-      try {
-        const nomeAutore = currentUserData?.nome || currentUser.displayName || 'Naufrago';
-        if (wasActive) {
-          await updateDoc(pRef, { [`reactions.${emoji}`]: increment(-1) });
-          await updateDoc(uRef, { emojis: arrayRemove(emoji) });
-        } else {
-          await updateDoc(pRef, { [`reactions.${emoji}`]: increment(1) });
-          const uSnap = await getDoc(uRef);
-          uSnap.exists()
-            ? await updateDoc(uRef, { emojis: arrayUnion(emoji), nomeAutore })
-            : await setDoc(uRef, { emojis: [emoji], nomeAutore });
-        }
-      } catch(err) {
-        btn.classList.toggle('active'); adjCount(btn, wasActive ? 1 : -1);
-        wasActive ? mine.add(emoji) : mine.delete(emoji);
-      }
-    };
-
-    function adjCount(btn, delta) {
-      let span = btn.querySelector('span');
-      if (!span) { span = document.createElement('span'); btn.append(' ', span); span.textContent = '0'; }
-      const next = parseInt(span.textContent || '0') + delta;
-      if (next <= 0) { const prev = span.previousSibling; if (prev?.nodeType === 3) btn.removeChild(prev); btn.removeChild(span); }
-      else span.textContent = next;
-    }
-
-    window.deletePost = async (postId, btn) => {
-      if (!confirm('Eliminare questo post?')) return;
-      try { await deleteDoc(doc(db, COLL, postId)); btn.closest('.post-card')?.remove(); }
-      catch(err) { alert(err.message); }
-    };
-
-    document.addEventListener('click', () => {
-      document.querySelectorAll('.post-options-menu.open').forEach(m => m.classList.remove('open'));
-    });
-    window.togglePostMenu = (e, postId) => {
-      e.stopPropagation();
-      const menu = document.getElementById(`pmenu-${postId}`);
-      if (!menu) return;
-      const wasOpen = menu.classList.contains('open');
-      document.querySelectorAll('.post-options-menu.open').forEach(m => m.classList.remove('open'));
-      if (!wasOpen) menu.classList.add('open');
-    };
-    window.closePostMenu = postId => document.getElementById(`pmenu-${postId}`)?.classList.remove('open');
-
-    window.openEditMedia = (postId, triggerBtn) => {
-      closePostMenu(postId);
-      const cardEl = triggerBtn.closest('.post-card');
-      if (!cardEl) return;
-      cardEl.querySelector('.edit-media-panel')?.remove();
-      const snap = cardEl._postData || {};
-      let mediaArr = normalizeMedia(snap).map(m => ({ ...m }));
-      let newFiles = [];
-      const panel = document.createElement('div');
-      panel.className = 'edit-media-panel';
-
-      function renderPanel() {
-        panel.innerHTML = '';
-        const h4 = document.createElement('h4'); h4.textContent = '✏️ Modifica media'; panel.appendChild(h4);
-        const existing = document.createElement('div'); existing.className = 'edit-media-existing';
-        function makeItem(previewEl, onRemove) {
-          const item = document.createElement('div'); item.className = 'edit-media-item';
-          item.appendChild(previewEl);
-          const rm = document.createElement('button'); rm.className = 'remove-media-btn'; rm.textContent = '✕';
-          rm.addEventListener('click', onRemove); item.appendChild(rm); return item;
-        }
-        mediaArr.forEach((m, i) => {
-          let prev;
-          if (m.type === 'video') { prev = document.createElement('video'); prev.src = m.url; prev.muted = true; }
-          else if (m.type === 'audio') { prev = document.createElement('div'); prev.style.cssText='width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:var(--oro-light);border-radius:8px;font-size:2rem;'; prev.textContent='🎵'; }
-          else { prev = document.createElement('img'); prev.src = m.url; }
-          existing.appendChild(makeItem(prev, () => { mediaArr.splice(i, 1); renderPanel(); }));
-        });
-        newFiles.forEach((nf, i) => {
-          let prev;
-          if (nf.type === 'video') { prev = document.createElement('video'); prev.src = URL.createObjectURL(nf.file); prev.muted = true; }
-          else { prev = document.createElement('img'); prev.src = URL.createObjectURL(nf.file); }
-          existing.appendChild(makeItem(prev, () => { newFiles.splice(i, 1); renderPanel(); }));
-        });
-        panel.appendChild(existing);
-        const addBtns = document.createElement('div'); addBtns.className = 'edit-media-add-btns';
-        function addFileBtn(label, accept, type, capture) {
-          const btn = document.createElement('button'); btn.textContent = label;
-          const inp = document.createElement('input'); inp.type='file'; inp.accept=accept; inp.style.display='none';
-          if (capture) inp.capture = capture;
-          inp.addEventListener('change', () => { if (inp.files[0]) { newFiles.push({file:inp.files[0],type,name:inp.files[0].name}); renderPanel(); } });
-          btn.addEventListener('click', () => inp.click());
-          addBtns.appendChild(btn); addBtns.appendChild(inp);
-        }
-        addFileBtn('🖼️ Foto','image/*','image',null);
-        addFileBtn('📹 Video','video/*','video',null);
-        panel.appendChild(addBtns);
-        const btnRow = document.createElement('div'); btnRow.style.cssText='display:flex;gap:8px;';
-        const saveBtn = document.createElement('button'); saveBtn.className='edit-media-save-btn'; saveBtn.textContent='Salva';
-        saveBtn.addEventListener('click', () => saveEdit(saveBtn));
-        const cancelBtn = document.createElement('button'); cancelBtn.className='edit-media-cancel-btn'; cancelBtn.textContent='Annulla';
-        cancelBtn.addEventListener('click', () => panel.remove());
-        btnRow.appendChild(saveBtn); btnRow.appendChild(cancelBtn); panel.appendChild(btnRow);
-      }
-
-      async function saveEdit(saveBtn) {
-        saveBtn.disabled=true; saveBtn.textContent='Salvataggio…';
-        try {
-          const uploaded = await Promise.all(newFiles.map(nf=>uploadOne(nf.file,nf.type).then(url=>({url,type:nf.type,name:nf.name}))));
-          await updateDoc(doc(db,COLL,postId),{media:[...mediaArr,...uploaded],mediaUrl:null,mediaType:null});
-          panel.remove();
-        } catch(e) { saveBtn.disabled=false; saveBtn.textContent='Salva'; alert('Errore: '+e.message); }
-      }
-      renderPanel();
-      const mg = cardEl.querySelector('.media-grid, .audio-list');
-      if (mg) mg.after(panel); else { const pt=cardEl.querySelector('.post-text'); (pt||cardEl).after(panel); }
-    };
-
-    // ── Comments ──────────────────────────────────────────────────────────
-    const loadedCs = new Set();
-
-    window.toggleComments = async postId => {
-      const sec = document.getElementById(`cs-${postId}`);
-      if (!sec) return;
-      const open = sec.classList.toggle('open');
-      if (open && !loadedCs.has(postId)) { loadedCs.add(postId); loadComments(postId, sec); }
-    };
-
-    function loadComments(postId, sec) {
-      sec.innerHTML = '<div style="color:#aaa;font-size:0.82rem;padding:4px 0">Caricamento…</div>';
-      const q = query(collection(db, COLL, postId, 'comments'), orderBy('timestamp', 'asc'));
-      onSnapshot(q, snap => {
-        const list = document.createElement('div'); list.className = 'comment-list';
-        snap.forEach(d => list.appendChild(buildCommentEl(postId, d.id, d.data())));
-        const existing = sec.querySelector('.comment-input-wrap');
-        sec.innerHTML = ''; sec.appendChild(list);
-        sec.appendChild(existing || buildCommentInput(postId));
-      }, err => { sec.innerHTML = `<p style="color:var(--rosso);font-size:0.82rem">${err.message}</p>`; });
-    }
-
-    function buildCommentEl(postId, commentId, data) {
-      const el = document.createElement('div'); el.className = 'comment-item';
-      const avatar = data.authorPhoto
-        ? `<div class="comment-avatar"><img src="${esc(data.authorPhoto)}" alt=""></div>`
-        : `<div class="comment-avatar">⚓</div>`;
-      const mediaHtml = renderCommentMedia(data);
-      const crKey = `${postId}:${commentId}`;
-      const myCR  = myCommentReactions.get(crKey) || new Set();
-      const reactHtml = EMOJIS.map(emoji => {
-        const cnt = (data.reactions||{})[emoji] || 0;
-        const active = myCR.has(emoji) ? ' active' : '';
-        return `<button class="comment-reaction-btn${active}" data-emoji="${emoji}" data-cnt="${cnt}" onclick="toggleCR('${postId}','${commentId}','${emoji}',this)">${emoji}${cnt > 0 ? ' ' + cnt : ''}</button>`;
-      }).join('');
-      const canDel = isAdmin || (currentUser && currentUser.uid === data.authorId);
-      el.innerHTML = `${avatar}
-        <div class="comment-bubble">
-          <div class="comment-autore">${esc(data.authorName || 'Naufrago')}</div>
-          ${data.text ? `<div class="comment-text">${data.tono ? `<span class="tono-tag">${data.tono}</span>` : ''}${esc(data.text)}</div>` : ''}
-          ${mediaHtml}
-          <div class="comment-reactions">${reactHtml}</div>
-          <div class="comment-data">${fmtDate(data.timestamp)}${canDel ? ` <button onclick="deleteComment('${postId}','${commentId}',this)" style="margin-left:8px;background:none;border:none;cursor:pointer;font-size:0.75rem;color:#ccc;">✕</button>` : ''}</div>
-        </div>`;
-      return el;
-    }
-
-    window.toggleCR = async (postId, commentId, emoji, btn) => {
-      if (!currentUser) { alert('Fai il login per reagire!'); return; }
-      const ref = doc(db, COLL, postId, 'comments', commentId);
-      const crKey = `${postId}:${commentId}`;
-      if (!myCommentReactions.has(crKey)) myCommentReactions.set(crKey, new Set());
-      const myCR = myCommentReactions.get(crKey);
-      const wasActive = btn.classList.contains('active');
-      const delta = wasActive ? -1 : 1;
-      const cur = parseInt(btn.dataset.cnt || '0');
-      const next = Math.max(0, cur + delta);
-      btn.classList.toggle('active'); btn.dataset.cnt = next;
-      btn.textContent = emoji + (next > 0 ? ' ' + next : '');
-      wasActive ? myCR.delete(emoji) : myCR.add(emoji);
-      try { await updateDoc(ref, { [`reactions.${emoji}`]: increment(delta) }); }
-      catch(err) {
-        btn.classList.toggle('active'); btn.dataset.cnt = cur;
-        btn.textContent = emoji + (cur > 0 ? ' ' + cur : '');
-        wasActive ? myCR.add(emoji) : myCR.delete(emoji);
-      }
-    };
-
-    window.deleteComment = async (postId, commentId, btn) => {
-      if (!confirm('Eliminare commento?')) return;
-      try {
-        await deleteDoc(doc(db, COLL, postId, 'comments', commentId));
-        await updateDoc(doc(db, COLL, postId), { commentsCount: increment(-1) });
-        btn.closest('.comment-item')?.remove();
-      } catch(err) { alert(err.message); }
-    };
-
-    function buildCommentInput(postId) {
-      const cItems = [];
-      const previewId = `cprev-${postId}-${Date.now()}`;
-      let cRec = null, cAudioChunks = [], cRecording = false;
-      const wrap = document.createElement('div'); wrap.className = 'comment-input-wrap';
-      wrap.innerHTML = `
-        <div class="comment-input-inner">
-          <textarea class="comment-textarea" placeholder="Scrivi un commento…" rows="1"></textarea>
-          <div class="comment-media-btns">
-            <label class="comment-media-btn">📷<input type="file" accept="image/*" multiple style="display:none" class="ci-foto"></label>
-            <label class="comment-media-btn btn-camera">📸<input type="file" accept="image/*" capture="environment" style="display:none" class="ci-foto-cam"></label>
-            <label class="comment-media-btn">🎬<input type="file" accept="video/*" multiple style="display:none" class="ci-vid"></label>
-            <label class="comment-media-btn btn-camera">🎥<input type="file" accept="video/*" capture="environment" style="display:none" class="ci-vid-cam"></label>
-            <button class="comment-media-btn ci-rec">🎙️</button>
-            <label class="comment-media-btn">🎵<input type="file" accept="audio/*,.mp3,.m4a,.wav,.ogg,.aac,.flac,.weba,.opus" multiple style="display:none" class="ci-aud"></label>
-          </div>
-          <div id="${previewId}"></div>
-        </div>
-        <button class="comment-send-btn">Invia</button>`;
-
-      const textarea = wrap.querySelector('.comment-textarea');
-      const recBtn   = wrap.querySelector('.ci-rec');
-      const sendBtn  = wrap.querySelector('.comment-send-btn');
-      const inner    = wrap.querySelector('.comment-input-inner');
-
-      let selectedTono = '';
-      const TONI_P = ['😊','😂','😢','😡','😍','🤔','😎','😳','🥺','😤','🙏','❤️'];
-      const picker = document.createElement('div'); picker.className = 'tono-picker';
-      TONI_P.forEach(t => {
-        const btn = document.createElement('button'); btn.type='button'; btn.className='tono-btn'; btn.textContent=t;
-        btn.addEventListener('click', () => {
-          const same = btn.classList.contains('selected');
-          picker.querySelectorAll('.tono-btn').forEach(b => b.classList.remove('selected'));
-          selectedTono = same ? '' : t;
-          if (!same) btn.classList.add('selected');
-        });
-        picker.appendChild(btn);
-      });
-      inner.insertBefore(picker, inner.firstChild);
-
-      textarea.addEventListener('input', () => { textarea.style.height='auto'; textarea.style.height=textarea.scrollHeight+'px'; });
-
-      function cAddFile(file, type) {
-        if (cItems.length >= MAX_FILES) { alert(`Massimo ${MAX_FILES} allegati.`); return; }
-        cItems.push({file,type,name:file.name||type,previewUrl:URL.createObjectURL(file)});
-        renderPreview(cItems, previewId, cRemoveFile);
-      }
-      function cRemoveFile(idx) {
-        URL.revokeObjectURL(cItems[idx].previewUrl); cItems.splice(idx,1);
-        renderPreview(cItems, previewId, cRemoveFile);
-      }
-
-      wrap.querySelector('.ci-foto').addEventListener('change',     e=>{Array.from(e.target.files).forEach(f=>cAddFile(f,'image'));e.target.value='';});
-      wrap.querySelector('.ci-foto-cam').addEventListener('change', e=>{Array.from(e.target.files).forEach(f=>cAddFile(f,'image'));e.target.value='';});
-      wrap.querySelector('.ci-vid').addEventListener('change',      e=>{Array.from(e.target.files).forEach(f=>cAddFile(f,'video'));e.target.value='';});
-      wrap.querySelector('.ci-vid-cam').addEventListener('change',  e=>{Array.from(e.target.files).forEach(f=>cAddFile(f,'video'));e.target.value='';});
-      wrap.querySelector('.ci-aud').addEventListener('change',      e=>{Array.from(e.target.files).forEach(f=>cAddFile(f,'audio'));e.target.value='';});
-
-      recBtn.addEventListener('click', async () => {
-        if (cRecording) { cRec.stop(); cRecording=false; recBtn.textContent='🎙️'; recBtn.classList.remove('recording'); return; }
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({audio:true});
-          cAudioChunks = [];
-          cRec = new MediaRecorder(stream);
-          cRec.ondataavailable = e => cAudioChunks.push(e.data);
-          cRec.onstop = () => {
-            const blob = new Blob(cAudioChunks,{type:'audio/webm'});
-            cAddFile(new File([blob],`rec_${Date.now()}.webm`,{type:'audio/webm'}),'audio');
-            stream.getTracks().forEach(t=>t.stop());
-          };
-          cRec.start(); cRecording=true; recBtn.textContent='⏹️'; recBtn.classList.add('recording');
-        } catch(err) { alert('Microfono non disponibile'); }
-      });
-
-      sendBtn.addEventListener('click', async () => {
-        if (!currentUser) { alert('Fai il login!'); return; }
-        const text = textarea.value.trim();
-        if (!text && cItems.length === 0) return;
-        const tono = selectedTono; selectedTono='';
-        wrap.querySelectorAll('.tono-btn').forEach(b=>b.classList.remove('selected'));
-        sendBtn.disabled=true; sendBtn.textContent='…';
-        try {
-          const snapshot = [...cItems];
-          const media = snapshot.length
-            ? await Promise.all(snapshot.map(item=>uploadOne(item.file,item.type).then(url=>({url,type:item.type,name:item.name}))))
-            : [];
-          const {nome,foto} = await getDatiAutore();
-          await addDoc(collection(db,COLL,postId,'comments'),{
-            authorId:currentUser.uid,authorName:nome,authorPhoto:foto,
-            text,tono,media,timestamp:serverTimestamp(),reactions:{},
-          });
-          await updateDoc(doc(db,COLL,postId),{commentsCount:increment(1)});
-          textarea.value=''; textarea.style.height='auto';
-          cItems.forEach(i=>URL.revokeObjectURL(i.previewUrl)); cItems.length=0;
-          renderPreview(cItems, previewId, cRemoveFile);
-          const footerBtn = wrap.closest('.post-card')?.querySelector('.btn-comments');
-          if (footerBtn) { const cur=parseInt(footerBtn.textContent.match(/\d+/)?.[0]||'0'); footerBtn.textContent=`💬 ${cur+1} commenti`; }
-        } catch(err) { alert('Errore: '+err.message); }
-        finally { sendBtn.disabled=false; sendBtn.textContent='Invia'; }
-      });
-
-      return wrap;
-    }
-  </script>
+    document.getElementById('post-text').value = '';
+    allegati = [];
+    renderPreview([], document.getElementById('preview-allegati'));
+    document.getElementById('modal-post').classList.remove('open');
+  } catch (e) {
+    err.textContent = 'Errore: ' + e.message;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Pubblica 🌊';
+  }
+});
+</script>
 </body>
 </html>

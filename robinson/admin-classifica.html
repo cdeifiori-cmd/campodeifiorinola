@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Classifica – Robinson</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/robinson.css">
+  <style>
+    .periodo-toggle { display:flex; gap:0; background:var(--navy); border-radius:8px; overflow:hidden; margin:12px 16px; }
+    .periodo-btn { flex:1; padding:9px 0; background:none; border:none; color:rgba(255,255,255,0.6); font-family:'Lora',serif; font-size:0.85rem; cursor:pointer; }
+    .periodo-btn.active { background:var(--oro); color:#fff; }
+    .podio-wrap { padding:16px; background:var(--navy); }
+    .podio { display:flex; justify-content:center; align-items:flex-end; gap:8px; }
+    .podio-slot { text-align:center; flex:1; max-width:100px; }
+    .podio-pilastro { background:rgba(255,255,255,0.1); border-top:3px solid var(--oro); display:flex; align-items:center; justify-content:center; flex-direction:column; border-radius:6px 6px 0 0; }
+    .podio-pilastro.p1 { height:90px; }
+    .podio-pilastro.p2 { height:65px; }
+    .podio-pilastro.p3 { height:45px; }
+    .podio-rank { font-size:1.5rem; }
+    .podio-nome { font-size:0.68rem; color:#fff; margin-top:6px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .podio-punti { font-size:0.72rem; color:var(--oro); }
+    .list-wrap { max-width:640px; margin:0 auto; padding:12px 12px 80px; }
+    .mini-badge { display:inline-block; background:var(--carta-scura); border-radius:4px; padding:1px 5px; font-size:0.65rem; color:var(--muted); margin-right:2px; }
+  </style>
+</head>
+<body>
+
+<header class="top-header">
+  <div>
+    <div class="header-title-main">📊 Classifica</div>
+    <div class="header-title-sub">chi guida la flotta</div>
+  </div>
+  <a href="index.html" style="color:#fff;font-size:0.8rem;text-decoration:none;">← Home</a>
+</header>
+
+<div class="periodo-toggle">
+  <button class="periodo-btn active" data-periodo="settimana">🗓️ Settimana</button>
+  <button class="periodo-btn" data-periodo="mese">📅 Mese</button>
+  <button class="periodo-btn" data-periodo="totale">🏆 Totale</button>
+</div>
+
+<div class="podio-wrap" id="podio-section"></div>
+
+<div class="list-wrap" id="lista-classifica">
+  <div class="spinner"></div>
+</div>
+
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item"><span class="nav-icon">🏝️</span><span>Home</span></a>
+  <a href="spiaggia.html" class="nav-item"><span class="nav-icon">🏖️</span><span>Spiaggia</span></a>
+  <a href="naufraghi.html" class="nav-item"><span class="nav-icon">👤</span><span>Naufraghi</span></a>
+  <a href="ciurma.html" class="nav-item"><span class="nav-icon">⚓</span><span>Ciurma</span></a>
+  <a href="appunti.html" class="nav-item"><span class="nav-icon">📔</span><span>Appunti</span></a>
+</nav>
+
+<script type="module">
+import { db, auth, ADMIN_UID } from './js/robinson-firebase.js';
+import { esc } from './js/robinson-utils.js';
+import { SETTIMANA_KEY, MESE_KEY } from './js/robinson-utils.js';
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+// Protezione admin
+onAuthStateChanged(auth, async user => {
+  if (!user || user.uid !== ADMIN_UID) {
+    window.location.replace('index.html');
+    return;
+  }
+  await loadClassifica();
+});
+
+let periodo = 'settimana';
+let allDocs = [];
+
+async function loadClassifica() {
+  const snap = await getDocs(collection(db, 'robinson_punteggi'));
+  allDocs = snap.docs.map(d => ({ uid: d.id, ...d.data() }));
+  render();
+}
+
+function getPunti(d) {
+  if (periodo === 'settimana') return (d.settimana || {})[SETTIMANA_KEY] || 0;
+  if (periodo === 'mese') return (d.mese || {})[MESE_KEY] || 0;
+  return d.totale || 0;
+}
+
+function render() {
+  const sorted = [...allDocs].sort((a, b) => getPunti(b) - getPunti(a));
+  const max = sorted.length ? getPunti(sorted[0]) : 1;
+
+  // Podio
+  const podioEl = document.getElementById('podio-section');
+  const top3 = sorted.slice(0, 3);
+  const order = top3.length >= 3 ? [top3[1], top3[0], top3[2]] : top3;
+  const classes = top3.length >= 3 ? ['p2','p1','p3'] : ['p1','p2','p3'];
+  const medaglie = top3.length >= 3 ? ['🥈','🥇','🥉'] : ['🥇','🥈','🥉'];
+  podioEl.innerHTML = `<div class="podio">` + order.map((u, i) => {
+    if (!u) return '';
+    return `<div class="podio-slot">
+      <div class="podio-pilastro ${classes[i]}">
+        <span class="podio-rank">${medaglie[i]}</span>
+      </div>
+      <div class="podio-nome">${esc(u.nome || u.uid)}</div>
+      <div class="podio-punti">${getPunti(u)} pt</div>
+    </div>`;
+  }).join('') + `</div>`;
+
+  // Lista
+  const lista = document.getElementById('lista-classifica');
+  if (!sorted.length) { lista.innerHTML = '<div class="empty-msg">Nessun dato ancora.</div>'; return; }
+  lista.innerHTML = sorted.map((u, i) => {
+    const punti = getPunti(u);
+    const pct = max > 0 ? Math.round(punti / max * 100) : 0;
+    const det = u.dettaglio || {};
+    return `<div class="classifica-row">
+      <div style="font-size:0.85rem;font-weight:700;color:var(--navy);min-width:24px;">#${i+1}</div>
+      <div style="flex:1;">
+        <div style="font-size:0.88rem;font-weight:600;color:var(--inchiostro);">${esc(u.nome || u.uid)}</div>
+        <div style="margin-top:3px;">
+          ${det.post ? `<span class="mini-badge">📝${det.post}</span>` : ''}
+          ${det.foto ? `<span class="mini-badge">📷${det.foto}</span>` : ''}
+          ${det.video ? `<span class="mini-badge">🎥${det.video}</span>` : ''}
+          ${det.audio ? `<span class="mini-badge">🎵${det.audio}</span>` : ''}
+          ${det.commenti ? `<span class="mini-badge">💬${det.commenti}</span>` : ''}
+          ${det.reazioni ? `<span class="mini-badge">❤️${det.reazioni}</span>` : ''}
+          ${det.bottiglie ? `<span class="mini-badge">🍾${det.bottiglie}</span>` : ''}
+        </div>
+        <div class="classifica-bar-bg" style="margin-top:5px;">
+          <div class="classifica-bar" style="width:${pct}%;"></div>
+        </div>
+      </div>
+      <div style="font-size:0.95rem;font-weight:700;color:var(--oro);min-width:40px;text-align:right;">${punti}</div>
+    </div>`;
+  }).join('');
+}
+
+document.querySelectorAll('.periodo-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.periodo-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    periodo = btn.dataset.periodo;
+    render();
+  });
+});
+</script>
+</body>
+</html>

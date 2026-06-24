@@ -1,7 +1,3 @@
-/**
- * Utilità condivise: upload, media rendering, preview, commenti, nomi.
- * Importato da spiaggia.html, naufrago.html, appunti.html
- */
 import { db, CLOUD_NAME, CLOUD_PRESET } from './robinson-firebase.js';
 import { getDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
@@ -10,19 +6,32 @@ export function esc(s) {
   return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// ── Formattazione data ─────────────────────────────────────────────────────────
+// ── Formattazione date ─────────────────────────────────────────────────────────
+const MESI = ['gen','feb','mar','apr','mag','giu','lug','ago','set','ott','nov','dic'];
+
 export function fmtDate(ts) {
-  if (!ts?.toDate) return '';
-  const d = ts.toDate();
-  return d.toLocaleDateString('it-IT', { day:'numeric', month:'long' }) +
-         ' · ' + d.toLocaleTimeString('it-IT', { hour:'2-digit', minute:'2-digit' });
+  if (!ts) return '';
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  const gg = String(d.getDate()).padStart(2,'0');
+  const mm = MESI[d.getMonth()];
+  const yyyy = d.getFullYear();
+  const hh = String(d.getHours()).padStart(2,'0');
+  const min = String(d.getMinutes()).padStart(2,'0');
+  return `${gg} ${mm} ${yyyy} ${hh}:${min}`;
 }
 
-// ── Cache nomi (uid → nome) ────────────────────────────────────────────────────
+export function fmtDateShort(ts) {
+  if (!ts) return '';
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+}
+
+// ── Cache nomi ─────────────────────────────────────────────────────────────────
 const _nomiCache = {};
 
 export async function risolviNome(uid) {
-  if (_nomiCache[uid] !== undefined) return _nomiCache[uid];
+  if (!uid) return 'Anonimo';
+  if (_nomiCache[uid] !== undefined) return _nomiCache[uid] || 'Anonimo';
   try {
     const [su, ss] = await Promise.all([
       getDoc(doc(db, 'utenti', uid)),
@@ -32,126 +41,94 @@ export async function risolviNome(uid) {
     const ds = ss.exists() ? ss.data() : null;
     const n = du?.nome || ds?.nome || ds?.nomeCompleto || du?.nomeCompleto || du?.displayName || ds?.displayName || '';
     _nomiCache[uid] = n;
-    return n;
+    return n || 'Anonimo';
   } catch(_) {}
   _nomiCache[uid] = '';
-  return '';
+  return 'Anonimo';
 }
 
 // ── Upload Cloudinary ──────────────────────────────────────────────────────────
-export async function uploadOne(file, type) {
+export async function uploadOne(file, tipo) {
   const fd = new FormData();
   fd.append('file', file);
   fd.append('upload_preset', CLOUD_PRESET);
-  const resType = type === 'image' ? 'image' : 'video';
-  const res  = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${resType}/upload`, { method:'POST', body:fd });
+  // audio usa resource_type=video su Cloudinary
+  const resType = tipo === 'image' ? 'image' : 'video';
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${resType}/upload`, { method:'POST', body:fd });
   const data = await res.json();
   if (!data.secure_url) throw new Error('Upload fallito: ' + (data.error?.message || file.name));
-  return data.secure_url;
+  return { url: data.secure_url, type: tipo, mime: file.type, name: file.name };
 }
 
-export async function uploadAll(items, barEl, progEl) {
-  if (progEl) progEl.style.display = 'block';
-  let done = 0;
-  const results = await Promise.all(
-    items.map(item => uploadOne(item.file, item.type).then(url => {
-      done++;
-      if (barEl) barEl.style.width = Math.round(done / items.length * 100) + '%';
-      return { url, type: item.type, name: item.name };
-    }))
-  );
-  setTimeout(() => { if (progEl) progEl.style.display = 'none'; if (barEl) barEl.style.width = '0%'; }, 500);
-  return results;
+export async function uploadAll(files) {
+  return Promise.all(files.map(f => uploadOne(f.file, f.type)));
 }
 
-// ── Normalizza media (retrocompat vecchi post) ─────────────────────────────────
-export function normalizeMedia(data) {
-  if (Array.isArray(data.media) && data.media.length > 0) return data.media;
-  if (data.mediaUrl) return [{ url: data.mediaUrl, type: data.mediaType || 'image', name: '' }];
+// ── Normalizza media ───────────────────────────────────────────────────────────
+export function normalizeMedia(item) {
+  if (Array.isArray(item.media) && item.media.length > 0) return item.media;
+  if (item.mediaUrl) return [{ url: item.mediaUrl, type: item.mediaType || 'image', mime:'', name:'' }];
   return [];
 }
 
-// ── Render griglia media (post) ────────────────────────────────────────────────
+// ── Render griglia media ───────────────────────────────────────────────────────
 export function renderMediaGrid(mediaList) {
-  if (!mediaList.length) return '';
+  if (!mediaList || !mediaList.length) return '';
   const imgs   = mediaList.filter(m => m.type === 'image');
   const vids   = mediaList.filter(m => m.type === 'video');
   const audios = mediaList.filter(m => m.type === 'audio');
   const visual = [...imgs, ...vids];
+  const n = visual.length;
+  const cls = n === 1 ? 'c1' : n === 2 ? 'c2' : 'c3';
   let html = '';
-
   if (visual.length) {
-    const n = visual.length;
-    const cls = n === 1 ? 'c1' : n === 2 ? 'c2' : n === 3 ? 'c3' : 'cmany';
     html += `<div class="media-grid ${cls}">`;
     visual.forEach(m => {
-      html += `<div class="mgitem">`;
+      html += `<div class="media-item">`;
       if (m.type === 'image') html += `<img src="${esc(m.url)}" loading="lazy" alt="foto">`;
-      else                    html += `<video src="${esc(m.url)}" controls playsinline></video>`;
+      else html += `<video src="${esc(m.url)}" controls playsinline></video>`;
       html += `</div>`;
     });
     html += `</div>`;
   }
   if (audios.length) {
-    html += `<div class="audio-list">`;
     audios.forEach(m => {
-      html += `<div class="audio-row"><span class="aico">🎵</span><audio src="${esc(m.url)}" controls></audio></div>`;
+      html += `<div class="media-item"><audio src="${esc(m.url)}" controls></audio></div>`;
     });
-    html += `</div>`;
-  }
-  return html;
-}
-
-// ── Render media commento ──────────────────────────────────────────────────────
-export function renderCommentMedia(data) {
-  const list = normalizeMedia(data);
-  if (!list.length) return '';
-  const imgs   = list.filter(m => m.type === 'image');
-  const vids   = list.filter(m => m.type === 'video');
-  const audios = list.filter(m => m.type === 'audio');
-  const visual = [...imgs, ...vids];
-  let html = '';
-  if (visual.length) {
-    html += `<div class="cmedia-grid${visual.length === 1 ? ' single' : ''}">`;
-    visual.forEach(m => {
-      if (m.type === 'image') html += `<img src="${esc(m.url)}" loading="lazy">`;
-      else html += `<video src="${esc(m.url)}" controls playsinline></video>`;
-    });
-    html += `</div>`;
-  }
-  if (audios.length) {
-    html += `<div class="caudio-list">`;
-    audios.forEach(m => {
-      html += `<div class="caudio-row"><span>🎵</span><audio src="${esc(m.url)}" controls></audio></div>`;
-    });
-    html += `</div>`;
   }
   return html;
 }
 
 // ── Preview allegati ───────────────────────────────────────────────────────────
-export function renderPreview(items, containerId, onRemove) {
-  const wrap = document.getElementById(containerId);
-  if (!wrap) return;
-  if (!items.length) { wrap.innerHTML = ''; return; }
-
-  let html = `<div class="preview-wrap">
-    <div class="preview-count">${items.length} allegat${items.length === 1 ? 'o' : 'i'}</div>
-    <div class="preview-grid">`;
-
-  items.forEach((item, idx) => {
-    if (item.type === 'image') {
-      html += `<div class="prev-item"><img src="${esc(item.previewUrl)}" alt=""><button class="prev-remove" data-idx="${idx}">✕</button></div>`;
-    } else if (item.type === 'video') {
-      html += `<div class="prev-item"><video src="${esc(item.previewUrl)}" muted playsinline></video><button class="prev-remove" data-idx="${idx}">✕</button></div>`;
+export function renderPreview(files, container) {
+  if (!container) return;
+  if (!files || !files.length) { container.innerHTML = ''; return; }
+  let html = '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;">';
+  files.forEach((f, i) => {
+    const url = f.previewUrl || URL.createObjectURL(f.file);
+    if (f.type === 'image') {
+      html += `<div style="position:relative;width:70px;height:70px;"><img src="${url}" style="width:100%;height:100%;object-fit:cover;border-radius:6px;"><span data-idx="${i}" style="position:absolute;top:2px;right:2px;background:rgba(0,0,0,0.6);color:#fff;border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:10px;cursor:pointer;" class="prev-rm">✕</span></div>`;
+    } else if (f.type === 'video') {
+      html += `<div style="position:relative;width:70px;height:70px;"><video src="${url}" style="width:100%;height:100%;object-fit:cover;border-radius:6px;" muted></video><span data-idx="${i}" class="prev-rm" style="position:absolute;top:2px;right:2px;background:rgba(0,0,0,0.6);color:#fff;border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:10px;cursor:pointer;">✕</span></div>`;
     } else {
-      html += `<div class="prev-item audio"><span class="aico">🎵</span><audio src="${esc(item.previewUrl)}" controls></audio><span class="aname">${esc(item.name)}</span><button class="prev-remove" data-idx="${idx}">✕</button></div>`;
+      html += `<div style="display:flex;align-items:center;gap:4px;background:var(--carta-scura);border-radius:6px;padding:4px 8px;font-size:0.75rem;">🎵 ${esc(f.file?.name || 'audio')}<span data-idx="${i}" class="prev-rm" style="cursor:pointer;margin-left:4px;color:var(--rosso);">✕</span></div>`;
     }
   });
-
-  html += `</div></div>`;
-  wrap.innerHTML = html;
-  wrap.querySelectorAll('.prev-remove').forEach(btn => {
-    btn.addEventListener('click', () => onRemove(parseInt(btn.dataset.idx)));
-  });
+  html += '</div>';
+  container.innerHTML = html;
 }
+
+// ── Costanti settimana/mese correnti ──────────────────────────────────────────
+function getISOWeek(d) {
+  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const day = date.getUTCDay() || 7;
+  date.setUTCDate(date.getUTCDate() + 4 - day);
+  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+  return Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
+}
+
+const _now = new Date();
+const _anno = _now.getFullYear();
+const _w = String(getISOWeek(_now)).padStart(2, '0');
+export const SETTIMANA_KEY = `${_anno}-W${_w}`;
+export const MESE_KEY = `${_anno}-${String(_now.getMonth()+1).padStart(2,'0')}`;

@@ -4,111 +4,92 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>I Naufraghi – Robinson</title>
-  <meta name="theme-color" content="#1a3a5c">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/robinson.css">
-  <style>
-    body { padding-bottom: 70px; }
-    .search-wrap {
-      max-width: 640px; margin: 14px auto 0; padding: 0 14px;
-    }
-    .search-input {
-      width: 100%; padding: 9px 14px;
-      border: 1.5px solid #c8b89a; border-radius: 20px;
-      font-family: 'Lora', serif; font-size: 0.9rem;
-      background: var(--post-bg); color: var(--inchiostro);
-      outline: none; transition: border-color 0.15s;
-    }
-    .search-input:focus { border-color: var(--navy); }
-    .grid-naufraghi { margin-top: 14px; }
-  </style>
 </head>
 <body>
 
-  <header class="top-header">
-    <div class="header-titles">
-      <div class="header-title-main">I Naufraghi</div>
-      <div class="header-title-sub">chi vive sull'isola</div>
-    </div>
-    <div id="nav-auth-slot"></div>
-  </header>
-
-  <div class="search-wrap">
-    <input class="search-input" id="search" type="search" placeholder="🔍 Cerca un naufrago…">
+<header class="top-header">
+  <div>
+    <div class="header-title-main">👤 I Naufraghi</div>
+    <div class="header-title-sub">compagni di isola</div>
   </div>
+  <div id="nav-auth-slot"></div>
+</header>
 
-  <div id="grid" class="grid-naufraghi">
-    <div class="spinner"></div>
-  </div>
+<div id="admin-banner" style="display:none;" class="admin-banner">
+  <a href="admin-classifica.html">📊 Vai alla Classifica →</a>
+</div>
 
-  <nav class="bottom-nav">
-    <a href="index.html"      class="nav-item"><span class="nav-icon">🏝️</span>Robinson</a>
-    <a href="spiaggia.html"   class="nav-item"><span class="nav-icon">🏖️</span>Spiaggia</a>
-    <a href="naufraghi.html"  class="nav-item active"><span class="nav-icon">👥</span>Naufraghi</a>
-    <a href="ciurma.html"     class="nav-item"><span class="nav-icon">⚓</span>Ciurma</a>
-    <a href="appunti.html"    class="nav-item"><span class="nav-icon">📓</span>Appunti</a>
-  </nav>
+<div class="search-bar">
+  <span>🔍</span>
+  <input type="text" id="search-inp" placeholder="Cerca per nome...">
+</div>
 
-  <script type="module">
-    import { db } from './js/robinson-firebase.js';
-    import { setupNavAuth } from './js/robinson-nav.js';
-    import { collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+<div id="grid" class="grid-naufraghi">
+  <div class="spinner" style="grid-column:span 2;"></div>
+</div>
 
-    setupNavAuth('nav-auth-slot');
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item"><span class="nav-icon">🏝️</span><span>Home</span></a>
+  <a href="spiaggia.html" class="nav-item"><span class="nav-icon">🏖️</span><span>Spiaggia</span></a>
+  <a href="naufraghi.html" class="nav-item active"><span class="nav-icon">👤</span><span>Naufraghi</span></a>
+  <a href="ciurma.html" class="nav-item"><span class="nav-icon">⚓</span><span>Ciurma</span></a>
+  <a href="appunti.html" class="nav-item"><span class="nav-icon">📔</span><span>Appunti</span></a>
+</nav>
 
-    const grid   = document.getElementById('grid');
-    const search = document.getElementById('search');
-    let allNaufraghi = [];
+<script type="module">
+import { db, auth, ADMIN_UID } from './js/robinson-firebase.js';
+import { setupNavAuth } from './js/robinson-nav.js';
+import { esc } from './js/robinson-utils.js';
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-    function esc(s) {
-      return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+setupNavAuth('nav-auth-slot');
+
+let allNaufraghi = [];
+
+onAuthStateChanged(auth, async user => {
+  if (!user) { location.href = 'https://campodeifiori.org/login.html'; return; }
+  if (user.uid === ADMIN_UID) document.getElementById('admin-banner').style.display = 'block';
+  await loadNaufraghi();
+});
+
+async function loadNaufraghi() {
+  const grid = document.getElementById('grid');
+  try {
+    let snap = await getDocs(query(collection(db, 'robinson_naufraghi'), orderBy('nome')));
+    if (snap.empty) {
+      snap = await getDocs(query(collection(db, 'utenti'), orderBy('nome')));
     }
+    allNaufraghi = snap.docs.map(d => ({ uid: d.id, ...d.data() }));
+    renderGrid(allNaufraghi);
+  } catch(e) {
+    grid.innerHTML = `<div style="grid-column:span 2;text-align:center;padding:20px;color:var(--rosso);">Errore caricamento: ${esc(e.message)}</div>`;
+  }
+}
 
-    function renderGrid(list) {
-      if (!list.length) {
-        grid.innerHTML = '<p class="empty-msg">Nessun naufrago trovato. 🏝️</p>';
-        return;
-      }
-      grid.innerHTML = list.map((d, i) => {
-        const fotoHtml = d.fotoProfilo
-          ? `<img src="${esc(d.fotoProfilo)}" alt="${esc(d.nome)}" loading="lazy">`
-          : '🧍';
-        return `
-          <a class="card-naufrago" href="naufrago.html?uid=${esc(d.uid)}">
-            <div class="card-foto">${fotoHtml}</div>
-            <div class="card-info">
-              <div class="card-nome">${esc(d.nome || 'Naufrago')}</div>
-              <div class="card-ruolo">Naufrago N° ${i + 1}</div>
-            </div>
-          </a>`;
-      }).join('');
-    }
+function renderGrid(lista) {
+  const grid = document.getElementById('grid');
+  if (!lista.length) { grid.innerHTML = '<div class="empty-msg" style="grid-column:span 2;">Nessun naufrago trovato.</div>'; return; }
+  grid.innerHTML = lista.map(n => {
+    const foto = n.fotoProfilo || n.photoURL || '';
+    const nome = n.nome || n.displayName || 'Naufrago';
+    const soprannome = n.soprannome || '';
+    return `<a class="card-naufrago" href="naufrago.html?uid=${esc(n.uid)}">
+      <div class="card-foto">${foto ? `<img src="${esc(foto)}" alt="${esc(nome)}" loading="lazy">` : '⚓'}</div>
+      <div class="card-info">
+        <div class="card-nome">${esc(nome)}</div>
+        ${soprannome ? `<div class="card-ruolo">"${esc(soprannome)}"</div>` : ''}
+      </div>
+    </a>`;
+  }).join('');
+}
 
-    search.addEventListener('input', () => {
-      const q = search.value.toLowerCase().trim();
-      renderGrid(q ? allNaufraghi.filter(d => (d.nome || '').toLowerCase().includes(q)) : allNaufraghi);
-    });
-
-    async function loadNaufraghi() {
-      try {
-        const snap = await getDocs(query(collection(db, 'robinson_naufraghi'), orderBy('nome')));
-        allNaufraghi = [];
-        snap.forEach(d => allNaufraghi.push({ uid: d.id, ...d.data() }));
-
-        if (!allNaufraghi.length) {
-          // fallback: legge da 'utenti' (tutti gli utenti iscritti)
-          const uSnap = await getDocs(query(collection(db, 'utenti'), orderBy('nome')));
-          uSnap.forEach(d => allNaufraghi.push({ uid: d.id, ...d.data() }));
-        }
-
-        grid.innerHTML = '';
-        renderGrid(allNaufraghi);
-      } catch(err) {
-        grid.innerHTML = `<p class="empty-msg">Errore: ${err.message}</p>`;
-        console.error(err);
-      }
-    }
-
-    loadNaufraghi();
-  </script>
+document.getElementById('search-inp').addEventListener('input', e => {
+  const q = e.target.value.toLowerCase();
+  renderGrid(allNaufraghi.filter(n => (n.nome || '').toLowerCase().includes(q) || (n.soprannome || '').toLowerCase().includes(q)));
+});
+</script>
 </body>
 </html>
