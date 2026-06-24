@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Naufrago – Robinson</title>
+  <meta name="theme-color" content="#1a3a5c">
+  <link rel="stylesheet" href="css/robinson.css">
+  <style>
+    body { padding-bottom: 70px; }
+
+    .feed-diario { padding: 12px; display: flex; flex-direction: column; gap: 14px; max-width: 640px; margin: 0 auto; }
+
+    /* FAB diario */
+    .fab-diario {
+      position: fixed; bottom: 80px; right: 18px;
+      width: 52px; height: 52px;
+      background: var(--navy); color: var(--oro);
+      font-size: 1.6rem; border: none; border-radius: 50%;
+      box-shadow: 0 4px 16px rgba(26,58,92,0.35);
+      cursor: pointer; z-index: 200;
+      display: none; align-items: center; justify-content: center;
+      transition: background 0.15s, transform 0.15s;
+    }
+    .fab-diario:hover { background: var(--navy-scuro); transform: scale(1.08); }
+  </style>
+</head>
+<body>
+
+  <header class="top-header">
+    <div class="header-titles" id="header-titles">
+      <div class="header-title-main" id="header-nome">Robinson</div>
+      <div class="header-title-sub" id="header-numero">il diario di bordo</div>
+    </div>
+    <div id="nav-auth-slot"></div>
+  </header>
+
+  <!-- Profile header -->
+  <div class="profile-header" id="profile-header" style="display:none">
+    <div class="profile-foto-wrap" id="profile-foto-wrap">⚓</div>
+    <div class="profile-nome" id="profile-nome">—</div>
+    <div class="profile-numero" id="profile-numero">Naufrago</div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="diario">📔 Diario</button>
+    <button class="tab-btn"        data-tab="chisono">🧭 Chi sono</button>
+    <button class="tab-btn"        data-tab="ricordi">🖼️ Ricordi</button>
+  </div>
+
+  <!-- Tab: Diario -->
+  <div class="tab-panel active" id="tab-diario">
+    <div id="feed-diario" class="feed-diario"><div class="spinner"></div></div>
+  </div>
+
+  <!-- Tab: Chi sono -->
+  <div class="tab-panel" id="tab-chisono">
+    <form class="chisono-form" id="chisono-form">
+      <div class="form-group">
+        <label>⚓ Soprannome sull'isola</label>
+        <input type="text" id="cs-soprannome" placeholder="Come ti chiamano i naufraghi?">
+      </div>
+      <div class="form-group">
+        <label>🏝️ La mia isola preferita</label>
+        <textarea id="cs-isola" rows="3" placeholder="Descrivi la tua isola dei sogni…"></textarea>
+      </div>
+      <div class="form-group">
+        <label>⚡ Il mio superpotere da naufrago</label>
+        <textarea id="cs-superpotere" rows="3" placeholder="Cosa sai fare meglio sull'isola?"></textarea>
+      </div>
+      <div class="form-group">
+        <label>🎒 Cosa porto con me</label>
+        <textarea id="cs-bagaglio" rows="3" placeholder="3 cose che non abbandoneresti mai…"></textarea>
+      </div>
+      <button type="submit" class="btn-salva-profilo" id="btn-salva" style="display:none">Salva nel diario</button>
+      <p id="chisono-readonly" style="color:var(--muted);font-style:italic;font-size:0.85rem;padding-top:6px;display:none">
+        Solo il naufrago può modificare la propria scheda.
+      </p>
+    </form>
+  </div>
+
+  <!-- Tab: Ricordi -->
+  <div class="tab-panel" id="tab-ricordi">
+    <div id="galleria" class="galleria-grid"></div>
+    <p id="galleria-empty" class="empty-msg" style="display:none">Nessun ricordo ancora… 📷</p>
+  </div>
+
+  <!-- FAB nuovo post diario -->
+  <button class="fab-diario" id="fab-diario" title="Nuovo post nel diario">＋</button>
+
+  <!-- Modal nuovo post diario -->
+  <div class="modal-backdrop" id="modal-backdrop">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <span class="modal-title">📔 Scrivi nel diario…</span>
+        <button class="modal-close" id="modal-close">✕</button>
+      </div>
+      <textarea class="form-textarea" id="post-text" placeholder="Cosa vuoi annotare oggi?" rows="4"></textarea>
+      <div class="media-btns">
+        <label class="media-btn">🖼️ Foto<input type="file" accept="image/*" id="input-foto" multiple style="display:none"></label>
+        <label class="media-btn btn-camera">📷 Scatta<input type="file" accept="image/*" id="input-foto-cam" capture="environment" style="display:none"></label>
+        <label class="media-btn">📹 Video<input type="file" accept="video/*" id="input-video" multiple style="display:none"></label>
+        <label class="media-btn btn-camera">🎬 Registra<input type="file" accept="video/*" id="input-video-cam" capture="environment" style="display:none"></label>
+        <button class="media-btn" id="btn-audio">🎙️ Registra</button>
+        <label class="media-btn">🎵 Audio<input type="file" accept="audio/*,.mp3,.m4a,.wav,.ogg,.aac,.flac,.weba,.opus" id="input-audio-file" multiple style="display:none"></label>
+      </div>
+      <div id="post-preview"></div>
+      <div class="upload-progress" id="upload-progress"><div class="upload-progress-bar" id="upload-bar" style="width:0%"></div></div>
+      <button class="btn-pubblica" id="btn-pubblica">Salva nel diario</button>
+    </div>
+  </div>
+
+  <nav class="bottom-nav">
+    <a href="index.html"      class="nav-item"><span class="nav-icon">🏝️</span>Robinson</a>
+    <a href="spiaggia.html"   class="nav-item"><span class="nav-icon">🏖️</span>Spiaggia</a>
+    <a href="naufraghi.html"  class="nav-item"><span class="nav-icon">👥</span>Naufraghi</a>
+    <a href="ciurma.html"     class="nav-item"><span class="nav-icon">⚓</span>Ciurma</a>
+    <a href="appunti.html"    class="nav-item"><span class="nav-icon">📓</span>Appunti</a>
+  </nav>
+
+  <script type="module">
+    import { auth, db, ADMIN_UID, EMOJIS, MAX_FILES } from './js/robinson-firebase.js';
+    import { setupNavAuth } from './js/robinson-nav.js';
+    import {
+      esc, fmtDate, risolviNome, uploadOne, uploadAll,
+      normalizeMedia, renderMediaGrid, renderCommentMedia, renderPreview
+    } from './js/robinson-utils.js';
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import {
+      collection, addDoc, getDoc, setDoc, doc, updateDoc,
+      query, orderBy, getDocs, serverTimestamp, deleteDoc, increment
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    setupNavAuth('nav-auth-slot');
+
+    const params  = new URLSearchParams(location.search);
+    const pageUid = params.get('uid') || '';
+
+    let currentUser     = null;
+    let currentUserData = null;
+    let isAdmin         = false;
+    let isOwner         = false;
+    let naufragoData    = null;
+    let naufragoNumero  = 1;
+
+    // ── Tabs ──────────────────────────────────────────────────────────────
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+      });
+    });
+
+    // ── Auth ──────────────────────────────────────────────────────────────
+    onAuthStateChanged(auth, async user => {
+      currentUser = user;
+      if (user) {
+        isAdmin = user.uid === ADMIN_UID;
+        isOwner = user.uid === pageUid;
+        try {
+          let snap = await getDoc(doc(db, 'utenti', user.uid));
+          if (!snap.exists()) snap = await getDoc(doc(db, 'staff', user.uid));
+          if (snap.exists()) currentUserData = snap.data();
+        } catch(_) {}
+        if (isOwner) {
+          document.getElementById('fab-diario').style.display = 'flex';
+          document.getElementById('btn-salva').style.display = 'inline-block';
+        } else {
+          document.getElementById('chisono-readonly').style.display = 'block';
+          document.querySelectorAll('#chisono-form input, #chisono-form textarea').forEach(el => el.disabled = true);
+        }
+      }
+      loadProfile();
+    });
+
+    // ── Carica profilo naufrago ───────────────────────────────────────────
+    async function loadProfile() {
+      if (!pageUid) {
+        document.getElementById('header-nome').textContent = 'Naufrago non trovato';
+        document.getElementById('feed-diario').innerHTML = '<p class="empty-msg">UID mancante nell\'URL.</p>';
+        return;
+      }
+
+      try {
+        // Dati base: da robinson_naufraghi o utenti
+        let snap = await getDoc(doc(db, 'robinson_naufraghi', pageUid));
+        if (!snap.exists()) snap = await getDoc(doc(db, 'utenti', pageUid));
+        if (!snap.exists()) snap = await getDoc(doc(db, 'staff', pageUid));
+        naufragoData = snap.exists() ? snap.data() : { nome: 'Naufrago' };
+      } catch(_) { naufragoData = { nome: 'Naufrago' }; }
+
+      // Numero naufrago (posizione nella lista robinson_naufraghi)
+      try {
+        const tutti = await getDocs(query(collection(db, 'robinson_naufraghi'), orderBy('nome')));
+        let idx = 1;
+        tutti.forEach((d, i) => { if (d.id === pageUid) naufragoNumero = idx; idx++; });
+      } catch(_) {}
+
+      const nome = naufragoData.nome || 'Naufrago';
+      const foto = naufragoData.fotoProfilo || null;
+
+      document.title = `${nome} – Robinson`;
+      document.getElementById('header-nome').textContent = nome;
+      document.getElementById('header-numero').textContent = 'il diario di bordo';
+
+      // Profile header
+      const ph = document.getElementById('profile-header');
+      ph.style.display = 'flex';
+      document.getElementById('profile-nome').textContent = nome;
+      document.getElementById('profile-numero').textContent = `Naufrago N° ${naufragoNumero}`;
+      const fw = document.getElementById('profile-foto-wrap');
+      if (foto) {
+        fw.innerHTML = `<img src="${esc(foto)}" alt="${esc(nome)}">`;
+      }
+
+      loadDiario();
+      loadChiSono();
+      loadGalleria();
+    }
+
+    // ── Diario ────────────────────────────────────────────────────────────
+    function loadDiario() {
+      const feedEl = document.getElementById('feed-diario');
+      feedEl.innerHTML = '<div class="spinner"></div>';
+      const DIARIO = `robinson_diari/${pageUid}/posts`;
+      getDocs(query(collection(db, 'robinson_diari', pageUid, 'posts'), orderBy('timestamp', 'desc')))
+        .then(snap => {
+          feedEl.innerHTML = '';
+          if (snap.empty) { feedEl.innerHTML = '<p class="empty-msg">Il diario è ancora vuoto… ✍️</p>'; return; }
+          snap.forEach(d => feedEl.appendChild(buildPostCard(d.id, d.data())));
+        })
+        .catch(err => { feedEl.innerHTML = `<p class="empty-msg">Errore: ${err.message}</p>`; });
+    }
+
+    function buildPostCard(postId, data) {
+      const card = document.createElement('div');
+      card.className = 'post-card';
+      const foto = naufragoData?.fotoProfilo || null;
+      const nome = naufragoData?.nome || 'Naufrago';
+      const avatar = foto
+        ? `<div class="post-avatar"><img src="${esc(foto)}" alt="${esc(nome)}"></div>`
+        : `<div class="post-avatar">📔</div>`;
+      const mediaHtml = renderMediaGrid(normalizeMedia(data));
+      const canDel = isAdmin || isOwner;
+      card.innerHTML = `
+        <div class="post-header">
+          ${avatar}
+          <div class="post-meta">
+            <div class="post-autore">${esc(nome)}</div>
+            <div class="post-data">${fmtDate(data.timestamp)}</div>
+          </div>
+          ${canDel ? `<button class="post-options-btn" onclick="deleteDiarioPost('${postId}',this)" title="Elimina">🗑️</button>` : ''}
+        </div>
+        ${data.text ? `<div class="post-text">${esc(data.text)}</div>` : ''}
+        ${mediaHtml}`;
+      return card;
+    }
+
+    window.deleteDiarioPost = async (postId, btn) => {
+      if (!confirm('Eliminare questo post dal diario?')) return;
+      try {
+        await deleteDoc(doc(db, 'robinson_diari', pageUid, 'posts', postId));
+        btn.closest('.post-card')?.remove();
+      } catch(err) { alert(err.message); }
+    };
+
+    // ── Chi sono ──────────────────────────────────────────────────────────
+    async function loadChiSono() {
+      try {
+        const snap = await getDoc(doc(db, 'robinson_naufraghi', pageUid, 'profilo', 'scheda'));
+        if (snap.exists()) {
+          const d = snap.data();
+          document.getElementById('cs-soprannome').value   = d.soprannome || '';
+          document.getElementById('cs-isola').value        = d.isola || '';
+          document.getElementById('cs-superpotere').value  = d.superpotere || '';
+          document.getElementById('cs-bagaglio').value     = d.bagaglio || '';
+        }
+      } catch(_) {}
+    }
+
+    document.getElementById('chisono-form').addEventListener('submit', async e => {
+      e.preventDefault();
+      if (!isOwner && !isAdmin) return;
+      const btn = document.getElementById('btn-salva');
+      btn.disabled = true; btn.textContent = 'Salvataggio…';
+      try {
+        await setDoc(doc(db, 'robinson_naufraghi', pageUid, 'profilo', 'scheda'), {
+          soprannome:  document.getElementById('cs-soprannome').value.trim(),
+          isola:       document.getElementById('cs-isola').value.trim(),
+          superpotere: document.getElementById('cs-superpotere').value.trim(),
+          bagaglio:    document.getElementById('cs-bagaglio').value.trim(),
+          updatedAt:   serverTimestamp(),
+        }, { merge: true });
+        btn.textContent = '✓ Salvato!';
+        setTimeout(() => { btn.textContent = 'Salva nel diario'; btn.disabled = false; }, 1800);
+      } catch(err) { alert('Errore: ' + err.message); btn.disabled = false; btn.textContent = 'Salva nel diario'; }
+    });
+
+    // ── Galleria ricordi ──────────────────────────────────────────────────
+    async function loadGalleria() {
+      const galleria = document.getElementById('galleria');
+      const emptyMsg = document.getElementById('galleria-empty');
+      galleria.innerHTML = '';
+      try {
+        const snap = await getDocs(query(collection(db, 'robinson_diari', pageUid, 'posts'), orderBy('timestamp', 'desc')));
+        let hasMedia = false;
+        snap.forEach(d => {
+          const mediaList = normalizeMedia(d.data());
+          mediaList.forEach(m => {
+            hasMedia = true;
+            if (m.type === 'image') {
+              const item = document.createElement('div'); item.className = 'galleria-item';
+              item.innerHTML = `<img src="${esc(m.url)}" loading="lazy" alt="ricordo">`;
+              galleria.appendChild(item);
+            } else if (m.type === 'video') {
+              const item = document.createElement('div'); item.className = 'galleria-item';
+              item.innerHTML = `<video src="${esc(m.url)}" muted playsinline loop></video>`;
+              item.addEventListener('mouseenter', () => item.querySelector('video')?.play());
+              item.addEventListener('mouseleave', () => item.querySelector('video')?.pause());
+              galleria.appendChild(item);
+            } else if (m.type === 'audio') {
+              const item = document.createElement('div'); item.className = 'galleria-audio';
+              item.innerHTML = `<span>🎵</span><audio src="${esc(m.url)}" controls></audio>`;
+              galleria.appendChild(item);
+            }
+          });
+        });
+        if (!hasMedia) emptyMsg.style.display = 'block';
+      } catch(err) {
+        galleria.innerHTML = `<p class="empty-msg">Errore: ${err.message}</p>`;
+      }
+    }
+
+    // ── Modal nuovo post diario ───────────────────────────────────────────
+    const postItems = [];
+
+    function postAddFile(file, type) {
+      if (postItems.length >= MAX_FILES) { alert(`Massimo ${MAX_FILES} allegati.`); return; }
+      postItems.push({ file, type, name: file.name || type, previewUrl: URL.createObjectURL(file) });
+      renderPreview(postItems, 'post-preview', postRemoveFile);
+    }
+    function postRemoveFile(idx) {
+      URL.revokeObjectURL(postItems[idx].previewUrl); postItems.splice(idx, 1);
+      renderPreview(postItems, 'post-preview', postRemoveFile);
+    }
+    function postClear() {
+      postItems.forEach(i => URL.revokeObjectURL(i.previewUrl)); postItems.length = 0;
+      renderPreview(postItems, 'post-preview', postRemoveFile);
+    }
+
+    let postRecorder = null, postAudioChunks = [], postRecording = false;
+    const fab      = document.getElementById('fab-diario');
+    const backdrop = document.getElementById('modal-backdrop');
+
+    fab.addEventListener('click', () => backdrop.classList.add('open'));
+    document.getElementById('modal-close').addEventListener('click', closeModal);
+    backdrop.addEventListener('click', e => { if (e.target === backdrop) closeModal(); });
+
+    function closeModal() {
+      backdrop.classList.remove('open');
+      document.getElementById('post-text').value = '';
+      postClear();
+      if (postRecording) stopRec();
+    }
+
+    ['input-foto','input-foto-cam'].forEach(id => {
+      document.getElementById(id)?.addEventListener('change', e => {
+        Array.from(e.target.files).forEach(f => postAddFile(f, 'image')); e.target.value = '';
+      });
+    });
+    ['input-video','input-video-cam'].forEach(id => {
+      document.getElementById(id)?.addEventListener('change', e => {
+        Array.from(e.target.files).forEach(f => postAddFile(f, 'video')); e.target.value = '';
+      });
+    });
+    document.getElementById('input-audio-file')?.addEventListener('change', e => {
+      Array.from(e.target.files).forEach(f => postAddFile(f, 'audio')); e.target.value = '';
+    });
+
+    const btnAudio = document.getElementById('btn-audio');
+    btnAudio?.addEventListener('click', async () => {
+      if (postRecording) { stopRec(); return; }
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        postAudioChunks = [];
+        const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4';
+        postRecorder = new MediaRecorder(stream, { mimeType });
+        postRecorder.ondataavailable = e => postAudioChunks.push(e.data);
+        postRecorder.onstop = () => {
+          const ext  = mimeType.includes('mp4') ? 'mp4' : 'webm';
+          const blob = new Blob(postAudioChunks, { type: mimeType });
+          postAddFile(new File([blob], `rec_${Date.now()}.${ext}`, { type: mimeType }), 'audio');
+          stream.getTracks().forEach(t => t.stop());
+        };
+        postRecorder.start(); postRecording = true;
+        btnAudio.textContent = '⏹️ Stop'; btnAudio.classList.add('recording');
+      } catch(err) { alert('Microfono non disponibile: ' + err.message); }
+    });
+
+    function stopRec() {
+      if (postRecorder && postRecording) {
+        postRecorder.stop(); postRecording = false;
+        btnAudio.textContent = '🎙️ Registra'; btnAudio.classList.remove('recording');
+      }
+    }
+
+    document.getElementById('btn-pubblica').addEventListener('click', async () => {
+      if (!currentUser || !isOwner) return;
+      const text = document.getElementById('post-text').value.trim();
+      if (!text && postItems.length === 0) { alert('Scrivi qualcosa o aggiungi un allegato!'); return; }
+      const btn = document.getElementById('btn-pubblica');
+      btn.disabled = true; btn.textContent = 'Salvataggio…';
+      try {
+        const items = [...postItems];
+        const media = items.length
+          ? await uploadAll(items, document.getElementById('upload-bar'), document.getElementById('upload-progress'))
+          : [];
+        const nome = currentUserData?.nome || currentUser.displayName || 'Naufrago';
+        const foto = currentUserData?.fotoProfilo || '';
+        await addDoc(collection(db, 'robinson_diari', pageUid, 'posts'), {
+          authorId: currentUser.uid, authorName: nome, authorPhoto: foto,
+          text, media, timestamp: serverTimestamp(),
+        });
+        closeModal();
+        loadDiario();
+        loadGalleria();
+      } catch(err) { alert('Errore: ' + err.message); }
+      finally { btn.disabled = false; btn.textContent = 'Salva nel diario'; }
+    });
+  </script>
+</body>
+</html>

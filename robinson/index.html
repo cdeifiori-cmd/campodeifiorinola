@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Robinson – il diario di bordo</title>
+  <meta name="theme-color" content="#1a3a5c">
+  <link rel="stylesheet" href="css/robinson.css">
+  <style>
+    body { padding-bottom: 70px; }
+
+    .hero {
+      min-height: calc(100vh - 64px - 62px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 20px 40px;
+      text-align: center;
+      gap: 20px;
+    }
+
+    /* Isola CSS stilizzata */
+    .island-art {
+      position: relative;
+      width: 160px;
+      height: 140px;
+      margin: 0 auto 8px;
+    }
+    .island-sea {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 50px;
+      background: linear-gradient(180deg, #2a6096 0%, #1a3a5c 100%);
+      border-radius: 0 0 80px 80px;
+      overflow: hidden;
+    }
+    .island-sea::before {
+      content: '';
+      position: absolute;
+      top: 6px; left: -10px; right: -10px; height: 12px;
+      background: rgba(255,255,255,0.12);
+      border-radius: 50%;
+      animation: wave 2.5s ease-in-out infinite;
+    }
+    @keyframes wave { 0%,100%{transform:translateX(-6px)} 50%{transform:translateX(6px)} }
+
+    .island-land {
+      position: absolute;
+      bottom: 30px; left: 50%; transform: translateX(-50%);
+      width: 110px; height: 55px;
+      background: linear-gradient(180deg, #c8860a 0%, #a06a08 100%);
+      border-radius: 50% 50% 30px 30px / 50% 50% 20px 20px;
+    }
+    .island-land::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 15px; right: 15px; bottom: 0;
+      background: linear-gradient(180deg, #8bc34a 0%, #6a9c2a 100%);
+      border-radius: 50% 50% 0 0 / 60% 60% 0 0;
+    }
+    .island-palm {
+      position: absolute;
+      bottom: 75px; left: 50%; transform: translateX(-50%);
+    }
+    .island-palm .trunk {
+      width: 6px; height: 36px;
+      background: #6d4c1f;
+      border-radius: 3px;
+      margin: 0 auto;
+      transform: rotate(-5deg);
+      transform-origin: bottom center;
+    }
+    .island-palm .leaves {
+      position: absolute;
+      bottom: 30px; left: 50%; transform: translateX(-50%);
+      font-size: 2rem;
+      line-height: 1;
+    }
+    .island-sun {
+      position: absolute;
+      top: 0; right: 10px;
+      width: 36px; height: 36px;
+      background: radial-gradient(circle, #ffd700, #c8860a);
+      border-radius: 50%;
+      box-shadow: 0 0 12px rgba(200,134,10,0.5);
+    }
+
+    .hero-title {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 3rem;
+      font-weight: 900;
+      color: var(--navy);
+      letter-spacing: 0.03em;
+      line-height: 1;
+    }
+    .hero-sub {
+      font-family: 'Lora', serif;
+      font-style: italic;
+      font-size: 1.05rem;
+      color: var(--muted);
+      margin-top: -12px;
+    }
+    .hero-desc {
+      font-size: 0.9rem;
+      color: var(--muted);
+      max-width: 340px;
+      line-height: 1.6;
+    }
+
+    /* Card navigazione */
+    .nav-cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      width: 100%;
+      max-width: 480px;
+      margin-top: 4px;
+    }
+    .nav-card {
+      background: var(--post-bg);
+      border: 1px solid #e0d8c8;
+      border-left: 4px solid var(--navy);
+      border-radius: 4px 12px 12px 4px;
+      padding: 16px 14px;
+      text-decoration: none;
+      color: var(--inchiostro);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 2px 2px 8px rgba(26,58,92,0.08);
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .nav-card:hover { transform: translateY(-2px); box-shadow: 2px 6px 16px rgba(26,58,92,0.14); }
+    .nav-card .card-icon { font-size: 2rem; }
+    .nav-card .card-label {
+      font-family: 'Playfair Display', serif;
+      font-size: 0.9rem; font-weight: 700;
+      color: var(--navy); text-align: center;
+    }
+    .nav-card .card-desc {
+      font-size: 0.72rem; color: var(--muted);
+      font-style: italic; text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="top-header">
+    <div class="header-titles">
+      <div class="header-title-main">Robinson</div>
+      <div class="header-title-sub">il diario di bordo</div>
+    </div>
+    <div id="nav-auth-slot"></div>
+  </header>
+
+  <main class="hero">
+    <!-- Illustrazione isola CSS -->
+    <div class="island-art">
+      <div class="island-sun"></div>
+      <div class="island-palm">
+        <div class="leaves">🌴</div>
+        <div class="trunk"></div>
+      </div>
+      <div class="island-land"></div>
+      <div class="island-sea"></div>
+    </div>
+
+    <div class="hero-title">Robinson</div>
+    <div class="hero-sub">il diario di bordo</div>
+    <p class="hero-desc">
+      Un'isola dove ogni naufrago lascia traccia del suo viaggio.
+      Storie, ricordi e avventure raccontate giorno per giorno.
+    </p>
+
+    <div class="nav-cards">
+      <a href="spiaggia.html" class="nav-card">
+        <span class="card-icon">🏖️</span>
+        <span class="card-label">La Spiaggia</span>
+        <span class="card-desc">il punto d'incontro</span>
+      </a>
+      <a href="naufraghi.html" class="nav-card">
+        <span class="card-icon">👥</span>
+        <span class="card-label">I Naufraghi</span>
+        <span class="card-desc">chi vive sull'isola</span>
+      </a>
+      <a href="ciurma.html" class="nav-card">
+        <span class="card-icon">⚓</span>
+        <span class="card-label">La Ciurma</span>
+        <span class="card-desc">chi guida la nave</span>
+      </a>
+      <a href="appunti.html" class="nav-card">
+        <span class="card-icon">📓</span>
+        <span class="card-label">Appunti di Viaggio</span>
+        <span class="card-desc">tutto quello che succede</span>
+      </a>
+    </div>
+  </main>
+
+  <nav class="bottom-nav">
+    <a href="index.html" class="nav-item active"><span class="nav-icon">🏝️</span>Robinson</a>
+    <a href="spiaggia.html"   class="nav-item"><span class="nav-icon">🏖️</span>Spiaggia</a>
+    <a href="naufraghi.html"  class="nav-item"><span class="nav-icon">👥</span>Naufraghi</a>
+    <a href="ciurma.html"     class="nav-item"><span class="nav-icon">⚓</span>Ciurma</a>
+    <a href="appunti.html"    class="nav-item"><span class="nav-icon">📓</span>Appunti</a>
+  </nav>
+
+  <script type="module">
+    import { setupNavAuth } from './js/robinson-nav.js';
+    setupNavAuth('nav-auth-slot');
+  </script>
+</body>
+</html>

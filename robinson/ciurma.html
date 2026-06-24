@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>La Ciurma – Robinson</title>
+  <meta name="theme-color" content="#1a3a5c">
+  <link rel="stylesheet" href="css/robinson.css">
+  <style>
+    body { padding-bottom: 70px; }
+
+    .grid-ciurma {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3px;
+      padding: 3px;
+      max-width: 640px;
+      margin: 0 auto;
+    }
+    @media (min-width: 500px) { .grid-ciurma { grid-template-columns: 1fr 1fr 1fr; } }
+
+    .card-ciurma {
+      background: var(--post-bg);
+      text-decoration: none;
+      color: var(--inchiostro);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transition: opacity 0.15s;
+    }
+    .card-ciurma:hover { opacity: 0.88; }
+
+    .card-foto-ciurma {
+      width: 100%; aspect-ratio: 1/1; overflow: hidden;
+      background: var(--oro-light);
+      display: flex; align-items: center; justify-content: center; font-size: 3rem;
+    }
+    .card-foto-ciurma img {
+      width: 100%; height: 100%;
+      object-fit: cover; object-position: top center; display: block;
+    }
+
+    .card-info-ciurma {
+      padding: 8px 10px 10px;
+      border-top: 3px solid var(--navy);
+      background: var(--post-bg);
+    }
+    .card-info-ciurma .nome {
+      font-family: 'Playfair Display', serif;
+      font-size: 0.88rem; font-weight: 700; color: var(--navy);
+    }
+    .card-info-ciurma .ruolo {
+      font-size: 0.7rem; color: var(--oro);
+      font-weight: 600; margin-top: 2px; font-style: italic;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="top-header">
+    <div class="header-titles">
+      <div class="header-title-main">La Ciurma</div>
+      <div class="header-title-sub">chi guida la nave</div>
+    </div>
+    <div id="nav-auth-slot"></div>
+  </header>
+
+  <div id="grid-ciurma" class="grid-ciurma">
+    <div class="spinner"></div>
+  </div>
+
+  <nav class="bottom-nav">
+    <a href="index.html"      class="nav-item"><span class="nav-icon">🏝️</span>Robinson</a>
+    <a href="spiaggia.html"   class="nav-item"><span class="nav-icon">🏖️</span>Spiaggia</a>
+    <a href="naufraghi.html"  class="nav-item"><span class="nav-icon">👥</span>Naufraghi</a>
+    <a href="ciurma.html"     class="nav-item active"><span class="nav-icon">⚓</span>Ciurma</a>
+    <a href="appunti.html"    class="nav-item"><span class="nav-icon">📓</span>Appunti</a>
+  </nav>
+
+  <script type="module">
+    import { db } from './js/robinson-firebase.js';
+    import { setupNavAuth } from './js/robinson-nav.js';
+    import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    setupNavAuth('nav-auth-slot');
+
+    const grid = document.getElementById('grid-ciurma');
+
+    function esc(s) {
+      return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    async function loadCiurma() {
+      try {
+        // Prima tenta robinson_ciurma, poi fallback su staff filtrato per ruolo 'ciurma'
+        let membri = [];
+        const snap = await getDocs(collection(db, 'robinson_ciurma'));
+        snap.forEach(d => membri.push({ id: d.id, ...d.data() }));
+
+        if (!membri.length) {
+          const staffSnap = await getDocs(collection(db, 'staff'));
+          staffSnap.forEach(d => {
+            const data = d.data();
+            if (data.ruolo === 'ciurma' || data.robinsonCiurma) {
+              membri.push({ id: d.id, ...data });
+            }
+          });
+        }
+
+        // Se ancora vuoto, carica tutto lo staff
+        if (!membri.length) {
+          const staffSnap = await getDocs(collection(db, 'staff'));
+          staffSnap.forEach(d => membri.push({ id: d.id, ...d.data() }));
+        }
+
+        membri.sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'it'));
+
+        grid.innerHTML = '';
+        if (!membri.length) { grid.innerHTML = '<p class="empty-msg">Nessun membro della ciurma.</p>'; return; }
+
+        membri.forEach(data => {
+          const fotoHtml = data.fotoProfilo
+            ? `<img src="${esc(data.fotoProfilo)}" alt="${esc(data.nome)}" loading="lazy">`
+            : '⚓';
+          const ruoloLabel = data.ruolo || 'Membro della Ciurma';
+          grid.innerHTML += `
+            <a class="card-ciurma" href="naufrago.html?uid=${esc(data.id)}">
+              <div class="card-foto-ciurma">${fotoHtml}</div>
+              <div class="card-info-ciurma">
+                <div class="nome">${esc(data.nome || '—')}</div>
+                <div class="ruolo">${esc(ruoloLabel)}</div>
+              </div>
+            </a>`;
+        });
+      } catch(err) {
+        grid.innerHTML = `<p class="empty-msg">Errore: ${err.message}</p>`;
+        console.error(err);
+      }
+    }
+
+    loadCiurma();
+  </script>
+</body>
+</html>
