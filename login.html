@@ -37,9 +37,11 @@
     import { login, onAuthChange } from './js/auth.js';
 
     const returnUrl = new URLSearchParams(location.search).get('returnUrl');
+    const ALLOWED_ORIGINS = ['https://robinson.campodeifiori.org', 'https://campodeifiori.org'];
+    const safeReturn = returnUrl && ALLOWED_ORIGINS.some(o => returnUrl.startsWith(o))
+      ? returnUrl : null;
     const afterLogin = () => {
-      if (returnUrl) { location.href = returnUrl; }
-      else { location.href = 'comunita.html'; }
+      location.href = safeReturn || 'comunita.html';
     };
 
     // If already logged in, redirect
