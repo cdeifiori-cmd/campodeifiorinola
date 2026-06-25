@@ -46,9 +46,9 @@
       }
     }
 
-    // If already logged in, redirect
+    // If already logged in, redirect (setTimeout ensures returnUrl is read after URL is fully parsed)
     onAuthChange(user => {
-      if (user) redirectAfterLogin();
+      if (user) setTimeout(() => redirectAfterLogin(), 100);
     });
 
     document.getElementById('btn-login').addEventListener('click', async () => {
