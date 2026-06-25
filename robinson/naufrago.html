@@ -314,7 +314,7 @@ let recChunks = [];
 let isolaZone = {};
 
 // ── Auth ────────────────────────────────────────────────────────────────
-requireAuth(async async user => {
+requireAuth(async user => {
   currentUser = user;
   isOwner = user.uid === pageUid;
   isAdmin = user.uid === ADMIN_UID;
