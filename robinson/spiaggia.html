@@ -67,6 +67,7 @@
 
 <script type="module">
 import { db, auth, EMOJIS, ADMIN_UID } from './js/robinson-firebase.js';
+import { requireAuth } from './js/robinson-auth.js';
 import { setupNavAuth } from './js/robinson-nav.js';
 import { aggiungiPunteggio } from './js/robinson-punteggio.js';
 import { esc, fmtDate, risolviNome, uploadAll, renderMediaGrid, normalizeMedia, renderPreview } from './js/robinson-utils.js';
@@ -82,9 +83,7 @@ const COL = 'robinson_spiaggia';
 let currentUser = null;
 let allegati = []; // {file, type, previewUrl}
 
-onAuthStateChanged(auth, user => {
-  if (!user) { const _ru = encodeURIComponent(window.location.href);
-      location.href = 'https://campodeifiori.org/login.html?returnUrl=' + _ru; return; }
+requireAuth(user => {
   currentUser = user;
   loadFeed();
 });

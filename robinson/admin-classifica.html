@@ -56,14 +56,14 @@
 
 <script type="module">
 import { db, auth, ADMIN_UID } from './js/robinson-firebase.js';
+import { requireAuth } from './js/robinson-auth.js';
 import { esc } from './js/robinson-utils.js';
 import { SETTIMANA_KEY, MESE_KEY } from './js/robinson-utils.js';
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-// Protezione admin
-onAuthStateChanged(auth, async user => {
-  if (!user || user.uid !== ADMIN_UID) {
+// Protezione admin: requireAuth garantisce un solo firing, poi controlla ruolo
+requireAuth(async user => {
+  if (user.uid !== ADMIN_UID) {
     window.location.replace('index.html');
     return;
   }

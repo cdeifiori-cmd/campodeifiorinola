@@ -31,6 +31,7 @@
 
 <script type="module">
 import { db, auth } from './js/robinson-firebase.js';
+import { requireAuth } from './js/robinson-auth.js';
 import { setupNavAuth } from './js/robinson-nav.js';
 import { esc, fmtDate, risolviNome, renderMediaGrid, normalizeMedia } from './js/robinson-utils.js';
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
@@ -38,9 +39,7 @@ import { collection, collectionGroup, getDocs, query, orderBy, limit } from "htt
 
 setupNavAuth('nav-auth-slot');
 
-onAuthStateChanged(auth, async user => {
-  if (!user) { const _ru = encodeURIComponent(window.location.href);
-      location.href = 'https://campodeifiori.org/login.html?returnUrl=' + _ru; return; }
+requireAuth(async async user => {
   await loadAppunti();
 });
 

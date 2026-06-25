@@ -40,6 +40,7 @@
 
 <script type="module">
 import { db, auth, ADMIN_UID } from './js/robinson-firebase.js';
+import { requireAuth } from './js/robinson-auth.js';
 import { setupNavAuth } from './js/robinson-nav.js';
 import { esc } from './js/robinson-utils.js';
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
@@ -49,9 +50,7 @@ setupNavAuth('nav-auth-slot');
 
 let allNaufraghi = [];
 
-onAuthStateChanged(auth, async user => {
-  if (!user) { const _ru = encodeURIComponent(window.location.href);
-      location.href = 'https://campodeifiori.org/login.html?returnUrl=' + _ru; return; }
+requireAuth(async async user => {
   if (user.uid === ADMIN_UID) document.getElementById('admin-banner').style.display = 'block';
   await loadNaufraghi();
 });

@@ -2,11 +2,26 @@ import { auth, db, ADMIN_UID } from './robinson-firebase.js';
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
+export function requireAuth(callback) {
+  let resolved = false;
+  onAuthStateChanged(auth, user => {
+    if (resolved) return;
+    resolved = true;
+    if (user) {
+      callback(user);
+    } else {
+      const returnUrl = encodeURIComponent(window.location.href);
+      window.location.href = `https://campodeifiori.org/login.html?returnUrl=${returnUrl}`;
+    }
+  });
+}
+
 export function waitForAuth() {
   return new Promise(resolve => {
-    const timer = setTimeout(() => { unsub(); resolve(null); }, 5000);
+    let resolved = false;
     const unsub = onAuthStateChanged(auth, user => {
-      clearTimeout(timer);
+      if (resolved) return;
+      resolved = true;
       unsub();
       resolve(user);
     });
