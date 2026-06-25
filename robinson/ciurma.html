@@ -166,11 +166,18 @@ async function apriCartaModal(uid) {
       return;
     }
 
-    const sezione = (titolo, contenuto) => contenuto.trim()
-      ? `<div style="border:2px dashed #c8860a;border-radius:8px;margin:12px 0;overflow:hidden;">
-           <div style="background:#1a3a5c;color:#c8860a;font-family:'Playfair Display',serif;padding:6px 10px;font-size:0.82rem;font-weight:700;">${titolo}</div>
-           <div style="background:#faf7f0;padding:10px 12px;">${contenuto}</div>
-         </div>` : '';
+    let _firstSezione = true;
+    const sezione = (titolo, contenuto) => {
+      if (!contenuto.trim()) return '';
+      const open = _firstSezione;
+      _firstSezione = false;
+      return `<div class="ci-accordion-item" style="margin:8px 0;">
+        <div class="ci-accordion-toggle" style="background:#1a3a5c;color:#c8860a;font-family:'Playfair Display',serif;padding:10px 12px;font-size:0.82rem;font-weight:700;cursor:pointer;border-radius:4px;display:flex;justify-content:space-between;align-items:center;">
+          ${titolo} <span style="font-size:0.75rem;">${open ? '▲' : '▼'}</span>
+        </div>
+        <div class="ci-accordion-body" style="display:${open ? 'block' : 'none'};background:#faf7f0;padding:10px 12px;border:1px solid #c8860a40;border-top:none;border-radius:0 0 4px 4px;">${contenuto}</div>
+      </div>`;
+    };
     const riga = (label, val) => val ? `<div style="margin-bottom:6px;"><span style="font-size:0.72rem;color:#1a3a5c;font-weight:600;">${label}:</span> <span style="font-size:0.86rem;">${esc(val)}</span></div>` : '';
 
     const treParole = (ci.treParole||[]).filter(Boolean).join(' · ');
