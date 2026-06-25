@@ -482,18 +482,7 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-document.addEventListener('DOMContentLoaded', function() {
-  document.querySelectorAll('.ci-accordion-toggle').forEach(function(toggle) {
-    toggle.addEventListener('click', function() {
-      var item = this.closest('.ci-accordion-item');
-      var body = item.querySelector('.ci-accordion-body');
-      var arrow = this.querySelector('span.arrow');
-      var isOpen = body.style.display === 'block';
-      body.style.display = isOpen ? 'none' : 'block';
-      if (arrow) arrow.textContent = isOpen ? '▼' : '▲';
-    });
-  });
-});
+// accordion viene inizializzato dopo il caricamento completo (vedi script dopo il modulo)
 </script>
 <script type="module">
 import { db, auth, ADMIN_UID, CLOUD_NAME, CLOUD_PRESET } from './js/robinson-firebase.js';
@@ -1592,6 +1581,25 @@ function lockAllForms(lock = true) {
   });
   if (lock) document.getElementById('btn-sblocca-diario').style.display = isAdmin ? 'inline-block' : 'none';
 }
+</script>
+<script>
+window.addEventListener('load', function() {
+  document.querySelectorAll('.ci-accordion-toggle').forEach(function(t) {
+    t.addEventListener('click', function() {
+      var body = this.nextElementSibling;
+      if (!body || !body.classList.contains('ci-accordion-body')) {
+        body = this.parentElement.querySelector('.ci-accordion-body');
+      }
+      if (!body) return;
+      var arrow = this.querySelector('span.arrow');
+      var isOpen = body.style.display === 'block';
+      body.style.display = isOpen ? 'none' : 'block';
+      if (arrow) arrow.textContent = isOpen ? '▼' : '▲';
+    });
+  });
+  var first = document.querySelector('.ci-accordion-body');
+  if (first) first.style.display = 'block';
+});
 </script>
 </body>
 </html>

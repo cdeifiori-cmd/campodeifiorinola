@@ -71,11 +71,15 @@ requireAuth(async user => {
 async function loadNaufraghi() {
   const grid = document.getElementById('grid');
   try {
-    let snap = await getDocs(query(collection(db, 'robinson_naufraghi'), orderBy('nome')));
-    if (snap.empty) {
-      snap = await getDocs(query(collection(db, 'utenti'), orderBy('nome')));
-    }
-    allNaufraghi = snap.docs.map(d => ({ uid: d.id, ...d.data() }));
+    const [snapUtenti, snapRobinson] = await Promise.all([
+      getDocs(query(collection(db, 'utenti'), orderBy('nome'))),
+      getDocs(collection(db, 'robinson_naufraghi'))
+    ]);
+    const robinsonMap = {};
+    snapRobinson.docs.forEach(d => { robinsonMap[d.id] = d.data(); });
+    allNaufraghi = snapUtenti.docs
+      .map(d => ({ uid: d.id, ...d.data(), ...(robinsonMap[d.id] || {}) }))
+      .filter(u => u.ruolo !== 'admin' && u.ruolo !== 'ciurma');
     renderGrid(allNaufraghi);
   } catch(e) {
     grid.innerHTML = `<div style="grid-column:span 2;text-align:center;padding:20px;color:var(--rosso);">Errore caricamento: ${esc(e.message)}</div>`;
