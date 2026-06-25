@@ -3,10 +3,12 @@ import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/f
 import { getDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 export function requireAuth(callback) {
+  if (auth.currentUser) { callback(auth.currentUser); return; }
   let resolved = false;
-  onAuthStateChanged(auth, user => {
+  const unsub = onAuthStateChanged(auth, user => {
     if (resolved) return;
     resolved = true;
+    unsub();
     if (user) {
       callback(user);
     } else {
@@ -45,7 +47,11 @@ export async function isAdmin(user) {
 export function setupNavAuth(slotId) {
   const slot = document.getElementById(slotId);
   if (!slot) return;
-  onAuthStateChanged(auth, async user => {
+  let navResolved = false;
+  const navUnsub = onAuthStateChanged(auth, async user => {
+    if (navResolved) return;
+    navResolved = true;
+    navUnsub();
     if (!user) {
       const returnUrl = encodeURIComponent(window.location.href);
       slot.innerHTML = `<a href="https://campodeifiori.org/login.html?returnUrl=${returnUrl}" style="color:#fff;font-size:0.85rem;">Accedi</a>`;
