@@ -45,7 +45,7 @@ import { collection, getDocs, query, orderBy, where } from "https://www.gstatic.
 setupNavAuth('nav-auth-slot');
 let allCiurma = [];
 
-requireAuth(async async user => {
+requireAuth(async user => {
   await loadCiurma();
 });
 
