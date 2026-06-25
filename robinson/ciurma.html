@@ -352,5 +352,16 @@ async function loadModalReactions(uid, postId, container) {
   } catch(_) {}
 }
 </script>
+<script>
+document.addEventListener('click', function(e) {
+  if (e.target.closest('.ci-accordion-toggle')) {
+    var toggle = e.target.closest('.ci-accordion-toggle');
+    var body = toggle.parentElement.querySelector('.ci-accordion-body');
+    if (body) {
+      body.style.display = body.style.display === 'block' ? 'none' : 'block';
+    }
+  }
+});
+</script>
 </body>
 </html>
