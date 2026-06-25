@@ -537,7 +537,6 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
-    if (btn.dataset.tab === 'carta') initAccordion();
   });
 });
 
@@ -1564,20 +1563,18 @@ function loadDiconoCommenti(container, postId, currentUser) {
 }
 
 // ── Accordion carta ───────────────────────────────────────────────────────
+let accordionInited = false;
 function initAccordion() {
+  if (accordionInited) return;
+  accordionInited = true;
   document.querySelectorAll('#tab-carta .ci-accordion-toggle').forEach(header => {
     header.addEventListener('click', () => {
       const body = header.closest('.ci-sezione').querySelector('.ci-accordion-body');
       const arrow = header.querySelector('.ci-accordion-arrow');
       const isOpen = body.classList.contains('open');
-      // Close all
       document.querySelectorAll('#tab-carta .ci-accordion-body').forEach(b => b.classList.remove('open'));
       document.querySelectorAll('#tab-carta .ci-accordion-arrow').forEach(a => a.classList.remove('open'));
-      // Open this one if it was closed
-      if (!isOpen) {
-        body.classList.add('open');
-        arrow.classList.add('open');
-      }
+      if (!isOpen) { body.classList.add('open'); arrow.classList.add('open'); }
     });
   });
 }
