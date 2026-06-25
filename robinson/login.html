@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Accedi – Robinson</title>
+  <meta name="theme-color" content="#1a3a5c">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #f5f0e8;
+      color: #2c1e0f;
+      font-family: 'Lora', serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .login-wrap {
+      width: 100%;
+      max-width: 380px;
+      padding: 24px 16px;
+    }
+    .login-box {
+      background: #faf7f0;
+      border: 2px solid #1a3a5c;
+      border-radius: 16px;
+      padding: 32px 28px;
+      box-shadow: 0 8px 32px rgba(26,58,92,0.12);
+    }
+    .logo {
+      text-align: center;
+      font-size: 2.5rem;
+      margin-bottom: 8px;
+    }
+    h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.5rem;
+      color: #1a3a5c;
+      text-align: center;
+      margin-bottom: 4px;
+    }
+    .subtitle {
+      text-align: center;
+      font-size: 0.78rem;
+      font-style: italic;
+      color: #8b7355;
+      margin-bottom: 24px;
+    }
+    .form-group { margin-bottom: 16px; }
+    .form-group label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #1a3a5c;
+      margin-bottom: 5px;
+    }
+    .form-group input {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1.5px solid #c8b89a;
+      border-radius: 8px;
+      font-family: 'Lora', serif;
+      font-size: 0.95rem;
+      background: #f5f0e8;
+      color: #2c1e0f;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .form-group input:focus { border-color: #1a3a5c; }
+    .btn-login {
+      width: 100%;
+      padding: 12px;
+      background: #1a3a5c;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-family: 'Lora', serif;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 4px;
+      transition: background 0.15s;
+    }
+    .btn-login:hover { background: #0f2540; }
+    .btn-login:disabled { opacity: 0.6; cursor: not-allowed; }
+    .error-msg {
+      display: none;
+      background: #fdecea;
+      border: 1px solid #e74c3c;
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 0.82rem;
+      color: #c0392b;
+      margin-bottom: 14px;
+    }
+    .error-msg.visible { display: block; }
+    .back-link {
+      text-align: center;
+      margin-top: 18px;
+      font-size: 0.8rem;
+    }
+    .back-link a { color: #c8860a; text-decoration: none; }
+    .back-link a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="login-wrap">
+    <div class="login-box">
+      <div class="logo">🏝️</div>
+      <h1>Robinson</h1>
+      <div class="subtitle">Il Diario di Bordo dei Naufraghi</div>
+
+      <div class="error-msg" id="error-msg"></div>
+
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" placeholder="la-tua@email.it" autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" placeholder="••••••••" autocomplete="current-password">
+      </div>
+
+      <button class="btn-login" id="btn-login">⚓ Salpare</button>
+
+      <div class="back-link">
+        <a href="index.html">← Torna all'isola</a>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { auth } from './js/robinson-firebase.js';
+    import {
+      signInWithEmailAndPassword,
+      onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+    const params = new URLSearchParams(window.location.search);
+    const returnPath = params.get('returnUrl') || 'index.html';
+
+    function goAfterLogin() {
+      window.location.href = returnPath;
+    }
+
+    // Se già loggato, redirect diretto
+    let checked = false;
+    const unsub = onAuthStateChanged(auth, user => {
+      if (checked) return;
+      checked = true;
+      unsub();
+      if (user) goAfterLogin();
+    });
+
+    const btnLogin = document.getElementById('btn-login');
+    const errEl = document.getElementById('error-msg');
+
+    function showError(msg) {
+      errEl.textContent = msg;
+      errEl.classList.add('visible');
+    }
+    function clearError() {
+      errEl.classList.remove('visible');
+    }
+
+    async function doLogin() {
+      clearError();
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      if (!email || !password) { showError('Inserisci email e password.'); return; }
+      btnLogin.disabled = true;
+      btnLogin.textContent = 'Accesso in corso...';
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+        goAfterLogin();
+      } catch (e) {
+        showError('Credenziali non valide. Riprova.');
+        btnLogin.disabled = false;
+        btnLogin.textContent = '⚓ Salpare';
+      }
+    }
+
+    btnLogin.addEventListener('click', doLogin);
+    document.getElementById('password').addEventListener('keydown', e => {
+      if (e.key === 'Enter') doLogin();
+    });
+  </script>
+</body>
+</html>

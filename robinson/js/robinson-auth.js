@@ -13,7 +13,7 @@ export function requireAuth(callback) {
       callback(user);
     } else {
       const returnUrl = encodeURIComponent(window.location.href);
-      window.location.href = `https://campodeifiori.org/login.html?returnUrl=${returnUrl}`;
+      window.location.href = `login.html?returnUrl=${encodeURIComponent(window.location.pathname)}`;
     }
   });
 }
@@ -54,7 +54,7 @@ export function setupNavAuth(slotId) {
     navUnsub();
     if (!user) {
       const returnUrl = encodeURIComponent(window.location.href);
-      slot.innerHTML = `<a href="https://campodeifiori.org/login.html?returnUrl=${returnUrl}" style="color:#fff;font-size:0.85rem;">Accedi</a>`;
+      slot.innerHTML = `<a href="login.html?returnUrl=${encodeURIComponent(window.location.pathname)}" style="color:#fff;font-size:0.85rem;">Accedi</a>`;
       return;
     }
     let nome = user.displayName || 'Naufrago';
