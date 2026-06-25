@@ -264,7 +264,7 @@
     <!-- IDENTIFICAZIONE -->
     <div class="ci-sezione ci-accordion-item">
       <div class="ci-sezione-header ci-accordion-toggle">🪪 Identificazione <span class="arrow">▲</span></div>
-      <div class="ci-sezione-body ci-accordion-body" style="display:block;">
+      <div class="ci-sezione-body ci-accordion-body" style="display:none;">
         <div class="ci-foto-wrap">
           <img id="ci-foto-img" class="ci-foto-img" src="" alt="foto profilo">
           <button class="ci-foto-btn" id="ci-foto-btn" style="display:none;">📷 Cambia foto</button>
@@ -370,7 +370,7 @@
 
     <!-- ISOLA DESERTA -->
     <div class="ci-sezione ci-accordion-item">
-      <div class="ci-sezione-header ci-accordion-toggle">🏝️ Cosa Porterei su un'Isola Deserta <span class="arrow">▼</span></div>
+      <div class="ci-sezione-header ci-accordion-toggle">🏝️ Cosa mi porto sull'isola <span class="arrow">▼</span></div>
       <div class="ci-sezione-body ci-accordion-body" style="display:none;">
         <div class="ci-isola-grid">
           <div class="ci-campo"><label>📚 Un libro</label><input type="text" id="id-libro" placeholder="scrivi qui..."></div>
@@ -1599,8 +1599,7 @@ function initAccordionNaufrago() {
     });
   });
   // Apri prima sezione di default
-  var first = document.querySelector('.ci-accordion-body');
-  if (first) first.style.display = 'block';
+  // tutte le sezioni chiuse di default — l'utente apre quella che vuole
 }
 </script>
 </body>
