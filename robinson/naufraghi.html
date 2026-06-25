@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>I Naufraghi – Robinson</title>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lora:ital,wght@0,400;0,600;1,400&family=Dancing+Script:wght@600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/robinson.css">
 </head>
 <body>
@@ -30,6 +30,17 @@
   <div class="spinner" style="grid-column:span 2;"></div>
 </div>
 
+<!-- Modal Carta d'Identità -->
+<div id="modal-carta" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;overflow-y:auto;padding:20px 12px;">
+  <div id="modal-carta-box" style="background:#f5f0e8;background-image:radial-gradient(circle,#c8b89a22 1px,transparent 1px);background-size:20px 20px;max-width:480px;margin:0 auto;border-radius:12px;padding:0;position:relative;overflow:hidden;">
+    <button id="modal-carta-close" style="position:absolute;top:10px;right:12px;background:none;border:none;font-size:1.4rem;cursor:pointer;color:#1a3a5c;z-index:10;">✕</button>
+    <div id="modal-carta-body" style="padding:16px;"></div>
+    <div style="padding:0 16px 20px;">
+      <button id="modal-carta-diario-btn" class="btn btn-primary" style="width:100%;">⚓ Entra nel diario</button>
+    </div>
+  </div>
+</div>
+
 <nav class="bottom-nav">
   <a href="index.html" class="nav-item"><span class="nav-icon">🏝️</span><span>Home</span></a>
   <a href="spiaggia.html" class="nav-item"><span class="nav-icon">🏖️</span><span>Spiaggia</span></a>
@@ -44,13 +55,13 @@ import { requireAuth } from './js/robinson-auth.js';
 import { setupNavAuth } from './js/robinson-nav.js';
 import { esc } from './js/robinson-utils.js';
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { collection, getDocs, query, orderBy, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 setupNavAuth('nav-auth-slot');
 
 let allNaufraghi = [];
 
-requireAuth(async async user => {
+requireAuth(async user => {
   if (user.uid === ADMIN_UID) document.getElementById('admin-banner').style.display = 'block';
   await loadNaufraghi();
 });
@@ -76,20 +87,128 @@ function renderGrid(lista) {
     const foto = n.fotoProfilo || n.photoURL || '';
     const nome = n.nome || n.displayName || 'Naufrago';
     const soprannome = n.soprannome || '';
-    return `<a class="card-naufrago" href="naufrago.html?uid=${esc(n.uid)}">
+    return `<div class="card-naufrago" data-uid="${esc(n.uid)}" style="cursor:pointer;">
       <div class="card-foto">${foto ? `<img src="${esc(foto)}" alt="${esc(nome)}" loading="lazy">` : '⚓'}</div>
       <div class="card-info">
         <div class="card-nome">${esc(nome)}</div>
         ${soprannome ? `<div class="card-ruolo">"${esc(soprannome)}"</div>` : ''}
       </div>
-    </a>`;
+    </div>`;
   }).join('');
+  grid.querySelectorAll('.card-naufrago').forEach(card => {
+    card.addEventListener('click', () => apriCartaModal(card.dataset.uid));
+  });
 }
 
 document.getElementById('search-inp').addEventListener('input', e => {
   const q = e.target.value.toLowerCase();
   renderGrid(allNaufraghi.filter(n => (n.nome || '').toLowerCase().includes(q) || (n.soprannome || '').toLowerCase().includes(q)));
 });
+
+// ── Modal Carta d'Identità ─────────────────────────────────────────────────
+const modalCarta = document.getElementById('modal-carta');
+const modalBody = document.getElementById('modal-carta-body');
+const modalDiarioBtn = document.getElementById('modal-carta-diario-btn');
+
+document.getElementById('modal-carta-close').addEventListener('click', () => { modalCarta.style.display = 'none'; });
+modalCarta.addEventListener('click', e => { if (e.target === modalCarta) modalCarta.style.display = 'none'; });
+
+async function apriCartaModal(uid) {
+  modalCarta.style.display = 'block';
+  modalBody.innerHTML = '<div style="padding:20px;text-align:center;color:#1a3a5c;">⏳ Caricamento…</div>';
+  modalDiarioBtn.textContent = '⚓ Entra nel diario';
+  modalDiarioBtn.onclick = () => { location.href = `naufrago.html?uid=${uid}`; };
+
+  try {
+    const [snapN, snapU, snapCI] = await Promise.all([
+      getDoc(doc(db, 'robinson_naufraghi', uid)),
+      getDoc(doc(db, 'utenti', uid)),
+      getDoc(doc(db, 'robinson_naufraghi', uid, 'carta_identita', 'dati'))
+    ]);
+    const dN = snapN.exists() ? snapN.data() : {};
+    const dU = snapU.exists() ? snapU.data() : {};
+    const ci = snapCI.exists() ? snapCI.data() : null;
+
+    const foto = dN.fotoProfilo || dU.fotoProfilo || dU.photoURL || '';
+    const nome = ci?.nome || dN.nome || dU.nome || dU.displayName || 'Naufrago';
+    const codice = ci?.codiceRR || '';
+    const sbarco = dN.primoAccesso?.toDate?.()?.toLocaleDateString('it-IT') || dN.dataInizio?.toDate?.()?.toLocaleDateString('it-IT') || '';
+
+    let html = `
+      <div style="background:#1a3a5c;padding:16px;display:flex;align-items:center;gap:12px;">
+        ${foto ? `<img src="${esc(foto)}" style="width:60px;height:60px;border-radius:50%;object-fit:cover;border:2px solid #c8860a;">` : '<div style="width:60px;height:60px;border-radius:50%;background:#c8b89a;display:flex;align-items:center;justify-content:center;font-size:1.5rem;">⚓</div>'}
+        <div>
+          <div style="font-family:\'Playfair Display\',serif;font-size:1.1rem;font-weight:700;color:#f5f0e8;">${esc(nome)}</div>
+          ${codice ? `<div style="font-size:0.75rem;color:#c8860a;letter-spacing:0.1em;font-weight:700;">${esc(codice)}</div>` : ''}
+          ${sbarco ? `<div style="font-size:0.72rem;color:#c8b89a;margin-top:2px;">Sbarcato/a il: ${esc(sbarco)}</div>` : ''}
+        </div>
+      </div>`;
+
+    if (!ci) {
+      html += `<div style="padding:20px;text-align:center;color:#1a3a5c;font-style:italic;">Questo naufrago non ha ancora compilato la sua Carta d'Identità.</div>`;
+      modalBody.innerHTML = html;
+      modalDiarioBtn.textContent = `⚓ Entra nel diario di ${esc(nome)}`;
+      return;
+    }
+
+    const sezione = (titolo, contenuto) => contenuto.trim()
+      ? `<div style="border:2px dashed #c8860a;border-radius:8px;margin:12px 0;overflow:hidden;">
+           <div style="background:#1a3a5c;color:#c8860a;font-family:\'Playfair Display\',serif;padding:6px 10px;font-size:0.82rem;font-weight:700;">${titolo}</div>
+           <div style="background:#faf7f0;padding:10px 12px;">${contenuto}</div>
+         </div>` : '';
+    const riga = (label, val) => val ? `<div style="margin-bottom:6px;"><span style="font-size:0.72rem;color:#1a3a5c;font-weight:600;">${label}:</span> <span style="font-size:0.86rem;">${esc(val)}</span></div>` : '';
+
+    // Ritratto
+    const treParole = (ci.treParole||[]).filter(Boolean).join(' · ');
+    let ritratto = '';
+    if (treParole) ritratto += `<div style="margin-bottom:8px;font-size:0.9rem;font-style:italic;color:#1a3a5c;">"${esc(treParole)}"</div>`;
+    ritratto += riga('Difficoltà', ci.difficolta) + riga('Pregio', ci.pregio) + riga('Vorrei imparare', ci.vorreiImparare) + riga('So fare bene', ci.soFareBene);
+    html += sezione('🖼️ Ritratto di Me', ritratto);
+
+    // Bussola
+    let bussola = riga('Cosa mi rende felice', ci.rendeFelice) + riga('Cosa mi fa arrabbiare', ci.faArrabbiare) + riga('Quando sono triste', ci.quandoTriste);
+    html += sezione('🧭 La Mia Bussola', bussola);
+
+    // Risorse
+    const persone = (ci.persone||[]).filter(Boolean).join(', ');
+    const qualita = (ci.qualita||[]).join(', ');
+    let risorse = riga('Persone su cui conto', persone) + riga('Le mie qualità', qualita);
+    html += sezione('🤝 Le Mie Risorse', risorse);
+
+    // Sfida e Motto
+    html += sezione('⚔️ La Mia Sfida', riga('', ci.sfida));
+    html += sezione('💬 Il Mio Motto', ci.motto ? `<div style="font-style:italic;font-size:0.9rem;">"${esc(ci.motto)}"</div>` : '');
+
+    // Isola deserta (solo se ha almeno un campo)
+    const idKeys = ['libro','canzone','film','serie','piatto','dolce','alimento','bevanda','persona',
+      'animale','gioco','sport','colore','luogo','casa','oggetto_caro','oggetto_utile',
+      'foto','parola','ricordo','sogno','qualita','valore','famoso','personaggio',
+      'pianta','profumo','momento','emozione','una_cosa'];
+    const idLabels = {'libro':'📚 Libro','canzone':'🎵 Canzone','film':'🎬 Film','serie':'📺 Serie','piatto':'🍕 Piatto','dolce':'🍰 Dolce','alimento':'🍎 Alimento','bevanda':'🥤 Bevanda','persona':'👤 Persona','animale':'🐶 Animale','gioco':'🎮 Gioco','sport':'⚽ Sport','colore':'🎨 Colore','luogo':'🌳 Luogo','casa':'🏠 Casa','oggetto_caro':'🧸 Oggetto caro','oggetto_utile':'🎒 Oggetto utile','foto':'📷 Foto','parola':'💬 Parola','ricordo':'❤️ Ricordo','sogno':'🌟 Sogno','qualita':'💪 Qualità','valore':'🤝 Valore','famoso':'😂 Famoso/a','personaggio':'🎭 Personaggio','pianta':'🌴 Pianta','profumo':'🌊 Profumo','momento':'⏰ Momento','emozione':'🌦️ Emozione','una_cosa':'⭐ La cosa più importante'};
+    const id = ci.isolaDeserta || {};
+    const idHasData = idKeys.some(k => id[k]) || id.altro;
+    if (idHasData) {
+      let isolaHtml = idKeys.filter(k => id[k]).map(k => riga(idLabels[k], id[k])).join('');
+      if (id.altro) isolaHtml += riga('✏️ Altro', id.altro);
+      html += sezione('🏝️ Isola Deserta', isolaHtml);
+    }
+
+    // Firma
+    if (ci.firma) {
+      html += `<div style="text-align:center;margin:16px 0 8px;font-family:\'Dancing Script\',cursive;font-size:1.4rem;color:#1a3a5c;">${esc(ci.firma)}</div>`;
+    }
+
+    // Timbro
+    html += `<div style="width:80px;height:80px;border:3px solid #c8860a;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;margin:16px auto 8px;opacity:0.4;transform:rotate(-15deg);">
+      <div style="font-size:0.42rem;font-weight:700;color:#1a3a5c;letter-spacing:0.12em;text-align:center;line-height:1.4;">🌴<br>ROBINSON<br>REPUBLIC</div>
+    </div>`;
+
+    modalBody.innerHTML = html;
+    modalDiarioBtn.textContent = `⚓ Entra nel diario di ${esc(nome)}`;
+  } catch(e) {
+    modalBody.innerHTML = `<div style="padding:20px;color:red;">Errore: ${esc(e.message)}</div>`;
+  }
+}
 </script>
 </body>
 </html>

@@ -117,6 +117,78 @@ service cloud.firestore {
       allow write: if isOwner(uid);
     }
 
+    // ===== ROBINSON =====
+
+    // La Spiaggia - post condivisi
+    match /robinson_spiaggia/{postId} {
+      allow read: if isLoggedIn();
+      allow create: if isLoggedIn();
+      allow update: if isLoggedIn() && (
+        request.auth.uid == resource.data.authorId
+        || isAdmin()
+        || request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['reactions', 'commentsCount'])
+      );
+      allow delete: if isLoggedIn() &&
+        (request.auth.uid == resource.data.authorId || isAdmin());
+
+      match /comments/{commentId} {
+        allow read: if isLoggedIn();
+        allow create: if isLoggedIn();
+        allow update: if isLoggedIn() &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reactions']);
+        allow delete: if isLoggedIn() &&
+          (request.auth.uid == resource.data.authorId || isAdmin());
+      }
+
+      match /user_reactions/{userId} {
+        allow read: if isLoggedIn();
+        allow write: if isLoggedIn() && request.auth.uid == userId;
+      }
+    }
+
+    // I Naufraghi - profili
+    match /robinson_naufraghi/{uid} {
+      allow read: if isLoggedIn();
+      allow write: if isLoggedIn() && (isOwner(uid) || isAdmin());
+
+      match /profilo/{docId} {
+        allow read: if isLoggedIn();
+        allow write: if isLoggedIn() && (isOwner(uid) || isAdmin());
+      }
+
+      match /carta_identita/{docId} {
+        allow read: if isLoggedIn();
+        allow write: if isOwner(uid) || isAdmin();
+      }
+    }
+
+    // Diari personali naufraghi
+    match /robinson_diari/{uid}/posts/{postId} {
+      allow read: if isLoggedIn();
+      allow create: if isLoggedIn() && request.auth.uid == uid;
+      allow update, delete: if isLoggedIn() && (isOwner(uid) || isAdmin());
+
+      match /reactions/{userId} {
+        allow read: if isLoggedIn();
+        allow write: if isLoggedIn() && request.auth.uid == userId;
+      }
+
+      match /commenti/{commentId} {
+        allow read: if isLoggedIn();
+        allow create: if isLoggedIn();
+        allow delete: if isLoggedIn() &&
+          (request.auth.uid == resource.data.authorId || isOwner(uid) || isAdmin());
+        allow update: if false;
+      }
+    }
+
+    // La Ciurma - operatori Robinson
+    match /robinson_ciurma/{uid} {
+      allow read: if isLoggedIn();
+      allow write: if isAdmin();
+    }
+
     // ── Messaggi in Bottiglia ────────────────────────────────
     match /messaggiBottiglia/{bottId} {
       allow read: if true;  // lettura pubblica (sola lettura per non loggati)

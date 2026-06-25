@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Il Naufrago – Robinson</title>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lora:ital,wght@0,400;0,600;1,400&family=Dancing+Script:wght@600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/robinson.css">
   <style>
     /* Stelle emozioni */
@@ -33,6 +33,30 @@
     .rg input[type=radio] { accent-color:var(--oro); }
     /* Tab padding */
     .tab-panel { padding:14px 12px 90px; }
+    /* Carta d'Identità */
+    .ci-wrap { background:#f5f0e8; background-image:radial-gradient(circle,#c8b89a22 1px,transparent 1px); background-size:20px 20px; border-radius:12px; padding:12px; }
+    .ci-sezione { border:2px dashed #c8860a; border-radius:8px; margin-bottom:16px; overflow:hidden; }
+    .ci-sezione-header { background:#1a3a5c; color:#c8860a; font-family:'Playfair Display',serif; padding:8px 12px; font-size:0.85rem; font-weight:700; }
+    .ci-sezione-body { background:#faf7f0; padding:12px; }
+    .ci-campo { margin-bottom:10px; }
+    .ci-campo label { display:block; font-size:0.76rem; color:#1a3a5c; font-weight:600; margin-bottom:3px; }
+    .ci-campo input[type=text], .ci-campo input[type=date], .ci-campo textarea { width:100%; padding:7px 10px; border:1.5px solid #c8b89a; border-radius:6px; font-family:'Lora',serif; font-size:0.88rem; background:#fff8ee; color:#2c1810; box-sizing:border-box; }
+    .ci-campo textarea { resize:vertical; min-height:60px; }
+    .ci-campo input[type=text]:focus, .ci-campo input[type=date]:focus, .ci-campo textarea:focus { outline:none; border-color:#c8860a; }
+    .ci-tre-parole { display:flex; gap:6px; }
+    .ci-tre-parole input { flex:1; min-width:0; }
+    .ci-badge-rr { display:inline-block; background:#1a3a5c; color:#c8860a; font-family:'Playfair Display',serif; font-weight:700; font-size:1rem; letter-spacing:0.1em; padding:6px 14px; border-radius:6px; border:2px solid #c8860a; }
+    .ci-field-ro { font-size:0.88rem; color:#2c1810; font-family:'Lora',serif; padding:6px 0; }
+    .ci-qualita-grid { display:flex; flex-wrap:wrap; gap:6px; }
+    .ci-qualita-grid label { cursor:pointer; display:flex; align-items:center; gap:5px; font-size:0.8rem; background:#fff8ee; border:1.5px solid #c8b89a; border-radius:6px; padding:4px 8px; }
+    .ci-qualita-grid input[type=checkbox] { accent-color:#c8860a; }
+    .ci-firma-input { font-family:'Dancing Script',cursive; font-size:1.2rem; }
+    .ci-timbro { width:90px; height:90px; border:3px solid #c8860a; border-radius:50%; display:flex; flex-direction:column; align-items:center; justify-content:center; margin:20px auto; opacity:0.4; transform:rotate(-15deg); }
+    .ci-timbro-text { font-size:0.45rem; font-weight:700; color:#1a3a5c; letter-spacing:0.12em; text-align:center; line-height:1.4; }
+    .ci-foto-wrap { display:flex; flex-direction:column; align-items:center; gap:8px; margin-bottom:12px; }
+    .ci-foto-img { width:80px; height:80px; border-radius:50%; object-fit:cover; border:3px solid #c8860a; background:#c8b89a; }
+    .ci-foto-btn { font-size:0.78rem; background:#1a3a5c; color:#c8860a; border:none; border-radius:6px; padding:5px 10px; cursor:pointer; font-family:'Lora',serif; }
+    .ci-isola-grid { display:flex; flex-direction:column; gap:8px; }
   </style>
 </head>
 <body>
@@ -56,6 +80,7 @@
   <button class="tab-btn" data-tab="isola">🗺️ Isola</button>
   <button class="tab-btn" data-tab="forziere">🏴‍☠️ Forziere</button>
   <button class="tab-btn" data-tab="bottiglia">🍾 Bottiglia</button>
+  <button class="tab-btn" id="tab-btn-carta" data-tab="carta" style="display:none;">🪪 Carta</button>
 </div>
 
 <!-- TAB A: Diario -->
@@ -229,6 +254,176 @@
   </div>
 </div>
 
+<!-- TAB H: Carta d'Identità -->
+<div class="tab-panel" id="tab-carta">
+  <div class="ci-wrap">
+
+    <!-- IDENTIFICAZIONE -->
+    <div class="ci-sezione">
+      <div class="ci-sezione-header">🪪 Identificazione</div>
+      <div class="ci-sezione-body">
+        <div class="ci-foto-wrap">
+          <img id="ci-foto-img" class="ci-foto-img" src="" alt="foto profilo">
+          <button class="ci-foto-btn" id="ci-foto-btn" style="display:none;">📷 Cambia foto</button>
+        </div>
+        <div class="ci-campo"><label>Nome</label><input type="text" id="ci-nome" placeholder="il tuo nome"></div>
+        <div class="ci-campo"><label>Cognome</label><input type="text" id="ci-cognome" placeholder="il tuo cognome"></div>
+        <div class="ci-campo"><label>Data di nascita</label><input type="date" id="ci-data-nascita"></div>
+        <div class="ci-campo"><label>Data dello sbarco</label><div class="ci-field-ro" id="ci-sbarco">—</div></div>
+        <div class="ci-campo"><label>Codice Identificativo Robinson</label><div><span class="ci-badge-rr" id="ci-codice-rr">—</span></div></div>
+        <div class="ci-campo">
+          <label>Mi identifico come</label>
+          <div class="rg">
+            <label><input type="radio" name="ci-genere" value="ragazzo"><span class="rl">♂️ Ragazzo</span></label>
+            <label><input type="radio" name="ci-genere" value="ragazza"><span class="rl">♀️ Ragazza</span></label>
+            <label><input type="radio" name="ci-genere" value="persona"><span class="rl">🌈 Non binario/a</span></label>
+            <label><input type="radio" name="ci-genere" value="preferisco_non_dire"><span class="rl">🤐 Preferisco non dire</span></label>
+          </div>
+        </div>
+        <div class="ci-campo">
+          <label>Pronomi</label>
+          <div class="rg">
+            <label><input type="radio" name="ci-pronomi" value="lui/lui"><span class="rl">lui/lui</span></label>
+            <label><input type="radio" name="ci-pronomi" value="lei/lei"><span class="rl">lei/lei</span></label>
+            <label><input type="radio" name="ci-pronomi" value="loro/loro"><span class="rl">loro/loro</span></label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RITRATTO -->
+    <div class="ci-sezione">
+      <div class="ci-sezione-header">🖼️ Ritratto di Me</div>
+      <div class="ci-sezione-body">
+        <div class="ci-campo">
+          <label>Mi descrivo con tre parole</label>
+          <div class="ci-tre-parole">
+            <input type="text" id="ci-parola1" placeholder="prima…">
+            <input type="text" id="ci-parola2" placeholder="seconda…">
+            <input type="text" id="ci-parola3" placeholder="terza…">
+          </div>
+        </div>
+        <div class="ci-campo"><label>La mia difficoltà più grande</label><textarea id="ci-difficolta" placeholder="…"></textarea></div>
+        <div class="ci-campo"><label>Il mio più grande pregio</label><input type="text" id="ci-pregio" placeholder="…"></div>
+        <div class="ci-campo"><label>Una cosa che vorrei imparare</label><input type="text" id="ci-imparare" placeholder="…"></div>
+        <div class="ci-campo"><label>Una cosa che so fare bene</label><input type="text" id="ci-so-fare" placeholder="…"></div>
+      </div>
+    </div>
+
+    <!-- BUSSOLA -->
+    <div class="ci-sezione">
+      <div class="ci-sezione-header">🧭 La Mia Bussola</div>
+      <div class="ci-sezione-body">
+        <div class="ci-campo"><label>Cosa mi rende felice?</label><textarea id="ci-felice" placeholder="…"></textarea></div>
+        <div class="ci-campo"><label>Cosa mi fa arrabbiare?</label><textarea id="ci-arrabbia" placeholder="…"></textarea></div>
+        <div class="ci-campo"><label>Quando sono triste, cosa mi aiuta?</label><textarea id="ci-triste" placeholder="…"></textarea></div>
+      </div>
+    </div>
+
+    <!-- RISORSE -->
+    <div class="ci-sezione">
+      <div class="ci-sezione-header">🤝 Le Mie Risorse</div>
+      <div class="ci-sezione-body">
+        <div class="ci-campo">
+          <label>Le persone su cui posso contare</label>
+          <input type="text" id="ci-persona1" placeholder="prima persona…" style="margin-bottom:6px;">
+          <input type="text" id="ci-persona2" placeholder="seconda persona…" style="margin-bottom:6px;">
+          <input type="text" id="ci-persona3" placeholder="terza persona…">
+        </div>
+        <div class="ci-campo">
+          <label>Le qualità che penso di avere</label>
+          <div class="ci-qualita-grid">
+            <label><input type="checkbox" value="Coraggio"> Coraggio</label>
+            <label><input type="checkbox" value="Pazienza"> Pazienza</label>
+            <label><input type="checkbox" value="Creatività"> Creatività</label>
+            <label><input type="checkbox" value="Determinazione"> Determinazione</label>
+            <label><input type="checkbox" value="Simpatia"> Simpatia</label>
+            <label><input type="checkbox" value="Ironia"> Ironia</label>
+            <label><input type="checkbox" value="Fantasia"> Fantasia</label>
+            <label><input type="checkbox" value="Ascolto"> Ascolto</label>
+            <label><input type="checkbox" value="Generosità"> Generosità</label>
+            <label><input type="checkbox" value="__altro__" id="ci-qualita-altro-chk"> Altro</label>
+          </div>
+          <input type="text" id="ci-qualita-altro" placeholder="Specifica…" style="margin-top:6px;display:none;">
+        </div>
+      </div>
+    </div>
+
+    <!-- SFIDA -->
+    <div class="ci-sezione">
+      <div class="ci-sezione-header">⚔️ La Mia Sfida</div>
+      <div class="ci-sezione-body">
+        <div class="ci-campo"><label>Durante questa avventura vorrei riuscire a…</label><textarea id="ci-sfida" placeholder="…"></textarea></div>
+      </div>
+    </div>
+
+    <!-- MOTTO -->
+    <div class="ci-sezione">
+      <div class="ci-sezione-header">💬 Il Mio Motto</div>
+      <div class="ci-sezione-body">
+        <div class="ci-campo"><label>Una frase che mi rappresenta oggi</label><textarea id="ci-motto" placeholder="…"></textarea></div>
+      </div>
+    </div>
+
+    <!-- ISOLA DESERTA -->
+    <div class="ci-sezione">
+      <div class="ci-sezione-header">🏝️ Cosa Porterei su un'Isola Deserta</div>
+      <div class="ci-sezione-body">
+        <div class="ci-isola-grid">
+          <div class="ci-campo"><label>📚 Un libro</label><input type="text" id="id-libro" placeholder="scrivi qui..."></div>
+          <div class="ci-campo"><label>🎵 Una canzone</label><input type="text" id="id-canzone" placeholder="scrivi qui..."></div>
+          <div class="ci-campo"><label>🎬 Un film</label><input type="text" id="id-film" placeholder="scrivi qui..."></div>
+          <div class="ci-campo"><label>📺 Una serie TV</label><input type="text" id="id-serie" placeholder="scrivi qui..."></div>
+          <div class="ci-campo"><label>🍕 Il tuo piatto preferito</label><input type="text" id="id-piatto" placeholder="scrivi qui..."></div>
+          <div class="ci-campo"><label>🍰 Il tuo dolce preferito</label><input type="text" id="id-dolce" placeholder="scrivi qui..."></div>
+          <div class="ci-campo"><label>🍎 Un alimento che non potrebbe mai mancare</label><input type="text" id="id-alimento" placeholder="scrivi qui..."></div>
+          <div class="ci-campo"><label>🥤 Una bevanda</label><input type="text" id="id-bevanda" placeholder="scrivi qui..."></div>
+          <div class="ci-campo"><label>👤 Una persona</label><input type="text" id="id-persona" placeholder="scrivi qui..."></div>
+          <div class="ci-campo"><label>🐶 Un animale</label><input type="text" id="id-animale" placeholder="scrivi qui..."></div>
+          <div class="ci-campo"><label>🎮 Un gioco</label><input type="text" id="id-gioco" placeholder="scrivi qui..."></div>
+          <div class="ci-campo"><label>⚽ Uno sport</label><input type="text" id="id-sport" placeholder="scrivi qui..."></div>
+          <div class="ci-campo"><label>🎨 Un colore</label><input type="text" id="id-colore" placeholder="scrivi qui..."></div>
+          <div class="ci-campo"><label>🌳 Un luogo del mondo</label><input type="text" id="id-luogo" placeholder="scrivi qui..."></div>
+          <div class="ci-campo"><label>🏠 Un posto che ti fa sentire a casa</label><input type="text" id="id-casa" placeholder="scrivi qui..."></div>
+          <div class="ci-campo"><label>🧸 Un oggetto a cui sei affezionato</label><input type="text" id="id-oggetto_caro" placeholder="scrivi qui..."></div>
+          <div class="ci-campo"><label>🎒 Un oggetto utile</label><input type="text" id="id-oggetto_utile" placeholder="scrivi qui..."></div>
+          <div class="ci-campo"><label>📷 Una fotografia</label><input type="text" id="id-foto" placeholder="scrivi qui..."></div>
+          <div class="ci-campo"><label>💬 Una parola</label><input type="text" id="id-parola" placeholder="scrivi qui..."></div>
+          <div class="ci-campo"><label>❤️ Un ricordo</label><input type="text" id="id-ricordo" placeholder="scrivi qui..."></div>
+          <div class="ci-campo"><label>🌟 Un sogno</label><input type="text" id="id-sogno" placeholder="scrivi qui..."></div>
+          <div class="ci-campo"><label>💪 Una tua qualità</label><input type="text" id="id-qualita" placeholder="scrivi qui..."></div>
+          <div class="ci-campo"><label>🤝 Un valore che non vorresti perdere</label><input type="text" id="id-valore" placeholder="scrivi qui..."></div>
+          <div class="ci-campo"><label>😂 Una persona famosa</label><input type="text" id="id-famoso" placeholder="scrivi qui..."></div>
+          <div class="ci-campo"><label>🎭 Un personaggio (reale o immaginario)</label><input type="text" id="id-personaggio" placeholder="scrivi qui..."></div>
+          <div class="ci-campo"><label>🌴 Una pianta o un fiore</label><input type="text" id="id-pianta" placeholder="scrivi qui..."></div>
+          <div class="ci-campo"><label>🌊 Un profumo</label><input type="text" id="id-profumo" placeholder="scrivi qui..."></div>
+          <div class="ci-campo"><label>⏰ Un momento della giornata</label><input type="text" id="id-momento" placeholder="scrivi qui..."></div>
+          <div class="ci-campo"><label>🌦️ Un'emozione che vorresti provare ogni giorno</label><input type="text" id="id-emozione" placeholder="scrivi qui..."></div>
+          <div class="ci-campo"><label>⭐ Se potessi portare una sola cosa in assoluto, quale sarebbe?</label><input type="text" id="id-una_cosa" placeholder="scrivi qui..."></div>
+          <div class="ci-campo"><label>✏️ Vuoi aggiungere qualcos'altro?</label><textarea id="id-altro" rows="3" placeholder="Scrivi liberamente…"></textarea></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FIRMA -->
+    <div class="ci-sezione">
+      <div class="ci-sezione-header">✍️ Firma</div>
+      <div class="ci-sezione-body">
+        <div class="ci-campo"><label>La tua firma</label><input type="text" id="ci-firma" class="ci-firma-input" placeholder="firma qui…"></div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" id="btn-salva-carta" style="width:100%;margin-top:4px;">💾 Salva Carta d'Identità</button>
+    <div id="carta-msg" style="margin-top:8px;font-size:0.8rem;text-align:center;"></div>
+
+    <!-- Timbro -->
+    <div class="ci-timbro">
+      <div class="ci-timbro-text">🌴<br>ROBINSON<br>REPUBLIC</div>
+    </div>
+
+  </div>
+</div>
+
 <!-- Modal forziere -->
 <div class="modal-overlay" id="modal-forziere">
   <div class="modal-box">
@@ -238,73 +433,6 @@
   </div>
 </div>
 
-<!-- Nav profilo edit (solo proprietario) -->
-<div id="profilo-edit-section" style="display:none;">
-  <div style="font-size:0.8rem;font-weight:700;color:var(--navy);padding:12px 12px 4px;font-family:'Playfair Display',serif;">⚙️ Il mio profilo</div>
-  <div class="profilo-edit">
-    <div class="campo-diario"><label>Nome</label><input type="text" id="pe-nome"></div>
-    <div class="campo-diario"><label>Soprannome sull'isola</label><input type="text" id="pe-soprannome"></div>
-    <div class="campo-diario">
-      <label>Mi identifico come</label>
-      <div class="rg">
-        <label><input type="radio" name="genere" value="ragazzo"><span class="rl">♂️ Ragazzo</span></label>
-        <label><input type="radio" name="genere" value="ragazza"><span class="rl">♀️ Ragazza</span></label>
-        <label><input type="radio" name="genere" value="persona"><span class="rl">🌈 Non binario/a</span></label>
-        <label><input type="radio" name="genere" value="preferisco_non_dire"><span class="rl">🤐 Preferisco non dire</span></label>
-      </div>
-    </div>
-    <div class="campo-diario">
-      <label>Pronomi</label>
-      <div class="rg">
-        <label><input type="radio" name="pronomi" value="lui/lui"><span class="rl">lui/lui</span></label>
-        <label><input type="radio" name="pronomi" value="lei/lei"><span class="rl">lei/lei</span></label>
-        <label><input type="radio" name="pronomi" value="loro/loro"><span class="rl">loro/loro</span></label>
-      </div>
-    </div>
-    <div class="campo-diario"><label>🦸 Il mio superpotere</label><input type="text" id="pe-superpotere" placeholder="cosa sai fare meglio?"></div>
-    <div class="campo-diario" style="border-top:2px dashed var(--oro);padding-top:14px;margin-top:6px;">
-      <label style="font-family:'Playfair Display',serif;font-size:1rem;color:var(--navy);">🏝️ Cosa porteresti con te su un'isola deserta?</label>
-      <div style="display:flex;flex-direction:column;gap:10px;margin-top:10px;">
-        <div><label style="font-size:0.78rem;color:var(--muted);">📚 Un libro</label><input type="text" id="id-libro" placeholder="scrivi qui..."></div>
-        <div><label style="font-size:0.78rem;color:var(--muted);">🎵 Una canzone</label><input type="text" id="id-canzone" placeholder="scrivi qui..."></div>
-        <div><label style="font-size:0.78rem;color:var(--muted);">🎬 Un film</label><input type="text" id="id-film" placeholder="scrivi qui..."></div>
-        <div><label style="font-size:0.78rem;color:var(--muted);">📺 Una serie TV</label><input type="text" id="id-serie" placeholder="scrivi qui..."></div>
-        <div><label style="font-size:0.78rem;color:var(--muted);">🍕 Il tuo piatto preferito</label><input type="text" id="id-piatto" placeholder="scrivi qui..."></div>
-        <div><label style="font-size:0.78rem;color:var(--muted);">🍰 Il tuo dolce preferito</label><input type="text" id="id-dolce" placeholder="scrivi qui..."></div>
-        <div><label style="font-size:0.78rem;color:var(--muted);">🍎 Un alimento che non potrebbe mai mancare</label><input type="text" id="id-alimento" placeholder="scrivi qui..."></div>
-        <div><label style="font-size:0.78rem;color:var(--muted);">🥤 Una bevanda</label><input type="text" id="id-bevanda" placeholder="scrivi qui..."></div>
-        <div><label style="font-size:0.78rem;color:var(--muted);">👤 Una persona</label><input type="text" id="id-persona" placeholder="scrivi qui..."></div>
-        <div><label style="font-size:0.78rem;color:var(--muted);">🐶 Un animale</label><input type="text" id="id-animale" placeholder="scrivi qui..."></div>
-        <div><label style="font-size:0.78rem;color:var(--muted);">🎮 Un gioco</label><input type="text" id="id-gioco" placeholder="scrivi qui..."></div>
-        <div><label style="font-size:0.78rem;color:var(--muted);">⚽ Uno sport</label><input type="text" id="id-sport" placeholder="scrivi qui..."></div>
-        <div><label style="font-size:0.78rem;color:var(--muted);">🎨 Un colore</label><input type="text" id="id-colore" placeholder="scrivi qui..."></div>
-        <div><label style="font-size:0.78rem;color:var(--muted);">🌳 Un luogo del mondo</label><input type="text" id="id-luogo" placeholder="scrivi qui..."></div>
-        <div><label style="font-size:0.78rem;color:var(--muted);">🏠 Un posto che ti fa sentire a casa</label><input type="text" id="id-casa" placeholder="scrivi qui..."></div>
-        <div><label style="font-size:0.78rem;color:var(--muted);">🧸 Un oggetto a cui sei affezionato</label><input type="text" id="id-oggetto_caro" placeholder="scrivi qui..."></div>
-        <div><label style="font-size:0.78rem;color:var(--muted);">🎒 Un oggetto utile</label><input type="text" id="id-oggetto_utile" placeholder="scrivi qui..."></div>
-        <div><label style="font-size:0.78rem;color:var(--muted);">📷 Una fotografia</label><input type="text" id="id-foto" placeholder="scrivi qui..."></div>
-        <div><label style="font-size:0.78rem;color:var(--muted);">💬 Una parola</label><input type="text" id="id-parola" placeholder="scrivi qui..."></div>
-        <div><label style="font-size:0.78rem;color:var(--muted);">❤️ Un ricordo</label><input type="text" id="id-ricordo" placeholder="scrivi qui..."></div>
-        <div><label style="font-size:0.78rem;color:var(--muted);">🌟 Un sogno</label><input type="text" id="id-sogno" placeholder="scrivi qui..."></div>
-        <div><label style="font-size:0.78rem;color:var(--muted);">💪 Una tua qualità</label><input type="text" id="id-qualita" placeholder="scrivi qui..."></div>
-        <div><label style="font-size:0.78rem;color:var(--muted);">🤝 Un valore che non vorresti perdere</label><input type="text" id="id-valore" placeholder="scrivi qui..."></div>
-        <div><label style="font-size:0.78rem;color:var(--muted);">😂 Una persona famosa</label><input type="text" id="id-famoso" placeholder="scrivi qui..."></div>
-        <div><label style="font-size:0.78rem;color:var(--muted);">🎭 Un personaggio (reale o immaginario)</label><input type="text" id="id-personaggio" placeholder="scrivi qui..."></div>
-        <div><label style="font-size:0.78rem;color:var(--muted);">🌴 Una pianta o un fiore</label><input type="text" id="id-pianta" placeholder="scrivi qui..."></div>
-        <div><label style="font-size:0.78rem;color:var(--muted);">🌊 Un profumo</label><input type="text" id="id-profumo" placeholder="scrivi qui..."></div>
-        <div><label style="font-size:0.78rem;color:var(--muted);">⏰ Un momento della giornata</label><input type="text" id="id-momento" placeholder="scrivi qui..."></div>
-        <div><label style="font-size:0.78rem;color:var(--muted);">🌦️ Un'emozione che vorresti provare ogni giorno</label><input type="text" id="id-emozione" placeholder="scrivi qui..."></div>
-        <div><label style="font-size:0.78rem;color:var(--muted);">⭐ Se potessi portare una sola cosa in assoluto, quale sarebbe?</label><input type="text" id="id-una_cosa" placeholder="scrivi qui..."></div>
-        <div style="margin-top:6px;">
-          <label style="font-size:0.78rem;color:var(--muted);">✏️ Vuoi aggiungere qualcos'altro?</label>
-          <textarea id="id-altro" rows="4" placeholder="Scrivi liberamente tutto quello che vorresti portare..." style="width:100%;padding:9px 12px;border:1.5px solid #c8b89a;border-radius:8px;font-family:'Lora',serif;font-size:0.88rem;background:var(--post-bg);color:var(--inchiostro);resize:vertical;margin-top:4px;"></textarea>
-        </div>
-      </div>
-    </div>
-    <button class="btn btn-primary" id="btn-salva-profilo">💾 Salva profilo</button>
-    <div id="profilo-msg" style="margin-top:8px;font-size:0.8rem;"></div>
-  </div>
-</div>
 
 <nav class="bottom-nav">
   <a href="index.html" class="nav-item"><span class="nav-icon">🏝️</span><span>Home</span></a>
@@ -315,7 +443,7 @@
 </nav>
 
 <script type="module">
-import { db, auth, ADMIN_UID } from './js/robinson-firebase.js';
+import { db, auth, ADMIN_UID, CLOUD_NAME, CLOUD_PRESET } from './js/robinson-firebase.js';
 import { requireAuth } from './js/robinson-auth.js';
 import { aggiungiPunteggio } from './js/robinson-punteggio.js';
 import { esc, fmtDate, fmtDateShort, risolviNome, uploadOne, renderMediaGrid, renderPreview } from './js/robinson-utils.js';
@@ -356,7 +484,11 @@ requireAuth(async user => {
   loadForziere();
   setupBottiglia();
   setupEmozioniStars();
-  if (isOwner || isAdmin) setupProfiloEdit();
+  if (isOwner || isAdmin) {
+    document.getElementById('tab-btn-carta').style.display = '';
+    await loadCartaIdentita();
+    setupCartaIdentita();
+  }
   if (!isOwner && !isAdmin) lockAllForms();
 });
 
@@ -380,10 +512,10 @@ async function loadProfilo() {
     if (snap.exists()) d = snap.data();
   } catch(_) {}
 
-  // Try profilo dati
+  // Try carta_identita dati
   try {
-    const ps = await getDoc(doc(db, 'robinson_naufraghi', pageUid, 'profilo', 'dati'));
-    if (ps.exists()) { const pd = ps.data(); d = { ...(d||{}), ...pd }; }
+    const cs = await getDoc(doc(db, 'robinson_naufraghi', pageUid, 'carta_identita', 'dati'));
+    if (cs.exists()) { const cd = cs.data(); d = { ...(d||{}), genere: cd.identificazione, pronomi: cd.pronomi, ...d }; }
   } catch(_) {}
 
   const foto = d?.fotoProfilo || d?.photoURL || '';
@@ -404,27 +536,6 @@ async function loadProfilo() {
     document.getElementById('diario-giorno').textContent = `🌅 Giorno ${giorni} sull'isola · Oggi: ${oggiKey}`;
   } else {
     document.getElementById('diario-giorno').textContent = `📅 Oggi: ${oggiKey}`;
-  }
-
-  if (isOwner) document.getElementById('profilo-edit-section').style.display = 'block';
-
-  // Prefill profilo edit
-  if (isOwner && d) {
-    document.getElementById('pe-nome').value = d.nome || '';
-    document.getElementById('pe-soprannome').value = d.soprannome || '';
-    document.getElementById('pe-superpotere').value = d.superpotere || '';
-    const id = d.isola_deserta || {};
-    ['libro','canzone','film','serie','piatto','dolce','alimento','bevanda','persona',
-     'animale','gioco','sport','colore','luogo','casa','oggetto_caro','oggetto_utile',
-     'foto','parola','ricordo','sogno','qualita','valore','famoso','personaggio',
-     'pianta','profumo','momento','emozione','una_cosa'].forEach(k => {
-      const el = document.getElementById('id-' + k);
-      if (el) el.value = id[k] || '';
-    });
-    const altroEl = document.getElementById('id-altro');
-    if (altroEl) altroEl.value = id.altro || '';
-    if (d.genere) { const r = document.querySelector(`input[name=genere][value="${d.genere}"]`); if(r) r.checked = true; }
-    if (d.pronomi) { const r = document.querySelector(`input[name=pronomi][value="${d.pronomi}"]`); if(r) r.checked = true; }
   }
 }
 
@@ -888,36 +999,208 @@ async function inviaBottiglia() {
   }
 }
 
-// ── Profilo edit ──────────────────────────────────────────────────────────
-function setupProfiloEdit() {
-  document.getElementById('btn-salva-profilo').addEventListener('click', async () => {
-    const dati = {
-      nome: document.getElementById('pe-nome').value.trim(),
-      soprannome: document.getElementById('pe-soprannome').value.trim(),
-      genere: document.querySelector('input[name=genere]:checked')?.value || '',
-      pronomi: document.querySelector('input[name=pronomi]:checked')?.value || '',
-      superpotere: document.getElementById('pe-superpotere').value.trim(),
-      isola_deserta: Object.fromEntries(
-        ['libro','canzone','film','serie','piatto','dolce','alimento','bevanda','persona',
-         'animale','gioco','sport','colore','luogo','casa','oggetto_caro','oggetto_utile',
-         'foto','parola','ricordo','sogno','qualita','valore','famoso','personaggio',
-         'pianta','profumo','momento','emozione','una_cosa'].map(k => [k, document.getElementById('id-'+k)?.value.trim() || ''])
+// ── Carta d'Identità ──────────────────────────────────────────────────────
+function generaCodiceRR() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = 'RR-';
+  for (let i = 0; i < 5; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  return code;
+}
+
+async function loadCartaIdentita() {
+  try {
+    // Dati base naufrago (per foto e primoAccesso)
+    const snapN = await getDoc(doc(db, 'robinson_naufraghi', pageUid));
+    const snapU = await getDoc(doc(db, 'utenti', pageUid));
+    const dN = snapN.exists() ? snapN.data() : {};
+    const dU = snapU.exists() ? snapU.data() : {};
+    const foto = dN.fotoProfilo || dU.fotoProfilo || dU.photoURL || '';
+    const nomeBase = dN.nome || dU.nome || dU.displayName || '';
+
+    const fotoImg = document.getElementById('ci-foto-img');
+    if (foto) fotoImg.src = foto; else fotoImg.style.display = 'none';
+
+    // Data sbarco: primoAccesso da robinson_naufraghi
+    const primoAccesso = dN.primoAccesso?.toDate?.() || dN.dataInizio?.toDate?.() || null;
+    if (primoAccesso) {
+      document.getElementById('ci-sbarco').textContent = primoAccesso.toLocaleDateString('it-IT');
+    } else {
+      // Fallback: primo post del diario
+      try {
+        const postsSnap = await getDocs(query(collection(db, 'robinson_diari', pageUid, 'posts'), orderBy('__name__')));
+        if (!postsSnap.empty) {
+          const primaKey = postsSnap.docs[0].id; // formato YYYY-MM-DD
+          document.getElementById('ci-sbarco').textContent = primaKey;
+        }
+      } catch(_) {}
+    }
+
+    // Carta identita dati
+    const snapCI = await getDoc(doc(db, 'robinson_naufraghi', pageUid, 'carta_identita', 'dati'));
+    const ci = snapCI.exists() ? snapCI.data() : {};
+
+    // Prefill nome
+    document.getElementById('ci-nome').value = ci.nome || nomeBase || '';
+    document.getElementById('ci-cognome').value = ci.cognome || '';
+    document.getElementById('ci-data-nascita').value = ci.dataNascita || '';
+    document.getElementById('ci-codice-rr').textContent = ci.codiceRR || '—';
+    if (ci.identificazione) {
+      const r = document.querySelector(`input[name=ci-genere][value="${ci.identificazione}"]`);
+      if (r) r.checked = true;
+    }
+    if (ci.pronomi) {
+      const r = document.querySelector(`input[name=ci-pronomi][value="${ci.pronomi}"]`);
+      if (r) r.checked = true;
+    }
+    document.getElementById('ci-parola1').value = ci.treParole?.[0] || '';
+    document.getElementById('ci-parola2').value = ci.treParole?.[1] || '';
+    document.getElementById('ci-parola3').value = ci.treParole?.[2] || '';
+    document.getElementById('ci-difficolta').value = ci.difficolta || '';
+    document.getElementById('ci-pregio').value = ci.pregio || '';
+    document.getElementById('ci-imparare').value = ci.vorreiImparare || '';
+    document.getElementById('ci-so-fare').value = ci.soFareBene || '';
+    document.getElementById('ci-felice').value = ci.rendeFelice || '';
+    document.getElementById('ci-arrabbia').value = ci.faArrabbiare || '';
+    document.getElementById('ci-triste').value = ci.quandoTriste || '';
+    document.getElementById('ci-persona1').value = ci.persone?.[0] || '';
+    document.getElementById('ci-persona2').value = ci.persone?.[1] || '';
+    document.getElementById('ci-persona3').value = ci.persone?.[2] || '';
+    // Qualita checkboxes
+    if (ci.qualita?.length) {
+      const fixed = ['Coraggio','Pazienza','Creatività','Determinazione','Simpatia','Ironia','Fantasia','Ascolto','Generosità'];
+      document.querySelectorAll('.ci-qualita-grid input[type=checkbox]').forEach(cb => {
+        if (fixed.includes(cb.value)) cb.checked = ci.qualita.includes(cb.value);
+      });
+      const altroVals = ci.qualita.filter(v => !fixed.includes(v));
+      if (altroVals.length) {
+        document.getElementById('ci-qualita-altro-chk').checked = true;
+        document.getElementById('ci-qualita-altro').value = altroVals.join(', ');
+        document.getElementById('ci-qualita-altro').style.display = '';
+      }
+    }
+    document.getElementById('ci-sfida').value = ci.sfida || '';
+    document.getElementById('ci-motto').value = ci.motto || '';
+    // Isola deserta
+    const id = ci.isolaDeserta || {};
+    ['libro','canzone','film','serie','piatto','dolce','alimento','bevanda','persona',
+     'animale','gioco','sport','colore','luogo','casa','oggetto_caro','oggetto_utile',
+     'foto','parola','ricordo','sogno','qualita','valore','famoso','personaggio',
+     'pianta','profumo','momento','emozione','una_cosa'].forEach(k => {
+      const el = document.getElementById('id-' + k);
+      if (el) el.value = id[k] || '';
+    });
+    document.getElementById('id-altro').value = id.altro || '';
+    document.getElementById('ci-firma').value = ci.firma || '';
+  } catch(e) { console.error('Errore loadCartaIdentita', e); }
+}
+
+function setupCartaIdentita() {
+  // Toggle "Altro" qualita
+  document.getElementById('ci-qualita-altro-chk').addEventListener('change', function() {
+    document.getElementById('ci-qualita-altro').style.display = this.checked ? '' : 'none';
+  });
+
+  // Foto profilo upload via Cloudinary
+  document.getElementById('ci-foto-btn').style.display = '';
+  document.getElementById('ci-foto-btn').addEventListener('click', () => {
+    const widget = window.cloudinary?.createUploadWidget({
+      cloudName: CLOUD_NAME,
+      uploadPreset: CLOUD_PRESET,
+      sources: ['local','camera'],
+      cropping: true,
+      croppingAspectRatio: 1,
+      maxFiles: 1,
+      resourceType: 'image'
+    }, async (error, result) => {
+      if (result?.event === 'success') {
+        const url = result.info.secure_url;
+        document.getElementById('ci-foto-img').src = url;
+        document.getElementById('ci-foto-img').style.display = '';
+        // Salva foto in utenti e robinson_naufraghi
+        try {
+          await setDoc(doc(db, 'robinson_naufraghi', pageUid), { fotoProfilo: url }, { merge: true });
+          await setDoc(doc(db, 'utenti', pageUid), { fotoProfilo: url }, { merge: true });
+          document.getElementById('ph-avatar').src = url;
+          document.getElementById('ph-avatar').style.display = '';
+        } catch(e) { console.error(e); }
+      }
+    });
+    widget.open();
+  });
+
+  // Salva carta
+  document.getElementById('btn-salva-carta').addEventListener('click', async () => {
+    if (!isOwner && !isAdmin) return;
+    const msg = document.getElementById('carta-msg');
+    msg.textContent = 'Salvataggio…';
+
+    // Codice RR: leggi esistente o genera
+    let codiceRR = document.getElementById('ci-codice-rr').textContent;
+    if (!codiceRR || codiceRR === '—') codiceRR = generaCodiceRR();
+
+    const fixed = ['Coraggio','Pazienza','Creatività','Determinazione','Simpatia','Ironia','Fantasia','Ascolto','Generosità'];
+    const qualitaChecked = Array.from(document.querySelectorAll('.ci-qualita-grid input[type=checkbox]:checked'))
+      .filter(cb => cb.value !== '__altro__')
+      .map(cb => cb.value);
+    if (document.getElementById('ci-qualita-altro-chk').checked) {
+      const altroTxt = document.getElementById('ci-qualita-altro').value.trim();
+      if (altroTxt) qualitaChecked.push(altroTxt);
+    }
+
+    const isolaKeys = ['libro','canzone','film','serie','piatto','dolce','alimento','bevanda','persona',
+     'animale','gioco','sport','colore','luogo','casa','oggetto_caro','oggetto_utile',
+     'foto','parola','ricordo','sogno','qualita','valore','famoso','personaggio',
+     'pianta','profumo','momento','emozione','una_cosa'];
+    const isolaDeserta = Object.fromEntries(
+      isolaKeys.map(k => [k, document.getElementById('id-'+k)?.value.trim() || ''])
         .concat([['altro', document.getElementById('id-altro')?.value.trim() || '']])
-      )
+    );
+
+    const nome = document.getElementById('ci-nome').value.trim();
+    const dati = {
+      codiceRR,
+      nome,
+      cognome: document.getElementById('ci-cognome').value.trim(),
+      dataNascita: document.getElementById('ci-data-nascita').value,
+      identificazione: document.querySelector('input[name=ci-genere]:checked')?.value || '',
+      pronomi: document.querySelector('input[name=ci-pronomi]:checked')?.value || '',
+      treParole: [
+        document.getElementById('ci-parola1').value.trim(),
+        document.getElementById('ci-parola2').value.trim(),
+        document.getElementById('ci-parola3').value.trim()
+      ],
+      difficolta: document.getElementById('ci-difficolta').value.trim(),
+      pregio: document.getElementById('ci-pregio').value.trim(),
+      vorreiImparare: document.getElementById('ci-imparare').value.trim(),
+      soFareBene: document.getElementById('ci-so-fare').value.trim(),
+      rendeFelice: document.getElementById('ci-felice').value.trim(),
+      faArrabbiare: document.getElementById('ci-arrabbia').value.trim(),
+      quandoTriste: document.getElementById('ci-triste').value.trim(),
+      persone: [
+        document.getElementById('ci-persona1').value.trim(),
+        document.getElementById('ci-persona2').value.trim(),
+        document.getElementById('ci-persona3').value.trim()
+      ],
+      qualita: qualitaChecked,
+      sfida: document.getElementById('ci-sfida').value.trim(),
+      motto: document.getElementById('ci-motto').value.trim(),
+      isolaDeserta,
+      firma: document.getElementById('ci-firma').value.trim()
     };
+
     try {
-      await setDoc(doc(db, 'robinson_naufraghi', pageUid, 'profilo', 'dati'), dati, { merge: true });
-      // Aggiorna anche nome in robinson_naufraghi root
-      if (dati.nome) await setDoc(doc(db, 'robinson_naufraghi', pageUid), { nome: dati.nome, soprannome: dati.soprannome }, { merge: true });
-      const msg = document.getElementById('profilo-msg');
-      msg.style.color = 'var(--oro)';
-      msg.textContent = '✅ Profilo salvato!';
-      document.getElementById('ph-nome').textContent = dati.nome || 'Naufrago';
-      document.getElementById('ph-soprannome').textContent = dati.soprannome ? `"${dati.soprannome}"` : '';
+      await setDoc(doc(db, 'robinson_naufraghi', pageUid, 'carta_identita', 'dati'), dati, { merge: true });
+      // Aggiorna nome e pronomi nel root
+      if (nome) await setDoc(doc(db, 'robinson_naufraghi', pageUid), { nome, pronomi: dati.pronomi, genere: dati.identificazione }, { merge: true });
+      document.getElementById('ci-codice-rr').textContent = codiceRR;
+      document.getElementById('ph-nome').textContent = nome || 'Naufrago';
       document.getElementById('ph-pronomi').textContent = dati.pronomi;
-      setTimeout(() => msg.textContent = '', 2000);
+      msg.style.color = 'var(--oro)';
+      msg.textContent = '✅ Carta d\'Identità salvata!';
+      setTimeout(() => msg.textContent = '', 3000);
     } catch(e) {
-      document.getElementById('profilo-msg').textContent = 'Errore: ' + e.message;
+      msg.style.color = 'var(--rosso,#c0392b)';
+      msg.textContent = 'Errore: ' + e.message;
     }
   });
 }
