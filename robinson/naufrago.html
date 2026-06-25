@@ -530,6 +530,7 @@ requireAuth(async user => {
     document.getElementById('tab-btn-carta').style.display = '';
     await loadCartaIdentita();
     setupCartaIdentita();
+    initAccordionNaufrago();
   }
   if (!isOwner && !isAdmin) lockAllForms();
   setupDicono(user);
@@ -1583,23 +1584,24 @@ function lockAllForms(lock = true) {
 }
 </script>
 <script>
-window.addEventListener('load', function() {
+function initAccordionNaufrago() {
+  // Rimuovi listener precedenti clonando i nodi
+  document.querySelectorAll('.ci-accordion-toggle').forEach(function(t) {
+    var clone = t.cloneNode(true);
+    t.parentNode.replaceChild(clone, t);
+  });
+  // Registra listener freschi
   document.querySelectorAll('.ci-accordion-toggle').forEach(function(t) {
     t.addEventListener('click', function() {
-      var body = this.nextElementSibling;
-      if (!body || !body.classList.contains('ci-accordion-body')) {
-        body = this.parentElement.querySelector('.ci-accordion-body');
-      }
+      var body = this.parentElement.querySelector('.ci-accordion-body');
       if (!body) return;
-      var arrow = this.querySelector('span.arrow');
-      var isOpen = body.style.display === 'block';
-      body.style.display = isOpen ? 'none' : 'block';
-      if (arrow) arrow.textContent = isOpen ? '▼' : '▲';
+      body.style.display = body.style.display === 'block' ? 'none' : 'block';
     });
   });
+  // Apri prima sezione di default
   var first = document.querySelector('.ci-accordion-body');
   if (first) first.style.display = 'block';
-});
+}
 </script>
 </body>
 </html>
