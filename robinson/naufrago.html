@@ -266,8 +266,8 @@
 
     <!-- IDENTIFICAZIONE -->
     <div class="ci-sezione">
-      <div class="ci-sezione-header ci-accordion-toggle">🪪 Identificazione<span class="ci-accordion-arrow open">▼</span></div>
-      <div class="ci-sezione-body ci-accordion-body open">
+      <div class="ci-sezione-header ci-accordion-toggle" onclick="toggleAccordion(this)">🪪 Identificazione ▲</div>
+      <div class="ci-sezione-body ci-accordion-body" style="display:block;">
         <div class="ci-foto-wrap">
           <img id="ci-foto-img" class="ci-foto-img" src="" alt="foto profilo">
           <button class="ci-foto-btn" id="ci-foto-btn" style="display:none;">📷 Cambia foto</button>
@@ -299,8 +299,8 @@
 
     <!-- RITRATTO -->
     <div class="ci-sezione">
-      <div class="ci-sezione-header ci-accordion-toggle">🖼️ Ritratto di Me<span class="ci-accordion-arrow">▼</span></div>
-      <div class="ci-sezione-body ci-accordion-body">
+      <div class="ci-sezione-header ci-accordion-toggle" onclick="toggleAccordion(this)">🖼️ Ritratto di Me ▼</div>
+      <div class="ci-sezione-body ci-accordion-body" style="display:none;">
         <div class="ci-campo">
           <label>Mi descrivo con tre parole</label>
           <div class="ci-tre-parole">
@@ -318,8 +318,8 @@
 
     <!-- BUSSOLA -->
     <div class="ci-sezione">
-      <div class="ci-sezione-header ci-accordion-toggle">🧭 La Mia Bussola<span class="ci-accordion-arrow">▼</span></div>
-      <div class="ci-sezione-body ci-accordion-body">
+      <div class="ci-sezione-header ci-accordion-toggle" onclick="toggleAccordion(this)">🧭 La Mia Bussola ▼</div>
+      <div class="ci-sezione-body ci-accordion-body" style="display:none;">
         <div class="ci-campo"><label>Cosa mi rende felice?</label><textarea id="ci-felice" placeholder="…"></textarea></div>
         <div class="ci-campo"><label>Cosa mi fa arrabbiare?</label><textarea id="ci-arrabbia" placeholder="…"></textarea></div>
         <div class="ci-campo"><label>Quando sono triste, cosa mi aiuta?</label><textarea id="ci-triste" placeholder="…"></textarea></div>
@@ -328,8 +328,8 @@
 
     <!-- RISORSE -->
     <div class="ci-sezione">
-      <div class="ci-sezione-header ci-accordion-toggle">🤝 Le Mie Risorse<span class="ci-accordion-arrow">▼</span></div>
-      <div class="ci-sezione-body ci-accordion-body">
+      <div class="ci-sezione-header ci-accordion-toggle" onclick="toggleAccordion(this)">🤝 Le Mie Risorse ▼</div>
+      <div class="ci-sezione-body ci-accordion-body" style="display:none;">
         <div class="ci-campo">
           <label>Le persone su cui posso contare</label>
           <input type="text" id="ci-persona1" placeholder="prima persona…" style="margin-bottom:6px;">
@@ -357,24 +357,24 @@
 
     <!-- SFIDA -->
     <div class="ci-sezione">
-      <div class="ci-sezione-header ci-accordion-toggle">⚔️ La Mia Sfida<span class="ci-accordion-arrow">▼</span></div>
-      <div class="ci-sezione-body ci-accordion-body">
+      <div class="ci-sezione-header ci-accordion-toggle" onclick="toggleAccordion(this)">⚔️ La Mia Sfida ▼</div>
+      <div class="ci-sezione-body ci-accordion-body" style="display:none;">
         <div class="ci-campo"><label>Durante questa avventura vorrei riuscire a…</label><textarea id="ci-sfida" placeholder="…"></textarea></div>
       </div>
     </div>
 
     <!-- MOTTO -->
     <div class="ci-sezione">
-      <div class="ci-sezione-header ci-accordion-toggle">💬 Il Mio Motto<span class="ci-accordion-arrow">▼</span></div>
-      <div class="ci-sezione-body ci-accordion-body">
+      <div class="ci-sezione-header ci-accordion-toggle" onclick="toggleAccordion(this)">💬 Il Mio Motto ▼</div>
+      <div class="ci-sezione-body ci-accordion-body" style="display:none;">
         <div class="ci-campo"><label>Una frase che mi rappresenta oggi</label><textarea id="ci-motto" placeholder="…"></textarea></div>
       </div>
     </div>
 
     <!-- ISOLA DESERTA -->
     <div class="ci-sezione">
-      <div class="ci-sezione-header ci-accordion-toggle">🏝️ Cosa Porterei su un'Isola Deserta<span class="ci-accordion-arrow">▼</span></div>
-      <div class="ci-sezione-body ci-accordion-body">
+      <div class="ci-sezione-header ci-accordion-toggle" onclick="toggleAccordion(this)">🏝️ Cosa Porterei su un'Isola Deserta ▼</div>
+      <div class="ci-sezione-body ci-accordion-body" style="display:none;">
         <div class="ci-isola-grid">
           <div class="ci-campo"><label>📚 Un libro</label><input type="text" id="id-libro" placeholder="scrivi qui..."></div>
           <div class="ci-campo"><label>🎵 Una canzone</label><input type="text" id="id-canzone" placeholder="scrivi qui..."></div>
@@ -443,8 +443,8 @@
 
     <!-- FIRMA -->
     <div class="ci-sezione">
-      <div class="ci-sezione-header ci-accordion-toggle">✍️ Firma<span class="ci-accordion-arrow">▼</span></div>
-      <div class="ci-sezione-body ci-accordion-body">
+      <div class="ci-sezione-header ci-accordion-toggle" onclick="toggleAccordion(this)">✍️ Firma ▼</div>
+      <div class="ci-sezione-body ci-accordion-body" style="display:none;">
         <div class="ci-campo"><label>La tua firma</label><input type="text" id="ci-firma" class="ci-firma-input" placeholder="firma qui…"></div>
       </div>
     </div>
@@ -478,6 +478,20 @@
   <a href="appunti.html" class="nav-item"><span class="nav-icon">📔</span><span>Appunti</span></a>
 </nav>
 
+<script>
+function toggleAccordion(toggle) {
+  const body = toggle.nextElementSibling;
+  const isOpen = body.style.display !== 'none';
+  document.querySelectorAll('.ci-accordion-body').forEach(b => { b.style.display = 'none'; });
+  document.querySelectorAll('.ci-accordion-toggle').forEach(t => {
+    t.textContent = t.textContent.replace('▲', '▼');
+  });
+  if (!isOpen) {
+    body.style.display = 'block';
+    toggle.textContent = toggle.textContent.replace('▼', '▲');
+  }
+}
+</script>
 <script type="module">
 import { db, auth, ADMIN_UID, CLOUD_NAME, CLOUD_PRESET } from './js/robinson-firebase.js';
 import { requireAuth } from './js/robinson-auth.js';
@@ -527,7 +541,6 @@ requireAuth(async user => {
   }
   if (!isOwner && !isAdmin) lockAllForms();
   setupDicono(user);
-  initAccordion();
 });
 
 // ── Tabs ─────────────────────────────────────────────────────────────────
@@ -1562,22 +1575,6 @@ function loadDiconoCommenti(container, postId, currentUser) {
   }
 }
 
-// ── Accordion carta ───────────────────────────────────────────────────────
-let accordionInited = false;
-function initAccordion() {
-  if (accordionInited) return;
-  accordionInited = true;
-  document.querySelectorAll('#tab-carta .ci-accordion-toggle').forEach(header => {
-    header.addEventListener('click', () => {
-      const body = header.closest('.ci-sezione').querySelector('.ci-accordion-body');
-      const arrow = header.querySelector('.ci-accordion-arrow');
-      const isOpen = body.classList.contains('open');
-      document.querySelectorAll('#tab-carta .ci-accordion-body').forEach(b => b.classList.remove('open'));
-      document.querySelectorAll('#tab-carta .ci-accordion-arrow').forEach(a => a.classList.remove('open'));
-      if (!isOpen) { body.classList.add('open'); arrow.classList.add('open'); }
-    });
-  });
-}
 
 // ── Lock forms per visitatori ─────────────────────────────────────────────
 function lockAllForms(lock = true) {
