@@ -36,17 +36,19 @@
   <script type="module">
     import { login, onAuthChange } from './js/auth.js';
 
-    const returnUrl = new URLSearchParams(location.search).get('returnUrl');
-    const ALLOWED_ORIGINS = ['https://robinson.campodeifiori.org', 'https://campodeifiori.org'];
-    const safeReturn = returnUrl && ALLOWED_ORIGINS.some(o => returnUrl.startsWith(o))
-      ? returnUrl : null;
-    const afterLogin = () => {
-      location.href = safeReturn || 'comunita.html';
-    };
+    function redirectAfterLogin() {
+      const params = new URLSearchParams(window.location.search);
+      const returnUrl = params.get('returnUrl');
+      if (returnUrl && returnUrl.startsWith('https://robinson.campodeifiori.org')) {
+        window.location.href = decodeURIComponent(returnUrl);
+      } else {
+        window.location.href = 'index.html';
+      }
+    }
 
     // If already logged in, redirect
     onAuthChange(user => {
-      if (user) afterLogin();
+      if (user) redirectAfterLogin();
     });
 
     document.getElementById('btn-login').addEventListener('click', async () => {
@@ -57,7 +59,7 @@
       if (!email || !password) { errEl.textContent = 'Inserisci email e password.'; errEl.classList.remove('hidden'); return; }
       try {
         await login(email, password);
-        afterLogin();
+        redirectAfterLogin();
       } catch (e) {
         errEl.textContent = 'Credenziali non valide. Riprova.';
         errEl.classList.remove('hidden');
