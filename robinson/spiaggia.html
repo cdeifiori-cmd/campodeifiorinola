@@ -4,319 +4,974 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>La Spiaggia – Robinson</title>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <meta name="theme-color" content="#1a3a5c">
   <link rel="stylesheet" href="css/robinson.css">
   <style>
-    .delete-btn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; }
-    .delete-btn:hover { color: var(--rosso); }
-    .upload-area { border: 2px dashed #c8b89a; border-radius: 8px; padding: 10px; margin-top: 8px; }
-    .upload-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
-    .upload-btn { background: var(--carta-scura); border: 1.5px solid #c8b89a; border-radius: 8px; padding: 6px 12px; font-size: 0.78rem; cursor: pointer; font-family: 'Lora', serif; }
-    .progress-wrap { display:none; background: var(--carta-scura); border-radius: 4px; height: 6px; margin-top: 6px; overflow: hidden; }
-    .progress-bar { height: 100%; background: var(--oro); width: 0%; transition: width 0.3s; border-radius: 4px; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body { padding-bottom: 80px; }
+
+    /* ── Post card override (più simile a piazzetta) ── */
+    .post-card {
+      background: var(--post-bg);
+      border: 1.5px solid #c8b89a;
+      border-radius: 10px;
+      box-shadow: 2px 2px 10px rgba(26,58,92,0.07);
+      overflow: hidden;
+      border-left: none;
+    }
+    .post-header { display: flex; align-items: center; gap: 10px; padding: 12px 14px 8px; margin-bottom: 0; }
+    .post-avatar { width: 36px; height: 36px; border-radius: 50%; overflow: hidden; flex-shrink: 0; background: var(--oro-light); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; border: 2px solid var(--navy); }
+    .post-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .post-meta { flex: 1; min-width: 0; }
+    .post-author { font-size: 0.9rem; font-weight: 700; color: var(--navy); font-family: 'Playfair Display', serif; }
+    .post-time { font-size: 0.72rem; color: var(--muted); margin-top: 1px; }
+    .post-text { font-size: 0.93rem; line-height: 1.6; padding: 0 14px 10px; white-space: pre-wrap; word-break: break-word; color: var(--inchiostro); }
+
+    /* Options menu */
+    .post-options-wrap { position: relative; flex-shrink: 0; }
+    .post-options-btn { background: none; border: none; color: #c8b89a; font-size: 1.2rem; cursor: pointer; padding: 2px 8px; border-radius: 8px; transition: all 0.15s; line-height: 1; }
+    .post-options-btn:hover { color: var(--navy); background: var(--carta-scura); }
+    .post-options-menu { position: absolute; right: 0; top: calc(100% + 4px); background: var(--post-bg); border: 1.5px solid #c8b89a; border-radius: 10px; box-shadow: 0 4px 18px rgba(0,0,0,0.15); min-width: 160px; z-index: 200; display: none; overflow: hidden; }
+    .post-options-menu.open { display: block; }
+    .post-options-menu button { display: block; width: 100%; padding: 10px 14px; background: none; border: none; text-align: left; font-family: 'Lora', serif; font-size: 0.88rem; font-weight: 600; cursor: pointer; transition: background 0.12s; color: var(--inchiostro); }
+    .post-options-menu button:hover { background: var(--carta-scura); }
+    .post-options-menu .opt-delete { color: var(--rosso); }
+
+    /* ── Media grid (feed) ── */
+    .media-grid { display: grid; gap: 3px; }
+    .media-grid.c1 { grid-template-columns: 1fr; }
+    .media-grid.c2 { grid-template-columns: 1fr 1fr; }
+    .media-grid.c3 { grid-template-columns: 1fr 1fr; }
+    .media-grid.c3 .mgitem:first-child { grid-column: 1 / -1; }
+    .media-grid.cmany { grid-template-columns: 1fr 1fr; }
+    .mgitem { background: #000; position: relative; }
+    .mgitem img, .mgitem video { width: 100%; display: block; object-fit: contain; height: auto; }
+    .mgitem video { background: #000; }
+
+    .audio-list { padding: 4px 14px; display: flex; flex-direction: column; gap: 6px; }
+    .audio-row { display: flex; align-items: center; gap: 8px; background: var(--oro-light); border-radius: 10px; padding: 7px 10px; }
+    .audio-row .aico { font-size: 1.1rem; flex-shrink: 0; }
+    .audio-row audio { flex: 1; height: 32px; min-width: 0; }
+
+    /* ── Reactions ── */
+    .post-reactions { display: flex; align-items: center; gap: 4px; padding: 8px 14px; flex-wrap: wrap; }
+    .reaction-btn {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: var(--carta-scura); border: 1.5px solid #c8b89a; border-radius: 20px; padding: 4px 10px;
+      font-size: 0.88rem; font-weight: 700; cursor: pointer; transition: background 0.15s, border-color 0.15s; color: var(--inchiostro);
+    }
+    .reaction-btn.active { background: var(--oro-light); border-color: var(--oro); color: var(--oro); }
+    .reaction-btn:hover { background: var(--oro-light); border-color: var(--oro); }
+
+    /* Skin tone popup */
+    .skin-popup {
+      position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%);
+      background: var(--post-bg); border: 1.5px solid #c8b89a; border-radius: 10px;
+      padding: 6px; display: flex; gap: 4px; box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+      z-index: 300; white-space: nowrap;
+    }
+    .skin-btn { background: none; border: 1.5px solid transparent; border-radius: 6px; font-size: 1.15rem; padding: 3px 5px; cursor: pointer; transition: border-color 0.12s, background 0.12s; line-height: 1; }
+    .skin-btn.selected { border-color: var(--oro); background: var(--oro-light); }
+    .reaction-wrap { position: relative; }
+
+    /* ── Comments ── */
+    .post-footer { border-top: 1px solid var(--carta-scura); padding: 8px 14px; display: flex; align-items: center; }
+    .btn-comments { background: none; border: none; font-size: 0.82rem; font-weight: 700; color: var(--muted); cursor: pointer; padding: 4px 0; transition: color 0.15s; font-family: 'Lora', serif; }
+    .btn-comments:hover { color: var(--oro); }
+    .comments-section { padding: 0 14px 12px; display: none; }
+    .comments-section.open { display: block; }
+    .comment-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+    .comment-item { display: flex; gap: 8px; align-items: flex-start; }
+    .comment-avatar { width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0; background: var(--oro-light); display: flex; align-items: center; justify-content: center; font-size: 1rem; overflow: hidden; border: 1.5px solid var(--navy); }
+    .comment-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .comment-bubble { background: var(--carta-scura); border-radius: 12px; padding: 7px 10px; flex: 1; min-width: 0; font-size: 0.85rem; }
+    .comment-autore { font-weight: 700; font-size: 0.78rem; margin-bottom: 2px; color: var(--navy); font-family: 'Playfair Display', serif; }
+    .comment-text { color: var(--inchiostro); white-space: pre-wrap; word-break: break-word; }
+    .comment-data { font-size: 0.68rem; color: var(--muted); margin-top: 3px; }
+
+    /* comment media */
+    .cmedia-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: 6px; }
+    .cmedia-grid.single { grid-template-columns: 1fr; }
+    .cmedia-grid img { width: 100%; border-radius: 8px; display: block; height: auto; object-fit: contain; }
+    .cmedia-grid video { width: 100%; border-radius: 8px; display: block; height: auto; }
+    .caudio-list { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
+    .caudio-row { display: flex; align-items: center; gap: 6px; background: var(--oro-light); border-radius: 8px; padding: 5px 8px; }
+    .caudio-row audio { flex: 1; height: 28px; min-width: 0; }
+
+    /* comment reactions */
+    .comment-reactions { display: flex; gap: 3px; flex-wrap: wrap; margin-top: 4px; }
+    .comment-reaction-btn { background: var(--carta); border: 1px solid #c8b89a; border-radius: 14px; padding: 2px 7px; font-size: 0.78rem; font-weight: 700; cursor: pointer; color: var(--inchiostro); transition: background 0.12s; }
+    .comment-reaction-btn.active { background: var(--oro-light); border-color: var(--oro); }
+
+    /* comment input */
+    .comment-input-wrap { display: flex; gap: 8px; align-items: flex-end; }
+    .comment-input-inner { flex: 1; }
+    .comment-textarea { width: 100%; border: 1.5px solid #c8b89a; border-radius: 12px; padding: 8px 10px; font-family: 'Lora', serif; font-size: 0.88rem; resize: none; outline: none; transition: border-color 0.15s; min-height: 36px; max-height: 120px; background: var(--post-bg); color: var(--inchiostro); }
+    .comment-textarea:focus { border-color: var(--navy); }
+    .comment-media-btns { display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap; }
+    .comment-media-btn { background: none; border: 1.5px solid #c8b89a; border-radius: 20px; padding: 3px 9px; font-size: 0.78rem; cursor: pointer; font-family: 'Lora', serif; transition: background 0.12s, border-color 0.12s; color: var(--inchiostro); }
+    .comment-media-btn:hover { background: var(--oro-light); border-color: var(--oro); }
+    .comment-media-btn.recording { background: #ffe5e5; border-color: var(--rosso); color: var(--rosso); animation: pulse 1s infinite; }
+    .comment-send-btn { background: var(--navy); color: var(--oro); border: none; border-radius: 12px; padding: 8px 14px; font-size: 0.88rem; font-weight: 700; cursor: pointer; white-space: nowrap; transition: background 0.15s; flex-shrink: 0; font-family: 'Lora', serif; }
+    .comment-send-btn:hover { background: var(--navy-scuro); }
+
+    /* ── Preview allegati ── */
+    .preview-wrap { margin: 8px 0; }
+    .preview-count { font-size: 0.78rem; color: var(--muted); font-weight: 700; margin-bottom: 4px; }
+    .preview-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+    .prev-item { position: relative; border-radius: 10px; overflow: visible; }
+    .prev-item img, .prev-item video { display: block; width: 90px; height: auto; object-fit: contain; border-radius: 10px; background: var(--carta-scura); }
+    .prev-item.audio { display: flex; align-items: center; gap: 6px; background: var(--oro-light); border-radius: 10px; padding: 6px 10px; width: 100%; }
+    .prev-item.audio .aico { font-size: 1.1rem; }
+    .prev-item.audio audio { flex: 1; height: 30px; }
+    .prev-item.audio .aname { font-size: 0.72rem; font-weight: 700; color: var(--navy); max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .prev-remove { position: absolute; top: -6px; right: -6px; width: 20px; height: 20px; border-radius: 50%; background: var(--rosso); color: #fff; border: none; font-size: 0.7rem; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 5; }
+    .prev-item.audio .prev-remove { position: static; flex-shrink: 0; }
+
+    /* ── FAB ── */
+    .fab { position: fixed; bottom: 80px; right: 18px; width: 52px; height: 52px; background: var(--oro); color: #fff; font-size: 1.6rem; border: none; border-radius: 50%; box-shadow: 0 4px 14px rgba(200,134,10,0.4); cursor: pointer; z-index: 200; display: none; align-items: center; justify-content: center; transition: background 0.15s, transform 0.15s; }
+    .fab:hover { background: #b5760a; transform: scale(1.08); }
+
+    /* ── Modal ── */
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 500; display: flex; align-items: flex-end; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+    .modal-backdrop.open { opacity: 1; pointer-events: all; }
+    .modal-sheet { background: var(--post-bg); border-radius: 20px 20px 0 0; width: 100%; max-width: 640px; padding: 20px 18px 24px; max-height: 90vh; overflow-y: auto; transform: translateY(100%); transition: transform 0.25s ease; border-top: 3px solid var(--oro); }
+    .modal-backdrop.open .modal-sheet { transform: translateY(0); }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    .modal-title-text { font-size: 1.05rem; font-weight: 700; font-family: 'Playfair Display', serif; color: var(--navy); }
+    .modal-close { background: var(--carta-scura); border: none; border-radius: 50%; width: 32px; height: 32px; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--inchiostro); }
+    .form-textarea { width: 100%; border: 1.5px solid #c8b89a; border-radius: 12px; padding: 10px 12px; font-family: 'Lora', serif; font-size: 0.95rem; resize: none; outline: none; min-height: 100px; transition: border-color 0.15s; background: var(--post-bg); color: var(--inchiostro); }
+    .form-textarea:focus { border-color: var(--navy); }
+    .media-btns { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0 6px; }
+    .media-btn { display: flex; align-items: center; gap: 5px; background: var(--carta-scura); border: 1.5px solid #c8b89a; border-radius: 20px; padding: 6px 14px; font-family: 'Lora', serif; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: background 0.15s, border-color 0.15s; color: var(--inchiostro); }
+    .media-btn:hover { background: var(--oro-light); border-color: var(--oro); }
+    .btn-camera { display: none; }
+    @media (pointer: coarse) { .btn-camera { display: inline-flex; } }
+    .media-btn.recording { background: #ffe5e5; border-color: var(--rosso); color: var(--rosso); animation: pulse 1s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.6} }
+    .upload-progress { height: 4px; background: var(--carta-scura); border-radius: 2px; margin: 8px 0; display: none; }
+    .upload-progress-bar { height: 100%; background: var(--oro); border-radius: 2px; transition: width 0.3s; }
+    .btn-pubblica { width: 100%; background: var(--navy); color: var(--oro); border: none; border-radius: 14px; padding: 12px; font-family: 'Lora', serif; font-size: 1rem; font-weight: 700; cursor: pointer; margin-top: 10px; transition: background 0.15s; }
+    .btn-pubblica:hover:not(:disabled) { background: var(--navy-scuro); }
+    .btn-pubblica:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* ── Spinner + empty ── */
+    .empty-msg { color: var(--muted); text-align: center; padding: 2rem; font-style: italic; }
+    .login-required { text-align: center; padding: 3rem 1rem; color: var(--muted); }
+    .login-required a { color: var(--oro); font-weight: 700; text-decoration: none; }
   </style>
 </head>
 <body>
 
-<header class="top-header">
-  <div>
-    <div class="header-title-main">🏖️ La Spiaggia</div>
-    <div class="header-title-sub">messaggi e voci dell'isola</div>
+  <header class="top-header">
+    <div>
+      <div class="header-title-main">🏖️ La Spiaggia</div>
+      <div class="header-title-sub">messaggi e voci dell'isola</div>
+    </div>
+    <div id="nav-auth-slot"></div>
+  </header>
+
+  <div id="feed" class="feed"><div class="spinner"></div></div>
+
+  <button class="fab" id="fab-new-post" title="Nuovo post">＋</button>
+
+  <!-- Modal nuovo post -->
+  <div class="modal-backdrop" id="modal-backdrop">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <span class="modal-title-text">🏖️ Scrivi sulla Spiaggia</span>
+        <button class="modal-close" id="modal-close">✕</button>
+      </div>
+      <textarea class="form-textarea" id="post-text" placeholder="Cosa vuoi condividere con l'isola?" rows="4"></textarea>
+      <div class="media-btns">
+        <label class="media-btn">🖼️ Foto<input type="file" accept="image/*" id="input-foto" multiple style="display:none"></label>
+        <label class="media-btn btn-camera">📷 Scatta<input type="file" accept="image/*" id="input-foto-cam" capture="environment" style="display:none"></label>
+        <label class="media-btn">📹 Video<input type="file" accept="video/*" id="input-video" multiple style="display:none"></label>
+        <label class="media-btn btn-camera">🎬 Registra<input type="file" accept="video/*" id="input-video-cam" capture="environment" style="display:none"></label>
+        <button class="media-btn" id="btn-audio">🎙️ Registra</button>
+        <label class="media-btn">🎵 Audio<input type="file" accept="audio/*,.mp3,.m4a,.wav,.ogg,.aac,.flac,.weba,.opus" id="input-audio-file" multiple style="display:none"></label>
+      </div>
+      <div id="post-preview"></div>
+      <div class="upload-progress" id="upload-progress"><div class="upload-progress-bar" id="upload-bar" style="width:0%"></div></div>
+      <button class="btn-pubblica" id="btn-pubblica">Pubblica 🌊</button>
+    </div>
   </div>
-  <div id="nav-auth-slot"></div>
-</header>
 
-<div id="feed" class="feed">
-  <div class="spinner"></div>
-</div>
+  <nav class="bottom-nav">
+    <a href="index.html" class="nav-item"><span class="nav-icon">🏝️</span><span>Home</span></a>
+    <a href="spiaggia.html" class="nav-item active"><span class="nav-icon">🏖️</span><span>Spiaggia</span></a>
+    <a href="naufraghi.html" class="nav-item"><span class="nav-icon">👤</span><span>Naufraghi</span></a>
+    <a href="ciurma.html" class="nav-item"><span class="nav-icon">⚓</span><span>Ciurma</span></a>
+    <a href="appunti.html" class="nav-item"><span class="nav-icon">📔</span><span>Appunti</span></a>
+  </nav>
 
-<button class="fab" id="fab-new" title="Nuovo post">+</button>
+  <script type="module">
+    import { db, auth, CLOUD_NAME, CLOUD_PRESET, ADMIN_UID, EMOJIS } from './js/robinson-firebase.js';
+    import { requireAuth } from './js/robinson-auth.js';
+    import { setupNavAuth } from './js/robinson-nav.js';
+    import { esc, risolviNome, fmtDate } from './js/robinson-utils.js';
+    import { aggiungiPunteggio } from './js/robinson-punteggio.js';
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import {
+      collection, addDoc, onSnapshot, query, orderBy, limit,
+      deleteDoc, doc, getDoc, setDoc, updateDoc, serverTimestamp, increment, arrayUnion, arrayRemove
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-<!-- Modal nuovo post -->
-<div class="modal-overlay" id="modal-post">
-  <div class="modal-box">
-    <div class="modal-title">🏖️ Scrivi sulla Spiaggia</div>
-    <div class="form-group">
-      <textarea id="post-text" placeholder="Cosa vuoi condividere con l'isola?" rows="4" style="width:100%;padding:9px 12px;border:1.5px solid #c8b89a;border-radius:8px;font-family:'Lora',serif;font-size:0.9rem;background:var(--post-bg);resize:vertical;"></textarea>
-    </div>
-    <div class="upload-area">
-      <div style="font-size:0.78rem;color:var(--muted);margin-bottom:6px;">📎 Allegati (facoltativo)</div>
-      <div class="upload-row">
-        <label class="upload-btn">📷 Foto <input type="file" id="inp-foto" accept="image/*" multiple style="display:none;"></label>
-        <label class="upload-btn">🎥 Video <input type="file" id="inp-video" accept="video/*" multiple style="display:none;"></label>
-        <label class="upload-btn">🎵 Audio <input type="file" id="inp-audio" accept="audio/*" multiple style="display:none;"></label>
-      </div>
-      <div id="preview-allegati"></div>
-      <div class="progress-wrap" id="prog-wrap"><div class="progress-bar" id="prog-bar"></div></div>
-    </div>
-    <div style="display:flex;gap:8px;margin-top:14px;">
-      <button class="btn btn-primary" id="btn-pubblica">Pubblica 🌊</button>
-      <button class="btn" style="background:var(--carta-scura);" id="btn-annulla">Annulla</button>
-    </div>
-    <div id="post-err" style="color:var(--rosso);font-size:0.8rem;margin-top:8px;"></div>
-  </div>
-</div>
+    setupNavAuth('nav-auth-slot');
 
-<nav class="bottom-nav">
-  <a href="index.html" class="nav-item"><span class="nav-icon">🏝️</span><span>Home</span></a>
-  <a href="spiaggia.html" class="nav-item active"><span class="nav-icon">🏖️</span><span>Spiaggia</span></a>
-  <a href="naufraghi.html" class="nav-item"><span class="nav-icon">👤</span><span>Naufraghi</span></a>
-  <a href="ciurma.html" class="nav-item"><span class="nav-icon">⚓</span><span>Ciurma</span></a>
-  <a href="appunti.html" class="nav-item"><span class="nav-icon">📔</span><span>Appunti</span></a>
-</nav>
+    const COL = 'robinson_spiaggia';
+    const MAX_FILES = 10;
 
-<script type="module">
-import { db, auth, EMOJIS, ADMIN_UID } from './js/robinson-firebase.js';
-import { requireAuth } from './js/robinson-auth.js';
-import { setupNavAuth } from './js/robinson-nav.js';
-import { aggiungiPunteggio } from './js/robinson-punteggio.js';
-import { esc, fmtDate, risolviNome, uploadAll, renderMediaGrid, normalizeMedia, renderPreview } from './js/robinson-utils.js';
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import {
-  collection, addDoc, deleteDoc, doc, onSnapshot,
-  query, orderBy, limit, getDoc, setDoc, serverTimestamp
-} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    // Skin tone selector
+    const SKIN_TONES = ['', '🏻', '🏼', '🏽', '🏾', '🏿'];
+    let skinTone = localStorage.getItem('skinTone') || '';
 
-setupNavAuth('nav-auth-slot');
+    // Cache reazioni
+    const myPostReactions    = new Map();
+    const myCommentReactions = new Map();
 
-const COL = 'robinson_spiaggia';
-let currentUser = null;
-let allegati = []; // {file, type, previewUrl}
+    let currentUser = null;
+    let currentUserData = null;
+    let isAdmin = false;
 
-requireAuth(user => {
-  currentUser = user;
-  loadFeed();
-});
+    // ── Auth ──────────────────────────────────────────────────────────────
+    onAuthStateChanged(auth, async user => {
+      currentUser = user;
+      if (user) {
+        isAdmin = user.uid === ADMIN_UID;
+        try {
+          let snap = await getDoc(doc(db, 'utenti', user.uid));
+          if (!snap.exists()) snap = await getDoc(doc(db, 'staff', user.uid));
+          if (snap.exists()) currentUserData = snap.data();
+        } catch(_) {}
+        document.getElementById('fab-new-post').style.display = 'flex';
+      }
+      loadFeed();
+    });
 
-// ── Feed ────────────────────────────────────────────────────────────────
-function loadFeed() {
-  const feed = document.getElementById('feed');
-  const q = query(collection(db, COL), orderBy('timestamp', 'desc'), limit(50));
-  onSnapshot(q, async snap => {
-    if (snap.empty) { feed.innerHTML = '<div class="empty-msg">🌊 Nessun post ancora. Sii il primo!</div>'; return; }
-    const posts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    feed.innerHTML = '';
-    for (const p of posts) {
-      const div = document.createElement('div');
-      div.className = 'post-card';
-      div.id = 'post-' + p.id;
-      div.innerHTML = await buildPostHTML(p);
-      feed.appendChild(div);
-      attachPostEvents(div, p);
+    // ── Helper: dati autore corrente ──────────────────────────────────────
+    async function getDatiAutore() {
+      let nome = currentUserData?.nome || currentUserData?.nomeCompleto || currentUserData?.displayName || currentUser?.displayName || '';
+      let foto = currentUserData?.fotoProfilo || null;
+      if (!nome && currentUser) {
+        try {
+          let snap = await getDoc(doc(db, 'utenti', currentUser.uid));
+          if (!snap.exists()) snap = await getDoc(doc(db, 'staff', currentUser.uid));
+          if (snap.exists()) {
+            const d = snap.data();
+            currentUserData = d;
+            nome = d.nome || d.nomeCompleto || d.displayName || currentUser.displayName || '';
+            foto = d.fotoProfilo || null;
+          }
+        } catch(_) {}
+      }
+      return { nome: nome || 'Naufrago', foto: foto || '' };
     }
-  });
-}
 
-async function buildPostHTML(p) {
-  const media = normalizeMedia(p);
-  const isAuthor = currentUser && (currentUser.uid === p.authorId || currentUser.uid === ADMIN_UID);
-  const avatar = p.authorPhoto ? `<img src="${esc(p.authorPhoto)}" class="post-avatar">` : `<div class="post-avatar" style="display:flex;align-items:center;justify-content:center;font-size:1.2rem;">⚓</div>`;
-  return `
-    <div class="post-header">
-      ${avatar}
-      <div class="post-meta">
-        <div class="post-author">${esc(p.authorName || 'Naufrago')}</div>
-        <div class="post-time">${fmtDate(p.timestamp)}</div>
-      </div>
-      ${isAuthor ? `<button class="delete-btn" data-id="${esc(p.id)}">🗑️</button>` : ''}
-    </div>
-    ${p.text ? `<div class="post-text">${esc(p.text)}</div>` : ''}
-    ${renderMediaGrid(media)}
-    <div class="reaction-bar" id="reactions-${esc(p.id)}">
-      ${EMOJIS.map(e => `<button class="reaction-btn" data-emoji="${esc(e)}" data-pid="${esc(p.id)}">${e} <span class="rcount">0</span></button>`).join('')}
-    </div>
-    <div class="post-actions">
-      <button class="btn btn-sm" style="background:var(--carta-scura);" data-toggle-comments="${esc(p.id)}">💬 Commenti</button>
-    </div>
-    <div id="comments-${esc(p.id)}" style="display:none;">
-      <div class="comments-list" id="clist-${esc(p.id)}"></div>
-      <div class="comment-form">
-        <input type="text" placeholder="Scrivi un commento..." id="cinp-${esc(p.id)}">
-        <button class="btn btn-sm btn-primary" data-send-comment="${esc(p.id)}">Invia</button>
-      </div>
-    </div>`;
-}
-
-function attachPostEvents(div, p) {
-  // Delete
-  div.querySelector('.delete-btn')?.addEventListener('click', async () => {
-    if (!confirm('Eliminare questo post?')) return;
-    await deleteDoc(doc(db, COL, p.id));
-  });
-
-  // Reactions
-  loadReactions(p.id);
-  div.querySelectorAll('.reaction-btn').forEach(btn => {
-    btn.addEventListener('click', () => toggleReaction(p.id, btn.dataset.emoji));
-  });
-
-  // Comments toggle
-  div.querySelector(`[data-toggle-comments]`)?.addEventListener('click', () => {
-    const box = document.getElementById('comments-' + p.id);
-    if (!box) return;
-    if (box.style.display === 'none') {
-      box.style.display = 'block';
-      loadComments(p.id);
-    } else {
-      box.style.display = 'none';
+    // ── Cloudinary upload ─────────────────────────────────────────────────
+    async function uploadOne(file, type) {
+      // iOS fix: prova webm, se fallisce usa il mime type del file
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('upload_preset', CLOUD_PRESET);
+      const resType = type === 'image' ? 'image' : 'video';
+      const res  = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${resType}/upload`, { method:'POST', body:fd });
+      const data = await res.json();
+      if (!data.secure_url) throw new Error('Upload fallito: ' + (data.error?.message || file.name));
+      return data.secure_url;
     }
-  });
 
-  // Send comment
-  div.querySelector(`[data-send-comment]`)?.addEventListener('click', () => sendComment(p.id));
-  div.querySelector(`#cinp-${p.id}`)?.addEventListener('keydown', e => { if (e.key === 'Enter') sendComment(p.id); });
-}
-
-// ── Reactions ───────────────────────────────────────────────────────────
-async function loadReactions(pid) {
-  const rRef = collection(db, COL, pid, 'user_reactions');
-  onSnapshot(rRef, snap => {
-    const counts = {};
-    EMOJIS.forEach(e => counts[e] = 0);
-    let myEmojis = [];
-    snap.forEach(d => {
-      const data = d.data();
-      (data.emojis || []).forEach(e => { if (counts[e] !== undefined) counts[e]++; });
-      if (currentUser && d.id === currentUser.uid) myEmojis = data.emojis || [];
-    });
-    const bar = document.getElementById('reactions-' + pid);
-    if (!bar) return;
-    bar.querySelectorAll('.reaction-btn').forEach(btn => {
-      const e = btn.dataset.emoji;
-      btn.querySelector('.rcount').textContent = counts[e] || 0;
-      btn.classList.toggle('mine', myEmojis.includes(e));
-    });
-  });
-}
-
-async function toggleReaction(pid, emoji) {
-  if (!currentUser) return;
-  const rDoc = doc(db, COL, pid, 'user_reactions', currentUser.uid);
-  const snap = await getDoc(rDoc);
-  let emojis = snap.exists() ? (snap.data().emojis || []) : [];
-  const had = emojis.includes(emoji);
-  emojis = had ? emojis.filter(e => e !== emoji) : [...emojis, emoji];
-  await setDoc(rDoc, { emojis });
-  if (!had) aggiungiPunteggio(currentUser.uid, 'reazione');
-}
-
-// ── Comments ────────────────────────────────────────────────────────────
-function loadComments(pid) {
-  const list = document.getElementById('clist-' + pid);
-  if (!list) return;
-  const q = query(collection(db, COL, pid, 'commenti'), orderBy('timestamp', 'asc'));
-  onSnapshot(q, snap => {
-    list.innerHTML = snap.docs.map(d => {
-      const c = d.data();
-      return `<div class="comment-item"><span class="comment-author">${esc(c.authorName || 'Naufrago')}</span>: ${esc(c.text)}<span style="float:right;font-size:0.68rem;color:var(--muted);">${fmtDate(c.timestamp)}</span></div>`;
-    }).join('');
-  });
-}
-
-async function sendComment(pid) {
-  if (!currentUser) return;
-  const inp = document.getElementById('cinp-' + pid);
-  const text = inp?.value?.trim();
-  if (!text) return;
-  inp.value = '';
-  await addDoc(collection(db, COL, pid, 'commenti'), {
-    text,
-    authorId: currentUser.uid,
-    authorName: currentUser.displayName || 'Naufrago',
-    authorPhoto: currentUser.photoURL || null,
-    timestamp: serverTimestamp()
-  });
-  aggiungiPunteggio(currentUser.uid, 'commento');
-}
-
-// ── Nuovo post ──────────────────────────────────────────────────────────
-document.getElementById('fab-new').addEventListener('click', () => {
-  document.getElementById('modal-post').classList.add('open');
-});
-document.getElementById('btn-annulla').addEventListener('click', () => {
-  document.getElementById('modal-post').classList.remove('open');
-  allegati = [];
-  renderPreview([], document.getElementById('preview-allegati'));
-});
-
-// File inputs
-['foto', 'video', 'audio'].forEach(tipo => {
-  document.getElementById('inp-' + tipo).addEventListener('change', e => {
-    const files = Array.from(e.target.files);
-    files.forEach(f => {
-      allegati.push({ file: f, type: tipo === 'foto' ? 'image' : tipo, previewUrl: URL.createObjectURL(f) });
-    });
-    e.target.value = '';
-    aggiPreview();
-  });
-});
-
-function aggiPreview() {
-  const container = document.getElementById('preview-allegati');
-  renderPreview(allegati, container);
-  container.querySelectorAll('.prev-rm').forEach(btn => {
-    btn.addEventListener('click', () => {
-      allegati.splice(parseInt(btn.dataset.idx), 1);
-      aggiPreview();
-    });
-  });
-}
-
-document.getElementById('btn-pubblica').addEventListener('click', async () => {
-  if (!currentUser) return;
-  const text = document.getElementById('post-text').value.trim();
-  const err = document.getElementById('post-err');
-  if (!text && !allegati.length) { err.textContent = 'Scrivi qualcosa o aggiungi un allegato.'; return; }
-  err.textContent = '';
-
-  const btn = document.getElementById('btn-pubblica');
-  btn.disabled = true;
-  btn.textContent = 'Pubblicazione...';
-
-  try {
-    let media = [];
-    if (allegati.length) {
-      const prog = document.getElementById('prog-wrap');
-      const bar = document.getElementById('prog-bar');
-      prog.style.display = 'block';
+    async function uploadAll(items, barEl, progEl) {
+      if (progEl) progEl.style.display = 'block';
       let done = 0;
-      media = await Promise.all(allegati.map(a =>
-        uploadAll([a]).then(r => {
+      const results = await Promise.all(
+        items.map(item => uploadOne(item.file, item.type).then(url => {
           done++;
-          bar.style.width = Math.round(done / allegati.length * 100) + '%';
-          return r[0];
-        })
-      ));
-      setTimeout(() => { prog.style.display = 'none'; bar.style.width = '0%'; }, 500);
+          if (barEl) barEl.style.width = Math.round(done / items.length * 100) + '%';
+          return { url, type: item.type, name: item.name };
+        }))
+      );
+      setTimeout(() => { if (progEl) progEl.style.display = 'none'; if (barEl) barEl.style.width = '0%'; }, 500);
+      return results;
     }
 
-    await addDoc(collection(db, COL), {
-      text,
-      authorId: currentUser.uid,
-      authorName: currentUser.displayName || 'Naufrago',
-      authorPhoto: currentUser.photoURL || null,
-      media,
-      timestamp: serverTimestamp()
+    // ── Normalizza media ──────────────────────────────────────────────────
+    function normalizeMedia(data) {
+      if (Array.isArray(data.media) && data.media.length > 0) return data.media;
+      if (data.mediaUrl) return [{ url: data.mediaUrl, type: data.mediaType || 'image', name: '' }];
+      return [];
+    }
+
+    // ── Render griglia media (feed post) ─────────────────────────────────
+    function renderMediaGrid(mediaList) {
+      if (!mediaList.length) return '';
+      const imgs   = mediaList.filter(m => m.type === 'image');
+      const vids   = mediaList.filter(m => m.type === 'video');
+      const audios = mediaList.filter(m => m.type === 'audio');
+      const visual = [...imgs, ...vids];
+      let html = '';
+
+      if (visual.length) {
+        const n = visual.length;
+        const cls = n === 1 ? 'c1' : n === 2 ? 'c2' : n === 3 ? 'c3' : 'cmany';
+        html += `<div class="media-grid ${cls}">`;
+        visual.forEach(m => {
+          html += `<div class="mgitem">`;
+          if (m.type === 'image')
+            html += `<img src="${esc(m.url)}" loading="lazy" alt="foto">`;
+          else
+            html += `<video src="${esc(m.url)}" controls playsinline></video>`;
+          html += `</div>`;
+        });
+        html += `</div>`;
+      }
+
+      if (audios.length) {
+        html += `<div class="audio-list">`;
+        audios.forEach(m => {
+          html += `<div class="audio-row"><span class="aico">🎵</span><audio src="${esc(m.url)}" controls></audio></div>`;
+        });
+        html += `</div>`;
+      }
+      return html;
+    }
+
+    // ── Render media commenti ─────────────────────────────────────────────
+    function renderCommentMedia(data) {
+      const list = normalizeMedia(data);
+      if (!list.length) return '';
+      const imgs   = list.filter(m => m.type === 'image');
+      const vids   = list.filter(m => m.type === 'video');
+      const audios = list.filter(m => m.type === 'audio');
+      const visual = [...imgs, ...vids];
+      let html = '';
+      if (visual.length) {
+        html += `<div class="cmedia-grid${visual.length === 1 ? ' single' : ''}">`;
+        visual.forEach(m => {
+          if (m.type === 'image') html += `<img src="${esc(m.url)}" loading="lazy">`;
+          else html += `<video src="${esc(m.url)}" controls playsinline></video>`;
+        });
+        html += `</div>`;
+      }
+      if (audios.length) {
+        html += `<div class="caudio-list">`;
+        audios.forEach(m => {
+          html += `<div class="caudio-row"><span>🎵</span><audio src="${esc(m.url)}" controls></audio></div>`;
+        });
+        html += `</div>`;
+      }
+      return html;
+    }
+
+    // ── Preview allegati ──────────────────────────────────────────────────
+    function renderPreview(items, containerId, onRemove) {
+      const wrap = document.getElementById(containerId);
+      if (!wrap) return;
+      if (!items.length) { wrap.innerHTML = ''; return; }
+
+      let html = `<div class="preview-wrap">
+        <div class="preview-count">${items.length} allegat${items.length === 1 ? 'o' : 'i'}</div>
+        <div class="preview-grid">`;
+
+      items.forEach((item, idx) => {
+        if (item.type === 'image') {
+          html += `<div class="prev-item">
+            <img src="${esc(item.previewUrl)}" alt="">
+            <button class="prev-remove" data-idx="${idx}">✕</button>
+          </div>`;
+        } else if (item.type === 'video') {
+          html += `<div class="prev-item">
+            <video src="${esc(item.previewUrl)}" muted playsinline></video>
+            <button class="prev-remove" data-idx="${idx}">✕</button>
+          </div>`;
+        } else {
+          html += `<div class="prev-item audio">
+            <span class="aico">🎵</span>
+            <audio src="${esc(item.previewUrl)}" controls></audio>
+            <span class="aname">${esc(item.name)}</span>
+            <button class="prev-remove" data-idx="${idx}">✕</button>
+          </div>`;
+        }
+      });
+
+      html += `</div></div>`;
+      wrap.innerHTML = html;
+
+      wrap.querySelectorAll('.prev-remove').forEach(btn => {
+        btn.addEventListener('click', () => onRemove(parseInt(btn.dataset.idx)));
+      });
+    }
+
+    // ── Modal nuovo post ──────────────────────────────────────────────────
+    const postItems = [];
+
+    function postAddFile(file, type) {
+      if (postItems.length >= MAX_FILES) { alert(`Massimo ${MAX_FILES} allegati per post.`); return; }
+      postItems.push({ file, type, name: file.name || type, previewUrl: URL.createObjectURL(file) });
+      redrawPostPreview();
+    }
+
+    function postRemoveFile(idx) {
+      URL.revokeObjectURL(postItems[idx].previewUrl);
+      postItems.splice(idx, 1);
+      redrawPostPreview();
+    }
+
+    function postClear() {
+      postItems.forEach(i => URL.revokeObjectURL(i.previewUrl));
+      postItems.length = 0;
+      redrawPostPreview();
+    }
+
+    function redrawPostPreview() {
+      renderPreview(postItems, 'post-preview', postRemoveFile);
+    }
+
+    let postRecorder = null, postAudioChunks = [], postRecording = false;
+
+    const fab      = document.getElementById('fab-new-post');
+    const backdrop = document.getElementById('modal-backdrop');
+
+    fab.addEventListener('click', () => backdrop.classList.add('open'));
+    document.getElementById('modal-close').addEventListener('click', closePostModal);
+    backdrop.addEventListener('click', e => { if (e.target === backdrop) closePostModal(); });
+
+    function closePostModal() {
+      backdrop.classList.remove('open');
+      document.getElementById('post-text').value = '';
+      postClear();
+      if (postRecording) stopPostRec();
+    }
+
+    document.getElementById('input-foto').addEventListener('change', e => {
+      Array.from(e.target.files).forEach(f => postAddFile(f, 'image'));
+      e.target.value = '';
+    });
+    document.getElementById('input-foto-cam').addEventListener('change', e => {
+      Array.from(e.target.files).forEach(f => postAddFile(f, 'image'));
+      e.target.value = '';
+    });
+    document.getElementById('input-video').addEventListener('change', e => {
+      Array.from(e.target.files).forEach(f => postAddFile(f, 'video'));
+      e.target.value = '';
+    });
+    document.getElementById('input-video-cam').addEventListener('change', e => {
+      Array.from(e.target.files).forEach(f => postAddFile(f, 'video'));
+      e.target.value = '';
+    });
+    document.getElementById('input-audio-file').addEventListener('change', e => {
+      Array.from(e.target.files).forEach(f => postAddFile(f, 'audio'));
+      e.target.value = '';
     });
 
-    aggiungiPunteggio(currentUser.uid, 'post');
-    media.forEach(m => {
-      if (m.type === 'image') aggiungiPunteggio(currentUser.uid, 'foto');
-      else if (m.type === 'video') aggiungiPunteggio(currentUser.uid, 'video');
-      else if (m.type === 'audio') aggiungiPunteggio(currentUser.uid, 'audio');
+    const btnAudio = document.getElementById('btn-audio');
+    btnAudio.addEventListener('click', async () => {
+      if (postRecording) { stopPostRec(); return; }
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        postAudioChunks = [];
+        // iOS fix: webm non supportato su Safari, usa mp4 come fallback
+        const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm'
+                       : MediaRecorder.isTypeSupported('audio/mp4')  ? 'audio/mp4'
+                       : '';
+        const opts = mimeType ? { mimeType } : {};
+        postRecorder = new MediaRecorder(stream, opts);
+        postRecorder.ondataavailable = e => postAudioChunks.push(e.data);
+        postRecorder.onstop = () => {
+          const mime = mimeType || 'audio/webm';
+          const ext  = mime.includes('mp4') ? 'mp4' : 'webm';
+          const blob = new Blob(postAudioChunks, { type: mime });
+          postAddFile(new File([blob], `rec_${Date.now()}.${ext}`, { type: mime }), 'audio');
+          stream.getTracks().forEach(t => t.stop());
+        };
+        postRecorder.start();
+        postRecording = true;
+        btnAudio.textContent = '⏹️ Stop'; btnAudio.classList.add('recording');
+      } catch(err) { alert('Microfono non disponibile: ' + err.message); }
     });
 
-    document.getElementById('post-text').value = '';
-    allegati = [];
-    renderPreview([], document.getElementById('preview-allegati'));
-    document.getElementById('modal-post').classList.remove('open');
-  } catch (e) {
-    err.textContent = 'Errore: ' + e.message;
-  } finally {
-    btn.disabled = false;
-    btn.textContent = 'Pubblica 🌊';
-  }
-});
-</script>
+    function stopPostRec() {
+      if (postRecorder && postRecording) {
+        postRecorder.stop(); postRecording = false;
+        btnAudio.textContent = '🎙️ Registra'; btnAudio.classList.remove('recording');
+      }
+    }
+
+    document.getElementById('btn-pubblica').addEventListener('click', async () => {
+      if (!currentUser) return;
+      const text = document.getElementById('post-text').value.trim();
+      if (!text && postItems.length === 0) { alert('Scrivi qualcosa o aggiungi un allegato!'); return; }
+
+      const btn = document.getElementById('btn-pubblica');
+      btn.disabled = true; btn.textContent = 'Pubblicazione…';
+
+      try {
+        const itemsToUpload = [...postItems];
+        const barEl  = document.getElementById('upload-bar');
+        const progEl = document.getElementById('upload-progress');
+        const media  = itemsToUpload.length ? await uploadAll(itemsToUpload, barEl, progEl) : [];
+
+        const { nome, foto } = await getDatiAutore();
+
+        await addDoc(collection(db, COL), {
+          authorId:      currentUser.uid,
+          authorName:    nome,
+          authorPhoto:   foto,
+          text:          text,
+          media:         media,
+          timestamp:     serverTimestamp(),
+          reactions:     {},
+          commentsCount: 0,
+        });
+
+        // Punteggio
+        await aggiungiPunteggio(currentUser.uid, 'post');
+        for (const m of media) {
+          if (m.type === 'image') await aggiungiPunteggio(currentUser.uid, 'foto');
+          else if (m.type === 'video') await aggiungiPunteggio(currentUser.uid, 'video');
+          else if (m.type === 'audio') await aggiungiPunteggio(currentUser.uid, 'audio');
+        }
+
+        closePostModal();
+      } catch(err) {
+        alert('Errore: ' + err.message);
+      } finally {
+        btn.disabled = false; btn.textContent = 'Pubblica 🌊';
+      }
+    });
+
+    // ── Feed ──────────────────────────────────────────────────────────────
+    function loadFeed() {
+      const feedEl = document.getElementById('feed');
+      feedEl.innerHTML = '<div class="spinner"></div>';
+      const q = query(collection(db, COL), orderBy('timestamp', 'desc'), limit(40));
+      onSnapshot(q, snap => {
+        feedEl.innerHTML = '';
+        if (snap.empty) {
+          feedEl.innerHTML = '<p class="empty-msg">🌊 Nessun post ancora. Sii il primo a scrivere!</p>';
+          return;
+        }
+        snap.forEach(d => feedEl.appendChild(buildPostCard(d.id, d.data())));
+      }, err => {
+        feedEl.innerHTML = '<p class="empty-msg">Errore caricamento.</p>';
+        console.error(err);
+      });
+    }
+
+    function buildPostCard(postId, data) {
+      const card = document.createElement('div');
+      card.className = 'post-card';
+      card.dataset.postId = postId;
+
+      const avatar = data.authorPhoto
+        ? `<div class="post-avatar"><img src="${esc(data.authorPhoto)}" alt=""></div>`
+        : `<div class="post-avatar">⚓</div>`;
+
+      const mediaHtml = renderMediaGrid(normalizeMedia(data));
+
+      const reactHtml = EMOJIS.map(emoji => {
+        const cnt = (data.reactions || {})[emoji] || 0;
+        return `<div class="reaction-wrap"><button class="reaction-btn" data-emoji="${emoji}" data-postid="${postId}">${emoji}${cnt > 0 ? ' <span>' + cnt + '</span>' : ''}</button></div>`;
+      }).join('');
+
+      const canDel = isAdmin || (currentUser && currentUser.uid === data.authorId);
+      const commCnt = data.commentsCount || 0;
+
+      card.innerHTML = `
+        <div class="post-header">
+          ${avatar}
+          <div class="post-meta">
+            <div class="post-author" data-uid="${esc(data.authorId || '')}">${esc(data.authorName && data.authorName !== 'Anonimo' ? data.authorName : '')}</div>
+            <div class="post-time">${fmtDate(data.timestamp)}</div>
+          </div>
+          ${canDel ? `<div class="post-options-wrap"><button class="post-options-btn" data-menu="${postId}">⋮</button><div class="post-options-menu" id="pmenu-${postId}"><button class="opt-delete" data-delete="${postId}">🗑️ Elimina</button></div></div>` : ''}
+        </div>
+        ${data.text ? `<div class="post-text">${esc(data.text)}</div>` : ''}
+        ${mediaHtml}
+        <div class="post-reactions">${reactHtml}</div>
+        <div class="post-footer">
+          <button class="btn-comments" data-toggle-comments="${postId}">💬 ${commCnt > 0 ? commCnt + ' commenti' : 'Commenta'}</button>
+        </div>
+        <div class="comments-section" id="cs-${postId}"></div>`;
+
+      // Fallback nome asincrono
+      const nomeEl = card.querySelector('.post-author');
+      if (nomeEl && !nomeEl.textContent.trim() && data.authorId) {
+        risolviNome(data.authorId).then(n => { if (n && n !== 'Anonimo') nomeEl.textContent = n; });
+      }
+
+      // Reactions event listeners
+      card.querySelectorAll('.reaction-btn').forEach(btn => {
+        btn.addEventListener('click', e => handleReactionClick(e, postId, btn));
+        btn.addEventListener('contextmenu', e => { e.preventDefault(); showSkinPopup(btn); });
+        btn.addEventListener('pointerdown', e => {
+          if (e.pointerType === 'touch') {
+            btn._longPressTimer = setTimeout(() => showSkinPopup(btn), 500);
+          }
+        });
+        btn.addEventListener('pointerup', () => clearTimeout(btn._longPressTimer));
+        btn.addEventListener('pointercancel', () => clearTimeout(btn._longPressTimer));
+      });
+
+      // Options menu
+      const menuBtn = card.querySelector('[data-menu]');
+      if (menuBtn) {
+        menuBtn.addEventListener('click', e => {
+          e.stopPropagation();
+          const menu = document.getElementById(`pmenu-${postId}`);
+          if (!menu) return;
+          const wasOpen = menu.classList.contains('open');
+          document.querySelectorAll('.post-options-menu.open').forEach(m => m.classList.remove('open'));
+          if (!wasOpen) menu.classList.add('open');
+        });
+      }
+
+      // Delete
+      const delBtn = card.querySelector('[data-delete]');
+      if (delBtn) {
+        delBtn.addEventListener('click', async () => {
+          if (!confirm('Eliminare questo post?')) return;
+          document.getElementById(`pmenu-${postId}`)?.classList.remove('open');
+          try {
+            await deleteDoc(doc(db, COL, postId));
+          } catch(err) { alert(err.message); }
+        });
+      }
+
+      // Comments toggle
+      const toggleBtn = card.querySelector('[data-toggle-comments]');
+      if (toggleBtn) {
+        toggleBtn.addEventListener('click', () => toggleComments(postId));
+      }
+
+      // Ripristina active reactions
+      if (currentUser) applyMyPostReactions(postId, card);
+
+      card._postData = data;
+      return card;
+    }
+
+    async function applyMyPostReactions(postId, card) {
+      if (!myPostReactions.has(postId)) {
+        myPostReactions.set(postId, new Set());
+        try {
+          const uSnap = await getDoc(doc(db, COL, postId, 'user_reactions', currentUser.uid));
+          myPostReactions.set(postId, new Set(uSnap.exists() ? (uSnap.data().emojis || []) : []));
+        } catch(_) {}
+      }
+      const mine = myPostReactions.get(postId);
+      card.querySelectorAll('.reaction-btn').forEach(btn => {
+        const base = btn.dataset.emoji;
+        const active = [...mine].some(e => e === base || e.startsWith(base));
+        if (active) btn.classList.add('active');
+        else btn.classList.remove('active');
+      });
+    }
+
+    // ── Skin tone popup ───────────────────────────────────────────────────
+    function showSkinPopup(btn) {
+      document.querySelectorAll('.skin-popup').forEach(p => p.remove());
+      const baseEmoji = btn.dataset.emoji;
+      const popup = document.createElement('div');
+      popup.className = 'skin-popup';
+
+      SKIN_TONES.forEach(tone => {
+        const sb = document.createElement('button');
+        sb.className = 'skin-btn' + (tone === skinTone ? ' selected' : '');
+        sb.textContent = tone ? baseEmoji + tone : baseEmoji;
+        sb.addEventListener('click', e => {
+          e.stopPropagation();
+          skinTone = tone;
+          localStorage.setItem('skinTone', tone);
+          popup.remove();
+        });
+        popup.appendChild(sb);
+      });
+
+      btn.parentElement.appendChild(popup);
+      setTimeout(() => document.addEventListener('click', () => popup.remove(), { once: true }), 0);
+    }
+
+    // ── Reactions ─────────────────────────────────────────────────────────
+    async function handleReactionClick(e, postId, btn) {
+      if (!currentUser) { alert('Fai il login per reagire!'); return; }
+      const baseEmoji = btn.dataset.emoji;
+      const emoji = skinTone ? baseEmoji + skinTone : baseEmoji;
+
+      const pRef = doc(db, COL, postId);
+      const uRef = doc(db, COL, postId, 'user_reactions', currentUser.uid);
+
+      const wasActive = btn.classList.contains('active');
+      btn.classList.toggle('active');
+      adjCount(btn, wasActive ? -1 : 1);
+
+      if (!myPostReactions.has(postId)) myPostReactions.set(postId, new Set());
+      const mine = myPostReactions.get(postId);
+      if (wasActive) {
+        mine.forEach(e => { if (e === emoji || e.startsWith(baseEmoji)) mine.delete(e); });
+      } else {
+        mine.add(emoji);
+      }
+
+      try {
+        if (wasActive) {
+          await updateDoc(pRef, { [`reactions.${baseEmoji}`]: increment(-1) });
+          await updateDoc(uRef, { emojis: arrayRemove(emoji) });
+        } else {
+          await updateDoc(pRef, { [`reactions.${baseEmoji}`]: increment(1) });
+          const uSnap = await getDoc(uRef);
+          const nome = currentUserData?.nome || currentUser.displayName || 'Naufrago';
+          uSnap.exists()
+            ? await updateDoc(uRef, { emojis: arrayUnion(emoji), nome })
+            : await setDoc(uRef, { emojis: [emoji], nome });
+          await aggiungiPunteggio(currentUser.uid, 'reazione');
+        }
+      } catch(err) {
+        btn.classList.toggle('active');
+        adjCount(btn, wasActive ? 1 : -1);
+        console.error('reaction error:', err.message);
+      }
+    }
+
+    function adjCount(btn, delta) {
+      let span = btn.querySelector('span');
+      if (!span) { span = document.createElement('span'); btn.append(' ', span); span.textContent = '0'; }
+      const next = parseInt(span.textContent || '0') + delta;
+      if (next <= 0) {
+        const prev = span.previousSibling;
+        if (prev?.nodeType === 3) btn.removeChild(prev);
+        btn.removeChild(span);
+      } else {
+        span.textContent = next;
+      }
+    }
+
+    // ── Comments ──────────────────────────────────────────────────────────
+    const loadedCs = new Set();
+
+    function toggleComments(postId) {
+      const sec = document.getElementById(`cs-${postId}`);
+      if (!sec) return;
+      const open = sec.classList.toggle('open');
+      if (open && !loadedCs.has(postId)) { loadedCs.add(postId); loadComments(postId, sec); }
+    }
+
+    function loadComments(postId, sec) {
+      sec.innerHTML = '<div style="color:var(--muted);font-size:0.82rem;padding:4px 0">Caricamento…</div>';
+      const q = query(collection(db, COL, postId, 'comments'), orderBy('timestamp', 'asc'));
+      onSnapshot(q, snap => {
+        const list = document.createElement('div');
+        list.className = 'comment-list';
+        snap.forEach(d => list.appendChild(buildCommentEl(postId, d.id, d.data())));
+        const existing = sec.querySelector('.comment-input-wrap');
+        sec.innerHTML = '';
+        sec.appendChild(list);
+        sec.appendChild(existing || buildCommentInput(postId));
+      }, err => {
+        sec.innerHTML = `<p style="color:var(--rosso);font-size:0.82rem">${err.message}</p>`;
+      });
+    }
+
+    function buildCommentEl(postId, commentId, data) {
+      const el = document.createElement('div');
+      el.className = 'comment-item';
+      const avatar = data.authorPhoto
+        ? `<div class="comment-avatar"><img src="${esc(data.authorPhoto)}" alt=""></div>`
+        : `<div class="comment-avatar">⚓</div>`;
+      const mediaHtml = renderCommentMedia(data);
+      const crKey = `${postId}:${commentId}`;
+      const myCR  = myCommentReactions.get(crKey) || new Set();
+      const reactHtml = EMOJIS.map(emoji => {
+        const cnt    = (data.reactions || {})[emoji] || 0;
+        const active = myCR.has(emoji) ? ' active' : '';
+        return `<button class="comment-reaction-btn${active}" data-emoji="${emoji}" data-cnt="${cnt}" data-postid="${postId}" data-commentid="${commentId}">${emoji}${cnt > 0 ? ' ' + cnt : ''}</button>`;
+      }).join('');
+      const canDel = isAdmin || (currentUser && currentUser.uid === data.authorId);
+      el.innerHTML = `${avatar}
+        <div class="comment-bubble">
+          <div class="comment-autore">${esc(data.authorName || 'Naufrago')}</div>
+          ${data.text ? `<div class="comment-text">${esc(data.text)}</div>` : ''}
+          ${mediaHtml}
+          <div class="comment-reactions">${reactHtml}</div>
+          <div class="comment-data">${fmtDate(data.timestamp)}${canDel ? ` <button data-del-comment="${commentId}" data-del-post="${postId}" style="margin-left:8px;background:none;border:none;cursor:pointer;font-size:0.75rem;color:#c8b89a;">✕</button>` : ''}</div>
+        </div>`;
+
+      // Comment reactions
+      el.querySelectorAll('.comment-reaction-btn').forEach(btn => {
+        btn.addEventListener('click', () => toggleCR(postId, commentId, btn.dataset.emoji, btn));
+      });
+
+      // Delete comment
+      const delBtn = el.querySelector('[data-del-comment]');
+      if (delBtn) {
+        delBtn.addEventListener('click', async () => {
+          if (!confirm('Eliminare commento?')) return;
+          try {
+            await deleteDoc(doc(db, COL, postId, 'comments', commentId));
+            await updateDoc(doc(db, COL, postId), { commentsCount: increment(-1) });
+            el.remove();
+          } catch(err) { alert(err.message); }
+        });
+      }
+
+      return el;
+    }
+
+    async function toggleCR(postId, commentId, emoji, btn) {
+      if (!currentUser) { alert('Fai il login per reagire!'); return; }
+      const ref   = doc(db, COL, postId, 'comments', commentId);
+      const crKey = `${postId}:${commentId}`;
+      if (!myCommentReactions.has(crKey)) myCommentReactions.set(crKey, new Set());
+      const myCR  = myCommentReactions.get(crKey);
+
+      const wasActive = btn.classList.contains('active');
+      const delta     = wasActive ? -1 : 1;
+      const cur       = parseInt(btn.dataset.cnt || '0');
+      const next      = Math.max(0, cur + delta);
+
+      btn.classList.toggle('active');
+      btn.dataset.cnt = next;
+      btn.textContent = emoji + (next > 0 ? ' ' + next : '');
+      wasActive ? myCR.delete(emoji) : myCR.add(emoji);
+
+      try {
+        await updateDoc(ref, { [`reactions.${emoji}`]: increment(delta) });
+      } catch(err) {
+        btn.classList.toggle('active');
+        btn.dataset.cnt = cur;
+        btn.textContent = emoji + (cur > 0 ? ' ' + cur : '');
+        wasActive ? myCR.add(emoji) : myCR.delete(emoji);
+        console.error('toggleCR:', err.message);
+      }
+    }
+
+    // ── Comment input ─────────────────────────────────────────────────────
+    function buildCommentInput(postId) {
+      const cItems = [];
+      const previewId = `cprev-${postId}-${Date.now()}`;
+
+      let cRec = null, cAudioChunks = [], cRecording = false;
+
+      const wrap = document.createElement('div');
+      wrap.className = 'comment-input-wrap';
+
+      wrap.innerHTML = `
+        <div class="comment-input-inner">
+          <textarea class="comment-textarea" placeholder="Scrivi un commento…" rows="1"></textarea>
+          <div class="comment-media-btns">
+            <label class="comment-media-btn">📷<input type="file" accept="image/*" multiple style="display:none" class="ci-foto"></label>
+            <label class="comment-media-btn btn-camera">📸<input type="file" accept="image/*" capture="environment" style="display:none" class="ci-foto-cam"></label>
+            <label class="comment-media-btn">🎬<input type="file" accept="video/*" multiple style="display:none" class="ci-vid"></label>
+            <label class="comment-media-btn btn-camera">🎥<input type="file" accept="video/*" capture="environment" style="display:none" class="ci-vid-cam"></label>
+            <button class="comment-media-btn ci-rec">🎙️</button>
+            <label class="comment-media-btn">🎵<input type="file" accept="audio/*,.mp3,.m4a,.wav,.ogg,.aac,.flac,.weba,.opus" multiple style="display:none" class="ci-aud"></label>
+          </div>
+          <div id="${previewId}"></div>
+        </div>
+        <button class="comment-send-btn">Invia</button>`;
+
+      const textarea = wrap.querySelector('.comment-textarea');
+      const recBtn   = wrap.querySelector('.ci-rec');
+      const sendBtn  = wrap.querySelector('.comment-send-btn');
+
+      textarea.addEventListener('input', () => {
+        textarea.style.height = 'auto';
+        textarea.style.height = textarea.scrollHeight + 'px';
+      });
+
+      function cAddFile(file, type) {
+        if (cItems.length >= MAX_FILES) { alert(`Massimo ${MAX_FILES} allegati.`); return; }
+        cItems.push({ file, type, name: file.name || type, previewUrl: URL.createObjectURL(file) });
+        cRedraw();
+      }
+
+      function cRemoveFile(idx) {
+        URL.revokeObjectURL(cItems[idx].previewUrl);
+        cItems.splice(idx, 1);
+        cRedraw();
+      }
+
+      function cRedraw() { renderPreview(cItems, previewId, cRemoveFile); }
+
+      wrap.querySelector('.ci-foto').addEventListener('change',     e => { Array.from(e.target.files).forEach(f => cAddFile(f, 'image')); e.target.value = ''; });
+      wrap.querySelector('.ci-foto-cam').addEventListener('change', e => { Array.from(e.target.files).forEach(f => cAddFile(f, 'image')); e.target.value = ''; });
+      wrap.querySelector('.ci-vid').addEventListener('change',      e => { Array.from(e.target.files).forEach(f => cAddFile(f, 'video')); e.target.value = ''; });
+      wrap.querySelector('.ci-vid-cam').addEventListener('change',  e => { Array.from(e.target.files).forEach(f => cAddFile(f, 'video')); e.target.value = ''; });
+      wrap.querySelector('.ci-aud').addEventListener('change',      e => { Array.from(e.target.files).forEach(f => cAddFile(f, 'audio')); e.target.value = ''; });
+
+      recBtn.addEventListener('click', async () => {
+        if (cRecording) {
+          cRec.stop(); cRecording = false;
+          recBtn.textContent = '🎙️'; recBtn.classList.remove('recording'); return;
+        }
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          cAudioChunks = [];
+          const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm'
+                         : MediaRecorder.isTypeSupported('audio/mp4')  ? 'audio/mp4'
+                         : '';
+          const opts = mimeType ? { mimeType } : {};
+          cRec = new MediaRecorder(stream, opts);
+          cRec.ondataavailable = e => cAudioChunks.push(e.data);
+          cRec.onstop = () => {
+            const mime = mimeType || 'audio/webm';
+            const ext  = mime.includes('mp4') ? 'mp4' : 'webm';
+            const blob = new Blob(cAudioChunks, { type: mime });
+            cAddFile(new File([blob], `rec_${Date.now()}.${ext}`, { type: mime }), 'audio');
+            stream.getTracks().forEach(t => t.stop());
+          };
+          cRec.start(); cRecording = true;
+          recBtn.textContent = '⏹️'; recBtn.classList.add('recording');
+        } catch(err) { alert('Microfono non disponibile'); }
+      });
+
+      sendBtn.addEventListener('click', async () => {
+        if (!currentUser) { alert('Fai il login!'); return; }
+        const text = textarea.value.trim();
+        if (!text && cItems.length === 0) return;
+
+        sendBtn.disabled = true; sendBtn.textContent = '…';
+        try {
+          const snapshot = [...cItems];
+          const media = snapshot.length
+            ? await Promise.all(snapshot.map(item =>
+                uploadOne(item.file, item.type).then(url => ({ url, type: item.type, name: item.name }))
+              ))
+            : [];
+
+          const { nome, foto } = await getDatiAutore();
+
+          await addDoc(collection(db, COL, postId, 'comments'), {
+            authorId: currentUser.uid, authorName: nome, authorPhoto: foto,
+            text, media,
+            timestamp: serverTimestamp(), reactions: {},
+          });
+          await updateDoc(doc(db, COL, postId), { commentsCount: increment(1) });
+          await aggiungiPunteggio(currentUser.uid, 'commento');
+
+          textarea.value = ''; textarea.style.height = 'auto';
+          cItems.forEach(i => URL.revokeObjectURL(i.previewUrl));
+          cItems.length = 0; cRedraw();
+
+          // Aggiorna contatore commenti nel footer
+          const card = document.querySelector(`[data-post-id="${postId}"]`);
+          const footerBtn = card?.querySelector('.btn-comments');
+          if (footerBtn) {
+            const cur = parseInt(footerBtn.textContent.match(/\d+/)?.[0] || '0');
+            footerBtn.textContent = `💬 ${cur + 1} commenti`;
+          }
+        } catch(err) { alert('Errore: ' + err.message); }
+        finally { sendBtn.disabled = false; sendBtn.textContent = 'Invia'; }
+      });
+
+      return wrap;
+    }
+
+    // ── Close menus on outside click ──────────────────────────────────────
+    document.addEventListener('click', () => {
+      document.querySelectorAll('.post-options-menu.open').forEach(m => m.classList.remove('open'));
+    });
+  </script>
 </body>
 </html>
