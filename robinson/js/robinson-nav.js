@@ -28,12 +28,17 @@ export function setupNavAuth(slotId = 'nav-auth-slot') {
         if (d.nome) nome = d.nome;
         if (d.fotoProfilo) foto = d.fotoProfilo;
         if (d.ruolo === 'admin') admin = true;
-        console.log('Robinson nav - uid:', user.uid);
-        console.log('Robinson nav - nome:', nome);
-        console.log('Robinson nav - foto:', foto);
-        console.log('Robinson nav - dati Firestore:', d);
       }
-    } catch (e) { console.warn('robinson-nav: errore lettura utenti', e); }
+      // Fallback: leggi da staff/{uid} se foto ancora mancante
+      if (!foto) {
+        const snapStaff = await getDoc(doc(db, 'staff', user.uid));
+        if (snapStaff.exists()) {
+          const ds = snapStaff.data();
+          if (ds.fotoProfilo) foto = ds.fotoProfilo;
+          if (!nome || nome === user.email?.split('@')[0]) { if (ds.nome) nome = ds.nome; }
+        }
+      }
+    } catch (e) { console.warn('robinson-nav: errore lettura profilo', e); }
 
     const avatarHtml = foto
       ? `<img src="${foto}" alt="${nome}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;border:2px solid var(--oro);">`

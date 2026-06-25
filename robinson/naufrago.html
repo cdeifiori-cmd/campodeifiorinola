@@ -765,9 +765,10 @@ async function toggleZona(zona, card) {
 async function loadForziere() {
   const list = document.getElementById('forziere-list');
   try {
-    const snap = await getDocs(query(collection(db, 'robinson_diari', pageUid, 'posts'), orderBy('__name__', 'desc')));
+    const snap = await getDocs(collection(db, 'robinson_diari', pageUid, 'posts'));
     if (snap.empty) { list.innerHTML = '<div class="empty-msg">Nessun giorno nel forziere ancora.</div>'; return; }
-    list.innerHTML = snap.docs.map(d => {
+    const docs = snap.docs.slice().sort((a, b) => b.id.localeCompare(a.id));
+    list.innerHTML = docs.map(d => {
       const data = d.data();
       return `<div class="ricordo-item" data-id="${esc(d.id)}">
         <span class="ricordo-data">🔒 ${esc(d.id)}</span>
@@ -775,7 +776,7 @@ async function loadForziere() {
       </div>`;
     }).join('');
     list.querySelectorAll('.ricordo-item').forEach(item => {
-      item.addEventListener('click', () => apriForziere(item.dataset.id, snap.docs.find(d => d.id === item.dataset.id)?.data()));
+      item.addEventListener('click', () => apriForziere(item.dataset.id, docs.find(d => d.id === item.dataset.id)?.data()));
     });
   } catch(e) {
     list.innerHTML = `<div style="color:var(--rosso);padding:12px;">Errore: ${esc(e.message)}</div>`;
