@@ -57,6 +57,12 @@
     .ci-foto-img { width:80px; height:80px; border-radius:50%; object-fit:cover; border:3px solid #c8860a; background:#c8b89a; }
     .ci-foto-btn { font-size:0.78rem; background:#1a3a5c; color:#c8860a; border:none; border-radius:6px; padding:5px 10px; cursor:pointer; font-family:'Lora',serif; }
     .ci-isola-grid { display:flex; flex-direction:column; gap:8px; }
+    /* Accordion carta */
+    .ci-accordion-body { overflow:hidden; max-height:0; transition:max-height 0.35s ease; }
+    .ci-accordion-body.open { max-height:2000px; }
+    .ci-accordion-toggle { display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none; }
+    .ci-accordion-arrow { transition:transform 0.25s ease; display:inline-block; }
+    .ci-accordion-arrow.open { transform:rotate(180deg); }
   </style>
 </head>
 <body>
@@ -260,8 +266,8 @@
 
     <!-- IDENTIFICAZIONE -->
     <div class="ci-sezione">
-      <div class="ci-sezione-header">🪪 Identificazione</div>
-      <div class="ci-sezione-body">
+      <div class="ci-sezione-header ci-accordion-toggle">🪪 Identificazione<span class="ci-accordion-arrow open">▼</span></div>
+      <div class="ci-sezione-body ci-accordion-body open">
         <div class="ci-foto-wrap">
           <img id="ci-foto-img" class="ci-foto-img" src="" alt="foto profilo">
           <button class="ci-foto-btn" id="ci-foto-btn" style="display:none;">📷 Cambia foto</button>
@@ -293,8 +299,8 @@
 
     <!-- RITRATTO -->
     <div class="ci-sezione">
-      <div class="ci-sezione-header">🖼️ Ritratto di Me</div>
-      <div class="ci-sezione-body">
+      <div class="ci-sezione-header ci-accordion-toggle">🖼️ Ritratto di Me<span class="ci-accordion-arrow">▼</span></div>
+      <div class="ci-sezione-body ci-accordion-body">
         <div class="ci-campo">
           <label>Mi descrivo con tre parole</label>
           <div class="ci-tre-parole">
@@ -312,8 +318,8 @@
 
     <!-- BUSSOLA -->
     <div class="ci-sezione">
-      <div class="ci-sezione-header">🧭 La Mia Bussola</div>
-      <div class="ci-sezione-body">
+      <div class="ci-sezione-header ci-accordion-toggle">🧭 La Mia Bussola<span class="ci-accordion-arrow">▼</span></div>
+      <div class="ci-sezione-body ci-accordion-body">
         <div class="ci-campo"><label>Cosa mi rende felice?</label><textarea id="ci-felice" placeholder="…"></textarea></div>
         <div class="ci-campo"><label>Cosa mi fa arrabbiare?</label><textarea id="ci-arrabbia" placeholder="…"></textarea></div>
         <div class="ci-campo"><label>Quando sono triste, cosa mi aiuta?</label><textarea id="ci-triste" placeholder="…"></textarea></div>
@@ -322,8 +328,8 @@
 
     <!-- RISORSE -->
     <div class="ci-sezione">
-      <div class="ci-sezione-header">🤝 Le Mie Risorse</div>
-      <div class="ci-sezione-body">
+      <div class="ci-sezione-header ci-accordion-toggle">🤝 Le Mie Risorse<span class="ci-accordion-arrow">▼</span></div>
+      <div class="ci-sezione-body ci-accordion-body">
         <div class="ci-campo">
           <label>Le persone su cui posso contare</label>
           <input type="text" id="ci-persona1" placeholder="prima persona…" style="margin-bottom:6px;">
@@ -351,24 +357,24 @@
 
     <!-- SFIDA -->
     <div class="ci-sezione">
-      <div class="ci-sezione-header">⚔️ La Mia Sfida</div>
-      <div class="ci-sezione-body">
+      <div class="ci-sezione-header ci-accordion-toggle">⚔️ La Mia Sfida<span class="ci-accordion-arrow">▼</span></div>
+      <div class="ci-sezione-body ci-accordion-body">
         <div class="ci-campo"><label>Durante questa avventura vorrei riuscire a…</label><textarea id="ci-sfida" placeholder="…"></textarea></div>
       </div>
     </div>
 
     <!-- MOTTO -->
     <div class="ci-sezione">
-      <div class="ci-sezione-header">💬 Il Mio Motto</div>
-      <div class="ci-sezione-body">
+      <div class="ci-sezione-header ci-accordion-toggle">💬 Il Mio Motto<span class="ci-accordion-arrow">▼</span></div>
+      <div class="ci-sezione-body ci-accordion-body">
         <div class="ci-campo"><label>Una frase che mi rappresenta oggi</label><textarea id="ci-motto" placeholder="…"></textarea></div>
       </div>
     </div>
 
     <!-- ISOLA DESERTA -->
     <div class="ci-sezione">
-      <div class="ci-sezione-header">🏝️ Cosa Porterei su un'Isola Deserta</div>
-      <div class="ci-sezione-body">
+      <div class="ci-sezione-header ci-accordion-toggle">🏝️ Cosa Porterei su un'Isola Deserta<span class="ci-accordion-arrow">▼</span></div>
+      <div class="ci-sezione-body ci-accordion-body">
         <div class="ci-isola-grid">
           <div class="ci-campo"><label>📚 Un libro</label><input type="text" id="id-libro" placeholder="scrivi qui..."></div>
           <div class="ci-campo"><label>🎵 Una canzone</label><input type="text" id="id-canzone" placeholder="scrivi qui..."></div>
@@ -409,27 +415,36 @@
     <div class="ci-sezione" id="dicono-sezione">
       <div class="ci-sezione-header">💬 Dicono di me</div>
       <div class="ci-sezione-body" style="padding:10px 12px;">
-        <div id="dicono-form" style="display:none;margin-bottom:12px;">
-          <textarea id="dicono-testo" placeholder="Scrivi qualcosa su questo naufrago..." rows="3" style="width:100%;padding:8px 10px;border:1.5px solid #c8b89a;border-radius:6px;font-family:'Lora',serif;font-size:0.88rem;background:#fff8ee;resize:vertical;box-sizing:border-box;"></textarea>
-          <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;align-items:center;">
-            <button id="dicono-foto-btn" style="background:#1a3a5c;color:#c8860a;border:none;border-radius:6px;padding:5px 10px;cursor:pointer;font-family:'Lora',serif;font-size:0.78rem;">📷 Foto</button>
-            <button id="dicono-video-btn" style="background:#1a3a5c;color:#c8860a;border:none;border-radius:6px;padding:5px 10px;cursor:pointer;font-family:'Lora',serif;font-size:0.78rem;">🎥 Video</button>
-            <input type="file" id="dicono-foto-inp" accept="image/*" style="display:none;">
-            <input type="file" id="dicono-video-inp" accept="video/*" style="display:none;">
-            <span id="dicono-media-nome" style="font-size:0.75rem;color:var(--muted);"></span>
+        <!-- Form solo per visitatori -->
+        <div id="dicono-form" style="display:none;margin-bottom:14px;background:#fff8ee;border:1.5px solid #c8b89a;border-radius:8px;padding:10px;">
+          <textarea id="dicono-testo" placeholder="Scrivi qualcosa su questo naufrago..." rows="3" style="width:100%;padding:8px 10px;border:1.5px solid #c8b89a;border-radius:6px;font-family:'Lora',serif;font-size:0.88rem;background:#fff;resize:vertical;box-sizing:border-box;"></textarea>
+          <div id="dicono-preview" style="margin-top:8px;display:none;position:relative;"></div>
+          <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
+            <button id="db-foto" title="Foto da libreria" style="background:#1a3a5c;color:#c8860a;border:none;border-radius:6px;padding:5px 8px;cursor:pointer;font-size:0.8rem;">📷</button>
+            <button id="db-cam" title="Scatta foto" style="background:#1a3a5c;color:#c8860a;border:none;border-radius:6px;padding:5px 8px;cursor:pointer;font-size:0.8rem;">📸</button>
+            <button id="db-video" title="Video da libreria" style="background:#1a3a5c;color:#c8860a;border:none;border-radius:6px;padding:5px 8px;cursor:pointer;font-size:0.8rem;">🎥</button>
+            <button id="db-vcam" title="Registra video" style="background:#1a3a5c;color:#c8860a;border:none;border-radius:6px;padding:5px 8px;cursor:pointer;font-size:0.8rem;">🎥📷</button>
+            <button id="db-audio" title="Audio da file" style="background:#1a3a5c;color:#c8860a;border:none;border-radius:6px;padding:5px 8px;cursor:pointer;font-size:0.8rem;">🎵</button>
+            <button id="db-rec" title="Registra audio" style="background:#1a3a5c;color:#c8860a;border:none;border-radius:6px;padding:5px 8px;cursor:pointer;font-size:0.8rem;">🎤</button>
           </div>
-          <div id="dicono-upload-progress" style="display:none;margin-top:6px;font-size:0.78rem;color:#c8860a;">⏳ Caricamento...</div>
+          <input type="file" id="db-inp-foto" accept="image/*" style="display:none;">
+          <input type="file" id="db-inp-cam" accept="image/*" capture="environment" style="display:none;">
+          <input type="file" id="db-inp-video" accept="video/*" style="display:none;">
+          <input type="file" id="db-inp-vcam" accept="video/*" capture="environment" style="display:none;">
+          <input type="file" id="db-inp-audio" accept="audio/*" style="display:none;">
+          <div id="dicono-progress" style="display:none;margin-top:6px;font-size:0.78rem;color:#c8860a;">⏳ Caricamento...</div>
           <button id="dicono-pubblica-btn" class="btn btn-primary" style="margin-top:8px;width:100%;">📨 Pubblica</button>
-          <div id="dicono-msg" style="margin-top:6px;font-size:0.78rem;"></div>
+          <div id="dicono-msg" style="margin-top:4px;font-size:0.78rem;"></div>
         </div>
-        <div id="dicono-feed"></div>
+        <!-- Feed -->
+        <div id="dicono-feed" style="display:flex;flex-direction:column;gap:10px;"></div>
       </div>
     </div>
 
     <!-- FIRMA -->
     <div class="ci-sezione">
-      <div class="ci-sezione-header">✍️ Firma</div>
-      <div class="ci-sezione-body">
+      <div class="ci-sezione-header ci-accordion-toggle">✍️ Firma<span class="ci-accordion-arrow">▼</span></div>
+      <div class="ci-sezione-body ci-accordion-body">
         <div class="ci-campo"><label>La tua firma</label><input type="text" id="ci-firma" class="ci-firma-input" placeholder="firma qui…"></div>
       </div>
     </div>
@@ -512,6 +527,7 @@ requireAuth(async user => {
   }
   if (!isOwner && !isAdmin) lockAllForms();
   setupDicono(user);
+  initAccordion();
 });
 
 // ── Tabs ─────────────────────────────────────────────────────────────────
@@ -521,6 +537,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    if (btn.dataset.tab === 'carta') initAccordion();
   });
 });
 
@@ -1228,216 +1245,340 @@ function setupCartaIdentita() {
 }
 
 // ── Dicono di me ──────────────────────────────────────────────────────────
-let diconoCurrentUser = null;
+const SKIN_TONES = ['', '🏻', '🏼', '🏽', '🏾', '🏿'];
+let skinTone = localStorage.getItem('skinTone') || '';
+let diconoMediaFile = null;
+let diconoMediaType = null;
+let diconoMediaRecorder = null;
+let diconoAudioChunks = [];
+let diconoFeedUnsub = null;
 
-async function setupDicono(user) {
-  diconoCurrentUser = user;
-  const form = document.getElementById('dicono-form');
-  if (form) form.style.display = isOwner ? 'none' : 'block';
-  await loadDiconoFeed();
-  setupDiconoForm(user);
+function getMimeType() {
+  const types = ['audio/webm', 'audio/mp4', 'audio/ogg'];
+  for (const t of types) { if (MediaRecorder.isTypeSupported(t)) return t; }
+  return '';
 }
 
-async function loadDiconoFeed() {
-  const feed = document.getElementById('dicono-feed');
-  if (!feed) return;
-  feed.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:0.8rem;">⏳</div>';
-  try {
-    const snap = await getDocs(query(
-      collection(db, 'robinson_dicono', pageUid, 'posts'),
-      orderBy('timestamp', 'desc')
-    ));
-    if (snap.empty) {
-      feed.innerHTML = '<div style="text-align:center;color:var(--muted);font-style:italic;font-size:0.82rem;padding:10px;">Ancora nessun messaggio. Sii il primo!</div>';
-      return;
-    }
-    feed.innerHTML = '';
-    for (const d of snap.docs) {
-      const el = await renderDiconoPost(d.id, d.data());
-      feed.appendChild(el);
-    }
-  } catch(e) {
-    feed.innerHTML = `<div style="color:var(--rosso);font-size:0.8rem;">Errore: ${esc(e.message)}</div>`;
+function setupDicono(user) {
+  const isOwnerLocal = user && user.uid === pageUid;
+  if (!isOwnerLocal && user) {
+    document.getElementById('dicono-form').style.display = 'block';
+    setupDiconoForm(user);
   }
-}
-
-async function renderDiconoPost(postId, data) {
-  const wrap = document.createElement('div');
-  wrap.className = 'dicono-post';
-  wrap.dataset.id = postId;
-  wrap.style.cssText = 'background:#faf7f0;border:1.5px solid #c8b89a;border-radius:8px;padding:10px 12px;margin-bottom:10px;';
-
-  const nomeAutore = data.autoreNome || 'Naufrago';
-  const fotoAutore = data.autoreFoto || '';
-  const dataStr = data.timestamp?.toDate ? data.timestamp.toDate().toLocaleDateString('it-IT', {day:'2-digit',month:'short',year:'numeric'}) : '';
-  const puoEliminare = diconoCurrentUser && (diconoCurrentUser.uid === data.autorId || isAdmin);
-
-  wrap.innerHTML = `
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-      ${fotoAutore ? `<img src="${esc(fotoAutore)}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;border:1.5px solid #c8860a;">` : '<span style="font-size:1rem;">⚓</span>'}
-      <span style="font-weight:600;font-size:0.82rem;color:#1a3a5c;">${esc(nomeAutore)}</span>
-      <span style="font-size:0.7rem;color:var(--muted);margin-left:auto;">${esc(dataStr)}</span>
-      ${puoEliminare ? `<button class="dicono-del-btn" data-id="${esc(postId)}" style="background:none;border:none;cursor:pointer;color:var(--rosso);font-size:0.85rem;padding:2px 4px;">🗑️</button>` : ''}
-    </div>
-    ${data.testo ? `<p style="font-size:0.88rem;color:#2c1810;margin:0 0 6px;white-space:pre-wrap;">${esc(data.testo)}</p>` : ''}
-    ${data.mediaUrl && data.mediaType === 'image' ? `<img src="${esc(data.mediaUrl)}" style="max-width:100%;border-radius:6px;margin-bottom:6px;">` : ''}
-    ${data.mediaUrl && data.mediaType === 'video' ? `<video src="${esc(data.mediaUrl)}" controls style="max-width:100%;border-radius:6px;margin-bottom:6px;"></video>` : ''}
-    <div class="dicono-reactions" style="display:flex;gap:4px;flex-wrap:wrap;margin-top:6px;" data-pid="${esc(postId)}"></div>
-    <div style="margin-top:8px;border-top:1px solid #f0e8d8;padding-top:8px;">
-      <div class="dicono-commenti-list" data-pid="${esc(postId)}"></div>
-      <div style="display:flex;gap:6px;margin-top:6px;">
-        <input type="text" class="dicono-commento-inp" placeholder="Commenta..." style="flex:1;padding:5px 8px;border:1.5px solid #c8b89a;border-radius:6px;font-family:'Lora',serif;font-size:0.82rem;background:#fff8ee;">
-        <button class="dicono-commento-btn" data-pid="${esc(postId)}" style="background:#1a3a5c;color:#c8860a;border:none;border-radius:6px;padding:5px 10px;cursor:pointer;font-size:0.78rem;">↩</button>
-      </div>
-    </div>`;
-
-  await loadDiconoReactions(wrap.querySelector('.dicono-reactions'), postId);
-  await loadDiconoCommenti(wrap.querySelector('.dicono-commenti-list'), postId);
-
-  wrap.querySelector('.dicono-del-btn')?.addEventListener('click', async () => {
-    if (!confirm('Eliminare questo post?')) return;
-    await deleteDoc(doc(db, 'robinson_dicono', pageUid, 'posts', postId));
-    wrap.remove();
-  });
-
-  wrap.querySelector('.dicono-commento-btn')?.addEventListener('click', async () => {
-    if (!diconoCurrentUser) return;
-    const inp = wrap.querySelector('.dicono-commento-inp');
-    const testo = inp.value.trim();
-    if (!testo) return;
-    let nomeC = diconoCurrentUser.displayName || '';
-    let fotoC = '';
-    try {
-      const su = await getDoc(doc(db, 'utenti', diconoCurrentUser.uid));
-      if (su.exists()) { nomeC = su.data().nome || nomeC; fotoC = su.data().fotoProfilo || ''; }
-    } catch(_) {}
-    await addDoc(collection(db, 'robinson_dicono', pageUid, 'posts', postId, 'commenti'), {
-      testo, autorId: diconoCurrentUser.uid, autoreNome: nomeC, autoreFoto: fotoC,
-      timestamp: serverTimestamp()
-    });
-    inp.value = '';
-    await loadDiconoCommenti(wrap.querySelector('.dicono-commenti-list'), postId);
-  });
-
-  return wrap;
-}
-
-const EMOJIS_D = ['❤️','😂','👏','🔥','😢'];
-
-async function loadDiconoReactions(container, postId) {
-  if (!container) return;
-  try {
-    const snap = await getDocs(collection(db, 'robinson_dicono', pageUid, 'posts', postId, 'reactions'));
-    const counts = {};
-    const myReactions = new Set();
-    snap.forEach(d => {
-      const e = d.data().emoji;
-      counts[e] = (counts[e]||0) + 1;
-      if (diconoCurrentUser && d.data().uid === diconoCurrentUser.uid) myReactions.add(e);
-    });
-    container.innerHTML = EMOJIS_D.map(e => {
-      const c = counts[e] || 0;
-      const active = myReactions.has(e);
-      return `<button class="dicono-react-btn" data-emoji="${e}" style="background:${active?'#c8860a22':'#fff8ee'};border:1.5px solid ${active?'#c8860a':'#c8b89a'};border-radius:20px;padding:3px 8px;cursor:pointer;font-size:0.82rem;display:flex;align-items:center;gap:3px;">${e}${c>0?`<span style="font-size:0.72rem;color:#1a3a5c;">${c}</span>`:''}</button>`;
-    }).join('');
-    container.querySelectorAll('.dicono-react-btn').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        if (!diconoCurrentUser) return;
-        const emoji = btn.dataset.emoji;
-        const rId = diconoCurrentUser.uid + '_' + emoji;
-        const rRef = doc(db, 'robinson_dicono', pageUid, 'posts', postId, 'reactions', rId);
-        const rSnap = await getDoc(rRef);
-        if (rSnap.exists()) { await deleteDoc(rRef); }
-        else { await setDoc(rRef, { uid: diconoCurrentUser.uid, emoji, timestamp: serverTimestamp() }); }
-        await loadDiconoReactions(container, postId);
-      });
-    });
-  } catch(_) {}
-}
-
-async function loadDiconoCommenti(container, postId) {
-  if (!container) return;
-  try {
-    const snap = await getDocs(query(collection(db, 'robinson_dicono', pageUid, 'posts', postId, 'commenti'), orderBy('timestamp', 'asc')));
-    if (snap.empty) { container.innerHTML = ''; return; }
-    container.innerHTML = snap.docs.map(d => {
-      const c = d.data();
-      const dataC = c.timestamp?.toDate ? c.timestamp.toDate().toLocaleDateString('it-IT') : '';
-      return `<div style="display:flex;gap:6px;align-items:flex-start;margin-bottom:6px;">
-        ${c.autoreFoto ? `<img src="${esc(c.autoreFoto)}" style="width:22px;height:22px;border-radius:50%;object-fit:cover;flex-shrink:0;">` : '<span style="font-size:0.8rem;flex-shrink:0;">⚓</span>'}
-        <div style="background:#fff8ee;border:1px solid #e8d8c0;border-radius:6px;padding:4px 8px;flex:1;">
-          <span style="font-weight:600;font-size:0.75rem;color:#1a3a5c;">${esc(c.autoreNome||'')}</span>
-          <span style="font-size:0.72rem;color:var(--muted);margin-left:4px;">${esc(dataC)}</span>
-          <div style="font-size:0.82rem;margin-top:2px;">${esc(c.testo||'')}</div>
-        </div>
-      </div>`;
-    }).join('');
-  } catch(_) {}
+  setupDiconoFeed(user);
 }
 
 function setupDiconoForm(user) {
-  if (isOwner) return;
-  let mediaFile = null;
-  let mediaType = null;
+  const bindFile = (btnId, inpId, type) => {
+    document.getElementById(btnId).addEventListener('click', () => document.getElementById(inpId).click());
+    document.getElementById(inpId).addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      diconoMediaFile = file;
+      diconoMediaType = type;
+      showDiconoPreview(file, type);
+      e.target.value = '';
+    });
+  };
+  bindFile('db-foto', 'db-inp-foto', 'image');
+  bindFile('db-cam', 'db-inp-cam', 'image');
+  bindFile('db-video', 'db-inp-video', 'video');
+  bindFile('db-vcam', 'db-inp-vcam', 'video');
+  bindFile('db-audio', 'db-inp-audio', 'audio');
 
-  const fotoBtn = document.getElementById('dicono-foto-btn');
-  const videoBtn = document.getElementById('dicono-video-btn');
-  const fotoInp = document.getElementById('dicono-foto-inp');
-  const videoInp = document.getElementById('dicono-video-inp');
-  const mediaNome = document.getElementById('dicono-media-nome');
-
-  fotoBtn?.addEventListener('click', () => fotoInp?.click());
-  videoBtn?.addEventListener('click', () => videoInp?.click());
-
-  fotoInp?.addEventListener('change', e => {
-    if (e.target.files[0]) { mediaFile = e.target.files[0]; mediaType = 'image'; mediaNome.textContent = mediaFile.name; }
-  });
-  videoInp?.addEventListener('change', e => {
-    if (e.target.files[0]) { mediaFile = e.target.files[0]; mediaType = 'video'; mediaNome.textContent = mediaFile.name; }
-  });
-
-  document.getElementById('dicono-pubblica-btn')?.addEventListener('click', async () => {
-    const testo = document.getElementById('dicono-testo')?.value.trim() || '';
-    if (!testo && !mediaFile) return;
-    const msg = document.getElementById('dicono-msg');
-    const progress = document.getElementById('dicono-upload-progress');
-    const btn = document.getElementById('dicono-pubblica-btn');
-    btn.disabled = true;
-
-    let mediaUrl = '';
-    if (mediaFile) {
-      progress.style.display = 'block';
-      const fd = new FormData();
-      fd.append('file', mediaFile);
-      fd.append('upload_preset', CLOUD_PRESET);
-      fd.append('cloud_name', CLOUD_NAME);
-      const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${mediaType === 'video' ? 'video' : 'image'}/upload`, { method:'POST', body:fd });
-      const json = await res.json();
-      mediaUrl = json.secure_url || '';
-      progress.style.display = 'none';
+  // MediaRecorder audio
+  const recBtn = document.getElementById('db-rec');
+  let isRec = false;
+  recBtn.addEventListener('click', async () => {
+    if (!isRec) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const mimeType = getMimeType();
+        diconoMediaRecorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+        diconoAudioChunks = [];
+        diconoMediaRecorder.ondataavailable = e => { if (e.data.size > 0) diconoAudioChunks.push(e.data); };
+        diconoMediaRecorder.onstop = () => {
+          const blob = new Blob(diconoAudioChunks, { type: diconoMediaRecorder.mimeType || 'audio/webm' });
+          const ext = (diconoMediaRecorder.mimeType || 'audio/webm').includes('mp4') ? 'mp4' : (diconoMediaRecorder.mimeType || '').includes('ogg') ? 'ogg' : 'webm';
+          diconoMediaFile = new File([blob], 'registrazione.' + ext, { type: blob.type });
+          diconoMediaType = 'audio';
+          showDiconoPreview(diconoMediaFile, 'audio');
+          stream.getTracks().forEach(t => t.stop());
+        };
+        diconoMediaRecorder.start();
+        isRec = true;
+        recBtn.textContent = '⏹️';
+        recBtn.title = 'Ferma registrazione';
+      } catch (err) {
+        alert('Microfono non disponibile: ' + err.message);
+      }
+    } else {
+      diconoMediaRecorder.stop();
+      isRec = false;
+      recBtn.textContent = '🎤';
+      recBtn.title = 'Registra audio';
     }
+  });
 
-    let nomeAutore = user.displayName || '';
-    let fotoAutore = '';
+  document.getElementById('dicono-pubblica-btn').addEventListener('click', () => pubblicaDicono(user));
+}
+
+function showDiconoPreview(file, type) {
+  const preview = document.getElementById('dicono-preview');
+  preview.innerHTML = '';
+  const url = URL.createObjectURL(file);
+  let el;
+  if (type === 'image') { el = document.createElement('img'); el.src = url; el.style.cssText = 'max-width:100%;max-height:200px;border-radius:6px;'; }
+  else if (type === 'video') { el = document.createElement('video'); el.src = url; el.controls = true; el.style.cssText = 'max-width:100%;border-radius:6px;'; }
+  else { el = document.createElement('audio'); el.src = url; el.controls = true; el.style.width = '100%'; }
+  const rmBtn = document.createElement('button');
+  rmBtn.textContent = '✕';
+  rmBtn.title = 'Rimuovi allegato';
+  rmBtn.style.cssText = 'position:absolute;top:4px;right:4px;background:#c0392b;color:#fff;border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:0.75rem;line-height:1;';
+  rmBtn.addEventListener('click', () => { diconoMediaFile = null; diconoMediaType = null; preview.style.display = 'none'; preview.innerHTML = ''; });
+  preview.style.position = 'relative';
+  preview.appendChild(el);
+  preview.appendChild(rmBtn);
+  preview.style.display = 'block';
+}
+
+async function pubblicaDicono(user) {
+  const testo = document.getElementById('dicono-testo').value.trim();
+  if (!testo && !diconoMediaFile) { document.getElementById('dicono-msg').textContent = 'Scrivi qualcosa o aggiungi un media.'; return; }
+  const msg = document.getElementById('dicono-msg');
+  const prog = document.getElementById('dicono-progress');
+  const btn = document.getElementById('dicono-pubblica-btn');
+  btn.disabled = true;
+  msg.textContent = '';
+  let mediaUrl = null;
+  let mediaKind = null;
+  if (diconoMediaFile) {
+    prog.style.display = 'block';
     try {
-      const su = await getDoc(doc(db, 'utenti', user.uid));
-      if (su.exists()) { nomeAutore = su.data().nome || nomeAutore; fotoAutore = su.data().fotoProfilo || ''; }
-    } catch(_) {}
-
+      const fd = new FormData();
+      fd.append('file', diconoMediaFile);
+      fd.append('upload_preset', CLOUD_PRESET);
+      const rtype = diconoMediaType === 'image' ? 'image' : 'video';
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${rtype}/upload`, { method: 'POST', body: fd });
+      const json = await res.json();
+      mediaUrl = json.secure_url;
+      mediaKind = diconoMediaType;
+    } catch (e) {
+      msg.textContent = 'Errore upload: ' + e.message;
+      btn.disabled = false;
+      prog.style.display = 'none';
+      return;
+    }
+    prog.style.display = 'none';
+  }
+  try {
+    const nomeAutore = await risolviNome(user.uid);
+    const fotoAutore = user.photoURL || '';
     await addDoc(collection(db, 'robinson_dicono', pageUid, 'posts'), {
-      testo, mediaUrl, mediaType: mediaUrl ? mediaType : '',
-      autorId: user.uid, autoreNome: nomeAutore, autoreFoto: fotoAutore,
+      uid: user.uid,
+      nomeAutore,
+      fotoAutore,
+      testo,
+      mediaUrl,
+      mediaKind,
       timestamp: serverTimestamp()
     });
-
-    if (typeof aggiungiPunteggio === 'function') aggiungiPunteggio(user.uid, 'post');
-
     document.getElementById('dicono-testo').value = '';
-    mediaFile = null; mediaType = null; mediaNome.textContent = '';
-    btn.disabled = false;
-    msg.style.color = 'var(--oro)'; msg.textContent = '✅ Pubblicato!';
-    setTimeout(() => msg.textContent = '', 2000);
-    await loadDiconoFeed();
+    diconoMediaFile = null;
+    diconoMediaType = null;
+    const preview = document.getElementById('dicono-preview');
+    preview.innerHTML = '';
+    preview.style.display = 'none';
+    msg.style.color = 'green';
+    msg.textContent = 'Pubblicato!';
+    setTimeout(() => { msg.textContent = ''; }, 2000);
+  } catch (e) {
+    msg.style.color = 'red';
+    msg.textContent = 'Errore: ' + e.message;
+  }
+  btn.disabled = false;
+}
+
+function setupDiconoFeed(currentUser) {
+  if (diconoFeedUnsub) diconoFeedUnsub();
+  const feed = document.getElementById('dicono-feed');
+  feed.innerHTML = '<p style="color:#999;font-size:0.82rem;">Caricamento...</p>';
+  const q = query(collection(db, 'robinson_dicono', pageUid, 'posts'), orderBy('timestamp', 'desc'));
+  diconoFeedUnsub = onSnapshot(q, snap => {
+    feed.innerHTML = '';
+    if (snap.empty) { feed.innerHTML = '<p style="color:#999;font-size:0.82rem;text-align:center;">Nessun messaggio ancora.</p>'; return; }
+    snap.forEach(docSnap => {
+      feed.appendChild(renderDiconoPost(docSnap.id, docSnap.data(), currentUser));
+    });
+  });
+}
+
+function renderDiconoPost(postId, data, currentUser) {
+  const isAdminLocal = currentUser && currentUser.email && currentUser.email.includes('admin');
+  const canDelete = currentUser && (currentUser.uid === data.uid || isAdmin);
+  const card = document.createElement('div');
+  card.style.cssText = 'background:#fff;border:1px solid #e0d5c5;border-radius:8px;padding:10px 12px;';
+  const ts = data.timestamp ? new Date(data.timestamp.seconds * 1000).toLocaleDateString('it-IT', { day:'2-digit', month:'short', year:'numeric' }) : '';
+  let mediaHtml = '';
+  if (data.mediaUrl) {
+    if (data.mediaKind === 'image') mediaHtml = `<img src="${esc(data.mediaUrl)}" style="max-width:100%;border-radius:6px;margin-top:6px;">`;
+    else if (data.mediaKind === 'video') mediaHtml = `<video src="${esc(data.mediaUrl)}" controls style="max-width:100%;border-radius:6px;margin-top:6px;"></video>`;
+    else mediaHtml = `<audio src="${esc(data.mediaUrl)}" controls style="width:100%;margin-top:6px;"></audio>`;
+  }
+  // Support legacy field names (autoreNome/autoreFoto/autorId)
+  const nomeDisplay = data.nomeAutore || data.autoreNome || 'Anonimo';
+  const fotoDisplay = data.fotoAutore || data.autoreFoto || '';
+  const testoDisplay = data.testo || '';
+  card.innerHTML = `
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+      <img src="${esc(fotoDisplay || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(nomeDisplay))}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;border:1.5px solid #c8b89a;">
+      <span style="font-weight:600;font-size:0.85rem;color:#1a3a5c;">${esc(nomeDisplay)}</span>
+      <span style="font-size:0.75rem;color:#999;margin-left:auto;">${esc(ts)}</span>
+      ${canDelete ? `<button class="dp-del" data-id="${esc(postId)}" style="background:none;border:none;color:#c0392b;cursor:pointer;font-size:0.8rem;padding:2px 4px;" title="Elimina">🗑️</button>` : ''}
+    </div>
+    ${testoDisplay ? `<p style="margin:0 0 4px;font-size:0.87rem;color:#333;white-space:pre-wrap;">${esc(testoDisplay)}</p>` : ''}
+    ${mediaHtml}
+    <div class="dicono-reactions" style="margin-top:8px;"></div>
+    <div class="dicono-commenti-wrap" style="margin-top:8px;border-top:1px solid #eee;padding-top:6px;"></div>
+  `;
+  if (canDelete) {
+    card.querySelector('.dp-del').addEventListener('click', async () => {
+      if (!confirm('Eliminare questo messaggio?')) return;
+      await deleteDoc(doc(db, 'robinson_dicono', pageUid, 'posts', postId));
+    });
+  }
+  loadDiconoReactions(card.querySelector('.dicono-reactions'), postId, currentUser);
+  loadDiconoCommenti(card.querySelector('.dicono-commenti-wrap'), postId, currentUser);
+  return card;
+}
+
+function loadDiconoReactions(container, postId, currentUser) {
+  const reactColl = collection(db, 'robinson_dicono', pageUid, 'posts', postId, 'reactions');
+  const row = document.createElement('div');
+  row.style.cssText = 'display:flex;gap:4px;flex-wrap:wrap;align-items:center;';
+  container.appendChild(row);
+
+  function doReaction(emoji, toneStr) {
+    if (!currentUser) return;
+    const key = currentUser.uid + '_' + emoji;
+    const ref = doc(db, 'robinson_dicono', pageUid, 'posts', postId, 'reactions', key);
+    getDoc(ref).then(d => {
+      if (d.exists() && d.data().tone === toneStr) { deleteDoc(ref); }
+      else { setDoc(ref, { uid: currentUser.uid, emoji, tone: toneStr, ts: Date.now() }); }
+    });
+  }
+
+  function showTonePopup(anchorBtn, emoji) {
+    document.querySelectorAll('.tone-popup').forEach(p => p.remove());
+    const popup = document.createElement('div');
+    popup.className = 'tone-popup';
+    popup.style.cssText = 'position:absolute;background:#fff;border:1px solid #ddd;border-radius:8px;padding:4px 6px;display:flex;gap:3px;z-index:999;box-shadow:0 2px 8px rgba(0,0,0,0.15);';
+    SKIN_TONES.forEach(tone => {
+      const t = document.createElement('button');
+      t.textContent = tone ? emoji + tone : emoji;
+      t.style.cssText = 'background:none;border:none;cursor:pointer;font-size:1.1rem;padding:2px;';
+      t.addEventListener('click', () => {
+        skinTone = tone;
+        localStorage.setItem('skinTone', tone);
+        doReaction(emoji, tone);
+        popup.remove();
+      });
+      popup.appendChild(t);
+    });
+    anchorBtn.style.position = 'relative';
+    anchorBtn.appendChild(popup);
+    const close = e => { if (!popup.contains(e.target)) { popup.remove(); document.removeEventListener('click', close); } };
+    setTimeout(() => document.addEventListener('click', close), 50);
+  }
+
+  onSnapshot(reactColl, snap => {
+    row.innerHTML = '';
+    const counts = {};
+    const userTones = {};
+    snap.forEach(d => {
+      const { emoji, tone, uid } = d.data();
+      const key = emoji;
+      counts[key] = (counts[key] || 0) + 1;
+      if (currentUser && uid === currentUser.uid) userTones[key] = tone || '';
+    });
+    EMOJIS.forEach(emoji => {
+      const count = counts[emoji] || 0;
+      const btn = document.createElement('button');
+      const tone = userTones[emoji] !== undefined ? userTones[emoji] : skinTone;
+      btn.textContent = (emoji + tone) + (count > 0 ? ' ' + count : '');
+      btn.style.cssText = `background:${userTones[emoji] !== undefined ? '#fff3cd' : '#f5f0e8'};border:1px solid #ddd;border-radius:12px;padding:2px 7px;cursor:pointer;font-size:0.85rem;transition:background 0.15s;`;
+      let toneTimer = null;
+      btn.addEventListener('pointerdown', () => {
+        toneTimer = setTimeout(() => { clearTimeout(toneTimer); toneTimer = null; showTonePopup(btn, emoji); }, 400);
+      });
+      btn.addEventListener('pointerup', () => {
+        if (toneTimer) { clearTimeout(toneTimer); toneTimer = null; doReaction(emoji, skinTone); }
+      });
+      btn.addEventListener('pointercancel', () => clearTimeout(toneTimer));
+      row.appendChild(btn);
+    });
+  });
+}
+
+function loadDiconoCommenti(container, postId, currentUser) {
+  const commColl = collection(db, 'robinson_dicono', pageUid, 'posts', postId, 'commenti');
+  const list = document.createElement('div');
+  list.style.cssText = 'display:flex;flex-direction:column;gap:5px;margin-bottom:6px;';
+  container.appendChild(list);
+
+  onSnapshot(query(commColl, orderBy('ts', 'asc')), snap => {
+    list.innerHTML = '';
+    snap.forEach(d => {
+      const c = d.data();
+      const el = document.createElement('div');
+      el.style.cssText = 'font-size:0.8rem;color:#444;background:#f9f6f0;border-radius:5px;padding:4px 8px;';
+      const nomeC = c.nome || c.autoreNome || 'Anonimo';
+      const testoC = c.testo || '';
+      el.innerHTML = `<span style="font-weight:600;color:#1a3a5c;">${esc(nomeC)}</span>: ${esc(testoC)}`;
+      list.appendChild(el);
+    });
+  });
+
+  if (currentUser) {
+    const form = document.createElement('div');
+    form.style.cssText = 'display:flex;gap:5px;';
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.placeholder = 'Commenta...';
+    inp.style.cssText = 'flex:1;padding:5px 8px;border:1px solid #c8b89a;border-radius:5px;font-size:0.8rem;background:#fff;';
+    const sbtn = document.createElement('button');
+    sbtn.textContent = '↩';
+    sbtn.style.cssText = 'background:#1a3a5c;color:#c8860a;border:none;border-radius:5px;padding:5px 10px;cursor:pointer;font-size:0.85rem;';
+    sbtn.addEventListener('click', async () => {
+      const testo = inp.value.trim();
+      if (!testo) return;
+      inp.value = '';
+      const nome = await risolviNome(currentUser.uid);
+      await addDoc(commColl, { uid: currentUser.uid, nome, testo, ts: serverTimestamp() });
+    });
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter') sbtn.click(); });
+    form.appendChild(inp);
+    form.appendChild(sbtn);
+    container.appendChild(form);
+  }
+}
+
+// ── Accordion carta ───────────────────────────────────────────────────────
+function initAccordion() {
+  document.querySelectorAll('#tab-carta .ci-accordion-toggle').forEach(header => {
+    header.addEventListener('click', () => {
+      const body = header.closest('.ci-sezione').querySelector('.ci-accordion-body');
+      const arrow = header.querySelector('.ci-accordion-arrow');
+      const isOpen = body.classList.contains('open');
+      // Close all
+      document.querySelectorAll('#tab-carta .ci-accordion-body').forEach(b => b.classList.remove('open'));
+      document.querySelectorAll('#tab-carta .ci-accordion-arrow').forEach(a => a.classList.remove('open'));
+      // Open this one if it was closed
+      if (!isOpen) {
+        body.classList.add('open');
+        arrow.classList.add('open');
+      }
+    });
   });
 }
 
