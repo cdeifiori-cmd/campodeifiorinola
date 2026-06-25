@@ -6,25 +6,30 @@ export function setupNavAuth(slotId = 'nav-auth-slot') {
   const slot = document.getElementById(slotId);
   if (!slot) return;
 
-  onAuthStateChanged(auth, async user => {
+  let navResolved = false;
+  const navUnsub = onAuthStateChanged(auth, async user => {
+    if (navResolved) return;
+    navResolved = true;
+    navUnsub();
+
     if (!user) {
       const _ru = encodeURIComponent(window.location.pathname);
       slot.innerHTML = `<a href="login.html?returnUrl=${_ru}" style="color:#fff;font-size:0.85rem;text-decoration:none;padding:6px 12px;border:1px solid rgba(255,255,255,0.4);border-radius:6px;">Accedi</a>`;
       return;
     }
 
-    let nome = user.displayName || 'Naufrago';
+    let nome = user.displayName || user.email?.split('@')[0] || 'Naufrago';
     let foto = null;
     let admin = user.uid === ADMIN_UID;
     try {
       const snap = await getDoc(doc(db, 'utenti', user.uid));
       if (snap.exists()) {
         const d = snap.data();
-        nome = d.nome || nome;
-        foto = d.fotoProfilo || null;
+        if (d.nome) nome = d.nome;
+        if (d.fotoProfilo) foto = d.fotoProfilo;
         if (d.ruolo === 'admin') admin = true;
       }
-    } catch (_) {}
+    } catch (e) { console.warn('robinson-nav: errore lettura utenti', e); }
 
     const avatarHtml = foto
       ? `<img src="${foto}" alt="${nome}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;border:2px solid var(--oro);">`
