@@ -45,7 +45,6 @@
     .ci-campo input[type=text]:focus, .ci-campo input[type=date]:focus, .ci-campo textarea:focus { outline:none; border-color:#c8860a; }
     .ci-tre-parole { display:flex; gap:6px; }
     .ci-tre-parole input { flex:1; min-width:0; }
-    .ci-badge-rr { display:inline-block; background:#1a3a5c; color:#c8860a; font-family:'Playfair Display',serif; font-weight:700; font-size:1rem; letter-spacing:0.1em; padding:6px 14px; border-radius:6px; border:2px solid #c8860a; }
     .ci-field-ro { font-size:0.88rem; color:#2c1810; font-family:'Lora',serif; padding:6px 0; }
     .ci-qualita-grid { display:flex; flex-wrap:wrap; gap:6px; }
     .ci-qualita-grid label { cursor:pointer; display:flex; align-items:center; gap:5px; font-size:0.8rem; background:#fff8ee; border:1.5px solid #c8b89a; border-radius:6px; padding:4px 8px; }
@@ -273,7 +272,6 @@
         <div class="ci-campo"><label>Cognome</label><input type="text" id="ci-cognome" placeholder="il tuo cognome"></div>
         <div class="ci-campo"><label>Data di nascita</label><input type="date" id="ci-data-nascita"></div>
         <div class="ci-campo"><label>Data dello sbarco</label><div class="ci-field-ro" id="ci-sbarco">—</div></div>
-        <div class="ci-campo"><label>Codice Identificativo Robinson</label><div><span class="ci-badge-rr" id="ci-codice-rr">—</span></div></div>
         <div class="ci-campo">
           <label>Mi identifico come</label>
           <div class="rg">
@@ -1044,12 +1042,6 @@ async function inviaBottiglia() {
 }
 
 // ── Carta d'Identità ──────────────────────────────────────────────────────
-function generaCodiceRR() {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let code = 'RR-';
-  for (let i = 0; i < 5; i++) code += chars[Math.floor(Math.random() * chars.length)];
-  return code;
-}
 
 async function loadCartaIdentita() {
   try {
@@ -1087,7 +1079,6 @@ async function loadCartaIdentita() {
     document.getElementById('ci-nome').value = ci.nome || nomeBase || '';
     document.getElementById('ci-cognome').value = ci.cognome || '';
     document.getElementById('ci-data-nascita').value = ci.dataNascita || '';
-    document.getElementById('ci-codice-rr').textContent = ci.codiceRR || '—';
     if (ci.identificazione) {
       const r = document.querySelector(`input[name=ci-genere][value="${ci.identificazione}"]`);
       if (r) r.checked = true;
@@ -1178,9 +1169,6 @@ function setupCartaIdentita() {
     const msg = document.getElementById('carta-msg');
     msg.textContent = 'Salvataggio…';
 
-    // Codice RR: leggi esistente o genera
-    let codiceRR = document.getElementById('ci-codice-rr').textContent;
-    if (!codiceRR || codiceRR === '—') codiceRR = generaCodiceRR();
 
     const fixed = ['Coraggio','Pazienza','Creatività','Determinazione','Simpatia','Ironia','Fantasia','Ascolto','Generosità'];
     const qualitaChecked = Array.from(document.querySelectorAll('.ci-qualita-grid input[type=checkbox]:checked'))
@@ -1202,7 +1190,6 @@ function setupCartaIdentita() {
 
     const nome = document.getElementById('ci-nome').value.trim();
     const dati = {
-      codiceRR,
       nome,
       cognome: document.getElementById('ci-cognome').value.trim(),
       dataNascita: document.getElementById('ci-data-nascita').value,
@@ -1236,7 +1223,6 @@ function setupCartaIdentita() {
       await setDoc(doc(db, 'robinson_naufraghi', pageUid, 'carta_identita', 'dati'), dati, { merge: true });
       // Aggiorna nome e pronomi nel root
       if (nome) await setDoc(doc(db, 'robinson_naufraghi', pageUid), { nome, pronomi: dati.pronomi, genere: dati.identificazione }, { merge: true });
-      document.getElementById('ci-codice-rr').textContent = codiceRR;
       document.getElementById('ph-nome').textContent = nome || 'Naufrago';
       document.getElementById('ph-pronomi').textContent = dati.pronomi;
       msg.style.color = 'var(--oro)';
