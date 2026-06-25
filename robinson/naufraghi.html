@@ -55,13 +55,15 @@ import { requireAuth } from './js/robinson-auth.js';
 import { setupNavAuth } from './js/robinson-nav.js';
 import { esc } from './js/robinson-utils.js';
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { collection, getDocs, query, orderBy, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { collection, getDocs, query, orderBy, doc, getDoc, addDoc, deleteDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 setupNavAuth('nav-auth-slot');
 
 let allNaufraghi = [];
+let currentUserModal = null;
 
 requireAuth(async user => {
+  currentUserModal = user;
   if (user.uid === ADMIN_UID) document.getElementById('admin-banner').style.display = 'block';
   await loadNaufraghi();
 });
@@ -205,9 +207,148 @@ async function apriCartaModal(uid) {
 
     modalBody.innerHTML = html;
     modalDiarioBtn.textContent = `⚓ Entra nel diario di ${esc(nome)}`;
+
+    // Dicono di me
+    setTimeout(() => caricaModalDicono(uid), 100);
   } catch(e) {
     modalBody.innerHTML = `<div style="padding:20px;color:red;">Errore: ${esc(e.message)}</div>`;
   }
+}
+
+// ── Dicono di me nel modal ─────────────────────────────────────────────────
+const EMOJIS_MODAL = ['❤️','😂','👏','🔥','😢'];
+
+async function caricaModalDicono(uid) {
+  // Crea il container e appendilo al modalBody
+  const existing = document.getElementById('modal-dicono-wrap');
+  if (existing) existing.remove();
+
+  const wrap = document.createElement('div');
+  wrap.id = 'modal-dicono-wrap';
+  wrap.style.cssText = 'padding:0 16px 16px;';
+
+  const sezioneDiv = document.createElement('div');
+  sezioneDiv.style.cssText = 'border:2px dashed #c8860a;border-radius:8px;margin:12px 0;overflow:hidden;';
+  sezioneDiv.innerHTML = `<div style="background:#1a3a5c;color:#c8860a;font-family:'Playfair Display',serif;padding:6px 10px;font-size:0.82rem;font-weight:700;">💬 Dicono di me</div>`;
+
+  const body = document.createElement('div');
+  body.style.cssText = 'background:#faf7f0;padding:10px 12px;';
+
+  // Form (solo se loggato e non è il proprio profilo)
+  if (currentUserModal && currentUserModal.uid !== uid) {
+    const formDiv = document.createElement('div');
+    formDiv.style.marginBottom = '12px';
+    formDiv.innerHTML = `
+      <textarea id="modal-dicono-testo-${uid}" placeholder="Scrivi qualcosa su questo naufrago..." rows="2" style="width:100%;padding:7px 9px;border:1.5px solid #c8b89a;border-radius:6px;font-family:'Lora',serif;font-size:0.85rem;background:#fff8ee;resize:vertical;box-sizing:border-box;"></textarea>
+      <button id="modal-dicono-pub-${uid}" style="margin-top:7px;width:100%;background:#1a3a5c;color:#c8860a;border:none;border-radius:6px;padding:7px;cursor:pointer;font-family:'Lora',serif;font-size:0.82rem;">📨 Pubblica</button>
+      <div id="modal-dicono-msg-${uid}" style="margin-top:4px;font-size:0.75rem;"></div>`;
+    body.appendChild(formDiv);
+
+    formDiv.querySelector(`#modal-dicono-pub-${uid}`).addEventListener('click', async () => {
+      const testo = formDiv.querySelector(`#modal-dicono-testo-${uid}`).value.trim();
+      if (!testo) return;
+      const msgEl = formDiv.querySelector(`#modal-dicono-msg-${uid}`);
+      let nomeAutore = currentUserModal.displayName || '';
+      let fotoAutore = '';
+      try {
+        const su = await getDoc(doc(db, 'utenti', currentUserModal.uid));
+        if (su.exists()) { nomeAutore = su.data().nome || nomeAutore; fotoAutore = su.data().fotoProfilo || ''; }
+      } catch(_) {}
+      await addDoc(collection(db, 'robinson_dicono', uid, 'posts'), {
+        testo, mediaUrl: '', mediaType: '',
+        autorId: currentUserModal.uid, autoreNome: nomeAutore, autoreFoto: fotoAutore,
+        timestamp: serverTimestamp()
+      });
+      formDiv.querySelector(`#modal-dicono-testo-${uid}`).value = '';
+      msgEl.style.color = '#c8860a';
+      msgEl.textContent = '✅ Pubblicato!';
+      setTimeout(() => msgEl.textContent = '', 2000);
+      await renderModalFeed(uid, feedDiv);
+    });
+  }
+
+  const feedDiv = document.createElement('div');
+  feedDiv.id = `modal-dicono-feed-${uid}`;
+  body.appendChild(feedDiv);
+
+  sezioneDiv.appendChild(body);
+  wrap.appendChild(sezioneDiv);
+  document.getElementById('modal-carta-body').appendChild(wrap);
+
+  await renderModalFeed(uid, feedDiv);
+}
+
+async function renderModalFeed(uid, container) {
+  container.innerHTML = '<div style="text-align:center;font-size:0.8rem;color:#999;">⏳</div>';
+  try {
+    const snap = await getDocs(query(
+      collection(db, 'robinson_dicono', uid, 'posts'),
+      orderBy('timestamp', 'desc')
+    ));
+    if (snap.empty) {
+      container.innerHTML = '<div style="text-align:center;color:#999;font-style:italic;font-size:0.8rem;padding:8px;">Ancora nessun messaggio.</div>';
+      return;
+    }
+    container.innerHTML = '';
+    for (const d of snap.docs) {
+      const postId = d.id;
+      const data = d.data();
+      const nomeA = data.autoreNome || 'Naufrago';
+      const fotoA = data.autoreFoto || '';
+      const dataStr = data.timestamp?.toDate ? data.timestamp.toDate().toLocaleDateString('it-IT', {day:'2-digit',month:'short',year:'numeric'}) : '';
+
+      const postEl = document.createElement('div');
+      postEl.style.cssText = 'background:#fff8ee;border:1px solid #e0d0b0;border-radius:8px;padding:8px 10px;margin-bottom:8px;';
+      postEl.innerHTML = `
+        <div style="display:flex;align-items:center;gap:7px;margin-bottom:5px;">
+          ${fotoA ? `<img src="${esc(fotoA)}" style="width:24px;height:24px;border-radius:50%;object-fit:cover;border:1px solid #c8860a;">` : '<span style="font-size:0.9rem;">⚓</span>'}
+          <span style="font-weight:600;font-size:0.8rem;color:#1a3a5c;">${esc(nomeA)}</span>
+          <span style="font-size:0.68rem;color:#999;margin-left:auto;">${esc(dataStr)}</span>
+        </div>
+        ${data.testo ? `<p style="font-size:0.85rem;color:#2c1810;margin:0 0 5px;white-space:pre-wrap;">${esc(data.testo)}</p>` : ''}
+        ${data.mediaUrl && data.mediaType === 'image' ? `<img src="${esc(data.mediaUrl)}" style="max-width:100%;border-radius:5px;margin-bottom:5px;">` : ''}
+        <div class="modal-reactions-${uid}-${postId}" style="display:flex;gap:3px;flex-wrap:wrap;margin-top:4px;"></div>`;
+
+      container.appendChild(postEl);
+
+      // Reactions
+      const reactContainer = postEl.querySelector(`.modal-reactions-${uid}-${postId}`);
+      await loadModalReactions(uid, postId, reactContainer);
+    }
+  } catch(e) {
+    container.innerHTML = `<div style="color:red;font-size:0.78rem;">Errore: ${esc(e.message)}</div>`;
+  }
+}
+
+async function loadModalReactions(uid, postId, container) {
+  if (!container) return;
+  try {
+    const snap = await getDocs(collection(db, 'robinson_dicono', uid, 'posts', postId, 'reactions'));
+    const counts = {};
+    const myReactions = new Set();
+    snap.forEach(d => {
+      const e = d.data().emoji;
+      counts[e] = (counts[e]||0) + 1;
+      if (currentUserModal && d.data().uid === currentUserModal.uid) myReactions.add(e);
+    });
+    container.innerHTML = EMOJIS_MODAL.map(e => {
+      const c = counts[e] || 0;
+      const active = myReactions.has(e);
+      return `<button class="modal-react-btn" data-emoji="${e}" style="background:${active?'#c8860a22':'#f5f0e8'};border:1.5px solid ${active?'#c8860a':'#c8b89a'};border-radius:20px;padding:2px 7px;cursor:pointer;font-size:0.78rem;display:flex;align-items:center;gap:2px;">${e}${c>0?`<span style="font-size:0.68rem;color:#1a3a5c;">${c}</span>`:''}</button>`;
+    }).join('');
+    container.querySelectorAll('.modal-react-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!currentUserModal) return;
+        const emoji = btn.dataset.emoji;
+        const rId = currentUserModal.uid + '_' + emoji;
+        const rRef = doc(db, 'robinson_dicono', uid, 'posts', postId, 'reactions', rId);
+        const rSnap = await getDoc(rRef);
+        if (rSnap.exists()) await deleteDoc(rRef);
+        else await setDoc(rRef, { uid: currentUserModal.uid, emoji, timestamp: serverTimestamp() });
+        await loadModalReactions(uid, postId, container);
+      });
+    });
+  } catch(_) {}
 }
 </script>
 </body>

@@ -405,6 +405,27 @@
       </div>
     </div>
 
+    <!-- DICONO DI ME -->
+    <div class="ci-sezione" id="dicono-sezione">
+      <div class="ci-sezione-header">💬 Dicono di me</div>
+      <div class="ci-sezione-body" style="padding:10px 12px;">
+        <div id="dicono-form" style="display:none;margin-bottom:12px;">
+          <textarea id="dicono-testo" placeholder="Scrivi qualcosa su questo naufrago..." rows="3" style="width:100%;padding:8px 10px;border:1.5px solid #c8b89a;border-radius:6px;font-family:'Lora',serif;font-size:0.88rem;background:#fff8ee;resize:vertical;box-sizing:border-box;"></textarea>
+          <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;align-items:center;">
+            <button id="dicono-foto-btn" style="background:#1a3a5c;color:#c8860a;border:none;border-radius:6px;padding:5px 10px;cursor:pointer;font-family:'Lora',serif;font-size:0.78rem;">📷 Foto</button>
+            <button id="dicono-video-btn" style="background:#1a3a5c;color:#c8860a;border:none;border-radius:6px;padding:5px 10px;cursor:pointer;font-family:'Lora',serif;font-size:0.78rem;">🎥 Video</button>
+            <input type="file" id="dicono-foto-inp" accept="image/*" style="display:none;">
+            <input type="file" id="dicono-video-inp" accept="video/*" style="display:none;">
+            <span id="dicono-media-nome" style="font-size:0.75rem;color:var(--muted);"></span>
+          </div>
+          <div id="dicono-upload-progress" style="display:none;margin-top:6px;font-size:0.78rem;color:#c8860a;">⏳ Caricamento...</div>
+          <button id="dicono-pubblica-btn" class="btn btn-primary" style="margin-top:8px;width:100%;">📨 Pubblica</button>
+          <div id="dicono-msg" style="margin-top:6px;font-size:0.78rem;"></div>
+        </div>
+        <div id="dicono-feed"></div>
+      </div>
+    </div>
+
     <!-- FIRMA -->
     <div class="ci-sezione">
       <div class="ci-sezione-header">✍️ Firma</div>
@@ -490,6 +511,7 @@ requireAuth(async user => {
     setupCartaIdentita();
   }
   if (!isOwner && !isAdmin) lockAllForms();
+  setupDicono(user);
 });
 
 // ── Tabs ─────────────────────────────────────────────────────────────────
@@ -1202,6 +1224,220 @@ function setupCartaIdentita() {
       msg.style.color = 'var(--rosso,#c0392b)';
       msg.textContent = 'Errore: ' + e.message;
     }
+  });
+}
+
+// ── Dicono di me ──────────────────────────────────────────────────────────
+let diconoCurrentUser = null;
+
+async function setupDicono(user) {
+  diconoCurrentUser = user;
+  const form = document.getElementById('dicono-form');
+  if (form) form.style.display = isOwner ? 'none' : 'block';
+  await loadDiconoFeed();
+  setupDiconoForm(user);
+}
+
+async function loadDiconoFeed() {
+  const feed = document.getElementById('dicono-feed');
+  if (!feed) return;
+  feed.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:0.8rem;">⏳</div>';
+  try {
+    const snap = await getDocs(query(
+      collection(db, 'robinson_dicono', pageUid, 'posts'),
+      orderBy('timestamp', 'desc')
+    ));
+    if (snap.empty) {
+      feed.innerHTML = '<div style="text-align:center;color:var(--muted);font-style:italic;font-size:0.82rem;padding:10px;">Ancora nessun messaggio. Sii il primo!</div>';
+      return;
+    }
+    feed.innerHTML = '';
+    for (const d of snap.docs) {
+      const el = await renderDiconoPost(d.id, d.data());
+      feed.appendChild(el);
+    }
+  } catch(e) {
+    feed.innerHTML = `<div style="color:var(--rosso);font-size:0.8rem;">Errore: ${esc(e.message)}</div>`;
+  }
+}
+
+async function renderDiconoPost(postId, data) {
+  const wrap = document.createElement('div');
+  wrap.className = 'dicono-post';
+  wrap.dataset.id = postId;
+  wrap.style.cssText = 'background:#faf7f0;border:1.5px solid #c8b89a;border-radius:8px;padding:10px 12px;margin-bottom:10px;';
+
+  const nomeAutore = data.autoreNome || 'Naufrago';
+  const fotoAutore = data.autoreFoto || '';
+  const dataStr = data.timestamp?.toDate ? data.timestamp.toDate().toLocaleDateString('it-IT', {day:'2-digit',month:'short',year:'numeric'}) : '';
+  const puoEliminare = diconoCurrentUser && (diconoCurrentUser.uid === data.autorId || isAdmin);
+
+  wrap.innerHTML = `
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+      ${fotoAutore ? `<img src="${esc(fotoAutore)}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;border:1.5px solid #c8860a;">` : '<span style="font-size:1rem;">⚓</span>'}
+      <span style="font-weight:600;font-size:0.82rem;color:#1a3a5c;">${esc(nomeAutore)}</span>
+      <span style="font-size:0.7rem;color:var(--muted);margin-left:auto;">${esc(dataStr)}</span>
+      ${puoEliminare ? `<button class="dicono-del-btn" data-id="${esc(postId)}" style="background:none;border:none;cursor:pointer;color:var(--rosso);font-size:0.85rem;padding:2px 4px;">🗑️</button>` : ''}
+    </div>
+    ${data.testo ? `<p style="font-size:0.88rem;color:#2c1810;margin:0 0 6px;white-space:pre-wrap;">${esc(data.testo)}</p>` : ''}
+    ${data.mediaUrl && data.mediaType === 'image' ? `<img src="${esc(data.mediaUrl)}" style="max-width:100%;border-radius:6px;margin-bottom:6px;">` : ''}
+    ${data.mediaUrl && data.mediaType === 'video' ? `<video src="${esc(data.mediaUrl)}" controls style="max-width:100%;border-radius:6px;margin-bottom:6px;"></video>` : ''}
+    <div class="dicono-reactions" style="display:flex;gap:4px;flex-wrap:wrap;margin-top:6px;" data-pid="${esc(postId)}"></div>
+    <div style="margin-top:8px;border-top:1px solid #f0e8d8;padding-top:8px;">
+      <div class="dicono-commenti-list" data-pid="${esc(postId)}"></div>
+      <div style="display:flex;gap:6px;margin-top:6px;">
+        <input type="text" class="dicono-commento-inp" placeholder="Commenta..." style="flex:1;padding:5px 8px;border:1.5px solid #c8b89a;border-radius:6px;font-family:'Lora',serif;font-size:0.82rem;background:#fff8ee;">
+        <button class="dicono-commento-btn" data-pid="${esc(postId)}" style="background:#1a3a5c;color:#c8860a;border:none;border-radius:6px;padding:5px 10px;cursor:pointer;font-size:0.78rem;">↩</button>
+      </div>
+    </div>`;
+
+  await loadDiconoReactions(wrap.querySelector('.dicono-reactions'), postId);
+  await loadDiconoCommenti(wrap.querySelector('.dicono-commenti-list'), postId);
+
+  wrap.querySelector('.dicono-del-btn')?.addEventListener('click', async () => {
+    if (!confirm('Eliminare questo post?')) return;
+    await deleteDoc(doc(db, 'robinson_dicono', pageUid, 'posts', postId));
+    wrap.remove();
+  });
+
+  wrap.querySelector('.dicono-commento-btn')?.addEventListener('click', async () => {
+    if (!diconoCurrentUser) return;
+    const inp = wrap.querySelector('.dicono-commento-inp');
+    const testo = inp.value.trim();
+    if (!testo) return;
+    let nomeC = diconoCurrentUser.displayName || '';
+    let fotoC = '';
+    try {
+      const su = await getDoc(doc(db, 'utenti', diconoCurrentUser.uid));
+      if (su.exists()) { nomeC = su.data().nome || nomeC; fotoC = su.data().fotoProfilo || ''; }
+    } catch(_) {}
+    await addDoc(collection(db, 'robinson_dicono', pageUid, 'posts', postId, 'commenti'), {
+      testo, autorId: diconoCurrentUser.uid, autoreNome: nomeC, autoreFoto: fotoC,
+      timestamp: serverTimestamp()
+    });
+    inp.value = '';
+    await loadDiconoCommenti(wrap.querySelector('.dicono-commenti-list'), postId);
+  });
+
+  return wrap;
+}
+
+const EMOJIS_D = ['❤️','😂','👏','🔥','😢'];
+
+async function loadDiconoReactions(container, postId) {
+  if (!container) return;
+  try {
+    const snap = await getDocs(collection(db, 'robinson_dicono', pageUid, 'posts', postId, 'reactions'));
+    const counts = {};
+    const myReactions = new Set();
+    snap.forEach(d => {
+      const e = d.data().emoji;
+      counts[e] = (counts[e]||0) + 1;
+      if (diconoCurrentUser && d.data().uid === diconoCurrentUser.uid) myReactions.add(e);
+    });
+    container.innerHTML = EMOJIS_D.map(e => {
+      const c = counts[e] || 0;
+      const active = myReactions.has(e);
+      return `<button class="dicono-react-btn" data-emoji="${e}" style="background:${active?'#c8860a22':'#fff8ee'};border:1.5px solid ${active?'#c8860a':'#c8b89a'};border-radius:20px;padding:3px 8px;cursor:pointer;font-size:0.82rem;display:flex;align-items:center;gap:3px;">${e}${c>0?`<span style="font-size:0.72rem;color:#1a3a5c;">${c}</span>`:''}</button>`;
+    }).join('');
+    container.querySelectorAll('.dicono-react-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!diconoCurrentUser) return;
+        const emoji = btn.dataset.emoji;
+        const rId = diconoCurrentUser.uid + '_' + emoji;
+        const rRef = doc(db, 'robinson_dicono', pageUid, 'posts', postId, 'reactions', rId);
+        const rSnap = await getDoc(rRef);
+        if (rSnap.exists()) { await deleteDoc(rRef); }
+        else { await setDoc(rRef, { uid: diconoCurrentUser.uid, emoji, timestamp: serverTimestamp() }); }
+        await loadDiconoReactions(container, postId);
+      });
+    });
+  } catch(_) {}
+}
+
+async function loadDiconoCommenti(container, postId) {
+  if (!container) return;
+  try {
+    const snap = await getDocs(query(collection(db, 'robinson_dicono', pageUid, 'posts', postId, 'commenti'), orderBy('timestamp', 'asc')));
+    if (snap.empty) { container.innerHTML = ''; return; }
+    container.innerHTML = snap.docs.map(d => {
+      const c = d.data();
+      const dataC = c.timestamp?.toDate ? c.timestamp.toDate().toLocaleDateString('it-IT') : '';
+      return `<div style="display:flex;gap:6px;align-items:flex-start;margin-bottom:6px;">
+        ${c.autoreFoto ? `<img src="${esc(c.autoreFoto)}" style="width:22px;height:22px;border-radius:50%;object-fit:cover;flex-shrink:0;">` : '<span style="font-size:0.8rem;flex-shrink:0;">⚓</span>'}
+        <div style="background:#fff8ee;border:1px solid #e8d8c0;border-radius:6px;padding:4px 8px;flex:1;">
+          <span style="font-weight:600;font-size:0.75rem;color:#1a3a5c;">${esc(c.autoreNome||'')}</span>
+          <span style="font-size:0.72rem;color:var(--muted);margin-left:4px;">${esc(dataC)}</span>
+          <div style="font-size:0.82rem;margin-top:2px;">${esc(c.testo||'')}</div>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(_) {}
+}
+
+function setupDiconoForm(user) {
+  if (isOwner) return;
+  let mediaFile = null;
+  let mediaType = null;
+
+  const fotoBtn = document.getElementById('dicono-foto-btn');
+  const videoBtn = document.getElementById('dicono-video-btn');
+  const fotoInp = document.getElementById('dicono-foto-inp');
+  const videoInp = document.getElementById('dicono-video-inp');
+  const mediaNome = document.getElementById('dicono-media-nome');
+
+  fotoBtn?.addEventListener('click', () => fotoInp?.click());
+  videoBtn?.addEventListener('click', () => videoInp?.click());
+
+  fotoInp?.addEventListener('change', e => {
+    if (e.target.files[0]) { mediaFile = e.target.files[0]; mediaType = 'image'; mediaNome.textContent = mediaFile.name; }
+  });
+  videoInp?.addEventListener('change', e => {
+    if (e.target.files[0]) { mediaFile = e.target.files[0]; mediaType = 'video'; mediaNome.textContent = mediaFile.name; }
+  });
+
+  document.getElementById('dicono-pubblica-btn')?.addEventListener('click', async () => {
+    const testo = document.getElementById('dicono-testo')?.value.trim() || '';
+    if (!testo && !mediaFile) return;
+    const msg = document.getElementById('dicono-msg');
+    const progress = document.getElementById('dicono-upload-progress');
+    const btn = document.getElementById('dicono-pubblica-btn');
+    btn.disabled = true;
+
+    let mediaUrl = '';
+    if (mediaFile) {
+      progress.style.display = 'block';
+      const fd = new FormData();
+      fd.append('file', mediaFile);
+      fd.append('upload_preset', CLOUD_PRESET);
+      fd.append('cloud_name', CLOUD_NAME);
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${mediaType === 'video' ? 'video' : 'image'}/upload`, { method:'POST', body:fd });
+      const json = await res.json();
+      mediaUrl = json.secure_url || '';
+      progress.style.display = 'none';
+    }
+
+    let nomeAutore = user.displayName || '';
+    let fotoAutore = '';
+    try {
+      const su = await getDoc(doc(db, 'utenti', user.uid));
+      if (su.exists()) { nomeAutore = su.data().nome || nomeAutore; fotoAutore = su.data().fotoProfilo || ''; }
+    } catch(_) {}
+
+    await addDoc(collection(db, 'robinson_dicono', pageUid, 'posts'), {
+      testo, mediaUrl, mediaType: mediaUrl ? mediaType : '',
+      autorId: user.uid, autoreNome: nomeAutore, autoreFoto: fotoAutore,
+      timestamp: serverTimestamp()
+    });
+
+    if (typeof aggiungiPunteggio === 'function') aggiungiPunteggio(user.uid, 'post');
+
+    document.getElementById('dicono-testo').value = '';
+    mediaFile = null; mediaType = null; mediaNome.textContent = '';
+    btn.disabled = false;
+    msg.style.color = 'var(--oro)'; msg.textContent = '✅ Pubblicato!';
+    setTimeout(() => msg.textContent = '', 2000);
+    await loadDiconoFeed();
   });
 }
 
