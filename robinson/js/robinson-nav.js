@@ -28,6 +28,10 @@ export function setupNavAuth(slotId = 'nav-auth-slot') {
         if (d.nome) nome = d.nome;
         if (d.fotoProfilo) foto = d.fotoProfilo;
         if (d.ruolo === 'admin') admin = true;
+        console.log('Robinson nav - uid:', user.uid);
+        console.log('Robinson nav - nome:', nome);
+        console.log('Robinson nav - foto:', foto);
+        console.log('Robinson nav - dati Firestore:', d);
       }
     } catch (e) { console.warn('robinson-nav: errore lettura utenti', e); }
 
