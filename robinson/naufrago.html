@@ -104,6 +104,7 @@
       <div class="stella-item" data-cat="rabbia"><div class="stella-label">🔥 Rabbia</div><div class="stella-stars"></div></div>
       <div class="stella-item" data-cat="fiducia"><div class="stella-label">🤝 Fiducia nel gruppo</div><div class="stella-stars"></div></div>
     </div>
+    <input type="text" id="e-bussola-note" placeholder="Se vuoi, indica il perché..." style="margin-top:10px;width:100%;padding:8px 12px;border:1.5px solid #c8b89a;border-radius:8px;font-family:'Lora',serif;font-size:0.88rem;background:var(--post-bg);color:var(--inchiostro);">
   </div>
   <div class="campo-diario">
     <label>🌊 Se fossi stato/a il mare...</label>
@@ -113,23 +114,10 @@
       <label><input type="radio" name="mare" value="agitato"><span class="rl">⛈️ Agitato</span></label>
       <label><input type="radio" name="mare" value="tempesta"><span class="rl">🌪️ Tempesta</span></label>
     </div>
+    <input type="text" id="e-mare-note" placeholder="Se vuoi, indica il perché..." style="margin-top:10px;width:100%;padding:8px 12px;border:1.5px solid #c8b89a;border-radius:8px;font-family:'Lora',serif;font-size:0.88rem;background:var(--post-bg);color:var(--inchiostro);">
   </div>
   <div class="campo-diario">
-    <label>🦁 Se fossi stato/a un animale...</label>
-    <div class="rg" id="e-animale">
-      <label><input type="radio" name="animale" value="delfino"><span class="rl">🐬 Delfino</span></label>
-      <label><input type="radio" name="animale" value="aquila"><span class="rl">🦅 Aquila</span></label>
-      <label><input type="radio" name="animale" value="tartaruga"><span class="rl">🐢 Tartaruga</span></label>
-      <label><input type="radio" name="animale" value="leone"><span class="rl">🦁 Leone</span></label>
-      <label><input type="radio" name="animale" value="gatto"><span class="rl">🐱 Gatto selvatico</span></label>
-    </div>
-    <div class="campo-diario" style="margin-top:8px;">
-      <label>Perché?</label>
-      <input type="text" id="e-animale-perche" placeholder="…perché oggi mi sono sentito/a…">
-    </div>
-  </div>
-  <div class="campo-diario">
-    <label>🧭 La bussola ha puntato verso...</label>
+    <label>🧭 La bussola di domani punterà verso...</label>
     <div class="rg" id="e-bussola">
       <label><input type="radio" name="bussola" value="Amicizia"><span class="rl">🤝 Amicizia</span></label>
       <label><input type="radio" name="bussola" value="Coraggio"><span class="rl">💪 Coraggio</span></label>
@@ -137,6 +125,10 @@
       <label><input type="radio" name="bussola" value="Avventura"><span class="rl">🗺️ Avventura</span></label>
       <label><input type="radio" name="bussola" value="Casa"><span class="rl">🏡 Casa</span></label>
     </div>
+  </div>
+  <div class="campo-diario">
+    <label>📝 Altro</label>
+    <textarea id="e-altro" placeholder="C'è qualcos'altro che vuoi raccontare di come ti sei sentito oggi?" rows="4" style="width:100%;padding:9px 12px;border:1.5px solid #c8b89a;border-radius:8px;font-family:'Lora',serif;font-size:0.9rem;background:var(--post-bg);color:var(--inchiostro);resize:vertical;"></textarea>
   </div>
   <button class="btn btn-primary" id="btn-salva-emozioni">💾 Salva emozioni</button>
   <div id="emozioni-msg" style="margin-top:8px;font-size:0.8rem;"></div>
@@ -508,10 +500,11 @@ function prefillEmozioni(em) {
   if (em.stelle) {
     Object.entries(em.stelle).forEach(([k,v]) => setStelle(k, v));
   }
+  if (em.bussolaNote) document.getElementById('e-bussola-note').value = em.bussolaNote;
   if (em.mare) { const r = document.querySelector(`input[name=mare][value="${em.mare}"]`); if(r) r.checked = true; }
-  if (em.animale) { const r = document.querySelector(`input[name=animale][value="${em.animale}"]`); if(r) r.checked = true; }
-  if (em.animalePerche) document.getElementById('e-animale-perche').value = em.animalePerche;
+  if (em.mareNote) document.getElementById('e-mare-note').value = em.mareNote;
   if (em.bussola) { const r = document.querySelector(`input[name=bussola][value="${em.bussola}"]`); if(r) r.checked = true; }
+  if (em.altro) document.getElementById('e-altro').value = em.altro;
 }
 
 document.getElementById('btn-salva-emozioni').addEventListener('click', async () => {
@@ -522,10 +515,11 @@ document.getElementById('btn-salva-emozioni').addEventListener('click', async ()
   });
   const emozioni = {
     stelle,
+    bussolaNote: document.getElementById('e-bussola-note').value.trim(),
     mare: document.querySelector('input[name=mare]:checked')?.value || '',
-    animale: document.querySelector('input[name=animale]:checked')?.value || '',
-    animalePerche: document.getElementById('e-animale-perche').value.trim(),
-    bussola: document.querySelector('input[name=bussola]:checked')?.value || ''
+    mareNote: document.getElementById('e-mare-note').value.trim(),
+    bussola: document.querySelector('input[name=bussola]:checked')?.value || '',
+    altro: document.getElementById('e-altro').value.trim()
   };
   try {
     await setDoc(doc(db, 'robinson_diari', pageUid, 'posts', oggiKey), { emozioni, timestamp: serverTimestamp() }, { merge: true });
@@ -876,7 +870,7 @@ function setupProfiloEdit() {
 
 // ── Lock forms per visitatori ─────────────────────────────────────────────
 function lockAllForms(lock = true) {
-  const selectors = ['#d-approdo','#d-titolo','#d-sensazione','#r-scoperto','#r-bello','#r-scoglio','#r-tesoro','#r-rotta','#e-animale-perche'];
+  const selectors = ['#d-approdo','#d-titolo','#d-sensazione','#r-scoperto','#r-bello','#r-scoglio','#r-tesoro','#r-rotta','#e-bussola-note','#e-mare-note','#e-altro'];
   selectors.forEach(s => {
     const el = document.querySelector(s);
     if (el) el.readOnly = lock;
