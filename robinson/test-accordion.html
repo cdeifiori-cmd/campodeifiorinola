@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+.acc-toggle { background:#1a3a5c; color:#c8860a; padding:12px; cursor:pointer; margin-bottom:2px; }
+.acc-body { display:none; padding:16px; background:#faf7f0; border:1px solid #c8860a; margin-bottom:8px; }
+</style>
+</head>
+<body>
+<div>
+  <div class="acc-toggle">🪪 Sezione 1 ▼</div>
+  <div class="acc-body">Contenuto sezione 1</div>
+</div>
+<div>
+  <div class="acc-toggle">👤 Sezione 2 ▼</div>
+  <div class="acc-body">Contenuto sezione 2</div>
+</div>
+<script>
+document.querySelectorAll('.acc-toggle').forEach(function(t) {
+  t.addEventListener('click', function() {
+    var body = this.nextElementSibling;
+    body.style.display = body.style.display === 'block' ? 'none' : 'block';
+  });
+});
+</script>
+</body>
+</html>
