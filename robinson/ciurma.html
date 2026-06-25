@@ -70,13 +70,15 @@ async function loadCiurma() {
       const base = snap.docs.map(d => ({ uid: d.id, ...d.data() }));
       allCiurma = await Promise.all(base.map(async m => {
         try {
-          const snapU = await getDoc(doc(db, 'utenti', m.uid));
-          if (snapU.exists()) {
-            const du = snapU.data();
-            const foto = du.fotoProfilo || du.photoURL || m.fotoProfilo || '';
-            const nome = du.nome || du.displayName || m.nome || '';
-            return { ...m, fotoProfilo: foto, nome };
-          }
+          const [snapU, snapS] = await Promise.all([
+            getDoc(doc(db, 'utenti', m.uid)),
+            getDoc(doc(db, 'staff', m.uid))
+          ]);
+          const du = snapU.exists() ? snapU.data() : null;
+          const ds = snapS.exists() ? snapS.data() : null;
+          const foto = du?.fotoProfilo || du?.photoURL || ds?.fotoProfilo || m.fotoProfilo || '';
+          const nome = du?.nome || du?.displayName || ds?.nome || m.nome || '';
+          return { ...m, fotoProfilo: foto, nome };
         } catch (_) {}
         return m;
       }));
