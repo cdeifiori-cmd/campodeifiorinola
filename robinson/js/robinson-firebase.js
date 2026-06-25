@@ -3,7 +3,7 @@ import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-aut
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyC0KFMjiJwJy0mEpZBJfB3DOoFBe_4_kFo",
+  apiKey: "AIzaSyC18lzwqhYcW29TsEO6Oy4Bqvb2PMBUmAg",
   authDomain: "campo-dei-fiori.firebaseapp.com",
   projectId: "campo-dei-fiori",
   storageBucket: "campo-dei-fiori.appspot.com",
