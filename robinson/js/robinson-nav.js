@@ -8,7 +8,8 @@ export function setupNavAuth(slotId = 'nav-auth-slot') {
 
   onAuthStateChanged(auth, async user => {
     if (!user) {
-      slot.innerHTML = `<a href="https://campodeifiori.org/login.html" style="color:#fff;font-size:0.85rem;text-decoration:none;padding:6px 12px;border:1px solid rgba(255,255,255,0.4);border-radius:6px;">Accedi</a>`;
+      const _ru = encodeURIComponent(window.location.href);
+      slot.innerHTML = `<a href="https://campodeifiori.org/login.html?returnUrl=${_ru}" style="color:#fff;font-size:0.85rem;text-decoration:none;padding:6px 12px;border:1px solid rgba(255,255,255,0.4);border-radius:6px;">Accedi</a>`;
       return;
     }
 

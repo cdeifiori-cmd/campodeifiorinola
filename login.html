@@ -36,9 +36,15 @@
   <script type="module">
     import { login, onAuthChange } from './js/auth.js';
 
+    const returnUrl = new URLSearchParams(location.search).get('returnUrl');
+    const afterLogin = () => {
+      if (returnUrl) { location.href = returnUrl; }
+      else { location.href = 'comunita.html'; }
+    };
+
     // If already logged in, redirect
     onAuthChange(user => {
-      if (user) location.href = 'comunita.html';
+      if (user) afterLogin();
     });
 
     document.getElementById('btn-login').addEventListener('click', async () => {
@@ -49,7 +55,7 @@
       if (!email || !password) { errEl.textContent = 'Inserisci email e password.'; errEl.classList.remove('hidden'); return; }
       try {
         await login(email, password);
-        location.href = 'comunita.html';
+        afterLogin();
       } catch (e) {
         errEl.textContent = 'Credenziali non valide. Riprova.';
         errEl.classList.remove('hidden');

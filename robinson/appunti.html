@@ -39,7 +39,8 @@ import { collection, collectionGroup, getDocs, query, orderBy, limit } from "htt
 setupNavAuth('nav-auth-slot');
 
 onAuthStateChanged(auth, async user => {
-  if (!user) { location.href = 'https://campodeifiori.org/login.html'; return; }
+  if (!user) { const _ru = encodeURIComponent(window.location.href);
+      location.href = 'https://campodeifiori.org/login.html?returnUrl=' + _ru; return; }
   await loadAppunti();
 });
 

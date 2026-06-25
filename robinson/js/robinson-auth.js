@@ -32,7 +32,8 @@ export function setupNavAuth(slotId) {
   if (!slot) return;
   onAuthStateChanged(auth, async user => {
     if (!user) {
-      slot.innerHTML = `<a href="https://campodeifiori.org/login.html" style="color:#fff;font-size:0.85rem;">Accedi</a>`;
+      const returnUrl = encodeURIComponent(window.location.href);
+      slot.innerHTML = `<a href="https://campodeifiori.org/login.html?returnUrl=${returnUrl}" style="color:#fff;font-size:0.85rem;">Accedi</a>`;
       return;
     }
     let nome = user.displayName || 'Naufrago';
