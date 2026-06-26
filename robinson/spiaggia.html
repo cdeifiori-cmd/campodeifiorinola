@@ -13,7 +13,7 @@
     :root { --navy:#1a3a5c; --oro:#c8860a; --carta:#f5f0e8; --muted:#6b5c45; --rosso:#c0392b; }
 
     body {
-      background-image: url('spiaggia%20cellok.png');
+      background-image: url('spiaggia_cellok.png');
       background-size: cover;
       background-position: top center;
       background-attachment: fixed;
@@ -23,11 +23,16 @@
       padding-bottom: 90px;
     }
     @media (min-width: 769px) {
-      body { background-image: url('spiaggia%20pc.png'); }
+      body { background-image: url('spiaggia_pc.png'); }
     }
 
     /* ── Auth slot ── */
-    #nav-auth-slot-wrap { position: fixed; top: 12px; right: 12px; z-index: 300; }
+    #nav-auth-slot-wrap { position: fixed; top: 6px; right: 8px; z-index: 300; }
+    @media (max-width: 768px) {
+      #nav-auth-slot-wrap { top: auto; bottom: 80px; right: 76px; }
+      #nav-auth-slot .nav-user-name { display: none; }
+      #nav-auth-slot img { width: 28px !important; height: 28px !important; }
+    }
 
     /* Nasconde l'header img inline — usiamo solo il CSS background */
     .spiaggia-header { display: none; }
@@ -38,14 +43,14 @@
       top: 0; left: 0; right: 0;
       height: 32vw;
       max-height: 200px;
-      background-image: url('spiaggia%20cellok.png');
+      background-image: url('spiaggia_cellok.png');
       background-size: cover;
       background-position: top center;
       z-index: 100;
     }
     @media (min-width: 769px) {
       .spiaggia-header-fixed {
-        background-image: url('spiaggia%20pc.png');
+        background-image: url('spiaggia_pc.png');
         height: 12vw;
         max-height: 140px;
       }
@@ -59,13 +64,6 @@
       .spiaggia-content { padding-top: calc(min(12vw, 140px) + 8px); }
     }
 
-    /* ── Avatar utente: sopra header, non sovrapposto alla scritta ── */
-    #nav-auth-slot-wrap { z-index: 200; }
-    @media (max-width: 768px) {
-      #nav-auth-slot-wrap { top: 6px; right: 8px; }
-      #nav-auth-slot .nav-user-name { display: none; }
-      #nav-auth-slot img { width: 28px !important; height: 28px !important; }
-    }
 
     /* ── FAB nuovo post ── */
     .btn-nuovo-post {
