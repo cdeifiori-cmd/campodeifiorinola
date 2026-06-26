@@ -7,25 +7,41 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lora:ital,wght@0,400;0,600;1,400&family=Dancing+Script:wght@600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/robinson.css">
   <style>
-    body { background: #f5f0e8; }
-    #nav-auth-slot-wrap {
-      position: fixed;
-      top: 12px;
-      right: 12px;
-      z-index: 200;
-    }
+    body { background: #f5f0e8; margin: 0; }
+
+    #nav-auth-slot-wrap { position: fixed; top: 12px; right: 12px; z-index: 200; }
+
+    /* Immagine header a larghezza piena, scorre normalmente */
     .naufraghi-header { width: 100%; display: block; line-height: 0; }
     .naufraghi-header img { width: 100%; display: block; }
-    .search-bar { margin: 10px 16px; }
+
+    /* Area elenco: stessa immagine come sfondo che si estende sotto */
+    .naufraghi-content {
+      background: url('naufraghi.png') center top / cover no-repeat;
+      min-height: 60vh;
+      padding-bottom: 100px;
+    }
+
+    .search-bar { margin: 12px 16px 6px; }
+
     #grid.grid-naufraghi {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 14px;
-      padding: 8px 16px 100px;
+      padding: 8px 16px 20px;
     }
     @media (max-width: 600px) {
-      #grid.grid-naufraghi { grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 8px 10px 100px; }
+      #grid.grid-naufraghi { grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 8px 10px 20px; }
     }
+
+    /* Card semitrasparenti per integrarsi con lo sfondo illustrato */
+    .card-naufrago {
+      background: rgba(255,255,255,0.85) !important;
+      box-shadow: 0 3px 12px rgba(0,0,0,0.25);
+      border-radius: 10px;
+      backdrop-filter: blur(2px);
+    }
+    .card-naufrago:hover { background: rgba(255,255,255,0.96) !important; }
   </style>
 </head>
 <body>
@@ -38,17 +54,19 @@
   <img src="naufraghi.png" alt="I Naufraghi">
 </div>
 
-<div id="admin-banner" style="display:none;" class="admin-banner">
-  <a href="admin-classifica.html">📊 Vai alla Classifica →</a>
-</div>
+<div class="naufraghi-content">
+  <div id="admin-banner" style="display:none;" class="admin-banner">
+    <a href="admin-classifica.html">📊 Vai alla Classifica →</a>
+  </div>
 
-<div class="search-bar">
-  <span>🔍</span>
-  <input type="text" id="search-inp" placeholder="Cerca per nome...">
-</div>
+  <div class="search-bar">
+    <span>🔍</span>
+    <input type="text" id="search-inp" placeholder="Cerca per nome...">
+  </div>
 
-<div id="grid" class="grid-naufraghi">
-  <div class="spinner" style="grid-column:span 3;"></div>
+  <div id="grid" class="grid-naufraghi">
+    <div class="spinner" style="grid-column:span 3;"></div>
+  </div>
 </div>
 
 <!-- Modal Carta d'Identità -->
