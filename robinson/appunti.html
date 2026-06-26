@@ -201,17 +201,17 @@ async function loadFeed() {
         ));
         snap.forEach(d => {
           const data = d.data();
-          const hasContent =
-            (data.text && data.text.trim()) ||
-            (data.testo && data.testo.trim()) ||
-            (data.titolo && data.titolo.trim()) ||
-            (data.approdo && data.approdo.trim()) ||
-            (data.contenuto && data.contenuto.trim()) ||
-            (data.fotoUrl && data.fotoUrl.length) ||
-            (data.videoUrl && data.videoUrl.length) ||
-            (data.audioUrl && data.audioUrl.length) ||
-            (Array.isArray(data.media) && data.media.length);
-          if (!hasContent) return;
+          if (!data.timestamp) return;
+          const hasTesto = (data.testo && data.testo.trim().length > 3) ||
+                           (data.text && data.text.trim().length > 3) ||
+                           (data.titolo && data.titolo.trim().length > 3) ||
+                           (data.approdo && data.approdo.trim().length > 3) ||
+                           (data.contenuto && data.contenuto.trim().length > 3);
+          const hasFoto  = data.fotoUrl  && data.fotoUrl.startsWith('http');
+          const hasVideo = data.videoUrl && data.videoUrl.startsWith('http');
+          const hasAudio = data.audioUrl && data.audioUrl.startsWith('http');
+          const hasMedia = Array.isArray(data.media) && data.media.length > 0;
+          if (!hasTesto && !hasFoto && !hasVideo && !hasAudio && !hasMedia) return;
           eventi.push({
             _id: d.id, _fonte: 'diario',
             _collPath: `robinson_diari/${uid}/posts`,
