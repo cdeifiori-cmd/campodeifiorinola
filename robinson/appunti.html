@@ -124,7 +124,7 @@
 <script type="module">
 import { db, auth } from './js/robinson-firebase.js';
 import { setupNavAuth } from './js/robinson-nav.js';
-import { esc, fmtDate, normalizeMedia } from './js/robinson-utils.js';
+import { esc, fmtDate, normalizeMedia, risolviNome } from './js/robinson-utils.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import {
   collection, getDocs, query, orderBy, limit
@@ -206,11 +206,23 @@ async function loadFeed() {
           limit(5)
         ));
         snap.forEach(d => {
+          const data = d.data();
+          const hasContent =
+            (data.text && data.text.trim()) ||
+            (data.testo && data.testo.trim()) ||
+            (data.titolo && data.titolo.trim()) ||
+            (data.approdo && data.approdo.trim()) ||
+            (data.contenuto && data.contenuto.trim()) ||
+            (data.fotoUrl && data.fotoUrl.length) ||
+            (data.videoUrl && data.videoUrl.length) ||
+            (data.audioUrl && data.audioUrl.length) ||
+            (Array.isArray(data.media) && data.media.length);
+          if (!hasContent) return;
           eventi.push({
             _id: d.id, _fonte: 'diario',
             _collPath: `robinson_diari/${uid}/posts`,
             _uid_owner: uid, authorId: uid,
-            ...d.data()
+            ...data
           });
         });
       } catch(_) {}
@@ -247,7 +259,16 @@ async function loadFeed() {
       return;
     }
 
-    eventi.slice(0, 80).forEach(p => feed.appendChild(buildCard(p)));
+    // Risolvi nomi per i post diario che non hanno authorName
+    const slice = eventi.slice(0, 80);
+    await Promise.all(slice.map(async p => {
+      if (!p.authorName) {
+        const uid = p.authorId || p._uid_owner || '';
+        if (uid) p.authorName = await risolviNome(uid);
+      }
+    }));
+
+    slice.forEach(p => feed.appendChild(buildCard(p)));
 
   } catch(err) {
     feed.innerHTML = `<div class="empty-msg" style="color:var(--rosso);">Errore: ${esc(err.message)}</div>`;
