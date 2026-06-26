@@ -13,7 +13,7 @@
     :root { --navy:#1a3a5c; --oro:#c8860a; --carta:#f5f0e8; --muted:#6b5c45; --rosso:#c0392b; }
 
     body {
-      background-image: url('spiaggia-cell.png');
+      background-image: url('spiaggia%20cellok.png');
       background-size: cover;
       background-position: top center;
       background-attachment: fixed;
@@ -23,7 +23,7 @@
       padding-bottom: 90px;
     }
     @media (min-width: 769px) {
-      body { background-image: url('spiaggia-pc.png'); }
+      body { background-image: url('spiaggia%20pc.png'); }
     }
 
     /* ── Auth slot ── */
@@ -32,22 +32,55 @@
     /* Nasconde l'header img inline — usiamo solo il CSS background */
     .spiaggia-header { display: none; }
 
-    /* ── Compose area ── */
-    .compose-area {
-      max-width: 440px; margin: 35vh auto 0; padding: 0 16px;
+    /* ── Header fisso ── */
+    .spiaggia-header-fixed {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 22vw;
+      max-height: 160px;
+      background-image: url('spiaggia%20cellok.png');
+      background-size: cover;
+      background-position: top center;
+      z-index: 100;
     }
-    .compose-btn {
-      width: 100%;
-      background: rgba(26,58,92,0.85);
-      color: var(--oro);
-      border: 1px solid var(--oro);
-      border-radius: 8px;
-      padding: 13px 18px; font-family: 'Lora', serif; font-size: 0.95rem;
-      cursor: pointer; text-align: left; display: flex; align-items: center; gap: 10px;
-      backdrop-filter: blur(2px);
-      transition: background 0.15s;
+    @media (min-width: 769px) {
+      .spiaggia-header-fixed {
+        background-image: url('spiaggia%20pc.png');
+        height: 12vw;
+        max-height: 140px;
+      }
     }
-    .compose-btn:hover { background: rgba(15,37,64,0.95); }
+
+    /* ── Contenuto sotto header ── */
+    .spiaggia-content {
+      padding-top: calc(22vw + 8px);
+    }
+    @media (min-width: 769px) {
+      .spiaggia-content { padding-top: calc(min(12vw, 140px) + 8px); }
+    }
+
+    /* ── FAB nuovo post ── */
+    .btn-nuovo-post {
+      position: fixed;
+      bottom: 80px;
+      right: 20px;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: #c8860a;
+      color: #fff;
+      font-size: 32px;
+      border: none;
+      cursor: pointer;
+      box-shadow: 2px 4px 12px #0000004a;
+      z-index: 200;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+    }
+
+    /* ── Feed ── (compose area rimossa) */
 
     /* ── Feed ── */
     .feed { padding: 8px 16px 20px; display: flex; flex-direction: column; align-items: center; gap: 28px; }
@@ -198,20 +231,17 @@
   <div id="nav-auth-slot"></div>
 </div>
 
-<!-- Header immagine responsive -->
-<div class="spiaggia-header">
-  <img id="spiaggia-img" src="spiaggia-cell.png" alt="La Spiaggia">
+<!-- Header fisso con immagine -->
+<div class="spiaggia-header-fixed"></div>
+
+<!-- Contenuto scrollabile sotto header -->
+<div class="spiaggia-content">
+  <!-- Feed post -->
+  <div id="feed" class="feed"><div class="spinner"></div></div>
 </div>
 
-<!-- Area compose -->
-<div class="compose-area">
-  <button class="compose-btn" id="fab-new-post" style="display:none;">
-    <span>✍️</span> Scrivi qualcosa sulla spiaggia…
-  </button>
-</div>
-
-<!-- Feed post -->
-<div id="feed" class="feed"><div class="spinner"></div></div>
+<!-- FAB nuovo post -->
+<button class="btn-nuovo-post" id="fab-new-post">+</button>
 
 <!-- Modal nuovo post -->
 <div class="modal-backdrop" id="modal-backdrop">
@@ -262,12 +292,6 @@ import {
 
 setupNavAuth('nav-auth-slot');
 
-// Immagine header responsive
-const spImg = document.getElementById('spiaggia-img');
-function updateSpiaggia() { spImg.src = window.innerWidth >= 769 ? 'spiaggia-pc.png' : 'spiaggia-cell.png'; }
-updateSpiaggia();
-window.addEventListener('resize', updateSpiaggia);
-
 // Lightbox
 const lightbox = document.getElementById('lightbox');
 const lbImg = document.getElementById('lightbox-img');
@@ -292,7 +316,7 @@ onAuthStateChanged(auth, async user => {
       if (!snap.exists()) snap = await getDoc(doc(db, 'staff', user.uid));
       if (snap.exists()) currentUserData = snap.data();
     } catch(_) {}
-    document.getElementById('fab-new-post').style.display = '';
+    document.getElementById('fab-new-post').style.display = 'flex';
   }
   loadFeed();
 });
