@@ -41,25 +41,25 @@
     }
 
     /* ── Mappa ── */
-    .mappa-outer {
+    #mappa-container {
       width: 100%;
       overflow: hidden;
-      touch-action: none;
-      user-select: none;
+      position: relative;
       background: #0d2240;
-      position: relative;
+      touch-action: none;
+      cursor: grab;
+      user-select: none;
     }
-    .mappa-inner {
+    #mappa-container:active { cursor: grabbing; }
+    #mappa-inner {
       position: relative;
-      transform-origin: top left;
-      transition: transform 0.1s ease;
       display: inline-block;
-      width: 100%;
+      transform-origin: 0 0;
     }
-    .mappa-inner img {
+    #mappa-inner img {
       display: block;
       width: 100%;
-      height: auto;
+      max-width: 100%;
       pointer-events: none;
     }
 
@@ -320,12 +320,12 @@
 <div class="isola-subtitle">Dove sei stasera, naufrago?</div>
 
 <!-- Mappa -->
-<div class="mappa-outer" id="mappaOuter">
+<div id="mappa-container">
   <div class="zoom-controls">
     <button class="zoom-btn" id="zoomIn" title="Zoom +">+</button>
     <button class="zoom-btn" id="zoomOut" title="Zoom −">−</button>
   </div>
-  <div class="mappa-inner" id="mappaInner">
+  <div id="mappa-inner">
     <img src="isola.png" alt="Mappa dell'isola" id="mappaImg" draggable="false">
     <!-- Hotspot inseriti via JS -->
   </div>
@@ -478,7 +478,7 @@ onAuthStateChanged(auth, async user => {
 
 // ── Mappa & Hotspot ───────────────────────────────────────────────────────────
 function buildHotspot() {
-  const inner = document.getElementById('mappaInner');
+  const inner = document.getElementById('mappa-inner');
   inner.querySelectorAll('.hotspot').forEach(el => el.remove());
   luoghiIsola.forEach(luogo => {
     const btn = document.createElement('button');
@@ -771,49 +771,138 @@ async function caricaForziere() {
   }
 }
 
-// ── Zoom ─────────────────────────────────────────────────────────────────────
-let zoomLevel = 1;
-const ZOOM_MIN = 1, ZOOM_MAX = 2.5, ZOOM_STEP = 0.25;
-let panX = 0, panY = 0;
+// ── Zoom + Pan ────────────────────────────────────────────────────────────────
+let scale = 1, minScale = 1, maxScale = 4;
+let translateX = 0, translateY = 0;
+let isDragging = false;
+let startX, startY, lastX = 0, lastY = 0;
+let lastDist = 0;
 
-function applyZoom() {
-  const inner = document.getElementById('mappaInner');
-  inner.style.transform = `scale(${zoomLevel}) translate(${panX}px, ${panY}px)`;
+const container = document.getElementById('mappa-container');
+const mappaInner = document.getElementById('mappa-inner');
+const mappaImg = document.getElementById('mappaImg');
+
+function applyTransform() {
+  const cw = container.offsetWidth;
+  const ch = container.offsetHeight;
+  const iw = mappaInner.offsetWidth * scale;
+  const ih = mappaInner.offsetHeight * scale;
+  translateX = Math.min(0, Math.max(translateX, cw - iw));
+  translateY = Math.min(0, Math.max(translateY, ch - ih));
+  mappaInner.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+  mappaInner.style.transformOrigin = '0 0';
 }
 
+// Imposta altezza container = altezza immagine
+function setContainerHeight() {
+  if (mappaImg.naturalWidth) {
+    container.style.height = container.offsetWidth * (mappaImg.naturalHeight / mappaImg.naturalWidth) + 'px';
+  }
+}
+mappaImg.addEventListener('load', setContainerHeight);
+if (mappaImg.complete) setContainerHeight();
+window.addEventListener('resize', () => { setContainerHeight(); applyTransform(); });
+
+// Touch: pinch zoom + pan
+container.addEventListener('touchstart', e => {
+  if (e.touches.length === 2) {
+    lastDist = Math.hypot(
+      e.touches[0].clientX - e.touches[1].clientX,
+      e.touches[0].clientY - e.touches[1].clientY
+    );
+  } else if (e.touches.length === 1) {
+    isDragging = true;
+    startX = e.touches[0].clientX - lastX;
+    startY = e.touches[0].clientY - lastY;
+  }
+}, { passive: true });
+
+container.addEventListener('touchmove', e => {
+  e.preventDefault();
+  if (e.touches.length === 2) {
+    const dist = Math.hypot(
+      e.touches[0].clientX - e.touches[1].clientX,
+      e.touches[0].clientY - e.touches[1].clientY
+    );
+    const delta = dist / lastDist;
+    const newScale = Math.min(maxScale, Math.max(minScale, scale * delta));
+    const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+    const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+    const rect = container.getBoundingClientRect();
+    const cx = midX - rect.left;
+    const cy = midY - rect.top;
+    translateX = cx - (cx - translateX) * (newScale / scale);
+    translateY = cy - (cy - translateY) * (newScale / scale);
+    scale = newScale;
+    lastDist = dist;
+    applyTransform();
+  } else if (e.touches.length === 1 && isDragging) {
+    translateX = e.touches[0].clientX - startX;
+    translateY = e.touches[0].clientY - startY;
+    lastX = translateX;
+    lastY = translateY;
+    applyTransform();
+  }
+}, { passive: false });
+
+container.addEventListener('touchend', e => {
+  isDragging = false;
+});
+
+// Doppio tap = reset zoom
+let lastTap = 0;
+container.addEventListener('touchend', e => {
+  const now = Date.now();
+  if (now - lastTap < 300) {
+    scale = 1; translateX = 0; translateY = 0; lastX = 0; lastY = 0;
+    applyTransform();
+  }
+  lastTap = now;
+});
+
+// Mouse drag (desktop)
+container.addEventListener('mousedown', e => {
+  isDragging = true;
+  startX = e.clientX - lastX;
+  startY = e.clientY - lastY;
+  container.style.cursor = 'grabbing';
+});
+container.addEventListener('mousemove', e => {
+  if (!isDragging) return;
+  translateX = e.clientX - startX;
+  translateY = e.clientY - startY;
+  lastX = translateX;
+  lastY = translateY;
+  applyTransform();
+});
+container.addEventListener('mouseup', () => { isDragging = false; container.style.cursor = 'grab'; });
+container.addEventListener('mouseleave', () => { isDragging = false; container.style.cursor = 'grab'; });
+
+// Scroll wheel zoom (desktop)
+container.addEventListener('wheel', e => {
+  e.preventDefault();
+  const delta = e.deltaY > 0 ? 0.9 : 1.1;
+  const newScale = Math.min(maxScale, Math.max(minScale, scale * delta));
+  const rect = container.getBoundingClientRect();
+  const cx = e.clientX - rect.left;
+  const cy = e.clientY - rect.top;
+  translateX = cx - (cx - translateX) * (newScale / scale);
+  translateY = cy - (cy - translateY) * (newScale / scale);
+  scale = newScale;
+  lastX = translateX; lastY = translateY;
+  applyTransform();
+}, { passive: false });
+
+// Bottoni zoom
 document.getElementById('zoomIn').addEventListener('click', () => {
-  zoomLevel = Math.min(ZOOM_MAX, zoomLevel + ZOOM_STEP);
-  applyZoom();
+  scale = Math.min(maxScale, scale * 1.3);
+  applyTransform();
 });
 document.getElementById('zoomOut').addEventListener('click', () => {
-  zoomLevel = Math.max(ZOOM_MIN, zoomLevel - ZOOM_STEP);
-  if (zoomLevel === ZOOM_MIN) { panX = 0; panY = 0; }
-  applyZoom();
+  scale = Math.max(minScale, scale / 1.3);
+  if (scale === minScale) { translateX = 0; translateY = 0; lastX = 0; lastY = 0; }
+  applyTransform();
 });
-
-// Pinch-to-zoom
-let touch1 = null, touch2 = null, initDist = 0, initZoom = 1;
-const outer = document.getElementById('mappaOuter');
-
-outer.addEventListener('touchstart', e => {
-  if (e.touches.length === 2) {
-    touch1 = e.touches[0];
-    touch2 = e.touches[1];
-    initDist = Math.hypot(touch2.clientX - touch1.clientX, touch2.clientY - touch1.clientY);
-    initZoom = zoomLevel;
-    e.preventDefault();
-  }
-}, { passive: false });
-
-outer.addEventListener('touchmove', e => {
-  if (e.touches.length === 2) {
-    const t1 = e.touches[0], t2 = e.touches[1];
-    const dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
-    zoomLevel = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, initZoom * (dist / initDist)));
-    applyZoom();
-    e.preventDefault();
-  }
-}, { passive: false });
 </script>
 </body>
 </html>
