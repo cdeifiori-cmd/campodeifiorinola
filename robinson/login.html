@@ -17,90 +17,83 @@
       align-items: center;
       justify-content: center;
     }
-    .login-wrap {
-      width: 100%;
-      max-width: 380px;
-      padding: 24px 16px;
-    }
+    .login-wrap { width: 100%; max-width: 400px; padding: 24px 16px; }
     .login-box {
       background: #faf7f0;
       border: 2px solid #1a3a5c;
       border-radius: 16px;
-      padding: 32px 28px;
+      padding: 28px 24px;
       box-shadow: 0 8px 32px rgba(26,58,92,0.12);
     }
-    .logo {
-      text-align: center;
-      font-size: 2.5rem;
-      margin-bottom: 8px;
-    }
-    h1 {
-      font-family: 'Playfair Display', serif;
-      font-size: 1.5rem;
-      color: #1a3a5c;
-      text-align: center;
-      margin-bottom: 4px;
-    }
-    .subtitle {
-      text-align: center;
-      font-size: 0.78rem;
-      font-style: italic;
-      color: #8b7355;
-      margin-bottom: 24px;
-    }
-    .form-group { margin-bottom: 16px; }
-    .form-group label {
-      display: block;
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: #1a3a5c;
-      margin-bottom: 5px;
-    }
+    .logo { text-align: center; font-size: 2.2rem; margin-bottom: 6px; }
+    h1 { font-family: 'Playfair Display', serif; font-size: 1.45rem; color: #1a3a5c; text-align: center; margin-bottom: 3px; }
+    .subtitle { text-align: center; font-size: 0.78rem; font-style: italic; color: #8b7355; margin-bottom: 18px; }
+
+    /* Tab switcher */
+    .tab-switch { display: flex; border: 1.5px solid #1a3a5c; border-radius: 8px; overflow: hidden; margin-bottom: 22px; }
+    .tab-btn { flex: 1; padding: 9px 6px; background: none; border: none; font-family: 'Lora', serif; font-size: 0.82rem; cursor: pointer; color: #1a3a5c; transition: background 0.15s, color 0.15s; }
+    .tab-btn.active { background: #1a3a5c; color: #fff; font-weight: 600; }
+
+    /* Pannello email */
+    #panel-email { display: block; }
+    #panel-pin  { display: none; }
+
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; font-size: 0.8rem; font-weight: 600; color: #1a3a5c; margin-bottom: 5px; }
     .form-group input {
-      width: 100%;
-      padding: 10px 14px;
-      border: 1.5px solid #c8b89a;
-      border-radius: 8px;
-      font-family: 'Lora', serif;
-      font-size: 0.95rem;
-      background: #f5f0e8;
-      color: #2c1e0f;
-      outline: none;
+      width: 100%; padding: 10px 14px;
+      border: 1.5px solid #c8b89a; border-radius: 8px;
+      font-family: 'Lora', serif; font-size: 0.95rem;
+      background: #f5f0e8; color: #2c1e0f; outline: none;
       transition: border-color 0.15s;
     }
     .form-group input:focus { border-color: #1a3a5c; }
+
     .btn-login {
-      width: 100%;
-      padding: 12px;
-      background: #1a3a5c;
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      font-family: 'Lora', serif;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      margin-top: 4px;
-      transition: background 0.15s;
+      width: 100%; padding: 12px;
+      background: #1a3a5c; color: #fff; border: none; border-radius: 8px;
+      font-family: 'Lora', serif; font-size: 1rem; font-weight: 600;
+      cursor: pointer; margin-top: 4px; transition: background 0.15s;
     }
     .btn-login:hover { background: #0f2540; }
     .btn-login:disabled { opacity: 0.6; cursor: not-allowed; }
+
     .error-msg {
-      display: none;
-      background: #fdecea;
-      border: 1px solid #e74c3c;
-      border-radius: 6px;
-      padding: 8px 12px;
-      font-size: 0.82rem;
-      color: #c0392b;
-      margin-bottom: 14px;
+      display: none; background: #fdecea; border: 1px solid #e74c3c;
+      border-radius: 6px; padding: 8px 12px; font-size: 0.82rem;
+      color: #c0392b; margin-bottom: 14px;
     }
     .error-msg.visible { display: block; }
-    .back-link {
-      text-align: center;
-      margin-top: 18px;
-      font-size: 0.8rem;
+
+    /* PIN tastierino */
+    .pin-title { font-size: 0.88rem; color: #1a3a5c; font-weight: 600; text-align: center; margin-bottom: 14px; }
+    .pin-display {
+      display: flex; justify-content: center; gap: 12px; margin-bottom: 18px;
     }
+    .pin-dot {
+      width: 18px; height: 18px; border-radius: 50%;
+      border: 2px solid #1a3a5c; background: transparent;
+      transition: background 0.1s;
+    }
+    .pin-dot.filled { background: #1a3a5c; }
+    .pin-keypad {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 10px; margin-bottom: 16px;
+    }
+    .pin-key {
+      padding: 14px 8px; background: #f5f0e8;
+      border: 1.5px solid #c8b89a; border-radius: 10px;
+      font-family: 'Playfair Display', serif; font-size: 1.3rem;
+      color: #1a3a5c; cursor: pointer; text-align: center;
+      transition: background 0.1s, transform 0.08s;
+      user-select: none;
+    }
+    .pin-key:hover { background: #e8e0d0; }
+    .pin-key:active { transform: scale(0.94); background: #d8d0c0; }
+    .pin-key.del { font-size: 1rem; color: #c0392b; }
+    .pin-key.empty { background: none; border-color: transparent; cursor: default; }
+
+    .back-link { text-align: center; margin-top: 16px; font-size: 0.8rem; }
     .back-link a { color: #c8860a; text-decoration: none; }
     .back-link a:hover { text-decoration: underline; }
   </style>
@@ -112,80 +105,183 @@
       <h1>Robinson</h1>
       <div class="subtitle">Il Diario di Bordo dei Naufraghi</div>
 
+      <!-- Tab switcher -->
+      <div class="tab-switch">
+        <button class="tab-btn active" id="tab-pin-btn">🔑 Naufrago (PIN)</button>
+        <button class="tab-btn" id="tab-email-btn">✉️ Ciurma (Email)</button>
+      </div>
+
       <div class="error-msg" id="error-msg"></div>
 
-      <div class="form-group">
-        <label for="email">Email</label>
-        <input type="email" id="email" placeholder="la-tua@email.it" autocomplete="email">
-      </div>
-      <div class="form-group">
-        <label for="password">Password</label>
-        <input type="password" id="password" placeholder="••••••••" autocomplete="current-password">
+      <!-- Pannello PIN -->
+      <div id="panel-pin">
+        <div class="pin-title">Sei un naufrago? Inserisci il tuo PIN</div>
+        <div class="pin-display" id="pin-display"></div>
+        <div class="pin-keypad" id="pin-keypad">
+          <button class="pin-key" data-d="1">1</button>
+          <button class="pin-key" data-d="2">2</button>
+          <button class="pin-key" data-d="3">3</button>
+          <button class="pin-key" data-d="4">4</button>
+          <button class="pin-key" data-d="5">5</button>
+          <button class="pin-key" data-d="6">6</button>
+          <button class="pin-key" data-d="7">7</button>
+          <button class="pin-key" data-d="8">8</button>
+          <button class="pin-key" data-d="9">9</button>
+          <button class="pin-key empty" disabled></button>
+          <button class="pin-key" data-d="0">0</button>
+          <button class="pin-key del" id="pin-del">⌫</button>
+        </div>
+        <button class="btn-login" id="btn-pin-login">⚓ Approda sull'isola</button>
       </div>
 
-      <button class="btn-login" id="btn-login">🏝️ Approda sull'isola</button>
-
-      <div class="back-link">
-        <a href="index.html">← Torna all'isola</a>
+      <!-- Pannello Email -->
+      <div id="panel-email">
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" placeholder="la-tua@email.it" autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" placeholder="••••••••" autocomplete="current-password">
+        </div>
+        <button class="btn-login" id="btn-email-login">🏝️ Approda sull'isola</button>
       </div>
+
+      <div class="back-link"><a href="index.html">← Torna all'isola</a></div>
     </div>
   </div>
 
   <script type="module">
-    import { auth } from './js/robinson-firebase.js';
+    import { auth, db } from './js/robinson-firebase.js';
     import {
-      signInWithEmailAndPassword,
-      onAuthStateChanged
+      signInWithEmailAndPassword, onAuthStateChanged
     } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { getDoc, doc, updateDoc, serverTimestamp }
+      from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     const params = new URLSearchParams(window.location.search);
     const returnPath = params.get('returnUrl') || 'index.html';
+    function goAfterLogin() { window.location.href = returnPath; }
 
-    function goAfterLogin() {
-      window.location.href = returnPath;
-    }
-
-    // Se già loggato, redirect diretto
     let checked = false;
     const unsub = onAuthStateChanged(auth, user => {
-      if (checked) return;
-      checked = true;
-      unsub();
+      if (checked) return; checked = true; unsub();
       if (user) goAfterLogin();
     });
 
-    const btnLogin = document.getElementById('btn-login');
     const errEl = document.getElementById('error-msg');
+    function showError(msg) { errEl.textContent = msg; errEl.classList.add('visible'); }
+    function clearError()   { errEl.classList.remove('visible'); }
 
-    function showError(msg) {
-      errEl.textContent = msg;
-      errEl.classList.add('visible');
+    // ── Tab switcher ──────────────────────────────────────────────────
+    document.getElementById('tab-pin-btn').addEventListener('click', () => {
+      document.getElementById('panel-pin').style.display = 'block';
+      document.getElementById('panel-email').style.display = 'none';
+      document.getElementById('tab-pin-btn').classList.add('active');
+      document.getElementById('tab-email-btn').classList.remove('active');
+      clearError();
+    });
+    document.getElementById('tab-email-btn').addEventListener('click', () => {
+      document.getElementById('panel-pin').style.display = 'none';
+      document.getElementById('panel-email').style.display = 'block';
+      document.getElementById('tab-email-btn').classList.add('active');
+      document.getElementById('tab-pin-btn').classList.remove('active');
+      clearError();
+    });
+    // Default: mostra PIN
+    document.getElementById('panel-pin').style.display = 'block';
+    document.getElementById('panel-email').style.display = 'none';
+
+    // ── PIN logic ─────────────────────────────────────────────────────
+    let pinValue = '';
+    const MAX_PIN = 6;
+    const MIN_PIN = 4;
+
+    function renderDots() {
+      const display = document.getElementById('pin-display');
+      display.innerHTML = '';
+      // Mostra fino a MAX_PIN puntini
+      for (let i = 0; i < MAX_PIN; i++) {
+        const dot = document.createElement('div');
+        dot.className = 'pin-dot' + (i < pinValue.length ? ' filled' : '');
+        display.appendChild(dot);
+      }
     }
-    function clearError() {
-      errEl.classList.remove('visible');
+    renderDots();
+
+    document.getElementById('pin-keypad').querySelectorAll('.pin-key[data-d]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (pinValue.length >= MAX_PIN) return;
+        pinValue += btn.dataset.d;
+        clearError();
+        renderDots();
+      });
+    });
+    document.getElementById('pin-del').addEventListener('click', () => {
+      pinValue = pinValue.slice(0, -1);
+      clearError();
+      renderDots();
+    });
+
+    const btnPinLogin = document.getElementById('btn-pin-login');
+    btnPinLogin.addEventListener('click', doLoginPin);
+
+    async function doLoginPin() {
+      clearError();
+      if (pinValue.length < MIN_PIN) {
+        showError(`Il PIN deve avere almeno ${MIN_PIN} cifre.`);
+        return;
+      }
+      btnPinLogin.disabled = true;
+      btnPinLogin.textContent = 'Accesso in corso...';
+      try {
+        const lookupDoc = await getDoc(doc(db, 'robinson_pin_lookup', pinValue));
+        if (!lookupDoc.exists()) {
+          showError('PIN non valido. Riprova.');
+          pinValue = ''; renderDots();
+          btnPinLogin.disabled = false;
+          btnPinLogin.textContent = "⚓ Approda sull'isola";
+          return;
+        }
+        const { email, password, uid } = lookupDoc.data();
+        await signInWithEmailAndPassword(auth, email, password);
+        // Aggiorna lastLogin
+        try {
+          await updateDoc(doc(db, 'robinson_pin', uid), { lastLogin: serverTimestamp() });
+        } catch(_) {}
+        goAfterLogin();
+      } catch(e) {
+        console.error(e);
+        showError('Errore di accesso. Riprova.');
+        pinValue = ''; renderDots();
+        btnPinLogin.disabled = false;
+        btnPinLogin.textContent = "⚓ Approda sull'isola";
+      }
     }
 
-    async function doLogin() {
+    // ── Email login ───────────────────────────────────────────────────
+    const btnEmailLogin = document.getElementById('btn-email-login');
+    btnEmailLogin.addEventListener('click', doLoginEmail);
+    document.getElementById('password').addEventListener('keydown', e => {
+      if (e.key === 'Enter') doLoginEmail();
+    });
+
+    async function doLoginEmail() {
       clearError();
       const email = document.getElementById('email').value.trim();
       const password = document.getElementById('password').value;
       if (!email || !password) { showError('Inserisci email e password.'); return; }
-      btnLogin.disabled = true;
-      btnLogin.textContent = 'Accesso in corso...';
+      btnEmailLogin.disabled = true;
+      btnEmailLogin.textContent = 'Accesso in corso...';
       try {
         await signInWithEmailAndPassword(auth, email, password);
         goAfterLogin();
-      } catch (e) {
+      } catch(e) {
         showError('Credenziali non valide. Riprova.');
-        btnLogin.disabled = false;
-        btnLogin.textContent = "🏝️ Approda sull'isola";
+        btnEmailLogin.disabled = false;
+        btnEmailLogin.textContent = "🏝️ Approda sull'isola";
       }
     }
-
-    btnLogin.addEventListener('click', doLogin);
-    document.getElementById('password').addEventListener('keydown', e => {
-      if (e.key === 'Enter') doLogin();
-    });
   </script>
 </body>
 </html>

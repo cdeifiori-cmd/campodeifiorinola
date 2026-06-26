@@ -55,6 +55,8 @@ export function setupNavAuth(slotId = 'nav-auth-slot') {
           <div style="padding:10px 16px;font-size:0.78rem;color:var(--muted);border-bottom:1px solid #f0e8d8;font-style:italic;">${nome}</div>
           <a href="naufrago.html?uid=${user.uid}" style="display:block;padding:10px 16px;color:var(--inchiostro);text-decoration:none;font-size:0.85rem;border-bottom:1px solid #f0e8d8;">⚓ Il mio profilo</a>
           ${admin ? `<a href="admin-classifica.html" style="display:block;padding:10px 16px;color:var(--inchiostro);text-decoration:none;font-size:0.85rem;border-bottom:1px solid #f0e8d8;">📊 Classifica</a>` : ''}
+          ${admin ? `<a href="admin-isola.html" style="display:block;padding:10px 16px;color:var(--inchiostro);text-decoration:none;font-size:0.85rem;border-bottom:1px solid #f0e8d8;">🏝️ Admin Isola</a>` : ''}
+          ${admin ? `<a href="admin-pin.html" style="display:block;padding:10px 16px;color:var(--inchiostro);text-decoration:none;font-size:0.85rem;border-bottom:1px solid #f0e8d8;">🔑 Gestione PIN</a>` : ''}
           <button id="_navLogout" style="width:100%;padding:10px 16px;background:none;border:none;text-align:left;cursor:pointer;color:var(--rosso);font-size:0.85rem;">🚪 Esci dall'isola</button>
         </div>
       </div>`;

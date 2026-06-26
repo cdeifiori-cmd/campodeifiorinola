@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestione PIN – Robinson Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/robinson.css">
+  <style>
+    :root { --navy:#1a3a5c; --oro:#c8860a; --carta:#f5f0e8; --carta-scura:#e8e0d0; --inchiostro:#2c2c2c; --muted:#6b6b6b; --rosso:#c0392b; --verde:#2d7a3a; }
+    * { box-sizing:border-box; }
+
+    .admin-header { background:var(--navy); color:#fff; padding:14px 20px; display:flex; align-items:center; justify-content:space-between; }
+    .admin-header h1 { font-family:'Playfair Display',serif; font-size:1.3rem; }
+    .admin-header-links { display:flex; gap:14px; align-items:center; }
+    .admin-header-links a { color:var(--oro); font-size:0.82rem; text-decoration:none; }
+
+    .page-wrap { max-width:900px; margin:0 auto; padding:20px 16px 100px; }
+
+    /* Stats strip */
+    .stats-strip { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:22px; }
+    .stat-card { background:#fff; border:1.5px solid var(--carta-scura); border-radius:10px; padding:12px 18px; flex:1; min-width:140px; }
+    .stat-num { font-family:'Playfair Display',serif; font-size:1.6rem; color:var(--navy); font-weight:700; }
+    .stat-lbl { font-size:0.75rem; color:var(--muted); margin-top:2px; }
+
+    /* Tabella */
+    .pin-table-wrap { background:#fff; border-radius:12px; border:1.5px solid var(--carta-scura); overflow:hidden; box-shadow:0 2px 12px rgba(0,0,0,0.06); }
+    .pin-table { width:100%; border-collapse:collapse; }
+    .pin-table thead th { background:var(--navy); color:#fff; padding:10px 12px; font-size:0.78rem; font-weight:600; text-align:left; }
+    .pin-table tbody tr { border-bottom:1px solid var(--carta-scura); }
+    .pin-table tbody tr:last-child { border-bottom:none; }
+    .pin-table tbody tr:nth-child(even) { background:#faf7f0; }
+    .pin-table td { padding:10px 12px; font-size:0.82rem; vertical-align:middle; }
+
+    .nt-avatar { width:36px; height:36px; border-radius:50%; object-fit:cover; border:2px solid var(--carta-scura); }
+    .nt-avatar-ph { width:36px; height:36px; border-radius:50%; background:var(--navy); color:#fff; display:flex; align-items:center; justify-content:center; font-size:1rem; flex-shrink:0; }
+    .nt-nome { font-weight:600; color:var(--navy); }
+
+    /* PIN display */
+    .pin-cell { display:flex; align-items:center; gap:6px; }
+    .pin-val { font-family:monospace; font-size:1rem; letter-spacing:2px; color:var(--inchiostro); }
+    .btn-eye { background:none; border:none; cursor:pointer; font-size:1rem; padding:2px 4px; }
+
+    /* Status badge */
+    .badge-attivo { display:inline-block; background:#d4edda; color:#155724; border-radius:20px; padding:2px 10px; font-size:0.72rem; font-weight:600; }
+    .badge-mai { display:inline-block; background:#fff3cd; color:#856404; border-radius:20px; padding:2px 10px; font-size:0.72rem; font-weight:600; }
+    .badge-nessun { display:inline-block; background:#f8d7da; color:#721c24; border-radius:20px; padding:2px 10px; font-size:0.72rem; font-weight:600; }
+
+    /* Azioni */
+    .btn-azione { background:none; border:1px solid var(--carta-scura); border-radius:6px; padding:4px 8px; font-size:0.78rem; cursor:pointer; transition:background 0.1s; margin-right:4px; }
+    .btn-azione:hover { background:var(--carta-scura); }
+    .btn-azione.crea { border-color:var(--oro); color:var(--oro); }
+    .btn-azione.crea:hover { background:#fef3de; }
+
+    /* Modal */
+    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:500; align-items:center; justify-content:center; }
+    .modal-overlay.open { display:flex; }
+    .modal-box { background:#fff; border-radius:14px; padding:28px 24px; width:100%; max-width:380px; box-shadow:0 8px 40px rgba(0,0,0,0.2); }
+    .modal-title { font-family:'Playfair Display',serif; font-size:1.2rem; color:var(--navy); margin-bottom:16px; }
+    .modal-input { width:100%; padding:12px; border:1.5px solid #c8b89a; border-radius:8px; font-size:1.2rem; letter-spacing:6px; font-family:monospace; text-align:center; outline:none; margin-bottom:14px; }
+    .modal-input:focus { border-color:var(--navy); }
+    .modal-btns { display:flex; gap:10px; }
+    .btn-modal-primary { flex:1; padding:10px; background:var(--navy); color:#fff; border:none; border-radius:8px; font-family:'Lora',serif; font-size:0.9rem; cursor:pointer; }
+    .btn-modal-primary:hover { background:#0f2540; }
+    .btn-modal-secondary { flex:1; padding:10px; background:none; color:var(--navy); border:1.5px solid var(--navy); border-radius:8px; font-family:'Lora',serif; font-size:0.9rem; cursor:pointer; }
+    .btn-modal-cancel { padding:10px 16px; background:none; color:var(--muted); border:1px solid #ddd; border-radius:8px; font-family:'Lora',serif; font-size:0.9rem; cursor:pointer; }
+    .modal-error { font-size:0.8rem; color:var(--rosso); margin-bottom:10px; min-height:18px; }
+
+    .spinner { display:flex; justify-content:center; padding:40px; }
+    .spinner:after { content:''; width:36px; height:36px; border:3px solid var(--carta-scura); border-top-color:var(--oro); border-radius:50%; animation:spin 0.7s linear infinite; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+
+    @media (max-width:640px) {
+      .pin-table thead th:nth-child(4), .pin-table td:nth-child(4) { display:none; }
+      .page-wrap { padding:12px 8px 90px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="admin-header">
+  <h1>🔑 Gestione PIN Naufraghi</h1>
+  <div class="admin-header-links">
+    <a href="admin-isola.html">🏝️ Isola</a>
+    <a href="admin-classifica.html">📊 Classifica</a>
+    <a href="index.html">← Home</a>
+  </div>
+</div>
+
+<div class="page-wrap">
+
+  <!-- Statistiche -->
+  <div class="stats-strip" id="stats-strip">
+    <div class="stat-card"><div class="stat-num" id="st-tot">–</div><div class="stat-lbl">Naufraghi totali</div></div>
+    <div class="stat-card"><div class="stat-num" id="st-pin">–</div><div class="stat-lbl">Con PIN attivo</div></div>
+    <div class="stat-card"><div class="stat-num" id="st-log">–</div><div class="stat-lbl">Hanno fatto login</div></div>
+    <div class="stat-card"><div class="stat-num" id="st-last" style="font-size:0.9rem;">–</div><div class="stat-lbl">Ultimo accesso</div></div>
+  </div>
+
+  <!-- Tabella -->
+  <div class="pin-table-wrap">
+    <table class="pin-table">
+      <thead>
+        <tr>
+          <th style="width:46px;"></th>
+          <th>Nome</th>
+          <th>PIN</th>
+          <th>Ultimo accesso</th>
+          <th>Stato</th>
+          <th>Azioni</th>
+        </tr>
+      </thead>
+      <tbody id="pin-tbody">
+        <tr><td colspan="6"><div class="spinner"></div></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal crea/cambia PIN -->
+<div class="modal-overlay" id="modal-pin">
+  <div class="modal-box">
+    <div class="modal-title" id="modal-title">🔑 Crea PIN</div>
+    <div style="font-size:0.85rem;color:var(--muted);margin-bottom:12px;" id="modal-nome-lbl"></div>
+    <input type="tel" class="modal-input" id="modal-input" placeholder="0000" maxlength="6" inputmode="numeric" pattern="[0-9]*">
+    <div class="modal-error" id="modal-error"></div>
+    <div class="modal-btns">
+      <button class="btn-modal-secondary" id="modal-genera">🎲 Genera</button>
+      <button class="btn-modal-primary" id="modal-salva">💾 Salva</button>
+      <button class="btn-modal-cancel" id="modal-chiudi">Annulla</button>
+    </div>
+  </div>
+</div>
+
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item"><span class="nav-icon">🏝️</span><span>Home</span></a>
+  <a href="admin-classifica.html" class="nav-item"><span class="nav-icon">📊</span><span>Classifica</span></a>
+  <a href="admin-isola.html" class="nav-item"><span class="nav-icon">🏝️</span><span>Isola</span></a>
+  <a href="admin-pin.html" class="nav-item active"><span class="nav-icon">🔑</span><span>PIN</span></a>
+</nav>
+
+<script type="module">
+import { db, auth, ADMIN_UID } from './js/robinson-firebase.js';
+import { requireAuth } from './js/robinson-auth.js';
+import { esc, fmtDate } from './js/robinson-utils.js';
+import {
+  collection, getDocs, getDoc, doc, setDoc, deleteDoc, updateDoc, serverTimestamp, query, orderBy
+} from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+const API_KEY = 'AIzaSyC18lzwqhYcW29TsEO6Oy4Bqvb2PMBUmAg';
+
+requireAuth(async user => {
+  // Solo admin
+  const profilo = await getDoc(doc(db, 'utenti', user.uid));
+  if (user.uid !== ADMIN_UID && profilo.data()?.ruolo !== 'admin') {
+    window.location.replace('index.html'); return;
+  }
+  await loadAll();
+});
+
+// ── Dati globali ──────────────────────────────────────────────────────────────
+let naufraghi = [];   // [{uid, nome, foto, ...}]
+let pinMap = {};      // uid → {pin, email, password, lastLogin, createdAt}
+let pinLookup = {};   // pin → uid (per check unicità)
+
+async function loadAll() {
+  const [nSnap, pSnap, utSnap] = await Promise.all([
+    getDocs(collection(db, 'robinson_naufraghi')),
+    getDocs(collection(db, 'robinson_pin')),
+    getDocs(collection(db, 'utenti'))
+  ]);
+
+  // Mappa utenti per nome/foto
+  const utMap = {};
+  utSnap.forEach(d => { utMap[d.id] = d.data(); });
+
+  naufraghi = nSnap.docs.map(d => {
+    const u = utMap[d.id] || {};
+    return { uid: d.id, nome: u.nome || u.nomeCompleto || u.displayName || d.id, foto: u.fotoProfilo || u.fotoProfiloUrl || '' };
+  }).sort((a,b) => a.nome.localeCompare(b.nome, 'it'));
+
+  pinMap = {};
+  pSnap.forEach(d => { pinMap[d.id] = d.data(); });
+
+  // Costruisci lookup locale per check unicità
+  pinLookup = {};
+  Object.entries(pinMap).forEach(([uid, pd]) => {
+    if (pd.pin) pinLookup[pd.pin] = uid;
+  });
+
+  renderStats();
+  renderTable();
+}
+
+function renderStats() {
+  document.getElementById('st-tot').textContent = naufraghi.length;
+  const conPin = naufraghi.filter(n => pinMap[n.uid]).length;
+  document.getElementById('st-pin').textContent = conPin;
+  const loggati = naufraghi.filter(n => pinMap[n.uid]?.lastLogin).length;
+  document.getElementById('st-log').textContent = loggati;
+
+  // Ultimo accesso
+  let ultimoTs = 0, ultimoNome = '–';
+  naufraghi.forEach(n => {
+    const pd = pinMap[n.uid];
+    if (!pd?.lastLogin) return;
+    const ms = pd.lastLogin.toMillis?.() || 0;
+    if (ms > ultimoTs) { ultimoTs = ms; ultimoNome = n.nome; }
+  });
+  document.getElementById('st-last').textContent = ultimoNome !== '–'
+    ? `${ultimoNome} · ${fmtDate({toMillis: () => ultimoTs, toDate: () => new Date(ultimoTs)})}`
+    : '–';
+}
+
+function renderTable() {
+  const tbody = document.getElementById('pin-tbody');
+  if (!naufraghi.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--muted);">Nessun naufrago trovato.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = '';
+  naufraghi.forEach(n => {
+    const pd = pinMap[n.uid];
+    const haPin = !!pd;
+    const hasLogin = haPin && !!pd.lastLogin;
+    const tr = document.createElement('tr');
+
+    // Avatar
+    const avatarHtml = n.foto
+      ? `<img class="nt-avatar" src="${esc(n.foto)}" alt="">`
+      : `<div class="nt-avatar-ph">⚓</div>`;
+
+    // PIN cell
+    const pinDisplay = haPin
+      ? `<div class="pin-cell">
+           <span class="pin-val" id="pv-${n.uid}" data-pin="${esc(pd.pin)}" data-hidden="1">●●●●</span>
+           <button class="btn-eye" title="Mostra/Nascondi" onclick="togglePin('${n.uid}')">👁️</button>
+         </div>`
+      : `<span style="color:var(--muted);font-size:0.78rem;">nessun PIN</span>`;
+
+    // Stato
+    let stato;
+    if (!haPin)      stato = `<span class="badge-nessun">❌ Nessun PIN</span>`;
+    else if (!hasLogin) stato = `<span class="badge-mai">⏳ Mai usato</span>`;
+    else             stato = `<span class="badge-attivo">✅ Attivo</span>`;
+
+    // Ultimo accesso
+    const ultimoAccesso = pd?.lastLogin
+      ? fmtDate(pd.lastLogin)
+      : '<span style="color:var(--muted);">Mai</span>';
+
+    // Azioni
+    const azioniHtml = haPin
+      ? `<button class="btn-azione" onclick="copiaPIN('${esc(pd.pin)}')">📋 Copia</button>
+         <button class="btn-azione" onclick="aprirModal('${n.uid}','${esc(n.nome)}',true)">🔄 Cambia</button>`
+      : `<button class="btn-azione crea" onclick="aprirModal('${n.uid}','${esc(n.nome)}',false)">➕ Crea PIN</button>`;
+
+    tr.innerHTML = `
+      <td>${avatarHtml}</td>
+      <td><div class="nt-nome">${esc(n.nome)}</div></td>
+      <td>${pinDisplay}</td>
+      <td>${ultimoAccesso}</td>
+      <td>${stato}</td>
+      <td>${azioniHtml}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+// ── Toggle show/hide PIN ──────────────────────────────────────────────────────
+window.togglePin = function(uid) {
+  const el = document.getElementById('pv-' + uid);
+  if (!el) return;
+  if (el.dataset.hidden === '1') {
+    el.textContent = el.dataset.pin;
+    el.dataset.hidden = '0';
+  } else {
+    el.textContent = '●'.repeat(el.dataset.pin.length);
+    el.dataset.hidden = '1';
+  }
+};
+
+// ── Copia PIN ─────────────────────────────────────────────────────────────────
+window.copiaPIN = function(pin) {
+  navigator.clipboard.writeText(pin).then(() => alert(`PIN copiato: ${pin}`)).catch(() => alert(`PIN: ${pin}`));
+};
+
+// ── Modal ─────────────────────────────────────────────────────────────────────
+let modalUid = null, modalNome = null, modalIsChange = false;
+
+window.aprirModal = function(uid, nome, isChange) {
+  modalUid = uid; modalNome = nome; modalIsChange = isChange;
+  document.getElementById('modal-title').textContent = isChange ? '🔄 Cambia PIN' : '➕ Crea PIN';
+  document.getElementById('modal-nome-lbl').textContent = nome;
+  document.getElementById('modal-input').value = '';
+  document.getElementById('modal-error').textContent = '';
+  document.getElementById('modal-pin').classList.add('open');
+  document.getElementById('modal-input').focus();
+};
+
+document.getElementById('modal-chiudi').addEventListener('click', () => {
+  document.getElementById('modal-pin').classList.remove('open');
+});
+document.getElementById('modal-pin').addEventListener('click', e => {
+  if (e.target === document.getElementById('modal-pin')) document.getElementById('modal-pin').classList.remove('open');
+});
+
+document.getElementById('modal-genera').addEventListener('click', () => {
+  let pin;
+  let tentativi = 0;
+  do {
+    pin = String(Math.floor(1000 + Math.random() * 9000)); // 4 cifre
+    tentativi++;
+  } while (pinLookup[pin] && pinLookup[pin] !== modalUid && tentativi < 100);
+  document.getElementById('modal-input').value = pin;
+  document.getElementById('modal-error').textContent = '';
+});
+
+document.getElementById('modal-salva').addEventListener('click', salvaPin);
+
+async function salvaPin() {
+  const pinNuovo = document.getElementById('modal-input').value.trim();
+  const errEl = document.getElementById('modal-error');
+
+  if (!/^\d{4,6}$/.test(pinNuovo)) {
+    errEl.textContent = 'Il PIN deve essere di 4-6 cifre numeriche.'; return;
+  }
+  // Verifica unicità
+  if (pinLookup[pinNuovo] && pinLookup[pinNuovo] !== modalUid) {
+    errEl.textContent = 'Questo PIN è già usato da un altro naufrago.'; return;
+  }
+
+  const btnSalva = document.getElementById('modal-salva');
+  btnSalva.disabled = true; btnSalva.textContent = 'Salvataggio...';
+  errEl.textContent = '';
+
+  try {
+    const emailFittizia = slugify(modalNome) + '.robinson@campodeifiori.org';
+    const vecchioPin = pinMap[modalUid]?.pin;
+
+    // Se non ha account Firebase, crealo via REST
+    if (!modalIsChange) {
+      const res = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${API_KEY}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: emailFittizia, password: pinNuovo, returnSecureToken: false })
+      });
+      const data = await res.json();
+      if (data.error) {
+        // Se account già esiste, aggiorna solo la password via Admin (non possibile da client)
+        // Ignora e procedi — l'account esiste già con la vecchia password, aggiorniamo il PIN doc
+        if (data.error.message !== 'EMAIL_EXISTS') {
+          errEl.textContent = 'Errore creazione account: ' + data.error.message;
+          btnSalva.disabled = false; btnSalva.textContent = '💾 Salva'; return;
+        }
+      }
+    }
+
+    // Salva/aggiorna robinson_pin/{uid}
+    await setDoc(doc(db, 'robinson_pin', modalUid), {
+      uid: modalUid,
+      nome: modalNome,
+      pin: pinNuovo,
+      email: emailFittizia,
+      password: pinNuovo,
+      createdAt: pinMap[modalUid]?.createdAt || serverTimestamp(),
+      lastLogin: pinMap[modalUid]?.lastLogin || null
+    });
+
+    // Salva robinson_pin_lookup/{pin}
+    await setDoc(doc(db, 'robinson_pin_lookup', pinNuovo), {
+      uid: modalUid,
+      email: emailFittizia,
+      password: pinNuovo
+    });
+
+    // Se cambio PIN: elimina vecchio lookup
+    if (modalIsChange && vecchioPin && vecchioPin !== pinNuovo) {
+      await deleteDoc(doc(db, 'robinson_pin_lookup', vecchioPin));
+    }
+
+    // Aggiorna stato locale
+    pinMap[modalUid] = { uid: modalUid, nome: modalNome, pin: pinNuovo, email: emailFittizia, password: pinNuovo, lastLogin: pinMap[modalUid]?.lastLogin || null };
+    if (vecchioPin) delete pinLookup[vecchioPin];
+    pinLookup[pinNuovo] = modalUid;
+
+    document.getElementById('modal-pin').classList.remove('open');
+    renderStats();
+    renderTable();
+
+  } catch(e) {
+    console.error(e);
+    errEl.textContent = 'Errore: ' + e.message;
+  }
+  btnSalva.disabled = false; btnSalva.textContent = '💾 Salva';
+}
+
+function slugify(nome) {
+  return nome.toLowerCase()
+    .replace(/[àáâã]/g,'a').replace(/[èéê]/g,'e').replace(/[ìíî]/g,'i')
+    .replace(/[òóô]/g,'o').replace(/[ùúû]/g,'u').replace(/[ñ]/g,'n')
+    .replace(/[^a-z0-9]+/g, '.').replace(/^\.+|\.+$/g,'');
+}
+</script>
+</body>
+</html>
