@@ -202,16 +202,14 @@ async function loadFeed() {
         snap.forEach(d => {
           const data = d.data();
           if (!data.timestamp) return;
+          // Un post diario reale deve avere testo scritto dall'utente
+          // (solo media senza testo = allegato giornaliero automatico, non un post)
           const hasTesto = (data.testo && data.testo.trim().length > 3) ||
                            (data.text && data.text.trim().length > 3) ||
                            (data.titolo && data.titolo.trim().length > 3) ||
                            (data.approdo && data.approdo.trim().length > 3) ||
                            (data.contenuto && data.contenuto.trim().length > 3);
-          const hasFoto  = data.fotoUrl  && data.fotoUrl.startsWith('http');
-          const hasVideo = data.videoUrl && data.videoUrl.startsWith('http');
-          const hasAudio = data.audioUrl && data.audioUrl.startsWith('http');
-          const hasMedia = Array.isArray(data.media) && data.media.length > 0;
-          if (!hasTesto && !hasFoto && !hasVideo && !hasAudio && !hasMedia) return;
+          if (!hasTesto) return;
           eventi.push({
             _id: d.id, _fonte: 'diario',
             _collPath: `robinson_diari/${uid}/posts`,
