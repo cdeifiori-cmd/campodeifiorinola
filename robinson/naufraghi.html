@@ -54,10 +54,12 @@
       .naufraghi-content { padding-top: calc(min(22vw, 280px) + 8px); }
     }
 
-    .search-bar { margin: 12px 16px 6px; }
+    .search-bar { margin: 12px 16px 6px; width: 100%; max-width: 100%; }
     @media (min-width: 769px) {
-      .search-bar { display: flex; justify-content: flex-start; padding: 8px 20px; margin: 0; }
-      .search-bar input { width: 280px; font-size: 13px; padding: 6px 12px; }
+      .search-bar { display: flex; justify-content: flex-start; padding: 8px 20px; margin: 0;
+        width: 260px !important; max-width: 260px !important;
+        margin-left: 20px !important; margin-right: auto !important; }
+      .search-bar input, #search-inp { width: 100% !important; font-size: 13px !important; padding: 6px 12px !important; }
     }
 
     #grid.grid-naufraghi {
