@@ -36,8 +36,8 @@
     .spiaggia-header-fixed {
       position: fixed;
       top: 0; left: 0; right: 0;
-      height: 22vw;
-      max-height: 160px;
+      height: 32vw;
+      max-height: 200px;
       background-image: url('spiaggia%20cellok.png');
       background-size: cover;
       background-position: top center;
@@ -53,10 +53,18 @@
 
     /* ── Contenuto sotto header ── */
     .spiaggia-content {
-      padding-top: calc(22vw + 8px);
+      padding-top: calc(min(32vw, 200px) + 8px);
     }
     @media (min-width: 769px) {
       .spiaggia-content { padding-top: calc(min(12vw, 140px) + 8px); }
+    }
+
+    /* ── Avatar utente: sopra header, non sovrapposto alla scritta ── */
+    #nav-auth-slot-wrap { z-index: 200; }
+    @media (max-width: 768px) {
+      #nav-auth-slot-wrap { top: 6px; right: 8px; }
+      #nav-auth-slot .nav-user-name { display: none; }
+      #nav-auth-slot img { width: 28px !important; height: 28px !important; }
     }
 
     /* ── FAB nuovo post ── */
