@@ -144,13 +144,12 @@ import { db, auth, ADMIN_UID } from './js/robinson-firebase.js';
 import { requireAuth } from './js/robinson-auth.js';
 import { esc, fmtDate } from './js/robinson-utils.js';
 import {
-  collection, getDocs, getDoc, doc, setDoc, deleteDoc, updateDoc, serverTimestamp, query, orderBy
+  collection, getDocs, getDoc, doc, setDoc, deleteDoc, serverTimestamp
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 const API_KEY = 'AIzaSyC18lzwqhYcW29TsEO6Oy4Bqvb2PMBUmAg';
 
 requireAuth(async user => {
-  // Solo admin
   const profilo = await getDoc(doc(db, 'utenti', user.uid));
   if (user.uid !== ADMIN_UID && profilo.data()?.ruolo !== 'admin') {
     window.location.replace('index.html'); return;
@@ -159,9 +158,21 @@ requireAuth(async user => {
 });
 
 // ── Dati globali ──────────────────────────────────────────────────────────────
-let naufraghi = [];   // [{uid, nome, foto, ...}]
-let pinMap = {};      // uid → {pin, email, password, lastLogin, createdAt}
-let pinLookup = {};   // pin → uid (per check unicità)
+let naufraghi = [];
+// pinMap è indicizzato per originalUid (il vecchio uid Firestore del naufrago)
+// ogni entry: { uid:newUid, originalUid, pin, email, lastLogin, createdAt, _docId }
+let pinMap = {};
+// pinLookup: pin → newUid (per check unicità)
+let pinLookup = {};
+
+function nomeToEmail(nome) {
+  return nome.toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]/g, '.')
+    .replace(/\.+/g, '.')
+    .replace(/^\.|\.$/g, '')
+    + '.robinson@campodeifiori.org';
+}
 
 async function loadAll() {
   const [nSnap, pSnap, utSnap] = await Promise.all([
@@ -170,11 +181,9 @@ async function loadAll() {
     getDocs(collection(db, 'utenti'))
   ]);
 
-  // Mappa utenti per nome/foto
   const utMap = {};
   utSnap.forEach(d => { utMap[d.id] = d.data(); });
 
-  // Funzione per estrarre nome e foto da un doc utenti
   function infoUtente(uid) {
     const u = utMap[uid] || {};
     const nome = u.nome || u.nomeCompleto || u.displayName || u.email?.split('@')[0] || uid;
@@ -182,15 +191,15 @@ async function loadAll() {
     return { nome, foto };
   }
 
-  // 1. Tutti i naufraghi registrati su Robinson
+  // Costruisci lista naufraghi: robinson_naufraghi + utenti non-staff
   const uidSet = new Set();
   nSnap.forEach(d => uidSet.add(d.id));
-
-  // 2. Aggiungi utenti che non sono admin/staff/ciurma
-  const RUOLI_ESCLUSI = new Set(['admin', 'staff', 'ciurma', 'operatore']);
+  const RUOLI_ESCLUSI = new Set(['admin', 'staff', 'ciurma', 'operatore', 'naufrago']); // 'naufrago' = account pin creato da noi
   utSnap.forEach(d => {
-    const ruolo = d.data().ruolo || '';
-    if (!RUOLI_ESCLUSI.has(ruolo)) uidSet.add(d.id);
+    const u = d.data();
+    const ruolo = u.ruolo || '';
+    // Escludi account robinson fittizi (hanno originalUid) e ruoli staff
+    if (!RUOLI_ESCLUSI.has(ruolo) && !u.originalUid) uidSet.add(d.id);
   });
 
   naufraghi = [...uidSet].map(uid => {
@@ -198,13 +207,14 @@ async function loadAll() {
     return { uid, nome, foto };
   }).sort((a, b) => a.nome.localeCompare(b.nome, 'it'));
 
+  // Costruisci pinMap indicizzato per originalUid
   pinMap = {};
-  pSnap.forEach(d => { pinMap[d.id] = d.data(); });
-
-  // Costruisci lookup locale per check unicità
   pinLookup = {};
-  Object.entries(pinMap).forEach(([uid, pd]) => {
-    if (pd.pin) pinLookup[pd.pin] = uid;
+  pSnap.forEach(d => {
+    const pd = d.data();
+    const key = pd.originalUid || pd.uid || d.id;
+    pinMap[key] = { ...pd, _docId: d.id };
+    if (pd.pin) pinLookup[pd.pin] = pd.uid || d.id;
   });
 
   renderStats();
@@ -218,7 +228,6 @@ function renderStats() {
   const loggati = naufraghi.filter(n => pinMap[n.uid]?.lastLogin).length;
   document.getElementById('st-log').textContent = loggati;
 
-  // Ultimo accesso
   let ultimoTs = 0, ultimoNome = '–';
   naufraghi.forEach(n => {
     const pd = pinMap[n.uid];
@@ -227,7 +236,7 @@ function renderStats() {
     if (ms > ultimoTs) { ultimoTs = ms; ultimoNome = n.nome; }
   });
   document.getElementById('st-last').textContent = ultimoNome !== '–'
-    ? `${ultimoNome} · ${fmtDate({toMillis: () => ultimoTs, toDate: () => new Date(ultimoTs)})}`
+    ? `${ultimoNome} · ${fmtDate({ toMillis: () => ultimoTs, toDate: () => new Date(ultimoTs) })}`
     : '–';
 }
 
@@ -244,35 +253,32 @@ function renderTable() {
     const hasLogin = haPin && !!pd.lastLogin;
     const tr = document.createElement('tr');
 
-    // Avatar
     const avatarHtml = n.foto
       ? `<img class="nt-avatar" src="${esc(n.foto)}" alt="">`
       : `<div class="nt-avatar-ph">⚓</div>`;
 
-    // PIN cell
     const pinDisplay = haPin
       ? `<div class="pin-cell">
-           <span class="pin-val" id="pv-${n.uid}" data-pin="${esc(pd.pin)}" data-hidden="1">●●●●</span>
+           <span class="pin-val" id="pv-${n.uid}" data-pin="${esc(pd.pin)}" data-hidden="1">${'●'.repeat(pd.pin?.length || 4)}</span>
            <button class="btn-eye" title="Mostra/Nascondi" onclick="togglePin('${n.uid}')">👁️</button>
          </div>`
       : `<span style="color:var(--muted);font-size:0.78rem;">nessun PIN</span>`;
 
-    // Stato
     let stato;
-    if (!haPin)      stato = `<span class="badge-nessun">❌ Nessun PIN</span>`;
+    if (!haPin)         stato = `<span class="badge-nessun">❌ Nessun PIN</span>`;
     else if (!hasLogin) stato = `<span class="badge-mai">⏳ Mai usato</span>`;
-    else             stato = `<span class="badge-attivo">✅ Attivo</span>`;
+    else                stato = `<span class="badge-attivo">✅ Attivo</span>`;
 
-    // Ultimo accesso
     const ultimoAccesso = pd?.lastLogin
       ? fmtDate(pd.lastLogin)
       : '<span style="color:var(--muted);">Mai</span>';
 
-    // Azioni
+    // Azioni: usa dataset invece di stringhe inline per evitare problemi con apostrofi
+    const btnId = `btn-${n.uid}`;
     const azioniHtml = haPin
       ? `<button class="btn-azione" onclick="copiaPIN('${esc(pd.pin)}')">📋 Copia</button>
-         <button class="btn-azione" onclick="aprirModal('${n.uid}','${esc(n.nome)}',true)">🔄 Cambia</button>`
-      : `<button class="btn-azione crea" onclick="aprirModal('${n.uid}','${esc(n.nome)}',false)">➕ Crea PIN</button>`;
+         <button class="btn-azione" id="${btnId}" data-uid="${n.uid}" data-nome="${esc(n.nome)}" data-change="1">🔄 Cambia</button>`
+      : `<button class="btn-azione crea" id="${btnId}" data-uid="${n.uid}" data-nome="${esc(n.nome)}" data-change="0">➕ Crea PIN</button>`;
 
     tr.innerHTML = `
       <td>${avatarHtml}</td>
@@ -282,23 +288,22 @@ function renderTable() {
       <td>${stato}</td>
       <td>${azioniHtml}</td>`;
     tbody.appendChild(tr);
+
+    // Attach listener dopo inserimento nel DOM
+    const btn = document.getElementById(btnId);
+    if (btn) btn.addEventListener('click', () => {
+      aprirModal(btn.dataset.uid, btn.dataset.nome, btn.dataset.change === '1');
+    });
   });
 }
 
-// ── Toggle show/hide PIN ──────────────────────────────────────────────────────
 window.togglePin = function(uid) {
   const el = document.getElementById('pv-' + uid);
   if (!el) return;
-  if (el.dataset.hidden === '1') {
-    el.textContent = el.dataset.pin;
-    el.dataset.hidden = '0';
-  } else {
-    el.textContent = '●'.repeat(el.dataset.pin.length);
-    el.dataset.hidden = '1';
-  }
+  if (el.dataset.hidden === '1') { el.textContent = el.dataset.pin; el.dataset.hidden = '0'; }
+  else { el.textContent = '●'.repeat(el.dataset.pin.length); el.dataset.hidden = '1'; }
 };
 
-// ── Copia PIN ─────────────────────────────────────────────────────────────────
 window.copiaPIN = function(pin) {
   navigator.clipboard.writeText(pin).then(() => alert(`PIN copiato: ${pin}`)).catch(() => alert(`PIN: ${pin}`));
 };
@@ -306,15 +311,15 @@ window.copiaPIN = function(pin) {
 // ── Modal ─────────────────────────────────────────────────────────────────────
 let modalUid = null, modalNome = null, modalIsChange = false;
 
-window.aprirModal = function(uid, nome, isChange) {
+function aprirModal(uid, nome, isChange) {
   modalUid = uid; modalNome = nome; modalIsChange = isChange;
   document.getElementById('modal-title').textContent = isChange ? '🔄 Cambia PIN' : '➕ Crea PIN';
   document.getElementById('modal-nome-lbl').textContent = nome;
   document.getElementById('modal-input').value = '';
   document.getElementById('modal-error').textContent = '';
   document.getElementById('modal-pin').classList.add('open');
-  document.getElementById('modal-input').focus();
-};
+  setTimeout(() => document.getElementById('modal-input').focus(), 100);
+}
 
 document.getElementById('modal-chiudi').addEventListener('click', () => {
   document.getElementById('modal-pin').classList.remove('open');
@@ -324,12 +329,12 @@ document.getElementById('modal-pin').addEventListener('click', e => {
 });
 
 document.getElementById('modal-genera').addEventListener('click', () => {
-  let pin;
-  let tentativi = 0;
+  const existingNewUid = pinMap[modalUid]?.uid;
+  let pin, t = 0;
   do {
-    pin = String(Math.floor(1000 + Math.random() * 9000)); // 4 cifre
-    tentativi++;
-  } while (pinLookup[pin] && pinLookup[pin] !== modalUid && tentativi < 100);
+    pin = String(Math.floor(1000 + Math.random() * 9000));
+    t++;
+  } while (pinLookup[pin] && pinLookup[pin] !== existingNewUid && t < 200);
   document.getElementById('modal-input').value = pin;
   document.getElementById('modal-error').textContent = '';
 });
@@ -343,8 +348,9 @@ async function salvaPin() {
   if (!/^\d{4,6}$/.test(pinNuovo)) {
     errEl.textContent = 'Il PIN deve essere di 4-6 cifre numeriche.'; return;
   }
-  // Verifica unicità
-  if (pinLookup[pinNuovo] && pinLookup[pinNuovo] !== modalUid) {
+  const esistente = pinMap[modalUid];
+  const existingNewUid = esistente?.uid;
+  if (pinLookup[pinNuovo] && pinLookup[pinNuovo] !== existingNewUid) {
     errEl.textContent = 'Questo PIN è già usato da un altro naufrago.'; return;
   }
 
@@ -353,54 +359,99 @@ async function salvaPin() {
   errEl.textContent = '';
 
   try {
-    const emailFittizia = slugify(modalNome) + '.robinson@campodeifiori.org';
-    const vecchioPin = pinMap[modalUid]?.pin;
+    const email = nomeToEmail(modalNome);
+    const password = 'RR' + pinNuovo;
+    const vecchioPin = esistente?.pin;
+    let newUid;
 
-    // Se non ha account Firebase, crealo via REST
     if (!modalIsChange) {
+      // ── NUOVO PIN: crea account Firebase Auth ──────────────────────────────
       const res = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${API_KEY}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: emailFittizia, password: pinNuovo, returnSecureToken: false })
+        body: JSON.stringify({ email, password, returnSecureToken: true })
       });
       const data = await res.json();
-      if (data.error) {
-        // Se account già esiste, aggiorna solo la password via Admin (non possibile da client)
-        // Ignora e procedi — l'account esiste già con la vecchia password, aggiorniamo il PIN doc
-        if (data.error.message !== 'EMAIL_EXISTS') {
-          errEl.textContent = 'Errore creazione account: ' + data.error.message;
-          btnSalva.disabled = false; btnSalva.textContent = '💾 Salva'; return;
-        }
-      }
+      if (data.error) throw new Error('Errore creazione account: ' + data.error.message);
+      newUid = data.localId;
+
+      // Crea profilo utente per il nuovo account
+      const nInfo = naufraghi.find(n => n.uid === modalUid) || {};
+      await setDoc(doc(db, 'utenti', newUid), {
+        nome: modalNome,
+        fotoProfilo: nInfo.foto || '',
+        ruolo: 'naufrago',
+        originalUid: modalUid,
+        createdAt: serverTimestamp()
+      });
+
+      // Copia robinson_naufraghi se esiste
+      try {
+        const nDoc = await getDoc(doc(db, 'robinson_naufraghi', modalUid));
+        await setDoc(doc(db, 'robinson_naufraghi', newUid), {
+          ...(nDoc.exists() ? nDoc.data() : {}),
+          uid: newUid,
+          originalUid: modalUid
+        });
+      } catch(_) {}
+
+    } else {
+      // ── CAMBIA PIN: aggiorna password account esistente ────────────────────
+      newUid = existingNewUid;
+      const oldPassword = 'RR' + vecchioPin;
+      const oldEmail = esistente?.email;
+
+      // Sign in come naufrago per ottenere idToken
+      const signInRes = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${API_KEY}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: oldEmail, password: oldPassword, returnSecureToken: true })
+      });
+      const signInData = await signInRes.json();
+      if (signInData.error) throw new Error('Accesso account fallito: ' + signInData.error.message);
+
+      // Aggiorna password
+      const updRes = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:update?key=${API_KEY}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken: signInData.idToken, password, returnSecureToken: false })
+      });
+      const updData = await updRes.json();
+      if (updData.error) throw new Error('Aggiornamento password fallito: ' + updData.error.message);
     }
 
-    // Salva/aggiorna robinson_pin/{uid}
-    await setDoc(doc(db, 'robinson_pin', modalUid), {
-      uid: modalUid,
+    // Salva robinson_pin/{newUid}
+    await setDoc(doc(db, 'robinson_pin', newUid), {
+      uid: newUid,
+      originalUid: modalUid,
       nome: modalNome,
       pin: pinNuovo,
-      email: emailFittizia,
-      password: pinNuovo,
-      createdAt: pinMap[modalUid]?.createdAt || serverTimestamp(),
-      lastLogin: pinMap[modalUid]?.lastLogin || null
+      email,
+      createdAt: esistente?.createdAt || serverTimestamp(),
+      lastLogin: esistente?.lastLogin || null
     });
 
-    // Salva robinson_pin_lookup/{pin}
+    // Salva robinson_pin_lookup/{pinNuovo}
     await setDoc(doc(db, 'robinson_pin_lookup', pinNuovo), {
-      uid: modalUid,
-      email: emailFittizia,
-      password: pinNuovo
+      uid: newUid,
+      email,
+      password
     });
 
-    // Se cambio PIN: elimina vecchio lookup
-    if (modalIsChange && vecchioPin && vecchioPin !== pinNuovo) {
-      await deleteDoc(doc(db, 'robinson_pin_lookup', vecchioPin));
+    // Elimina vecchio lookup se cambio PIN
+    if (vecchioPin && vecchioPin !== pinNuovo) {
+      try { await deleteDoc(doc(db, 'robinson_pin_lookup', vecchioPin)); } catch(_) {}
     }
 
     // Aggiorna stato locale
-    pinMap[modalUid] = { uid: modalUid, nome: modalNome, pin: pinNuovo, email: emailFittizia, password: pinNuovo, lastLogin: pinMap[modalUid]?.lastLogin || null };
+    pinMap[modalUid] = {
+      uid: newUid, _docId: newUid, originalUid: modalUid,
+      nome: modalNome, pin: pinNuovo, email,
+      lastLogin: esistente?.lastLogin || null,
+      createdAt: esistente?.createdAt || null
+    };
     if (vecchioPin) delete pinLookup[vecchioPin];
-    pinLookup[pinNuovo] = modalUid;
+    pinLookup[pinNuovo] = newUid;
 
     document.getElementById('modal-pin').classList.remove('open');
     renderStats();
@@ -408,16 +459,9 @@ async function salvaPin() {
 
   } catch(e) {
     console.error(e);
-    errEl.textContent = 'Errore: ' + e.message;
+    errEl.textContent = e.message;
   }
   btnSalva.disabled = false; btnSalva.textContent = '💾 Salva';
-}
-
-function slugify(nome) {
-  return nome.toLowerCase()
-    .replace(/[àáâã]/g,'a').replace(/[èéê]/g,'e').replace(/[ìíî]/g,'i')
-    .replace(/[òóô]/g,'o').replace(/[ùúû]/g,'u').replace(/[ñ]/g,'n')
-    .replace(/[^a-z0-9]+/g, '.').replace(/^\.+|\.+$/g,'');
 }
 </script>
 </body>
