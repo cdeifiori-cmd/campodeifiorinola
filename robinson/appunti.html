@@ -82,9 +82,12 @@
     .pv-top { display:flex; align-items:center; gap:6px; margin-bottom:3px; }
     .pv-nome { font-weight:700; font-size:0.8rem; color:var(--navy); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:120px; }
     .pv-badge { font-size:0.66rem; font-weight:700; padding:2px 7px; border-radius:10px; white-space:nowrap; }
-    .badge-spiaggia { background:#ddeeff; color:#1a5c8a; }
-    .badge-diario   { background:#fef0d5; color:#8a5c0a; }
-    .badge-isola    { background:#e4f5e8; color:#2a7a3a; }
+    .badge-spiaggia  { background:#ddeeff; color:#1a5c8a; }
+    .badge-diario    { background:#fef0d5; color:#8a5c0a; }
+    .badge-isola     { background:#e4f5e8; color:#2a7a3a; }
+    .badge-commento  { background:#ede4f5; color:#5a2a7a; }
+    .fonte-commento  { border-left-color:#6a3a8a !important; }
+    .pv-dest { font-size:0.72rem; color:var(--muted); margin-top:1px; }
     .pv-data { font-size:0.64rem; color:var(--muted); margin-left:auto; white-space:nowrap; }
     .pv-testo { font-size:0.82rem; color:#444; line-height:1.4; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
@@ -223,7 +226,66 @@ async function loadFeed() {
       } catch(_) {}
     }));
 
-    // 3. Isola — query per-uid su robinson_isola/{uid}/notti
+    // 3. Commenti Spiaggia — per ogni post carica gli ultimi 3 commenti
+    try {
+      const spPostSnap = await getDocs(query(
+        collection(db, 'robinson_spiaggia'), orderBy('timestamp','desc'), limit(20)
+      ));
+      await Promise.all(spPostSnap.docs.map(async postDoc => {
+        try {
+          const cSnap = await getDocs(query(
+            collection(db, 'robinson_spiaggia', postDoc.id, 'comments'),
+            orderBy('timestamp','desc'), limit(3)
+          ));
+          cSnap.forEach(c => {
+            const d = c.data();
+            if (!d.text?.trim()) return;
+            eventi.push({
+              _id: c.id, _fonte: 'commento', _subFonte: 'spiaggia',
+              _postId: postDoc.id,
+              _postAuthorId: postDoc.data().authorId || '',
+              _postAuthorName: postDoc.data().authorName || '',
+              authorId: d.authorId || '', authorName: d.authorName || '',
+              authorPhoto: d.authorPhoto || '',
+              text: d.text, timestamp: d.timestamp
+            });
+          });
+        } catch(_) {}
+      }));
+    } catch(e) { console.warn('commenti spiaggia:', e.message); }
+
+    // 4. Commenti Diari — per ogni uid, per ogni post carica gli ultimi 2 commenti
+    await Promise.all(uidList.map(async uid => {
+      try {
+        const postsSnap = await getDocs(query(
+          collection(db, 'robinson_diari', uid, 'posts'),
+          orderBy('timestamp','desc'), limit(5)
+        ));
+        await Promise.all(postsSnap.docs.map(async postDoc => {
+          try {
+            const cSnap = await getDocs(query(
+              collection(db, 'robinson_diari', uid, 'posts', postDoc.id, 'commenti'),
+              orderBy('timestamp','desc'), limit(2)
+            ));
+            cSnap.forEach(c => {
+              const d = c.data();
+              if (!d.testo?.trim() && !d.text?.trim()) return;
+              eventi.push({
+                _id: c.id, _fonte: 'commento', _subFonte: 'diario',
+                _postId: postDoc.id, _uid_owner: uid,
+                _postAuthorId: uid,
+                authorId: d.authorId || d.uidAutore || '',
+                authorName: d.authorName || d.nomeAutore || '',
+                authorPhoto: d.authorPhoto || '',
+                text: d.testo || d.text || '', timestamp: d.timestamp
+              });
+            });
+          } catch(_) {}
+        }));
+      } catch(_) {}
+    }));
+
+    // 5. Isola — query per-uid su robinson_isola/{uid}/notti
     await Promise.all(uidList.map(async uid => {
       try {
         const snap = await getDocs(query(
@@ -254,12 +316,16 @@ async function loadFeed() {
       return;
     }
 
-    // Risolvi nomi per i post diario che non hanno authorName
+    // Risolvi nomi mancanti (autori commenti e post diario)
     const slice = eventi.slice(0, 80);
     await Promise.all(slice.map(async p => {
       if (!p.authorName) {
         const uid = p.authorId || p._uid_owner || '';
         if (uid) p.authorName = await risolviNome(uid);
+      }
+      // Per i commenti risolvi anche il nome dell'autore del post originale
+      if (p._fonte === 'commento' && !p._postAuthorName && p._postAuthorId) {
+        p._postAuthorName = await risolviNome(p._postAuthorId);
       }
     }));
 
@@ -285,23 +351,31 @@ function buildCard(p) {
                    (p.approdo && p.approdo.trim().length > 0) ||
                    (p.contenuto && p.contenuto.trim().length > 0);
   const isTesoro = p._fonte === 'diario' && !hasTesto;
+  const isCommento = p._fonte === 'commento';
 
   // Link destinazione
   let href = 'spiaggia.html';
-  if (p._fonte === 'spiaggia')      href = `spiaggia.html#${p._id}`;
-  else if (p._fonte === 'diario')   href = `naufrago.html?uid=${uid}#${isTesoro ? 'tab-tesori' : 'tab-diario'}`;
-  else                              href = 'isola.html';
+  if (isCommento) {
+    href = p._subFonte === 'spiaggia'
+      ? `spiaggia.html#${p._postId}`
+      : `naufrago.html?uid=${p._uid_owner}#tab-diario`;
+  } else if (p._fonte === 'spiaggia')    href = `spiaggia.html#${p._id}`;
+  else if (p._fonte === 'diario')        href = `naufrago.html?uid=${uid}#${isTesoro ? 'tab-tesori' : 'tab-diario'}`;
+  else                                   href = 'isola.html';
 
   // Badge
   let badge, badgeCls, borderCls;
-  if (p._fonte === 'spiaggia')    { badge = '🏖️ Spiaggia'; badgeCls = 'badge-spiaggia'; borderCls = 'fonte-spiaggia'; }
-  else if (isTesoro)              { badge = '📸 Tesori';   badgeCls = 'badge-diario';   borderCls = 'fonte-diario'; }
-  else if (p._fonte === 'diario') { badge = '📔 Diario';   badgeCls = 'badge-diario';   borderCls = 'fonte-diario'; }
-  else                            { badge = '🏝️ Isola';    badgeCls = 'badge-isola';    borderCls = 'fonte-isola'; }
+  if (isCommento)             { badge = '💬 Commento'; badgeCls = 'badge-commento'; borderCls = 'fonte-commento'; }
+  else if (p._fonte === 'spiaggia')    { badge = '🏖️ Spiaggia'; badgeCls = 'badge-spiaggia'; borderCls = 'fonte-spiaggia'; }
+  else if (isTesoro)                   { badge = '📸 Tesori';   badgeCls = 'badge-diario';   borderCls = 'fonte-diario'; }
+  else if (p._fonte === 'diario')      { badge = '📔 Diario';   badgeCls = 'badge-diario';   borderCls = 'fonte-diario'; }
+  else                                 { badge = '🏝️ Isola';    badgeCls = 'badge-isola';    borderCls = 'fonte-isola'; }
 
   // Testo anteprima (max 100 chars)
   let testo = '';
-  if (p._fonte === 'isola') {
+  if (isCommento) {
+    testo = p.text || '';
+  } else if (p._fonte === 'isola') {
     if (p.privato) testo = '🔒 Pensiero privato';
     else {
       const luogo = LUOGO_MAP[p.luogoId] || {};
@@ -313,25 +387,33 @@ function buildCard(p) {
   }
   const anteprima = testo.length > 100 ? testo.slice(0, 100) + '…' : testo;
 
-  // Miniatura media
+  // Riga "su post di…" per i commenti
+  const destHtml = isCommento && p._postAuthorName
+    ? `<div class="pv-dest">su post di ${esc(p._postAuthorName)}</div>`
+    : '';
+
+  // Miniatura media (solo per non-commenti)
   let mediaHtml = '';
-  if (p._fonte === 'isola') {
-    if (p.fotoUrl)  mediaHtml = `<img class="pv-thumb" src="${esc(p.fotoUrl)}" loading="lazy" alt="">`;
-    else if (p.videoUrl) mediaHtml = `<div class="pv-media-icon">🎬</div>`;
-  } else {
-    const media = normalizeMedia(p);
-    const img = media.find(m => m.type === 'image');
-    const vid = media.find(m => m.type === 'video');
-    const aud = media.find(m => m.type === 'audio');
-    if (img)      mediaHtml = `<img class="pv-thumb" src="${esc(img.url)}" loading="lazy" alt="">`;
-    else if (vid) mediaHtml = `<div class="pv-media-icon">🎬</div>`;
-    else if (aud) mediaHtml = `<div class="pv-media-icon">🎙️</div>`;
+  if (!isCommento) {
+    if (p._fonte === 'isola') {
+      if (p.fotoUrl)       mediaHtml = `<img class="pv-thumb" src="${esc(p.fotoUrl)}" loading="lazy" alt="">`;
+      else if (p.videoUrl) mediaHtml = `<div class="pv-media-icon">🎬</div>`;
+    } else {
+      const media = normalizeMedia(p);
+      const img = media.find(m => m.type === 'image');
+      const vid = media.find(m => m.type === 'video');
+      const aud = media.find(m => m.type === 'audio');
+      if (img)      mediaHtml = `<img class="pv-thumb" src="${esc(img.url)}" loading="lazy" alt="">`;
+      else if (vid) mediaHtml = `<div class="pv-media-icon">🎬</div>`;
+      else if (aud) mediaHtml = `<div class="pv-media-icon">🎙️</div>`;
+    }
   }
 
   // Avatar
+  const placeholderEmoji = isCommento ? '💬' : p._fonte === 'spiaggia' ? '🏖️' : p._fonte === 'diario' ? '📔' : '🏝️';
   const avatarHtml = foto
     ? `<img class="pv-avatar" src="${esc(foto)}" alt="" loading="lazy">`
-    : `<div class="pv-avatar-placeholder">${p._fonte === 'spiaggia' ? '🏖️' : p._fonte === 'diario' ? '📔' : '🏝️'}</div>`;
+    : `<div class="pv-avatar-placeholder">${placeholderEmoji}</div>`;
 
   const card = document.createElement('a');
   card.className = `preview-card ${borderCls}`;
@@ -345,6 +427,7 @@ function buildCard(p) {
         <span class="pv-data">${fmtDate(p.timestamp)}</span>
       </div>
       ${anteprima ? `<div class="pv-testo">${esc(anteprima)}</div>` : ''}
+      ${destHtml}
     </div>
     ${mediaHtml}
     <span class="pv-arrow">›</span>`;
