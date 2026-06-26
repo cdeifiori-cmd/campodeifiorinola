@@ -18,8 +18,71 @@
     .ricordo-list { display:flex; flex-direction:column; gap:6px; }
     /* Bottiglia */
     .bottiglia-msg { background:var(--post-bg); border-left:4px solid var(--oro); border-radius:4px 10px 10px 4px; padding:10px 12px; margin-bottom:8px; }
-    /* Isola read-only */
+    /* Isola read-only (legacy) */
     .zona-card.readonly { cursor:default; }
+    /* Mappa isola nel diario */
+    .n-mappa-container {
+      width:100%; overflow:hidden; position:relative;
+      background:#0d2240; touch-action:none; cursor:grab; user-select:none;
+      border-radius:12px; margin-bottom:12px;
+    }
+    .n-mappa-container:active { cursor:grabbing; }
+    .n-mappa-inner { position:relative; display:inline-block; transform-origin:0 0; }
+    .n-mappa-inner img { display:block; width:100%; max-width:100%; pointer-events:none; }
+    .n-zoom-controls { position:absolute; bottom:8px; right:8px; z-index:50; display:flex; flex-direction:column; gap:4px; }
+    .n-zoom-btn {
+      width:28px; height:28px; border-radius:50%;
+      background:rgba(26,58,92,0.8); color:#c8860a;
+      font-size:16px; font-weight:bold; border:1px solid #c8860a60;
+      cursor:pointer; display:flex; align-items:center; justify-content:center;
+    }
+    .n-hotspot {
+      position:absolute; transform:translate(-50%,-50%);
+      width:44px; height:44px; background:transparent !important;
+      border:none !important; padding:0; cursor:pointer;
+      font-size:0 !important; color:transparent !important;
+      -webkit-tap-highlight-color:transparent; z-index:10; outline:none;
+    }
+    .n-hotspot:hover { background:rgba(200,134,10,0.15) !important; border-radius:50%; }
+    .n-hotspot.scelto { background:rgba(200,134,10,0.3) !important; border-radius:50%; border:2px solid #c8860a !important; }
+    .n-presenza-badge {
+      position:absolute; top:-6px; right:-6px;
+      background:#1a3a5c; color:#c8860a; border-radius:50%;
+      width:18px; height:18px; font-size:10px; font-weight:bold;
+      display:flex; align-items:center; justify-content:center;
+      border:1.5px solid #c8860a; pointer-events:none;
+    }
+    .n-isola-msg {
+      background:linear-gradient(135deg,rgba(200,134,10,0.15),rgba(200,134,10,0.3));
+      border:1.5px solid var(--oro); border-radius:12px;
+      padding:12px 16px; font-size:0.9rem; color:var(--navy);
+      text-align:center; margin-bottom:12px; font-weight:600;
+    }
+    .n-isola-orario-msg {
+      background:rgba(26,58,92,0.08); border:1px solid #c8860a40; border-radius:10px;
+      padding:10px 14px; font-size:0.82rem; color:var(--muted);
+      text-align:center; font-style:italic; margin-bottom:10px;
+    }
+    /* Forziere isola */
+    .forziere-isola-title {
+      font-family:'Playfair Display',serif; font-size:1rem; font-weight:700;
+      color:var(--navy); margin:14px 0 8px;
+    }
+    .notte-isola-card {
+      background:#fff; border:1px solid #e0d4c0; border-radius:10px;
+      padding:10px 12px; margin-bottom:8px;
+    }
+    .notte-isola-top { display:flex; align-items:center; gap:8px; margin-bottom:4px; }
+    .notte-isola-emoji { font-size:1.3rem; }
+    .notte-isola-luogo { font-weight:700; font-size:0.86rem; color:var(--navy); }
+    .notte-isola-data { font-size:0.7rem; color:var(--muted); }
+    .notte-isola-pensiero { font-style:italic; font-size:0.83rem; color:#444; line-height:1.4; }
+    .mi-meteo-btn {
+      background:#fff; border:1.5px solid #c8b89a; border-radius:20px;
+      padding:5px 10px; font-size:0.82rem; cursor:pointer;
+      font-family:'Lora',serif; transition:background 0.12s,border-color 0.12s;
+    }
+    .mi-meteo-btn.selected { background:#f5ead5; border-color:var(--oro); font-weight:700; }
     /* Media recorder */
     .rec-btn { background:var(--rosso); color:#fff; border:none; border-radius:8px; padding:6px 12px; cursor:pointer; font-family:'Lora',serif; font-size:0.78rem; }
     .rec-btn.recording { animation: pulse 1s infinite; }
@@ -271,15 +334,51 @@
 
 <!-- TAB E: Isola Interiore -->
 <div class="tab-panel" id="tab-isola">
-  <div style="font-size:0.82rem;color:var(--muted);margin-bottom:10px;padding:0 4px;">Conquista le zone della tua isola interiore!</div>
-  <div class="isola-grid" id="isola-grid">
-    <div class="zona-card" data-zona="spiaggia"><span class="zona-icon">🌴</span><div class="zona-nome">Spiaggia della Fiducia</div></div>
-    <div class="zona-card" data-zona="promontorio"><span class="zona-icon">🧭</span><div class="zona-nome">Promontorio del Coraggio</div></div>
-    <div class="zona-card" data-zona="baia"><span class="zona-icon">🌊</span><div class="zona-nome">Baia della Calma</div></div>
-    <div class="zona-card" data-zona="villaggio"><span class="zona-icon">🤝</span><div class="zona-nome">Villaggio dell'Amicizia</div></div>
-    <div class="zona-card" data-zona="faro"><span class="zona-icon">⭐</span><div class="zona-nome">Faro dei Sogni</div></div>
-    <div class="zona-card" data-zona="vulcano"><span class="zona-icon">🔥</span><div class="zona-nome">Vulcano della Rabbia</div></div>
-    <div class="zona-card" data-zona="laguna"><span class="zona-icon">🐢</span><div class="zona-nome">Laguna della Pazienza</div></div>
+  <div id="n-isola-orario-msg" class="n-isola-orario-msg" style="display:none;">🌅 Puoi scegliere il tuo luogo dalle 23:00 alle 05:00</div>
+  <div id="n-isola-gia-scelto" class="n-isola-msg" style="display:none;"></div>
+
+  <div class="n-mappa-container" id="n-mappa-container">
+    <div class="n-zoom-controls">
+      <button class="n-zoom-btn" id="n-zoomIn">+</button>
+      <button class="n-zoom-btn" id="n-zoomOut">−</button>
+    </div>
+    <div class="n-mappa-inner" id="n-mappa-inner">
+      <img src="isola.png" alt="Mappa dell'isola" id="n-mappaImg" draggable="false">
+    </div>
+  </div>
+
+  <div class="forziere-isola-title">🏴‍☠️ Notti sull'Isola</div>
+  <div id="forziere-isola-lista"><div class="spinner"></div></div>
+</div>
+
+<!-- Modal scelta luogo isola -->
+<div class="modal-overlay" id="modal-isola" style="display:none;">
+  <div class="modal-box" style="max-height:90vh;overflow-y:auto;">
+    <div class="modal-title" id="mi-titolo">🏝️ —</div>
+    <div id="mi-desc" style="font-style:italic;font-size:0.85rem;color:var(--muted);margin-bottom:12px;"></div>
+    <div id="mi-domanda" style="background:var(--navy);color:var(--carta);border-radius:10px;padding:12px 14px;margin-bottom:14px;font-style:italic;font-size:0.88rem;line-height:1.5;"></div>
+    <div style="font-size:0.78rem;font-weight:700;color:var(--muted);margin-bottom:6px;">Meteo del cuore</div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;" id="mi-meteo-grid">
+      <button class="mi-meteo-btn" data-meteo="☀️">☀️ Sereno</button>
+      <button class="mi-meteo-btn" data-meteo="🌤️">🌤️ Abbastanza bene</button>
+      <button class="mi-meteo-btn" data-meteo="🌧️">🌧️ Triste</button>
+      <button class="mi-meteo-btn" data-meteo="⛈️">⛈️ Arrabbiato/a</button>
+      <button class="mi-meteo-btn" data-meteo="🌫️">🌫️ Confus*</button>
+      <button class="mi-meteo-btn" data-meteo="🌈">🌈 Fiducios*</button>
+    </div>
+    <label style="font-size:0.78rem;font-weight:700;color:var(--muted);display:block;margin-bottom:4px;">Il mio pensiero della sera</label>
+    <textarea id="mi-pensiero" style="width:100%;border:1.5px solid #c8b89a;border-radius:10px;padding:9px 12px;font-family:'Lora',serif;font-size:0.9rem;resize:none;min-height:80px;background:#fff;margin-bottom:12px;" placeholder="Scrivi qui…" rows="3"></textarea>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+      <label style="display:flex;align-items:center;gap:5px;background:#fff;border:1.5px solid #c8b89a;border-radius:20px;padding:6px 14px;cursor:pointer;font-size:0.82rem;font-weight:600;">
+        🖼️ Foto<input type="file" accept="image/*" id="mi-foto" multiple style="display:none">
+      </label>
+      <label style="display:flex;align-items:center;gap:5px;background:#fff;border:1.5px solid #c8b89a;border-radius:20px;padding:6px 14px;cursor:pointer;font-size:0.82rem;font-weight:600;">
+        📹 Video<input type="file" accept="video/*" id="mi-video" style="display:none">
+      </label>
+    </div>
+    <div id="mi-preview" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;"></div>
+    <button class="btn btn-oro" id="mi-salva" style="width:100%;">🏕️ Scegli questo luogo per stanotte</button>
+    <button class="btn" id="mi-chiudi" style="width:100%;margin-top:8px;background:#e0d8cc;border:none;border-radius:10px;padding:10px;">Annulla</button>
   </div>
 </div>
 
@@ -533,7 +632,7 @@ import { esc, fmtDate, fmtDateShort, risolviNome, uploadOne, renderMediaGrid, re
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import {
   doc, getDoc, setDoc, addDoc, deleteDoc,
-  collection, getDocs, query, orderBy, serverTimestamp, onSnapshot
+  collection, getDocs, query, orderBy, serverTimestamp, onSnapshot, increment
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { setupNavAuth } from './js/robinson-nav.js';
 
@@ -553,7 +652,62 @@ let meteoUmoreSel = '';
 let tesoriAllegati = []; // {file, type, previewUrl}
 let mediaRecorder = null;
 let recChunks = [];
-let isolaZone = {};
+// isola state
+let miLuogoAttivo = null;
+let miMeteoSel = '';
+let miMediaItems = [];
+let isolaPresenzeUnsubs = [];
+let nScale = 1, nTX = 0, nTY = 0;
+let nPinching = false, nDragging = false;
+let nPinchStartDist = 0, nPinchStartScale = 1, nLastX = 0, nLastY = 0;
+let nDragStartX = 0, nDragStartY = 0;
+const luoghiIsola = [
+  { id:"spiaggia-fiducia",     nome:"Spiaggia della Fiducia",     emoji:"🌴", x:31, y:29,
+    descrizione:"Mi sento seren* e in pace.",
+    domanda:"Chi o che cosa oggi ti ha fatto sentire al sicuro?" },
+  { id:"faro-sogni",           nome:"Faro dei Sogni",             emoji:"🗼", x:49, y:21,
+    descrizione:"Guardo lontano e sogno il futuro.",
+    domanda:"Quale sogno oggi hai sentito più vicino?" },
+  { id:"promontorio-coraggio", nome:"Promontorio del Coraggio",   emoji:"🧭", x:66, y:23,
+    descrizione:"Affronto le sfide con forza.",
+    domanda:"Quale piccola o grande sfida hai affrontato oggi?" },
+  { id:"baia-calma",           nome:"Baia della Calma",           emoji:"🌊", x:84, y:31,
+    descrizione:"Trovo tranquillità e respiro.",
+    domanda:"In quale momento oggi ti sei sentit* in pace?" },
+  { id:"villaggio-amicizia",   nome:"Villaggio dell'Amicizia",    emoji:"🤝", x:18, y:43,
+    descrizione:"Mi sento parte del gruppo.",
+    domanda:"Chi oggi ti ha fatto sentire parte della ciurma?" },
+  { id:"vulcano-rabbia",       nome:"Vulcano della Rabbia",       emoji:"🌋", x:46, y:49,
+    descrizione:"Oggi è tutto molto difficile.",
+    domanda:"Che cosa sta bruciando dentro di te?" },
+  { id:"laguna-pazienza",      nome:"Laguna della Pazienza",      emoji:"🐢", x:12, y:65,
+    descrizione:"Respiro, aspetto e mi prendo tempo.",
+    domanda:"In quale momento hai avuto bisogno di pazienza?" },
+  { id:"caverna-tristezza",    nome:"Caverna della Tristezza",    emoji:"🌧️", x:69, y:50,
+    descrizione:"Ho bisogno di stare con i miei pensieri.",
+    domanda:"Che cosa ti ha res* triste oggi?" },
+  { id:"tempesta-caos",        nome:"Tempesta del Caos",          emoji:"⛈️", x:84, y:57,
+    descrizione:"Tutto mi sembra confuso e pesante.",
+    domanda:"Quale pensiero oggi ti ha creato confusione?" },
+  { id:"deserto-solitudine",   nome:"Deserto della Solitudine",   emoji:"🌪️", x:36, y:70,
+    descrizione:"Mi sento sol* e incompres*.",
+    domanda:"Quando oggi ti sei sentit* distante dagli altri?" },
+  { id:"scoglio-dolore",       nome:"Scoglio del Dolore",         emoji:"💔", x:56, y:70,
+    descrizione:"Porto con me ferite e ricordi.",
+    domanda:"C'è qualcosa che oggi ti ha fatto male?" },
+  { id:"nebbia-dubbi",         nome:"Nebbia dei Dubbi",           emoji:"🌫️", x:76, y:74,
+    descrizione:"Non so cosa scegliere.",
+    domanda:"Su cosa senti di avere ancora dubbi?" },
+  { id:"isola-paure",          nome:"Isola delle Paure",          emoji:"🔒", x:24, y:86,
+    descrizione:"Le mie paure sono grandi.",
+    domanda:"Quale paura oggi ti ha accompagnat*?" },
+  { id:"bivio-scelte",         nome:"Bivio delle Scelte",         emoji:"🚧", x:49, y:89,
+    descrizione:"Sono indecis*, ho bisogno di capire.",
+    domanda:"Davanti a quale scelta ti sei sentit* oggi?" },
+  { id:"tramonto-gratitudine", nome:"Tramonto della Gratitudine", emoji:"🌅", x:72, y:88,
+    descrizione:"Ringrazio per ciò che ho vissuto.",
+    domanda:"Per che cosa vuoi dire grazie questa sera?" }
+];
 
 // ── Auth ────────────────────────────────────────────────────────────────
 requireAuth(async user => {
@@ -998,33 +1152,284 @@ document.getElementById('btn-carica-tesori').addEventListener('click', async () 
 });
 
 // ── Isola Interiore ───────────────────────────────────────────────────────
-async function loadIsola() {
-  try {
-    const snap = await getDoc(doc(db, 'robinson_naufraghi', pageUid, 'isola', 'zone'));
-    if (snap.exists()) isolaZone = snap.data();
-  } catch(_) {}
-  renderIsola();
+
+function getDataNotte() {
+  const now = new Date();
+  if (now.getHours() < 5) {
+    const ieri = new Date(now); ieri.setDate(ieri.getDate() - 1);
+    return ieri.getFullYear() + '-' + String(ieri.getMonth()+1).padStart(2,'0') + '-' + String(ieri.getDate()).padStart(2,'0');
+  }
+  return now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
 }
 
-function renderIsola() {
-  document.querySelectorAll('.zona-card').forEach(card => {
-    const zona = card.dataset.zona;
-    card.classList.toggle('conquistata', !!isolaZone[zona]);
-    if (!isOwner && !isAdmin) {
-      card.classList.add('readonly');
+function isOraIsola() { const h = new Date().getHours(); return h >= 23 || h < 5; }
+
+async function loadIsola() {
+  initIsolaMappa();
+  loadForziereIsola();
+
+  // Fuori orario: mostra messaggio
+  if (!isOraIsola()) {
+    document.getElementById('n-isola-orario-msg').style.display = '';
+  }
+
+  // Controlla se già salvato stanotte
+  const dataNotte = getDataNotte();
+  try {
+    const existing = await getDoc(doc(db, 'robinson_isola', pageUid, 'notti', dataNotte));
+    if (existing.exists()) {
+      mostraIsolaGiaSalvata(existing.data());
+      buildHotspotNaufrago(existing.data().luogoId);
     } else {
-      card.addEventListener('click', () => toggleZona(zona, card));
+      buildHotspotNaufrago(null);
     }
+  } catch(_) {
+    buildHotspotNaufrago(null);
+  }
+
+  // Ascolta presenze in real-time
+  isolaPresenzeUnsubs.forEach(u => u());
+  isolaPresenzeUnsubs = [];
+  luoghiIsola.forEach(luogo => {
+    const unsub = onSnapshot(doc(db, 'robinson_isola_presenze', dataNotte + '_' + luogo.id), snap => {
+      const count = snap.exists() ? (snap.data().count || 0) : 0;
+      const el = document.getElementById('ni-hcount-' + luogo.id);
+      if (el) { el.textContent = count; el.style.display = count >= 1 ? 'flex' : 'none'; }
+    });
+    isolaPresenzeUnsubs.push(unsub);
   });
 }
 
-async function toggleZona(zona, card) {
-  if (!isOwner && !isAdmin) return;
-  isolaZone[zona] = !isolaZone[zona];
-  card.classList.toggle('conquistata', !!isolaZone[zona]);
+function mostraIsolaGiaSalvata(d) {
+  const el = document.getElementById('n-isola-gia-scelto');
+  el.textContent = '🏕️ Stanotte sei a ' + (d.emoji || '') + ' ' + (d.luogoNome || '') + ' — Buona notte, naufrago!';
+  el.style.display = '';
+}
+
+function buildHotspotNaufrago(luogoSceltoId) {
+  const inner = document.getElementById('n-mappa-inner');
+  inner.querySelectorAll('.n-hotspot').forEach(el => el.remove());
+  luoghiIsola.forEach(luogo => {
+    const btn = document.createElement('button');
+    btn.className = 'n-hotspot' + (luogo.id === luogoSceltoId ? ' scelto' : '');
+    btn.style.left = luogo.x + '%';
+    btn.style.top = luogo.y + '%';
+    btn.title = luogo.nome;
+    btn.setAttribute('aria-label', luogo.nome);
+    btn.textContent = luogo.emoji;
+    // Badge presenze
+    const badge = document.createElement('span');
+    badge.className = 'n-presenza-badge';
+    badge.id = 'ni-hcount-' + luogo.id;
+    badge.style.display = 'none';
+    btn.appendChild(badge);
+    // Click: solo proprietario, solo in orario, solo se non già scelto
+    btn.addEventListener('click', () => {
+      if (!isOwner && !isAdmin) return;
+      if (luogoSceltoId) { alert('Hai già scelto il tuo luogo per stanotte!'); return; }
+      if (!isOraIsola()) { alert('Puoi scegliere il tuo luogo dalle 23:00 alle 05:00.'); return; }
+      apriModalIsola(luogo);
+    });
+    inner.appendChild(btn);
+  });
+}
+
+function apriModalIsola(luogo) {
+  miLuogoAttivo = luogo;
+  miMeteoSel = '';
+  miMediaItems = [];
+  document.getElementById('mi-titolo').textContent = luogo.emoji + ' ' + luogo.nome;
+  document.getElementById('mi-desc').textContent = luogo.descrizione;
+  document.getElementById('mi-domanda').textContent = '"' + luogo.domanda + '"';
+  document.getElementById('mi-pensiero').value = '';
+  document.getElementById('mi-preview').innerHTML = '';
+  document.querySelectorAll('.mi-meteo-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('modal-isola').style.display = 'flex';
+}
+
+document.getElementById('mi-chiudi').addEventListener('click', () => {
+  document.getElementById('modal-isola').style.display = 'none';
+  miLuogoAttivo = null;
+});
+
+document.getElementById('mi-meteo-grid').addEventListener('click', e => {
+  const btn = e.target.closest('.mi-meteo-btn');
+  if (!btn) return;
+  document.querySelectorAll('.mi-meteo-btn').forEach(b => b.classList.remove('selected'));
+  miMeteoSel = btn.dataset.meteo;
+  btn.classList.add('selected');
+});
+
+document.getElementById('mi-foto').addEventListener('change', e => {
+  Array.from(e.target.files).forEach(f => {
+    miMediaItems.push({ file: f, type: 'image', previewUrl: URL.createObjectURL(f) });
+  });
+  renderMiPreview(); e.target.value = '';
+});
+document.getElementById('mi-video').addEventListener('change', e => {
+  const f = e.target.files[0];
+  if (f) { miMediaItems.push({ file: f, type: 'video', previewUrl: URL.createObjectURL(f) }); renderMiPreview(); }
+  e.target.value = '';
+});
+
+function renderMiPreview() {
+  document.getElementById('mi-preview').innerHTML = miMediaItems.map(item =>
+    item.type === 'image' ? `<img src="${esc(item.previewUrl)}" style="width:70px;height:70px;object-fit:cover;border-radius:8px;">` :
+    `<video src="${esc(item.previewUrl)}" style="width:70px;height:70px;object-fit:cover;border-radius:8px;" muted playsinline></video>`
+  ).join('');
+}
+
+document.getElementById('mi-salva').addEventListener('click', async () => {
+  if (!miLuogoAttivo || !currentUser) return;
+  const dataNotte = getDataNotte();
+  const btn = document.getElementById('mi-salva');
+  btn.disabled = true; btn.textContent = '⏳ Salvo…';
   try {
-    await setDoc(doc(db, 'robinson_naufraghi', pageUid, 'isola', 'zone'), isolaZone);
-  } catch(e) { console.error(e); }
+    const existing = await getDoc(doc(db, 'robinson_isola', pageUid, 'notti', dataNotte));
+    if (existing.exists()) { alert('Hai già scelto il tuo luogo per stanotte!'); return; }
+
+    let fotoUrl = null, videoUrl = null;
+    for (const item of miMediaItems) {
+      const url = await uploadOne(item.file, item.type === 'image' ? 'image' : 'video');
+      if (item.type === 'image' && !fotoUrl) fotoUrl = url;
+      if (item.type === 'video' && !videoUrl) videoUrl = url;
+    }
+
+    const docData = {
+      data: dataNotte, luogoId: miLuogoAttivo.id, luogoNome: miLuogoAttivo.nome,
+      emoji: miLuogoAttivo.emoji, meteo: miMeteoSel,
+      pensiero: document.getElementById('mi-pensiero').value.trim(),
+      fotoUrl: fotoUrl || null, videoUrl: videoUrl || null,
+      uid: pageUid, timestamp: serverTimestamp()
+    };
+    await setDoc(doc(db, 'robinson_isola', pageUid, 'notti', dataNotte), docData);
+
+    // Incrementa contatore presenze
+    await setDoc(
+      doc(db, 'robinson_isola_presenze', dataNotte + '_' + miLuogoAttivo.id),
+      { count: increment(1), data: dataNotte, luogoId: miLuogoAttivo.id },
+      { merge: true }
+    );
+
+    document.getElementById('modal-isola').style.display = 'none';
+    mostraIsolaGiaSalvata(docData);
+    buildHotspotNaufrago(miLuogoAttivo.id);
+    loadForziereIsola();
+  } catch(err) {
+    alert('Errore: ' + err.message);
+  } finally {
+    btn.disabled = false; btn.textContent = '🏕️ Scegli questo luogo per stanotte';
+  }
+});
+
+async function loadForziereIsola() {
+  const lista = document.getElementById('forziere-isola-lista');
+  if (!lista) return;
+  lista.innerHTML = '<div class="spinner"></div>';
+  try {
+    const q = query(collection(db, 'robinson_isola', pageUid, 'notti'), orderBy('timestamp', 'desc'));
+    const snap = await getDocs(q);
+    if (snap.empty) {
+      lista.innerHTML = '<div class="empty-msg" style="font-style:italic;color:var(--muted);font-size:0.85rem;padding:10px 0;">Nessuna notte sull\'isola ancora.</div>';
+      return;
+    }
+    lista.innerHTML = '';
+    snap.forEach(d => {
+      const nd = d.data();
+      const dataFmt = d.id.split('-').reverse().join('/');
+      const card = document.createElement('div');
+      card.className = 'notte-isola-card';
+      card.innerHTML = `
+        <div class="notte-isola-top">
+          <span class="notte-isola-emoji">${esc(nd.emoji || '')}</span>
+          <div>
+            <div class="notte-isola-luogo">${esc(nd.luogoNome || '')}</div>
+            <div class="notte-isola-data">${esc(dataFmt)}${nd.meteo ? ' · ' + nd.meteo : ''}</div>
+          </div>
+        </div>
+        ${nd.pensiero ? `<div class="notte-isola-pensiero">"${esc(nd.pensiero.slice(0,120))}${nd.pensiero.length > 120 ? '…' : ''}"</div>` : ''}
+        ${nd.fotoUrl ? `<img src="${esc(nd.fotoUrl)}" style="width:60px;height:60px;object-fit:cover;border-radius:6px;margin-top:6px;" alt="">` : ''}`;
+      lista.appendChild(card);
+    });
+  } catch(e) {
+    lista.innerHTML = `<div style="color:var(--rosso);font-size:0.8rem;">${esc(e.message)}</div>`;
+  }
+}
+
+// ── Mappa zoom+pan embedded ────────────────────────────────────────────────
+function initIsolaMappa() {
+  const nc = document.getElementById('n-mappa-container');
+  const ni = document.getElementById('n-mappa-inner');
+  const nImg = document.getElementById('n-mappaImg');
+  if (!nc || nc.dataset.mappaInit) return;
+  nc.dataset.mappaInit = '1';
+  const N_MIN = 1, N_MAX = 4;
+
+  function nClampT(x, y, s) {
+    return [Math.min(0, Math.max(x, nc.clientWidth - ni.clientWidth * s)),
+            Math.min(0, Math.max(y, nc.clientHeight - ni.clientHeight * s))];
+  }
+  function nApplyT() {
+    [nTX, nTY] = nClampT(nTX, nTY, nScale);
+    ni.style.transform = `translate(${nTX}px,${nTY}px) scale(${nScale})`;
+    ni.style.transformOrigin = '0 0';
+  }
+  function setNH() {
+    if (nImg.naturalWidth) nc.style.height = nc.offsetWidth * (nImg.naturalHeight / nImg.naturalWidth) + 'px';
+  }
+  nImg.addEventListener('load', setNH); if (nImg.complete) setNH();
+  window.addEventListener('resize', () => { setNH(); nApplyT(); });
+  // Re-init height when tab becomes active
+  document.querySelector('[data-tab="isola"]').addEventListener('click', () => setTimeout(setNH, 50));
+
+  function nDist(t) { return Math.hypot(t[0].clientX-t[1].clientX, t[0].clientY-t[1].clientY); }
+  function nMid(t, r) { return {x:((t[0].clientX+t[1].clientX)/2)-r.left, y:((t[0].clientY+t[1].clientY)/2)-r.top}; }
+
+  nc.addEventListener('touchstart', e => {
+    if (e.touches.length===2) {
+      e.preventDefault(); nPinching=true; nDragging=false;
+      nPinchStartDist=nDist(e.touches); nPinchStartScale=nScale; nLastX=nTX; nLastY=nTY;
+    } else if (e.touches.length===1) {
+      nDragging=true; nPinching=false;
+      nDragStartX=e.touches[0].clientX-nTX; nDragStartY=e.touches[0].clientY-nTY;
+    }
+  }, {passive:false});
+  nc.addEventListener('touchmove', e => {
+    e.preventDefault();
+    if (nPinching && e.touches.length===2) {
+      const ns=Math.min(N_MAX,Math.max(N_MIN,nPinchStartScale*(nDist(e.touches)/nPinchStartDist)));
+      const r=nc.getBoundingClientRect(), m=nMid(e.touches,r);
+      nTX=m.x-(m.x-nLastX)*(ns/nPinchStartScale); nTY=m.y-(m.y-nLastY)*(ns/nPinchStartScale);
+      nScale=ns; nApplyT();
+    } else if (nDragging && e.touches.length===1) {
+      nTX=e.touches[0].clientX-nDragStartX; nTY=e.touches[0].clientY-nDragStartY; nApplyT();
+    }
+  }, {passive:false});
+  nc.addEventListener('touchend', e => { if(e.touches.length<2) nPinching=false; if(e.touches.length===0) nDragging=false; });
+  nc.addEventListener('mousedown', e => { nDragging=true; nDragStartX=e.clientX-nTX; nDragStartY=e.clientY-nTY; nc.style.cursor='grabbing'; });
+  nc.addEventListener('mousemove', e => { if(!nDragging) return; nTX=e.clientX-nDragStartX; nTY=e.clientY-nDragStartY; nApplyT(); });
+  nc.addEventListener('mouseup', () => { nDragging=false; nc.style.cursor='grab'; });
+  nc.addEventListener('mouseleave', () => { nDragging=false; nc.style.cursor='grab'; });
+  nc.addEventListener('wheel', e => {
+    e.preventDefault();
+    const ns=Math.min(N_MAX,Math.max(N_MIN,nScale*(e.deltaY>0?0.9:1.1)));
+    const r=nc.getBoundingClientRect();
+    nTX=e.clientX-r.left-(e.clientX-r.left-nTX)*(ns/nScale);
+    nTY=e.clientY-r.top-(e.clientY-r.top-nTY)*(ns/nScale);
+    nScale=ns; nApplyT();
+  }, {passive:false});
+  document.getElementById('n-zoomIn').addEventListener('click', () => {
+    const ns=Math.min(N_MAX,nScale*1.3), cx=nc.clientWidth/2, cy=nc.clientHeight/2;
+    nTX=cx-(cx-nTX)*(ns/nScale); nTY=cy-(cy-nTY)*(ns/nScale); nScale=ns; nApplyT();
+  });
+  document.getElementById('n-zoomOut').addEventListener('click', () => {
+    const ns=Math.max(N_MIN,nScale/1.3);
+    if(ns===N_MIN){nTX=0;nTY=0;} else {
+      const cx=nc.clientWidth/2, cy=nc.clientHeight/2;
+      nTX=cx-(cx-nTX)*(ns/nScale); nTY=cy-(cy-nTY)*(ns/nScale);
+    }
+    nScale=ns; nApplyT();
+  });
 }
 
 // ── Forziere ─────────────────────────────────────────────────────────────
