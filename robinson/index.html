@@ -127,6 +127,9 @@
 
 <script type="module">
 import { setupNavAuth, getAuthUser } from './js/robinson-nav.js';
+import { ADMIN_UID } from './js/robinson-firebase.js';
+import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { db } from './js/robinson-firebase.js';
 
 // Copertina responsive
 const img = document.getElementById('copertina');
@@ -145,6 +148,19 @@ if (!user) {
 } else {
   const diarioLink = document.getElementById('nav-diario');
   if (diarioLink) diarioLink.href = `naufrago.html?uid=${user.uid}`;
+
+  // Mostra link admin se è admin
+  const profilo = await getDoc(doc(db, 'utenti', user.uid));
+  const ruolo = profilo.data()?.ruolo;
+  if (user.uid === ADMIN_UID || ruolo === 'admin') {
+    const adminWrap = document.createElement('div');
+    adminWrap.style.cssText = 'position:fixed;top:60px;right:12px;z-index:100;display:flex;flex-direction:column;gap:6px;';
+    adminWrap.innerHTML = `
+      <a href="admin-classifica.html" style="background:rgba(26,58,92,0.88);color:#c8860a;border:1px solid #c8860a66;border-radius:20px;padding:5px 12px;font-size:0.75rem;text-decoration:none;font-family:Lora,serif;white-space:nowrap;">📊 Classifica admin</a>
+      <a href="admin-isola.html" style="background:rgba(26,58,92,0.88);color:#c8860a;border:1px solid #c8860a66;border-radius:20px;padding:5px 12px;font-size:0.75rem;text-decoration:none;font-family:Lora,serif;white-space:nowrap;">🏝️ Admin Isola</a>
+    `;
+    document.body.appendChild(adminWrap);
+  }
 }
 </script>
 </body>

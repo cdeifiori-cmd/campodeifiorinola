@@ -71,6 +71,10 @@
   <div id="ph-pronomi" class="profilo-pronomi"></div>
   <div id="ph-rank" style="margin-top:6px;font-size:1.4rem;"></div>
   <div id="ph-punti" class="punti-badge" style="display:none;margin:6px auto 0;">⭐ <span id="ph-punti-val">0</span> punti</div>
+  <div id="ph-admin-links" style="display:none;margin-top:10px;gap:8px;justify-content:center;flex-wrap:wrap;">
+    <a href="admin-classifica.html" style="background:rgba(26,58,92,0.85);color:#c8860a;border:1px solid #c8860a55;border-radius:20px;padding:4px 12px;font-size:0.75rem;text-decoration:none;">📊 Classifica</a>
+    <a href="admin-isola.html" style="background:rgba(26,58,92,0.85);color:#c8860a;border:1px solid #c8860a55;border-radius:20px;padding:4px 12px;font-size:0.75rem;text-decoration:none;">🏝️ Admin Isola</a>
+  </div>
 </div>
 
 <!-- Tabs nav -->
@@ -517,6 +521,10 @@ requireAuth(async user => {
   currentUser = user;
   isOwner = user.uid === pageUid;
   isAdmin = user.uid === ADMIN_UID;
+  if (isAdmin) {
+    const al = document.getElementById('ph-admin-links');
+    if (al) al.style.display = 'flex';
+  }
 
   await loadProfilo();
   await loadRank();
