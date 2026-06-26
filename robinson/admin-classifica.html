@@ -7,47 +7,155 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/robinson.css">
   <style>
-    .periodo-toggle { display:flex; gap:0; background:var(--navy); border-radius:8px; overflow:hidden; margin:12px 16px; }
-    .periodo-btn { flex:1; padding:9px 0; background:none; border:none; color:rgba(255,255,255,0.6); font-family:'Lora',serif; font-size:0.85rem; cursor:pointer; }
-    .periodo-btn.active { background:var(--oro); color:#fff; }
+    /* ── Tab navigation ── */
+    .section-tabs { display:flex; gap:0; background:var(--navy); border-bottom:2px solid var(--oro); overflow-x:auto; }
+    .section-tab { flex-shrink:0; padding:10px 14px; background:none; border:none; color:rgba(255,255,255,0.6); font-family:'Lora',serif; font-size:0.8rem; cursor:pointer; white-space:nowrap; border-bottom:3px solid transparent; }
+    .section-tab.active { color:var(--oro); border-bottom-color:var(--oro); }
+
+    /* ── Periodo toggle ── */
+    .periodo-toggle { display:flex; gap:0; background:var(--carta-scura); border-radius:8px; overflow:hidden; margin:10px 12px; }
+    .periodo-btn { flex:1; padding:8px 0; background:none; border:none; color:var(--muted); font-family:'Lora',serif; font-size:0.8rem; cursor:pointer; }
+    .periodo-btn.active { background:var(--navy); color:var(--oro); }
+
+    /* ── Section panels ── */
+    .section-panel { display:none; }
+    .section-panel.active { display:block; }
+
+    /* ── Podio ── */
     .podio-wrap { padding:16px; background:var(--navy); }
     .podio { display:flex; justify-content:center; align-items:flex-end; gap:8px; }
-    .podio-slot { text-align:center; flex:1; max-width:100px; }
+    .podio-slot { text-align:center; flex:1; max-width:110px; }
+    .podio-avatar { width:48px; height:48px; border-radius:50%; object-fit:cover; border:2px solid var(--oro); margin-bottom:4px; }
+    .podio-avatar-ph { width:48px; height:48px; border-radius:50%; background:rgba(255,255,255,0.15); display:inline-flex; align-items:center; justify-content:center; font-size:1.3rem; margin-bottom:4px; }
     .podio-pilastro { background:rgba(255,255,255,0.1); border-top:3px solid var(--oro); display:flex; align-items:center; justify-content:center; flex-direction:column; border-radius:6px 6px 0 0; }
     .podio-pilastro.p1 { height:90px; }
     .podio-pilastro.p2 { height:65px; }
     .podio-pilastro.p3 { height:45px; }
     .podio-rank { font-size:1.5rem; }
-    .podio-nome { font-size:0.68rem; color:#fff; margin-top:6px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .podio-nome { font-size:0.68rem; color:#fff; margin-top:4px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100px; }
     .podio-punti { font-size:0.72rem; color:var(--oro); }
-    .list-wrap { max-width:640px; margin:0 auto; padding:12px 12px 80px; }
-    .mini-badge { display:inline-block; background:var(--carta-scura); border-radius:4px; padding:1px 5px; font-size:0.65rem; color:var(--muted); margin-right:2px; }
+
+    /* ── Classifica lista ── */
+    .list-wrap { max-width:640px; margin:0 auto; padding:10px 12px 90px; }
+    .mini-badge { display:inline-block; background:var(--carta-scura); border-radius:4px; padding:1px 5px; font-size:0.65rem; color:var(--muted); margin-right:2px; margin-bottom:2px; }
+    .sort-btn-row { display:flex; gap:6px; flex-wrap:wrap; margin:10px 12px 0; }
+    .sort-btn { padding:5px 12px; background:var(--carta-scura); border:1px solid #c8b89a; border-radius:20px; font-family:'Lora',serif; font-size:0.75rem; cursor:pointer; }
+    .sort-btn.active { background:var(--navy); color:var(--oro); border-color:var(--navy); }
+
+    /* ── Presenza cards ── */
+    .presenza-card { background:#fff; border-radius:12px; padding:12px 14px; margin-bottom:10px; display:flex; gap:12px; align-items:center; box-shadow:0 1px 6px rgba(0,0,0,0.07); position:relative; }
+    .presenza-avatar { width:44px; height:44px; border-radius:50%; object-fit:cover; flex-shrink:0; }
+    .presenza-avatar-ph { width:44px; height:44px; border-radius:50%; background:var(--carta-scura); display:flex; align-items:center; justify-content:center; font-size:1.2rem; flex-shrink:0; }
+    .pres-nome { font-size:0.88rem; font-weight:700; color:var(--navy); }
+    .pres-badges { display:flex; gap:6px; flex-wrap:wrap; margin-top:5px; }
+    .pres-badge { padding:3px 8px; border-radius:10px; font-size:0.72rem; font-weight:600; }
+    .pres-badge.streak { background:#fff3cd; color:#856404; }
+    .pres-badge.notti { background:#d1ecf1; color:#0c5460; }
+    .pres-badge.giorni { background:#d4edda; color:#155724; }
+    .corona { position:absolute; top:-6px; right:10px; font-size:1.2rem; }
+    .alert-badge { display:inline-block; background:#dc3545; color:#fff; border-radius:6px; font-size:0.65rem; padding:1px 5px; margin-left:5px; }
+
+    /* ── Emozioni ── */
+    .emo-big { text-align:center; padding:20px; }
+    .emo-big-icon { font-size:3.5rem; }
+    .emo-big-label { font-size:1rem; color:var(--navy); font-weight:600; margin-top:6px; }
+    .emo-big-pct { font-size:0.8rem; color:var(--muted); }
+    .emo-bar-row { display:flex; align-items:center; gap:8px; margin:5px 0; }
+    .emo-bar-label { font-size:0.85rem; min-width:32px; }
+    .emo-bar-bg { flex:1; height:8px; background:#e9e3d9; border-radius:4px; overflow:hidden; }
+    .emo-bar-fill { height:100%; background:var(--oro); border-radius:4px; transition:width 0.4s; }
+    .emo-bar-cnt { font-size:0.75rem; color:var(--muted); min-width:24px; text-align:right; }
+    .luogo-top { display:flex; align-items:center; gap:10px; margin:6px 0; padding:8px 12px; background:var(--carta-scura); border-radius:8px; }
+    .luogo-top-rank { font-size:1.1rem; min-width:26px; }
+    .luogo-top-nome { font-size:0.82rem; color:var(--navy); font-weight:600; flex:1; }
+    .luogo-top-cnt { font-size:0.75rem; color:var(--muted); }
+    .alert-group { background:#fff3cd; border:1px solid #ffc107; border-radius:8px; padding:10px 14px; margin:10px 0; font-size:0.82rem; color:#856404; }
+    #canvas-trend { display:block; width:100%; height:160px; }
+
+    /* ── Dicono ── */
+    .dicono-card { background:#fff; border-radius:12px; padding:12px 14px; margin-bottom:10px; display:flex; gap:12px; align-items:center; box-shadow:0 1px 6px rgba(0,0,0,0.07); }
+    .dicono-avatar { width:44px; height:44px; border-radius:50%; object-fit:cover; flex-shrink:0; }
+    .dicono-avatar-ph { width:44px; height:44px; border-radius:50%; background:var(--carta-scura); display:flex; align-items:center; justify-content:center; font-size:1.2rem; flex-shrink:0; }
+    .dicono-stat { display:flex; gap:10px; flex-wrap:wrap; margin-top:4px; }
+    .dicono-stat-item { font-size:0.72rem; color:var(--muted); }
+    .dicono-stat-item strong { color:var(--navy); font-size:0.82rem; }
+
+    /* ── Export PDF btn ── */
+    .export-btn { display:flex; align-items:center; gap:6px; background:var(--carta-scura); border:1px solid #c8b89a; border-radius:20px; padding:6px 14px; font-family:'Lora',serif; font-size:0.78rem; cursor:pointer; margin:0 12px 10px; }
+    .export-btn:hover { background:#e6ddd0; }
+
+    /* ── Spinner / empty ── */
+    .section-loader { text-align:center; padding:30px; color:var(--muted); font-style:italic; font-family:'Lora',serif; }
+    .card-h2 { font-family:'Playfair Display',serif; font-size:1.05rem; color:var(--navy); padding:14px 14px 6px; font-weight:700; }
   </style>
 </head>
 <body>
 
 <header class="top-header">
   <div>
-    <div class="header-title-main">📊 Classifica</div>
-    <div class="header-title-sub">chi guida la flotta</div>
+    <div class="header-title-main">📊 Statistiche</div>
+    <div class="header-title-sub">admin – Robinson</div>
   </div>
   <div style="display:flex;gap:12px;align-items:center;">
-    <a href="admin-isola.html" style="color:var(--oro);font-size:0.82rem;text-decoration:none;">🏝️ Dashboard Isola</a>
-    <a href="admin-pin.html" style="color:var(--oro);font-size:0.82rem;text-decoration:none;">🔑 Gestione PIN</a>
+    <a href="admin-isola.html" style="color:var(--oro);font-size:0.82rem;text-decoration:none;">🏝️ Isola</a>
+    <a href="admin-pin.html" style="color:var(--oro);font-size:0.82rem;text-decoration:none;">🔑 PIN</a>
     <a href="index.html" style="color:#fff;font-size:0.8rem;text-decoration:none;">← Home</a>
   </div>
 </header>
 
-<div class="periodo-toggle">
-  <button class="periodo-btn active" data-periodo="settimana">🗓️ Settimana</button>
-  <button class="periodo-btn" data-periodo="mese">📅 Mese</button>
-  <button class="periodo-btn" data-periodo="totale">🏆 Totale</button>
+<!-- Tab navigation -->
+<div class="section-tabs" id="main-tabs">
+  <button class="section-tab active" data-tab="contributi">🏆 Contributi</button>
+  <button class="section-tab" data-tab="presenza">🗓️ Presenza</button>
+  <button class="section-tab" data-tab="emozioni">🧭 Emozioni</button>
+  <button class="section-tab" data-tab="dicono">💬 Dicono di me</button>
 </div>
 
-<div class="podio-wrap" id="podio-section"></div>
+<!-- Periodo toggle (shared) -->
+<div class="periodo-toggle" id="periodo-toggle">
+  <button class="periodo-btn active" data-periodo="settimana">🗓️ Settimana</button>
+  <button class="periodo-btn" data-periodo="mese">📅 Mese</button>
+  <button class="periodo-btn" data-periodo="totale">🏆 Tutto</button>
+</div>
 
-<div class="list-wrap" id="lista-classifica">
-  <div class="spinner"></div>
+<!-- ══ SEZIONE 1: CONTRIBUTI ═══════════════════════════════════════════════ -->
+<div class="section-panel active" id="panel-contributi">
+  <div class="podio-wrap" id="podio-contributi"></div>
+  <div class="list-wrap" id="lista-contributi"><div class="section-loader">⏳ Caricamento…</div></div>
+  <button class="export-btn" onclick="exportPdf('contributi')">📄 Esporta PDF</button>
+</div>
+
+<!-- ══ SEZIONE 2: PRESENZA ════════════════════════════════════════════════ -->
+<div class="section-panel" id="panel-presenza">
+  <div class="sort-btn-row">
+    <span style="font-size:0.75rem;color:var(--muted);line-height:2;font-family:'Lora',serif;">Ordina per:</span>
+    <button class="sort-btn active" data-sort="streak">🔥 Streak</button>
+    <button class="sort-btn" data-sort="notti">🏝️ Notti</button>
+    <button class="sort-btn" data-sort="giorni">📅 Giorni</button>
+  </div>
+  <div class="list-wrap" id="lista-presenza"><div class="section-loader">⏳ Caricamento…</div></div>
+  <button class="export-btn" onclick="exportPdf('presenza')">📄 Esporta PDF</button>
+</div>
+
+<!-- ══ SEZIONE 3: EMOZIONI ════════════════════════════════════════════════ -->
+<div class="section-panel" id="panel-emozioni">
+  <div id="emo-alert-group" style="display:none;" class="alert-group" style="margin:10px 12px;">⚠️ Attenzione: il gruppo sembra attraversare un momento difficile</div>
+  <div class="card-h2">Emozione dominante (ultimi 7 gg)</div>
+  <div id="emo-dominante" class="emo-big"><div class="section-loader">⏳</div></div>
+  <div class="card-h2">Distribuzione emozioni</div>
+  <div class="list-wrap" id="emo-barre" style="padding-bottom:10px;"></div>
+  <div class="card-h2">Luoghi più abitati (ultimi 7 gg)</div>
+  <div class="list-wrap" id="emo-luoghi" style="padding-bottom:10px;"></div>
+  <div class="card-h2">Trend emozioni (14 giorni)</div>
+  <div style="padding:0 12px 10px;"><canvas id="canvas-trend"></canvas></div>
+  <button class="export-btn" onclick="exportPdf('emozioni')">📄 Esporta PDF</button>
+</div>
+
+<!-- ══ SEZIONE 4: DICONO DI ME ════════════════════════════════════════════ -->
+<div class="section-panel" id="panel-dicono">
+  <div class="card-h2">Chi ha ricevuto messaggi dalla ciurma</div>
+  <div class="list-wrap" id="lista-dicono"><div class="section-loader">⏳ Caricamento…</div></div>
+  <button class="export-btn" onclick="exportPdf('dicono')">📄 Esporta PDF</button>
 </div>
 
 <nav class="bottom-nav">
@@ -63,72 +171,173 @@ import { db, auth, ADMIN_UID } from './js/robinson-firebase.js';
 import { requireAuth } from './js/robinson-auth.js';
 import { esc } from './js/robinson-utils.js';
 import { SETTIMANA_KEY, MESE_KEY } from './js/robinson-utils.js';
-import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import {
+  collection, getDocs, query, orderBy, limit, where, doc, getDoc
+} from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
-// Protezione admin: requireAuth garantisce un solo firing, poi controlla ruolo
+// ── Luoghi mappa ──────────────────────────────────────────────────────────
+const LUOGHI = [
+  { id:'spiaggia-fiducia',     nome:'Spiaggia della Fiducia',    emoji:'🌴' },
+  { id:'faro-sogni',           nome:'Faro dei Sogni',            emoji:'🗼' },
+  { id:'promontorio-coraggio', nome:'Promontorio del Coraggio',  emoji:'🧭' },
+  { id:'baia-calma',           nome:'Baia della Calma',          emoji:'🌊' },
+  { id:'villaggio-amicizia',   nome:"Villaggio dell'Amicizia",   emoji:'🤝' },
+  { id:'vulcano-rabbia',       nome:'Vulcano della Rabbia',      emoji:'🌋' },
+  { id:'laguna-pazienza',      nome:'Laguna della Pazienza',     emoji:'🐢' },
+  { id:'caverna-tristezza',    nome:'Caverna della Tristezza',   emoji:'🌧️' },
+  { id:'tempesta-caos',        nome:'Tempesta del Caos',         emoji:'⛈️' },
+  { id:'deserto-solitudine',   nome:'Deserto della Solitudine',  emoji:'🌪️' },
+  { id:'scoglio-dolore',       nome:'Scoglio del Dolore',        emoji:'💔' },
+  { id:'nebbia-dubbi',         nome:'Nebbia dei Dubbi',          emoji:'🌫️' },
+  { id:'isola-paure',          nome:'Isola delle Paure',         emoji:'🔒' },
+  { id:'bivio-scelte',         nome:'Bivio delle Scelte',        emoji:'🚧' },
+  { id:'tramonto-gratitudine', nome:'Tramonto della Gratitudine',emoji:'🌅' },
+];
+const LUOGO_MAP = Object.fromEntries(LUOGHI.map(l => [l.id, l]));
+
+// ── Emozioni config ───────────────────────────────────────────────────────
+const EMO_METEO = [
+  { key:'☀️',  label:'Sereno',     color:'#f4c542' },
+  { key:'🌤️', label:'Variabile',  color:'#f49842' },
+  { key:'🌈',  label:'Arcobaleno', color:'#a855f7' },
+  { key:'🌧️', label:'Nuvoloso',   color:'#6b9fd4' },
+  { key:'⛈️',  label:'Tempesta',   color:'#4a6fa5' },
+  { key:'🌫️', label:'Nebbia',     color:'#9e9e9e' },
+  { key:'🌪️', label:'Turbine',    color:'#795548' },
+  { key:'💔',  label:'Dolore',     color:'#e53935' },
+];
+const EMO_NEGATIVE = new Set(['🌧️','⛈️','🌪️','💔','🌫️']);
+
+// ── Stato globale ─────────────────────────────────────────────────────────
+let periodo = 'settimana';
+let activeTab = 'contributi';
+let sortPresenza = 'streak';
+let uidList = [];
+let naufraghiInfo = {}; // uid → {nome, foto}
+let loaded = { contributi:false, presenza:false, emozioni:false, dicono:false };
+// alert flags
+let allertaNaufraghi = new Set(); // uid con emozioni negative 3gg consecutivi
+
 requireAuth(async user => {
-  if (user.uid !== ADMIN_UID) {
-    window.location.replace('index.html');
-    return;
-  }
-  await loadClassifica();
+  if (user.uid !== ADMIN_UID) { window.location.replace('index.html'); return; }
+
+  // Carica lista naufraghi
+  const snap = await getDocs(collection(db, 'robinson_naufraghi'));
+  uidList = snap.docs.map(d => d.id);
+
+  // Carica profili
+  await Promise.all(uidList.map(async uid => {
+    try {
+      const uSnap = await getDoc(doc(db, 'utenti', uid));
+      const d = uSnap.data() || {};
+      naufraghiInfo[uid] = { nome: d.nome || uid, foto: d.fotoProfiloUrl || d.fotoProfilo || '' };
+    } catch(_) { naufraghiInfo[uid] = { nome: uid, foto: '' }; }
+  }));
+
+  // Prima tab sempre caricata
+  await loadTab('contributi');
 });
 
-let periodo = 'settimana';
-let allDocs = [];
+// ── Tab switching ─────────────────────────────────────────────────────────
+document.querySelectorAll('.section-tab').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    document.querySelectorAll('.section-tab').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.section-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    activeTab = btn.dataset.tab;
+    document.getElementById('panel-' + activeTab).classList.add('active');
+    await loadTab(activeTab);
+  });
+});
 
-async function loadClassifica() {
+// ── Periodo switching ─────────────────────────────────────────────────────
+document.querySelectorAll('.periodo-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.periodo-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    periodo = btn.dataset.periodo;
+    // Re-render sezioni già caricate che dipendono dal periodo
+    if (loaded.contributi) renderContributi();
+    if (loaded.presenza) renderPresenza();
+  });
+});
+
+// ── Sort presenza ─────────────────────────────────────────────────────────
+document.querySelectorAll('.sort-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    sortPresenza = btn.dataset.sort;
+    if (loaded.presenza) renderPresenza();
+  });
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+// SEZIONE 1 — CONTRIBUTI
+// ════════════════════════════════════════════════════════════════════════════
+let punteggiDocs = [];
+
+async function loadContributi() {
   const snap = await getDocs(collection(db, 'robinson_punteggi'));
-  allDocs = snap.docs.map(d => ({ uid: d.id, ...d.data() }));
-  render();
+  punteggiDocs = snap.docs.map(d => ({ uid: d.id, ...d.data() }));
+  loaded.contributi = true;
+  renderContributi();
 }
 
 function getPunti(d) {
   if (periodo === 'settimana') return (d.settimana || {})[SETTIMANA_KEY] || 0;
-  if (periodo === 'mese') return (d.mese || {})[MESE_KEY] || 0;
+  if (periodo === 'mese')      return (d.mese || {})[MESE_KEY] || 0;
   return d.totale || 0;
 }
 
-function render() {
-  const sorted = [...allDocs].sort((a, b) => getPunti(b) - getPunti(a));
-  const max = sorted.length ? getPunti(sorted[0]) : 1;
+function renderContributi() {
+  const sorted = [...punteggiDocs].sort((a,b) => getPunti(b) - getPunti(a));
+  const max = sorted.length ? (getPunti(sorted[0]) || 1) : 1;
 
   // Podio
-  const podioEl = document.getElementById('podio-section');
-  const top3 = sorted.slice(0, 3);
+  const podio = document.getElementById('podio-contributi');
+  const top3 = sorted.slice(0,3);
   const order = top3.length >= 3 ? [top3[1], top3[0], top3[2]] : top3;
   const classes = top3.length >= 3 ? ['p2','p1','p3'] : ['p1','p2','p3'];
   const medaglie = top3.length >= 3 ? ['🥈','🥇','🥉'] : ['🥇','🥈','🥉'];
-  podioEl.innerHTML = `<div class="podio">` + order.map((u, i) => {
+  podio.innerHTML = `<div class="podio">` + order.map((u,i) => {
     if (!u) return '';
+    const info = naufraghiInfo[u.uid] || {};
+    const nome = info.nome || u.nome || u.uid;
+    const foto = info.foto || '';
+    const avEl = foto
+      ? `<img class="podio-avatar" src="${esc(foto)}" alt="">`
+      : `<div class="podio-avatar-ph">${medaglie[i]}</div>`;
     return `<div class="podio-slot">
-      <div class="podio-pilastro ${classes[i]}">
-        <span class="podio-rank">${medaglie[i]}</span>
-      </div>
-      <div class="podio-nome">${esc(u.nome || u.uid)}</div>
+      ${avEl}
+      <div class="podio-pilastro ${classes[i]}"><span class="podio-rank">${medaglie[i]}</span></div>
+      <div class="podio-nome">${esc(nome)}</div>
       <div class="podio-punti">${getPunti(u)} pt</div>
     </div>`;
   }).join('') + `</div>`;
 
   // Lista
-  const lista = document.getElementById('lista-classifica');
-  if (!sorted.length) { lista.innerHTML = '<div class="empty-msg">Nessun dato ancora.</div>'; return; }
-  lista.innerHTML = sorted.map((u, i) => {
+  const lista = document.getElementById('lista-contributi');
+  if (!sorted.length) { lista.innerHTML = '<div class="section-loader">Nessun dato ancora.</div>'; return; }
+  lista.innerHTML = sorted.map((u,i) => {
     const punti = getPunti(u);
-    const pct = max > 0 ? Math.round(punti / max * 100) : 0;
+    const pct = max > 0 ? Math.round(punti/max*100) : 0;
     const det = u.dettaglio || {};
+    const info = naufraghiInfo[u.uid] || {};
+    const nome = info.nome || u.nome || u.uid;
+    const alertBadge = allertaNaufraghi.has(u.uid) ? `<span class="alert-badge">⚠️ Monitorare</span>` : '';
     return `<div class="classifica-row">
       <div style="font-size:0.85rem;font-weight:700;color:var(--navy);min-width:24px;">#${i+1}</div>
       <div style="flex:1;">
-        <div style="font-size:0.88rem;font-weight:600;color:var(--inchiostro);">${esc(u.nome || u.uid)}</div>
+        <div style="font-size:0.88rem;font-weight:600;color:var(--inchiostro);">${esc(nome)}${alertBadge}</div>
         <div style="margin-top:3px;">
-          ${det.post ? `<span class="mini-badge">📝${det.post}</span>` : ''}
-          ${det.foto ? `<span class="mini-badge">📷${det.foto}</span>` : ''}
-          ${det.video ? `<span class="mini-badge">🎥${det.video}</span>` : ''}
-          ${det.audio ? `<span class="mini-badge">🎵${det.audio}</span>` : ''}
-          ${det.commenti ? `<span class="mini-badge">💬${det.commenti}</span>` : ''}
-          ${det.reazioni ? `<span class="mini-badge">❤️${det.reazioni}</span>` : ''}
-          ${det.bottiglie ? `<span class="mini-badge">🍾${det.bottiglie}</span>` : ''}
+          ${det.post    ? `<span class="mini-badge">📝${det.post} (${(det.post||0)*3}pt)</span>` : ''}
+          ${det.foto    ? `<span class="mini-badge">📷${det.foto} (${(det.foto||0)*4}pt)</span>` : ''}
+          ${det.video   ? `<span class="mini-badge">🎬${det.video} (${(det.video||0)*5}pt)</span>` : ''}
+          ${det.audio   ? `<span class="mini-badge">🎙️${det.audio} (${(det.audio||0)*4}pt)</span>` : ''}
+          ${det.commenti? `<span class="mini-badge">💬${det.commenti} (${(det.commenti||0)*2}pt)</span>` : ''}
+          ${det.reazioni? `<span class="mini-badge">❤️${det.reazioni} (${(det.reazioni||0)*1}pt)</span>` : ''}
+          ${det.bottiglie?`<span class="mini-badge">🍾${det.bottiglie}</span>` : ''}
         </div>
         <div class="classifica-bar-bg" style="margin-top:5px;">
           <div class="classifica-bar" style="width:${pct}%;"></div>
@@ -139,14 +348,294 @@ function render() {
   }).join('');
 }
 
-document.querySelectorAll('.periodo-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.periodo-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    periodo = btn.dataset.periodo;
-    render();
+// ════════════════════════════════════════════════════════════════════════════
+// SEZIONE 2 — PRESENZA
+// ════════════════════════════════════════════════════════════════════════════
+let presenzaDati = []; // { uid, streak, notti, giorni }
+
+async function loadPresenza() {
+  const today = dateStr(new Date());
+
+  presenzaDati = await Promise.all(uidList.map(async uid => {
+    const dateSet = new Set();
+
+    // Spiaggia
+    try {
+      const snap = await getDocs(query(
+        collection(db, 'robinson_spiaggia'),
+        where('authorId','==',uid)
+      ));
+      snap.forEach(d => { if (d.data().timestamp) dateSet.add(dateStr(d.data().timestamp.toDate())); });
+    } catch(_){}
+
+    // Diario
+    try {
+      const snap = await getDocs(collection(db, 'robinson_diari', uid, 'posts'));
+      snap.forEach(d => { if (d.data().timestamp) dateSet.add(dateStr(d.data().timestamp.toDate())); });
+    } catch(_){}
+
+    // Isola notti
+    let nottiCount = 0;
+    try {
+      const snap = await getDocs(collection(db, 'robinson_isola', uid, 'notti'));
+      nottiCount = snap.size;
+      snap.forEach(d => { if (d.data().timestamp) dateSet.add(dateStr(d.data().timestamp.toDate())); });
+    } catch(_){}
+
+    const giorni = dateSet.size;
+    const streak = calcStreak(dateSet, today);
+    return { uid, streak, notti: nottiCount, giorni };
+  }));
+
+  loaded.presenza = true;
+  renderPresenza();
+}
+
+function dateStr(d) {
+  return d.toISOString().slice(0,10);
+}
+
+function calcStreak(dateSet, today) {
+  let count = 0;
+  let cur = new Date(today);
+  while (true) {
+    const s = dateStr(cur);
+    if (!dateSet.has(s)) break;
+    count++;
+    cur.setDate(cur.getDate() - 1);
+  }
+  return count;
+}
+
+function renderPresenza() {
+  const sorted = [...presenzaDati].sort((a,b) => b[sortPresenza] - a[sortPresenza]);
+  const maxStreak = sorted.reduce((m,u) => Math.max(m, u.streak), 0);
+  const lista = document.getElementById('lista-presenza');
+  if (!sorted.length) { lista.innerHTML = '<div class="section-loader">Nessun dato.</div>'; return; }
+  lista.innerHTML = sorted.map((u,i) => {
+    const info = naufraghiInfo[u.uid] || {};
+    const nome = info.nome || u.uid;
+    const foto = info.foto || '';
+    const avEl = foto
+      ? `<img class="presenza-avatar" src="${esc(foto)}" alt="">`
+      : `<div class="presenza-avatar-ph">👤</div>`;
+    const corona = (u.streak > 0 && u.streak === maxStreak) ? `<div class="corona">👑</div>` : '';
+    const alertBadge = allertaNaufraghi.has(u.uid) ? `<span class="alert-badge">⚠️ Monitorare</span>` : '';
+    return `<div class="presenza-card">
+      ${corona}
+      ${avEl}
+      <div style="flex:1;">
+        <div class="pres-nome">${esc(nome)}${alertBadge}</div>
+        <div class="pres-badges">
+          <span class="pres-badge streak">🔥 ${u.streak} giorni consecutivi</span>
+          <span class="pres-badge notti">🏝️ ${u.notti} notti</span>
+          <span class="pres-badge giorni">📅 ${u.giorni} giorni attivi</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// SEZIONE 3 — EMOZIONI
+// ════════════════════════════════════════════════════════════════════════════
+async function loadEmozioni() {
+  const now = new Date();
+  const ms7  = 7  * 86400000;
+  const ms14 = 14 * 86400000;
+  const ms2  = 2  * 86400000;
+
+  // Raccogli tutte le notti
+  let tutte = [];
+  await Promise.all(uidList.map(async uid => {
+    try {
+      const snap = await getDocs(collection(db, 'robinson_isola', uid, 'notti'));
+      snap.forEach(d => {
+        const data = d.data();
+        if (!data.timestamp) return;
+        tutte.push({ uid, meteo: data.meteo || '', luogoId: data.luogoId || '', ts: data.timestamp.toDate() });
+      });
+    } catch(_){}
+  }));
+
+  const now7  = tutte.filter(n => (now - n.ts) <= ms7);
+  const now14 = tutte.filter(n => (now - n.ts) <= ms14);
+  const now2  = tutte.filter(n => (now - n.ts) <= ms2);
+
+  // Emozione dominante 7 gg
+  const emoCounts = {};
+  EMO_METEO.forEach(e => emoCounts[e.key] = 0);
+  now7.forEach(n => { if (emoCounts[n.meteo] !== undefined) emoCounts[n.meteo]++; });
+  const totEmo = now7.length || 1;
+  const sorted = Object.entries(emoCounts).sort((a,b) => b[1]-a[1]);
+  const [topKey, topCnt] = sorted[0] || ['☀️',0];
+  const topInfo = EMO_METEO.find(e => e.key === topKey) || { label:'Sereno', key:'☀️' };
+
+  document.getElementById('emo-dominante').innerHTML = `
+    <div class="emo-big-icon">${topKey}</div>
+    <div class="emo-big-label">${topInfo.label}</div>
+    <div class="emo-big-pct">${Math.round(topCnt/totEmo*100)}% delle notti sull'isola</div>
+  `;
+
+  // Barre distribuzione
+  document.getElementById('emo-barre').innerHTML = EMO_METEO.map(e => {
+    const cnt = emoCounts[e.key] || 0;
+    const pct = Math.round(cnt/totEmo*100);
+    return `<div class="emo-bar-row">
+      <div class="emo-bar-label">${e.key}</div>
+      <div class="emo-bar-bg"><div class="emo-bar-fill" style="width:${pct}%;background:${e.color};"></div></div>
+      <div class="emo-bar-cnt">${cnt}</div>
+    </div>`;
+  }).join('');
+
+  // Top 3 luoghi 7 gg
+  const luoghiCnt = {};
+  now7.forEach(n => { if (n.luogoId) luoghiCnt[n.luogoId] = (luoghiCnt[n.luogoId]||0)+1; });
+  const top3luoghi = Object.entries(luoghiCnt).sort((a,b)=>b[1]-a[1]).slice(0,3);
+  document.getElementById('emo-luoghi').innerHTML = top3luoghi.map(([id,cnt],i) => {
+    const l = LUOGO_MAP[id] || { emoji:'🗺️', nome: id };
+    return `<div class="luogo-top">
+      <div class="luogo-top-rank">${['1️⃣','2️⃣','3️⃣'][i]}</div>
+      <div class="luogo-top-rank">${l.emoji}</div>
+      <div class="luogo-top-nome">${l.nome}</div>
+      <div class="luogo-top-cnt">${cnt} nott${cnt===1?'e':'i'}</div>
+    </div>`;
+  }).join('') || '<div class="section-loader">Nessun dato.</div>';
+
+  // Alert gruppo: >40% negative nelle ultime 48h
+  const neg2 = now2.filter(n => EMO_NEGATIVE.has(n.meteo));
+  const uid2Set = new Set(now2.map(n => n.uid));
+  const negUid2Set = new Set(neg2.map(n => n.uid));
+  if (uid2Set.size > 0 && negUid2Set.size / uid2Set.size > 0.4) {
+    document.getElementById('emo-alert-group').style.display = 'block';
+  }
+
+  // Alert singoli: 3 giorni consecutivi negativi
+  await Promise.all(uidList.map(async uid => {
+    const nottiUid = tutte.filter(n => n.uid === uid).sort((a,b) => b.ts-a.ts);
+    let cons = 0;
+    const visitedDays = new Set();
+    for (const n of nottiUid) {
+      const ds = dateStr(n.ts);
+      if (visitedDays.has(ds)) continue;
+      visitedDays.add(ds);
+      if (EMO_NEGATIVE.has(n.meteo)) cons++;
+      else break;
+    }
+    if (cons >= 3) allertaNaufraghi.add(uid);
+  }));
+
+  // Trend canvas 14 giorni
+  drawTrend(now14);
+
+  loaded.emozioni = true;
+}
+
+function drawTrend(notti) {
+  const canvas = document.getElementById('canvas-trend');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.offsetWidth || 320;
+  const H = 160;
+  canvas.width = W;
+  canvas.height = H;
+
+  const days = [];
+  for (let i=13; i>=0; i--) {
+    const d = new Date(); d.setDate(d.getDate()-i);
+    days.push(dateStr(d));
+  }
+
+  ctx.clearRect(0,0,W,H);
+  const pad = { t:10, b:30, l:20, r:10 };
+  const gW = W - pad.l - pad.r;
+  const gH = H - pad.t - pad.b;
+
+  // Grid lines
+  ctx.strokeStyle = '#e9e3d9'; ctx.lineWidth=1;
+  for (let y=0; y<=4; y++) {
+    const gy = pad.t + gH - (y/4)*gH;
+    ctx.beginPath(); ctx.moveTo(pad.l, gy); ctx.lineTo(pad.l+gW, gy); ctx.stroke();
+  }
+
+  // X labels (ogni 2 giorni)
+  ctx.fillStyle = '#9e8f7a'; ctx.font = '9px Lora,serif'; ctx.textAlign='center';
+  days.forEach((d,i) => {
+    if (i % 2 === 0) {
+      const x = pad.l + (i/(days.length-1))*gW;
+      ctx.fillText(d.slice(5), x, H - 6);
+    }
   });
-});
+
+  // Lines per emozione
+  EMO_METEO.forEach(emo => {
+    const vals = days.map(day => notti.filter(n => dateStr(n.ts)===day && n.meteo===emo.key).length);
+    const maxV = Math.max(...vals, 1);
+    ctx.strokeStyle = emo.color; ctx.lineWidth = 2; ctx.beginPath();
+    vals.forEach((v,i) => {
+      const x = pad.l + (i/(days.length-1))*gW;
+      const y = pad.t + gH - (v/maxV)*gH;
+      i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+    });
+    ctx.stroke();
+  });
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// SEZIONE 4 — DICONO DI ME
+// ════════════════════════════════════════════════════════════════════════════
+async function loadDicono() {
+  const dati = await Promise.all(uidList.map(async uid => {
+    try {
+      const snap = await getDocs(
+        query(collection(db, 'robinson_dicono', uid, 'posts'), orderBy('timestamp','desc'))
+      );
+      const docs = snap.docs.map(d => d.data());
+      const mittenti = new Set(docs.map(d => d.uid || d.autorId || '').filter(Boolean));
+      const ultimo = docs[0]?.timestamp?.toDate?.() || null;
+      return { uid, count: docs.length, mittenti: mittenti.size, ultimo };
+    } catch(_) { return { uid, count:0, mittenti:0, ultimo:null }; }
+  }));
+
+  const sorted = dati.sort((a,b) => b.count - a.count).filter(d => d.count > 0);
+  const lista = document.getElementById('lista-dicono');
+  if (!sorted.length) { lista.innerHTML = '<div class="section-loader">Nessun messaggio ancora.</div>'; return; }
+  lista.innerHTML = sorted.map(u => {
+    const info = naufraghiInfo[u.uid] || {};
+    const nome = info.nome || u.uid;
+    const foto = info.foto || '';
+    const avEl = foto
+      ? `<img class="dicono-avatar" src="${esc(foto)}" alt="">`
+      : `<div class="dicono-avatar-ph">👤</div>`;
+    const ultimoLabel = u.ultimo ? u.ultimo.toLocaleDateString('it-IT',{day:'2-digit',month:'short'}) : '—';
+    return `<div class="dicono-card">
+      ${avEl}
+      <div style="flex:1;">
+        <div style="font-size:0.88rem;font-weight:700;color:var(--navy);">${esc(nome)}</div>
+        <div class="dicono-stat">
+          <div class="dicono-stat-item"><strong>${u.count}</strong> messagg${u.count===1?'io':'i'}</div>
+          <div class="dicono-stat-item"><strong>${u.mittenti}</strong> person${u.mittenti===1?'a':'e'}</div>
+          <div class="dicono-stat-item">ultimo: <strong>${ultimoLabel}</strong></div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  loaded.dicono = true;
+}
+
+// ── Tab loader dispatcher ────────────────────────────────────────────────
+async function loadTab(tab) {
+  if (tab === 'contributi' && !loaded.contributi) await loadContributi();
+  if (tab === 'presenza'   && !loaded.presenza)   await loadPresenza();
+  if (tab === 'emozioni'   && !loaded.emozioni)   await loadEmozioni();
+  if (tab === 'dicono'     && !loaded.dicono)      await loadDicono();
+}
+
+// ── Export PDF (window.print) ────────────────────────────────────────────
+window.exportPdf = function(section) {
+  window.print();
+};
+
 </script>
 </body>
 </html>
