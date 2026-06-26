@@ -59,6 +59,15 @@
     /* Accordion carta */
     .ci-accordion-toggle { cursor:pointer; user-select:none; display:flex; justify-content:space-between; align-items:center; }
     .ci-accordion-body[style*="display:block"] { padding:16px; min-height:60px; background:#faf7f0; border:1px solid #c8860a40; border-top:none; margin-bottom:8px; }
+    /* Sfondo campi diario/emozioni */
+    .campo-diario {
+      background: rgba(250,247,240,0.95);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 12px;
+      border: 1px solid #c8860a40;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
     /* Sfondo tramonto fisso */
     body {
       background-image: url('sfondo-naufrago.png');
@@ -110,24 +119,11 @@
   <div id="diario-form">
     <div class="campo-diario">
       <label>⚓ Approdo del giorno</label>
-      <textarea id="d-approdo" placeholder="Come sei arrivato/a sull'isola stamattina?"></textarea>
+      <textarea id="d-approdo" placeholder="Allora? com'è andata oggi?"></textarea>
     </div>
     <div class="campo-diario">
       <label>📌 Titolo della giornata</label>
       <input type="text" id="d-titolo" placeholder="Una frase che la descrive...">
-    </div>
-    <div class="campo-diario">
-      <label>🌤️ Meteo del cuore</label>
-      <div class="meteo-picker" id="d-meteo">
-        <span class="meteo-opt" data-v="🌞">🌞</span>
-        <span class="meteo-opt" data-v="🌤️">🌤️</span>
-        <span class="meteo-opt" data-v="⛅">⛅</span>
-        <span class="meteo-opt" data-v="🌧️">🌧️</span>
-        <span class="meteo-opt" data-v="⛈️">⛈️</span>
-        <span class="meteo-opt" data-v="🌪️">🌪️</span>
-        <span class="meteo-opt" data-v="🌈">🌈</span>
-        <span class="meteo-opt" data-v="⭐">⭐</span>
-      </div>
     </div>
     <div class="campo-diario">
       <label>💬 Sensazione</label>
@@ -142,6 +138,20 @@
 <!-- TAB B: Emozioni -->
 <div class="tab-panel" id="tab-emozioni">
   <div class="campo-diario">
+    <label>☀️ Meteo dell'umore</label>
+    <div class="meteo-picker" id="e-meteo-umore">
+      <span class="meteo-opt-umore" data-v="🌞">🌞</span>
+      <span class="meteo-opt-umore" data-v="🌤️">🌤️</span>
+      <span class="meteo-opt-umore" data-v="⛅">⛅</span>
+      <span class="meteo-opt-umore" data-v="🌧️">🌧️</span>
+      <span class="meteo-opt-umore" data-v="⛈️">⛈️</span>
+      <span class="meteo-opt-umore" data-v="🌪️">🌪️</span>
+      <span class="meteo-opt-umore" data-v="🌈">🌈</span>
+      <span class="meteo-opt-umore" data-v="⭐">⭐</span>
+    </div>
+    <input type="text" id="e-meteo-umore-note" placeholder="Oggi mi sono sentito/a..." style="margin-top:10px;width:100%;padding:8px 12px;border:1.5px solid #c8b89a;border-radius:8px;font-family:'Lora',serif;font-size:0.88rem;background:var(--post-bg);color:var(--inchiostro);">
+  </div>
+  <div class="campo-diario">
     <label>🧭 Bussola delle emozioni (1–5 stelle)</label>
     <div class="stelle-row" id="bussola-stelle">
       <div class="stella-item" data-cat="felicita"><div class="stella-label">😊 Felicità</div><div class="stella-stars"></div></div>
@@ -153,12 +163,12 @@
     <input type="text" id="e-bussola-note" placeholder="Se vuoi, indica il perché..." style="margin-top:10px;width:100%;padding:8px 12px;border:1.5px solid #c8b89a;border-radius:8px;font-family:'Lora',serif;font-size:0.88rem;background:var(--post-bg);color:var(--inchiostro);">
   </div>
   <div class="campo-diario">
-    <label>🌊 Se fossi stato/a il mare...</label>
+    <label>🌊 Se fossi stat* il mare oggi, sarei stat*...</label>
     <div class="rg" id="e-mare">
-      <label><input type="radio" name="mare" value="calmo"><span class="rl">🌊 Calmo</span></label>
-      <label><input type="radio" name="mare" value="onde"><span class="rl">〰️ Con le onde</span></label>
-      <label><input type="radio" name="mare" value="agitato"><span class="rl">⛈️ Agitato</span></label>
-      <label><input type="radio" name="mare" value="tempesta"><span class="rl">🌪️ Tempesta</span></label>
+      <label><input type="radio" name="mare" value="calmo"><span class="rl">🌊 Un mare calmo e piatto</span></label>
+      <label><input type="radio" name="mare" value="onde"><span class="rl">〰️ Avrei avuto onde leggere</span></label>
+      <label><input type="radio" name="mare" value="agitato"><span class="rl">⛈️ Agitat*</span></label>
+      <label><input type="radio" name="mare" value="tempesta"><span class="rl">🌪️ Avrei vissuto una tempesta</span></label>
     </div>
     <input type="text" id="e-mare-note" placeholder="Se vuoi, indica il perché..." style="margin-top:10px;width:100%;padding:8px 12px;border:1.5px solid #c8b89a;border-radius:8px;font-family:'Lora',serif;font-size:0.88rem;background:var(--post-bg);color:var(--inchiostro);">
   </div>
@@ -174,7 +184,7 @@
   </div>
   <div class="campo-diario">
     <label>📝 Altro</label>
-    <textarea id="e-altro" placeholder="C'è qualcos'altro che vuoi raccontare di come ti sei sentito oggi?" rows="4" style="width:100%;padding:9px 12px;border:1.5px solid #c8b89a;border-radius:8px;font-family:'Lora',serif;font-size:0.9rem;background:var(--post-bg);color:var(--inchiostro);resize:vertical;"></textarea>
+    <textarea id="e-altro" placeholder="C'è altro che vuoi aggiungere su come ti sei sentit* oggi?" rows="4" style="width:100%;padding:9px 12px;border:1.5px solid #c8b89a;border-radius:8px;font-family:'Lora',serif;font-size:0.9rem;background:var(--post-bg);color:var(--inchiostro);resize:vertical;"></textarea>
   </div>
   <button class="btn btn-primary" id="btn-salva-emozioni">💾 Salva emozioni</button>
   <div id="emozioni-msg" style="margin-top:8px;font-size:0.8rem;"></div>
@@ -526,6 +536,7 @@ let isAdmin = false;
 const oggi = new Date();
 const oggiKey = `${oggi.getFullYear()}-${String(oggi.getMonth()+1).padStart(2,'0')}-${String(oggi.getDate()).padStart(2,'0')}`;
 let meteoSel = '';
+let meteoUmoreSel = '';
 let tesoriAllegati = []; // {file, type, previewUrl}
 let mediaRecorder = null;
 let recChunks = [];
@@ -665,10 +676,24 @@ function selMeteo(v) {
   });
 }
 
+function selMeteoUmore(v) {
+  meteoUmoreSel = v;
+  document.querySelectorAll('.meteo-opt-umore').forEach(o => {
+    o.classList.toggle('sel', o.dataset.v === v);
+  });
+}
+
 document.querySelectorAll('.meteo-opt').forEach(o => {
   o.addEventListener('click', () => {
     if (!isOwner && !isAdmin) return;
     selMeteo(o.dataset.v);
+  });
+});
+
+document.querySelectorAll('.meteo-opt-umore').forEach(o => {
+  o.addEventListener('click', () => {
+    if (!isOwner && !isAdmin) return;
+    selMeteoUmore(o.dataset.v);
   });
 });
 
@@ -733,6 +758,8 @@ function prefillEmozioni(em) {
   if (em.stelle) {
     Object.entries(em.stelle).forEach(([k,v]) => setStelle(k, v));
   }
+  if (em.meteoUmore) selMeteoUmore(em.meteoUmore);
+  if (em.meteoUmoreNote) document.getElementById('e-meteo-umore-note').value = em.meteoUmoreNote;
   if (em.bussolaNote) document.getElementById('e-bussola-note').value = em.bussolaNote;
   if (em.mare) { const r = document.querySelector(`input[name=mare][value="${em.mare}"]`); if(r) r.checked = true; }
   if (em.mareNote) document.getElementById('e-mare-note').value = em.mareNote;
@@ -747,6 +774,8 @@ document.getElementById('btn-salva-emozioni').addEventListener('click', async ()
     stelle[item.dataset.cat] = parseInt(item.dataset.val || 0);
   });
   const emozioni = {
+    meteoUmore: meteoUmoreSel,
+    meteoUmoreNote: document.getElementById('e-meteo-umore-note').value.trim(),
     stelle,
     bussolaNote: document.getElementById('e-bussola-note').value.trim(),
     mare: document.querySelector('input[name=mare]:checked')?.value || '',
