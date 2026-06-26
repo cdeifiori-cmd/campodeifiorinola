@@ -66,26 +66,28 @@
     /* ── Zoom controls ── */
     .zoom-controls {
       position: absolute;
-      top: 10px;
-      left: 10px;
+      bottom: 8px;
+      right: 8px;
+      top: auto;
+      left: auto;
       z-index: 50;
       display: flex;
       flex-direction: column;
       gap: 4px;
     }
     .zoom-btn {
-      width: 34px; height: 34px;
-      background: rgba(26,58,92,0.88);
-      color: var(--oro);
-      border: 1.5px solid var(--oro);
-      border-radius: 8px;
-      font-size: 1.2rem;
-      font-weight: 700;
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: rgba(26,58,92,0.75);
+      color: #c8860a;
+      font-size: 18px;
+      font-weight: bold;
+      border: 1px solid #c8860a60;
       cursor: pointer;
       display: flex; align-items: center; justify-content: center;
       line-height: 1;
     }
-    .zoom-btn:hover { background: rgba(26,58,92,1); }
+    .zoom-btn:hover { background: rgba(26,58,92,0.95); }
 
     /* ── Hotspot ── */
     .hotspot {
@@ -739,28 +741,33 @@ async function caricaForziere() {
 }
 
 // ── Zoom + Pan ────────────────────────────────────────────────────────────────
-let scale = 1, minScale = 1, maxScale = 4;
-let translateX = 0, translateY = 0;
-let isDragging = false;
-let startX, startY, lastX = 0, lastY = 0;
-let lastDist = 0;
-
+let scale = 1, translateX = 0, translateY = 0;
+let lastScale = 1, lastX = 0, lastY = 0;
+let isPinching = false, isDragging = false;
+let pinchStartDist = 0, pinchStartScale = 1;
+let dragStartX = 0, dragStartY = 0;
+const MIN_SCALE = 1, MAX_SCALE = 4;
 const container = document.getElementById('mappa-container');
-const mappaInner = document.getElementById('mappa-inner');
+const inner = document.getElementById('mappa-inner');
 const mappaImg = document.getElementById('mappaImg');
 
-function applyTransform() {
-  const cw = container.offsetWidth;
-  const ch = container.offsetHeight;
-  const iw = mappaInner.offsetWidth * scale;
-  const ih = mappaInner.offsetHeight * scale;
-  translateX = Math.min(0, Math.max(translateX, cw - iw));
-  translateY = Math.min(0, Math.max(translateY, ch - ih));
-  mappaInner.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
-  mappaInner.style.transformOrigin = '0 0';
+function clampTranslate(x, y, s) {
+  const cw = container.clientWidth;
+  const ch = container.clientHeight;
+  const iw = inner.clientWidth * s;
+  const ih = inner.clientHeight * s;
+  x = Math.min(0, Math.max(x, cw - iw));
+  y = Math.min(0, Math.max(y, ch - ih));
+  return [x, y];
 }
 
-// Imposta altezza container = altezza immagine
+function applyTransform() {
+  [translateX, translateY] = clampTranslate(translateX, translateY, scale);
+  inner.style.transform = `translate(${translateX}px,${translateY}px) scale(${scale})`;
+  inner.style.transformOrigin = '0 0';
+}
+
+// Imposta altezza container = proporzioni immagine
 function setContainerHeight() {
   if (mappaImg.naturalWidth) {
     container.style.height = container.offsetWidth * (mappaImg.naturalHeight / mappaImg.naturalWidth) + 'px';
@@ -770,76 +777,67 @@ mappaImg.addEventListener('load', setContainerHeight);
 if (mappaImg.complete) setContainerHeight();
 window.addEventListener('resize', () => { setContainerHeight(); applyTransform(); });
 
-// Touch: pinch zoom + pan
+function getDist(t) {
+  return Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+}
+function getMid(t, rect) {
+  return {
+    x: ((t[0].clientX + t[1].clientX) / 2) - rect.left,
+    y: ((t[0].clientY + t[1].clientY) / 2) - rect.top
+  };
+}
+
 container.addEventListener('touchstart', e => {
   if (e.touches.length === 2) {
-    lastDist = Math.hypot(
-      e.touches[0].clientX - e.touches[1].clientX,
-      e.touches[0].clientY - e.touches[1].clientY
-    );
+    e.preventDefault();
+    isPinching = true;
+    isDragging = false;
+    pinchStartDist = getDist(e.touches);
+    pinchStartScale = scale;
+    lastX = translateX;
+    lastY = translateY;
   } else if (e.touches.length === 1) {
     isDragging = true;
-    startX = e.touches[0].clientX - lastX;
-    startY = e.touches[0].clientY - lastY;
+    isPinching = false;
+    dragStartX = e.touches[0].clientX - translateX;
+    dragStartY = e.touches[0].clientY - translateY;
   }
-}, { passive: true });
+}, { passive: false });
 
 container.addEventListener('touchmove', e => {
   e.preventDefault();
-  if (e.touches.length === 2) {
-    const dist = Math.hypot(
-      e.touches[0].clientX - e.touches[1].clientX,
-      e.touches[0].clientY - e.touches[1].clientY
-    );
-    const delta = dist / lastDist;
-    const newScale = Math.min(maxScale, Math.max(minScale, scale * delta));
-    const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
-    const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+  if (isPinching && e.touches.length === 2) {
+    const dist = getDist(e.touches);
+    const newScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, pinchStartScale * (dist / pinchStartDist)));
     const rect = container.getBoundingClientRect();
-    const cx = midX - rect.left;
-    const cy = midY - rect.top;
-    translateX = cx - (cx - translateX) * (newScale / scale);
-    translateY = cy - (cy - translateY) * (newScale / scale);
+    const mid = getMid(e.touches, rect);
+    translateX = mid.x - (mid.x - lastX) * (newScale / pinchStartScale);
+    translateY = mid.y - (mid.y - lastY) * (newScale / pinchStartScale);
     scale = newScale;
-    lastDist = dist;
     applyTransform();
-  } else if (e.touches.length === 1 && isDragging) {
-    translateX = e.touches[0].clientX - startX;
-    translateY = e.touches[0].clientY - startY;
-    lastX = translateX;
-    lastY = translateY;
+  } else if (isDragging && e.touches.length === 1) {
+    translateX = e.touches[0].clientX - dragStartX;
+    translateY = e.touches[0].clientY - dragStartY;
     applyTransform();
   }
 }, { passive: false });
 
 container.addEventListener('touchend', e => {
-  isDragging = false;
-});
-
-// Doppio tap = reset zoom
-let lastTap = 0;
-container.addEventListener('touchend', e => {
-  const now = Date.now();
-  if (now - lastTap < 300) {
-    scale = 1; translateX = 0; translateY = 0; lastX = 0; lastY = 0;
-    applyTransform();
-  }
-  lastTap = now;
+  if (e.touches.length < 2) isPinching = false;
+  if (e.touches.length === 0) isDragging = false;
 });
 
 // Mouse drag (desktop)
 container.addEventListener('mousedown', e => {
   isDragging = true;
-  startX = e.clientX - lastX;
-  startY = e.clientY - lastY;
+  dragStartX = e.clientX - translateX;
+  dragStartY = e.clientY - translateY;
   container.style.cursor = 'grabbing';
 });
 container.addEventListener('mousemove', e => {
   if (!isDragging) return;
-  translateX = e.clientX - startX;
-  translateY = e.clientY - startY;
-  lastX = translateX;
-  lastY = translateY;
+  translateX = e.clientX - dragStartX;
+  translateY = e.clientY - dragStartY;
   applyTransform();
 });
 container.addEventListener('mouseup', () => { isDragging = false; container.style.cursor = 'grab'; });
@@ -849,25 +847,37 @@ container.addEventListener('mouseleave', () => { isDragging = false; container.s
 container.addEventListener('wheel', e => {
   e.preventDefault();
   const delta = e.deltaY > 0 ? 0.9 : 1.1;
-  const newScale = Math.min(maxScale, Math.max(minScale, scale * delta));
+  const newScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, scale * delta));
   const rect = container.getBoundingClientRect();
   const cx = e.clientX - rect.left;
   const cy = e.clientY - rect.top;
   translateX = cx - (cx - translateX) * (newScale / scale);
   translateY = cy - (cy - translateY) * (newScale / scale);
   scale = newScale;
-  lastX = translateX; lastY = translateY;
   applyTransform();
 }, { passive: false });
 
 // Bottoni zoom
 document.getElementById('zoomIn').addEventListener('click', () => {
-  scale = Math.min(maxScale, scale * 1.3);
+  const newScale = Math.min(MAX_SCALE, scale * 1.3);
+  const cx = container.clientWidth / 2;
+  const cy = container.clientHeight / 2;
+  translateX = cx - (cx - translateX) * (newScale / scale);
+  translateY = cy - (cy - translateY) * (newScale / scale);
+  scale = newScale;
   applyTransform();
 });
 document.getElementById('zoomOut').addEventListener('click', () => {
-  scale = Math.max(minScale, scale / 1.3);
-  if (scale === minScale) { translateX = 0; translateY = 0; lastX = 0; lastY = 0; }
+  const newScale = Math.max(MIN_SCALE, scale / 1.3);
+  if (newScale === MIN_SCALE) {
+    translateX = 0; translateY = 0;
+  } else {
+    const cx = container.clientWidth / 2;
+    const cy = container.clientHeight / 2;
+    translateX = cx - (cx - translateX) * (newScale / scale);
+    translateY = cy - (cy - translateY) * (newScale / scale);
+  }
+  scale = newScale;
   applyTransform();
 });
 </script>
