@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Isola – Robinson</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/robinson.css">
+  <style>
+    :root { --navy:#1a3a5c; --oro:#c8860a; --carta:#f5f0e8; --carta-scura:#e8e0d0; --inchiostro:#2c2c2c; --muted:#6b6b6b; }
+    * { box-sizing:border-box; }
+    body { background:var(--carta); font-family:'Lora',serif; color:var(--inchiostro); margin:0; padding:0; }
+
+    /* ── Header ── */
+    .admin-header { background:var(--navy); color:#fff; padding:14px 16px 10px; position:sticky; top:0; z-index:100; display:flex; align-items:center; justify-content:space-between; }
+    .admin-header h1 { font-family:'Playfair Display',serif; font-size:1.2rem; margin:0; }
+    .admin-header a { color:var(--oro); font-size:0.82rem; text-decoration:none; }
+
+    /* ── Filtri ── */
+    .filtri-bar { background:#fff; border-bottom:2px solid var(--oro); padding:12px 16px; display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+    .filtri-bar select, .filtri-bar input[type=date] { font-family:'Lora',serif; font-size:0.83rem; border:1.5px solid var(--carta-scura); border-radius:6px; padding:6px 10px; background:var(--carta); color:var(--inchiostro); }
+    .range-box { display:none; gap:8px; align-items:center; flex-wrap:wrap; }
+    .range-box.show { display:flex; }
+    .btn-aggiorna { background:var(--navy); color:#fff; border:none; border-radius:8px; padding:7px 18px; font-family:'Playfair Display',serif; font-size:0.88rem; cursor:pointer; }
+    .btn-aggiorna:hover { background:var(--oro); }
+    .contatore { font-size:0.8rem; color:var(--muted); margin-left:auto; white-space:nowrap; }
+    .btn-export { background:var(--carta-scura); color:var(--navy); border:1.5px solid var(--navy); border-radius:8px; padding:6px 14px; font-size:0.8rem; cursor:pointer; font-family:'Lora',serif; }
+    .btn-export:hover { background:var(--oro); color:#fff; border-color:var(--oro); }
+
+    /* ── Sezioni ── */
+    .sezione { max-width:1200px; margin:0 auto 0; padding:16px 12px 8px; }
+    .sezione h2 { font-family:'Playfair Display',serif; color:var(--navy); font-size:1.1rem; border-bottom:2px solid var(--oro); padding-bottom:6px; margin:0 0 14px; }
+
+    /* ── Tabella scrollabile ── */
+    .table-scroll { overflow-x:auto; }
+    table { border-collapse:collapse; width:100%; font-size:0.78rem; min-width:600px; }
+    th { background:var(--navy); color:#fff; padding:7px 8px; text-align:center; font-weight:600; font-family:'Playfair Display',serif; white-space:nowrap; position:sticky; top:0; }
+    th.col-data { text-align:left; min-width:150px; }
+    td { padding:5px 7px; border-bottom:1px solid var(--carta-scura); vertical-align:top; text-align:center; }
+    td.col-data { text-align:left; font-size:0.76rem; color:var(--muted); white-space:nowrap; }
+    tr:nth-child(even) td { background:var(--carta); }
+    tr:nth-child(odd) td { background:#fff; }
+    .cell-nomi { font-size:0.73rem; line-height:1.4; position:relative; cursor:default; }
+    .tooltip { display:none; position:absolute; background:var(--navy); color:#fff; padding:5px 9px; border-radius:6px; font-size:0.72rem; z-index:999; left:50%; transform:translateX(-50%); top:calc(100% + 4px); white-space:nowrap; pointer-events:none; }
+    .cell-nomi:hover .tooltip { display:block; }
+
+    /* Colore presenze */
+    .bg-0 { }
+    .bg-1 { background:#fff8e1 !important; }
+    .bg-2 { background:#ffe082 !important; }
+    .bg-3 { background:#ffca28 !important; }
+
+    /* ── Cards luoghi ── */
+    .luoghi-cards { display:flex; flex-wrap:wrap; gap:10px; margin-top:14px; }
+    .luogo-card { background:#fff; border:1.5px solid var(--carta-scura); border-radius:10px; padding:10px 14px; min-width:160px; flex:1; max-width:220px; }
+    .luogo-card .lc-head { display:flex; align-items:center; gap:6px; margin-bottom:6px; }
+    .luogo-card .lc-emoji { font-size:1.4rem; }
+    .luogo-card .lc-nome { font-family:'Playfair Display',serif; font-size:0.88rem; color:var(--navy); }
+    .luogo-card .lc-totale { font-size:1.4rem; font-weight:700; color:var(--oro); }
+    .luogo-card .lc-list { font-size:0.72rem; color:var(--muted); margin-top:4px; }
+
+    /* ── Meteo ── */
+    .meteo-cell { font-size:1.2rem; padding:4px 2px; cursor:default; position:relative; }
+    .meteo-cell .tooltip { top:calc(100% + 4px); }
+
+    /* ── Canvas charts ── */
+    .chart-wrap { background:#fff; border:1.5px solid var(--carta-scura); border-radius:10px; padding:14px; margin-bottom:14px; }
+    .chart-wrap h3 { font-family:'Playfair Display',serif; font-size:0.95rem; color:var(--navy); margin:0 0 12px; }
+    canvas { display:block; max-width:100%; }
+    .stat-cards { display:flex; flex-wrap:wrap; gap:10px; margin-top:8px; }
+    .stat-card { background:#fff; border:1.5px solid var(--carta-scura); border-radius:10px; padding:12px 16px; flex:1; min-width:140px; text-align:center; }
+    .stat-card .sc-val { font-size:1.5rem; font-weight:700; color:var(--oro); }
+    .stat-card .sc-lbl { font-size:0.72rem; color:var(--muted); margin-top:3px; }
+
+    /* ── Drawer naufrago ── */
+    .drawer-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:500; }
+    .drawer-overlay.open { display:block; }
+    .drawer { position:fixed; right:0; top:0; bottom:0; width:min(420px,100vw); background:var(--carta); overflow-y:auto; z-index:501; transform:translateX(100%); transition:transform 0.3s; }
+    .drawer.open { transform:translateX(0); }
+    .drawer-header { background:var(--navy); color:#fff; padding:14px 16px; display:flex; align-items:center; gap:12px; }
+    .drawer-header img { width:44px; height:44px; border-radius:50%; object-fit:cover; border:2px solid var(--oro); }
+    .drawer-header .dh-nome { font-family:'Playfair Display',serif; font-size:1.1rem; }
+    .drawer-close { margin-left:auto; background:none; border:none; color:#fff; font-size:1.5rem; cursor:pointer; line-height:1; }
+    .drawer-body { padding:14px 16px 80px; }
+    .drawer-section { margin-bottom:18px; }
+    .drawer-section h4 { font-family:'Playfair Display',serif; color:var(--navy); font-size:0.9rem; border-bottom:1px solid var(--carta-scura); padding-bottom:4px; margin:0 0 10px; }
+    .timeline-item { display:flex; gap:10px; padding:8px 0; border-bottom:1px solid var(--carta-scura); }
+    .ti-date { font-size:0.72rem; color:var(--muted); min-width:90px; }
+    .ti-body { flex:1; font-size:0.82rem; }
+    .ti-luogo { font-weight:600; color:var(--navy); }
+    .ti-pensiero { color:var(--inchiostro); font-style:italic; margin-top:3px; font-size:0.78rem; }
+    .miniature { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+    .miniatura { width:64px; height:64px; object-fit:cover; border-radius:6px; cursor:pointer; }
+
+    /* ── Spinner ── */
+    .spinner { display:flex; justify-content:center; padding:30px; }
+    .spinner:after { content:''; width:34px; height:34px; border:3px solid var(--carta-scura); border-top-color:var(--oro); border-radius:50%; animation:spin 0.7s linear infinite; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    .empty-msg { text-align:center; color:var(--muted); padding:24px; font-size:0.9rem; }
+
+    /* ── Nome cliccabile ── */
+    .nome-link { cursor:pointer; color:var(--navy); text-decoration:underline dotted; }
+    .nome-link:hover { color:var(--oro); }
+
+    /* ── Nomi naufrago nelle celle ── */
+    .nomi-cell { font-size:0.72rem; line-height:1.45; }
+
+    /* ── Print ── */
+    @media print {
+      .filtri-bar, .admin-header a, .btn-export, .drawer-overlay, nav { display:none !important; }
+      .sezione { page-break-inside:avoid; }
+      body { background:#fff; }
+    }
+
+    /* ── Mobile ── */
+    @media (max-width:640px) {
+      .stat-card { min-width:120px; }
+      .luogo-card { min-width:130px; max-width:50%; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="admin-header">
+  <h1>🏝️ Admin Isola</h1>
+  <a href="admin-classifica.html">← Classifica</a>
+</header>
+
+<!-- Filtri -->
+<div class="filtri-bar">
+  <select id="sel-periodo">
+    <option value="oggi">Oggi</option>
+    <option value="settimana" selected>Ultima settimana</option>
+    <option value="mese">Ultimo mese</option>
+    <option value="tutto">Tutto</option>
+    <option value="range">Range personalizzato</option>
+  </select>
+  <div class="range-box" id="range-box">
+    <input type="date" id="data-da">
+    <span style="font-size:0.8rem">→</span>
+    <input type="date" id="data-a">
+  </div>
+  <button class="btn-aggiorna" id="btn-aggiorna">Aggiorna</button>
+  <span class="contatore" id="contatore">—</span>
+  <button class="btn-export" onclick="esportaCSV()">📊 CSV</button>
+  <button class="btn-export" onclick="window.print()">📄 PDF</button>
+</div>
+
+<div id="main-content">
+  <div class="spinner"></div>
+</div>
+
+<!-- Drawer singolo naufrago -->
+<div class="drawer-overlay" id="drawer-overlay" onclick="chiudiDrawer()"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-header">
+    <img id="d-foto" src="" alt="">
+    <div class="d-nome" id="d-nome"></div>
+    <button class="drawer-close" onclick="chiudiDrawer()">✕</button>
+  </div>
+  <div class="drawer-body" id="drawer-body"></div>
+</div>
+
+<script type="module">
+import { db, auth, ADMIN_UID } from './js/robinson-firebase.js';
+import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import {
+  collection, collectionGroup, getDocs, getDoc, doc,
+  query, orderBy, where
+} from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { esc } from './js/robinson-utils.js';
+
+// ── Luoghi isola ──────────────────────────────────────────────────────────────
+const LUOGHI = [
+  { id:'spiaggia-fiducia',       nome:'Fiducia',      emoji:'🌴' },
+  { id:'faro-sogni',             nome:'Sogni',         emoji:'🗼' },
+  { id:'promontorio-coraggio',   nome:'Coraggio',      emoji:'🧭' },
+  { id:'baia-calma',             nome:'Calma',         emoji:'🌊' },
+  { id:'villaggio-amicizia',     nome:'Amicizia',      emoji:'🤝' },
+  { id:'vulcano-rabbia',         nome:'Rabbia',        emoji:'🌋' },
+  { id:'laguna-pazienza',        nome:'Pazienza',      emoji:'🐢' },
+  { id:'caverna-tristezza',      nome:'Tristezza',     emoji:'🌧️' },
+  { id:'tempesta-caos',          nome:'Caos',          emoji:'⛈️' },
+  { id:'deserto-solitudine',     nome:'Solitudine',    emoji:'🌪️' },
+  { id:'scoglio-dolore',         nome:'Dolore',        emoji:'💔' },
+  { id:'nebbia-dubbi',           nome:'Dubbi',         emoji:'🌫️' },
+  { id:'isola-paure',            nome:'Paure',         emoji:'🔒' },
+  { id:'bivio-scelte',           nome:'Scelte',        emoji:'🚧' },
+  { id:'tramonto-gratitudine',   nome:'Gratitudine',   emoji:'🌅' },
+];
+const LUOGO_MAP = Object.fromEntries(LUOGHI.map(l => [l.id, l]));
+
+const METEO = ['☀️','🌤️','🌧️','⛈️','🌫️','🌈'];
+const METEO_BG = { '☀️':'#fff9c4','🌤️':'#e8f5e9','🌧️':'#e3f2fd','⛈️':'#ffebee','🌫️':'#f5f5f5','🌈':'#f3e5f5' };
+const METEO_COLORI_CANVAS = { '☀️':'#f9d73f','🌤️':'#81c784','🌧️':'#64b5f6','⛈️':'#e57373','🌫️':'#bdbdbd','🌈':'#ce93d8' };
+
+// ── Stato globale ─────────────────────────────────────────────────────────────
+let allNotti = [];    // { uid, data, luogoId, luogoNome, meteo, pensiero, fotoUrl, videoUrl, nome, fotoProfiloUrl }
+let utentiMap = {};   // uid → { nome, fotoProfiloUrl }
+
+// ── Auth guard ────────────────────────────────────────────────────────────────
+onAuthStateChanged(auth, async user => {
+  if (!user) { location.href = 'index.html'; return; }
+  const profilo = await getDoc(doc(db, 'utenti', user.uid));
+  const ruolo = profilo.data()?.ruolo;
+  if (user.uid !== ADMIN_UID && ruolo !== 'admin') { location.href = 'index.html'; return; }
+  initPage();
+});
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+function initPage() {
+  // default data-a = oggi, data-da = 7 gg fa
+  const oggi = isoOggi();
+  document.getElementById('data-a').value = oggi;
+  document.getElementById('data-da').value = isoAddDays(oggi, -7);
+
+  document.getElementById('sel-periodo').addEventListener('change', e => {
+    document.getElementById('range-box').classList.toggle('show', e.target.value === 'range');
+  });
+  document.getElementById('btn-aggiorna').addEventListener('click', caricaDati);
+  caricaDati();
+}
+
+// ── Date utils ────────────────────────────────────────────────────────────────
+function isoOggi() { return new Date().toISOString().slice(0,10); }
+function isoAddDays(iso, n) {
+  const d = new Date(iso); d.setDate(d.getDate() + n);
+  return d.toISOString().slice(0,10);
+}
+function getDateRange() {
+  const p = document.getElementById('sel-periodo').value;
+  const oggi = isoOggi();
+  if (p === 'oggi')      return { da: oggi, a: oggi };
+  if (p === 'settimana') return { da: isoAddDays(oggi,-7), a: oggi };
+  if (p === 'mese')      return { da: isoAddDays(oggi,-30), a: oggi };
+  if (p === 'tutto')     return { da: '2020-01-01', a: '2099-12-31' };
+  return { da: document.getElementById('data-da').value, a: document.getElementById('data-a').value };
+}
+function fmtDataLunga(iso) {
+  const [y,m,d] = iso.split('-');
+  const date = new Date(+y, +m-1, +d);
+  return date.toLocaleDateString('it-IT', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+}
+function fmtDataBreve(iso) {
+  const [y,m,d] = iso.split('-');
+  return `${d}/${m}`;
+}
+
+// ── Carica dati ───────────────────────────────────────────────────────────────
+async function caricaDati() {
+  document.getElementById('main-content').innerHTML = '<div class="spinner"></div>';
+  const { da, a } = getDateRange();
+
+  try {
+    // 1. Carica tutti gli utenti
+    const utentiSnap = await getDocs(collection(db, 'utenti'));
+    utentiMap = {};
+    utentiSnap.forEach(d => {
+      utentiMap[d.id] = { nome: d.data().nome || d.data().email || d.id, fotoProfiloUrl: d.data().fotoProfiloUrl || '' };
+    });
+
+    // 2. Carica tutte le notti (collectionGroup 'notti' sotto robinson_isola)
+    const nottiSnap = await getDocs(collectionGroup(db, 'notti'));
+    allNotti = [];
+    nottiSnap.forEach(d => {
+      const data = d.id; // YYYY-MM-DD
+      if (data < da || data > a) return;
+      const uid = d.ref.parent.parent.id;
+      const row = d.data();
+      allNotti.push({
+        uid, data,
+        luogoId: row.luogoId || '',
+        luogoNome: row.luogoNome || (LUOGO_MAP[row.luogoId]?.nome ?? row.luogoId),
+        meteo: row.meteo || '',
+        pensiero: row.pensiero || '',
+        fotoUrl: row.fotoUrl || '',
+        videoUrl: row.videoUrl || '',
+        nome: utentiMap[uid]?.nome || 'Anonimo',
+        fotoProfiloUrl: utentiMap[uid]?.fotoProfiloUrl || ''
+      });
+    });
+
+    // 3. Contatore
+    const nNaufraghi = new Set(allNotti.map(n => n.uid)).size;
+    document.getElementById('contatore').textContent =
+      `${nNaufraghi} naufraghi · ${allNotti.length} notti nel periodo`;
+
+    // 4. Render
+    renderTutto();
+  } catch(err) {
+    document.getElementById('main-content').innerHTML =
+      `<div class="empty-msg" style="color:red;">Errore: ${esc(err.message)}</div>`;
+  }
+}
+
+// ── Render tutto ──────────────────────────────────────────────────────────────
+function renderTutto() {
+  // Calcola strutture dati
+  const giorni = [...new Set(allNotti.map(n => n.data))].sort().reverse();
+  const naufraghiUids = [...new Set(allNotti.map(n => n.uid))].sort((a,b) =>
+    (utentiMap[a]?.nome||'').localeCompare(utentiMap[b]?.nome||''));
+
+  // [data][luogoId] → [{ nome, uid }]
+  const mapDateLuogo = {};
+  allNotti.forEach(n => {
+    if (!mapDateLuogo[n.data]) mapDateLuogo[n.data] = {};
+    if (!mapDateLuogo[n.data][n.luogoId]) mapDateLuogo[n.data][n.luogoId] = [];
+    mapDateLuogo[n.data][n.luogoId].push({ nome: n.nome, uid: n.uid });
+  });
+
+  // [uid][data] → { meteo, luogoNome }
+  const mapUidData = {};
+  allNotti.forEach(n => {
+    if (!mapUidData[n.uid]) mapUidData[n.uid] = {};
+    mapUidData[n.uid][n.data] = { meteo: n.meteo, luogoNome: n.luogoNome };
+  });
+
+  // Luoghi stats
+  const luogoStats = {};
+  allNotti.forEach(n => {
+    if (!luogoStats[n.luogoId]) luogoStats[n.luogoId] = { totale:0, visitatori:{} };
+    luogoStats[n.luogoId].totale++;
+    luogoStats[n.luogoId].visitatori[n.uid] = (luogoStats[n.luogoId].visitatori[n.uid]||0)+1;
+  });
+
+  // Meteo stats
+  const meteoStats = {};
+  METEO.forEach(m => meteoStats[m] = 0);
+  allNotti.forEach(n => { if (n.meteo) meteoStats[n.meteo] = (meteoStats[n.meteo]||0)+1; });
+
+  // Naufrago stats
+  const naufragoStats = {};
+  allNotti.forEach(n => { naufragoStats[n.uid] = (naufragoStats[n.uid]||0)+1; });
+
+  // Giorno con più presenze
+  const giornoCount = {};
+  allNotti.forEach(n => { giornoCount[n.data] = (giornoCount[n.data]||0)+1; });
+  const giornoTop = Object.entries(giornoCount).sort((a,b)=>b[1]-a[1])[0];
+
+  // Trend meteo per giorno (giorni in ordine cronologico)
+  const giorniCrono = [...giorni].reverse();
+  const meteoTrend = {}; // meteo → [count per giorno]
+  METEO.forEach(m => { meteoTrend[m] = giorniCrono.map(g =>
+    allNotti.filter(n => n.data===g && n.meteo===m).length); });
+
+  const main = document.getElementById('main-content');
+  main.innerHTML = '';
+
+  // ══ SEZIONE 2: Mappa presenze ═════════════════════════════════════════════
+  const s2 = document.createElement('div');
+  s2.className = 'sezione';
+  s2.innerHTML = `<h2>🏝️ Chi ha abitato dove</h2>`;
+
+  if (!giorni.length) {
+    s2.innerHTML += '<div class="empty-msg">Nessuna notte nel periodo selezionato.</div>';
+  } else {
+    // Tabella
+    let th = `<th class="col-data">Giorno</th>`;
+    LUOGHI.forEach(l => { th += `<th title="${l.nome}">${l.emoji}<br><span style="font-size:0.65rem">${l.nome}</span></th>`; });
+    let tbody = '';
+    giorni.forEach(g => {
+      let tds = `<td class="col-data">${fmtDataLunga(g)}</td>`;
+      LUOGHI.forEach(l => {
+        const persone = mapDateLuogo[g]?.[l.id] || [];
+        const n = persone.length;
+        const cls = n===0?'bg-0':n<=2?'bg-1':n<=4?'bg-2':'bg-3';
+        if (!n) { tds += `<td class="${cls}"></td>`; return; }
+        const tutti = persone.map(p => `<span class="nome-link" data-uid="${p.uid}">${esc(p.nome)}</span>`);
+        const vis = tutti.length<=2 ? tutti.join(', ') : tutti.slice(0,2).join(', ');
+        const extra = tutti.length>2 ? ` +${tutti.length-2}` : '';
+        const tooltipTxt = tutti.length>2 ? persone.map(p=>p.nome).join(', ') : '';
+        tds += `<td class="${cls} cell-nomi"><div class="nomi-cell">${vis}${extra}${tooltipTxt?`<div class="tooltip">${esc(tooltipTxt)}</div>`:''}</div></td>`;
+      });
+      tbody += `<tr>${tds}</tr>`;
+    });
+    const t = document.createElement('div');
+    t.className = 'table-scroll';
+    t.innerHTML = `<table><thead><tr>${th}</tr></thead><tbody>${tbody}</tbody></table>`;
+    s2.appendChild(t);
+
+    // Cards luoghi
+    const cardsWrap = document.createElement('div');
+    cardsWrap.className = 'luoghi-cards';
+    const luoghiSorted = LUOGHI
+      .map(l => ({ ...l, stats: luogoStats[l.id]||{totale:0,visitatori:{}} }))
+      .sort((a,b) => b.stats.totale - a.stats.totale);
+    luoghiSorted.forEach(l => {
+      if (!l.stats.totale) return;
+      const visitList = Object.entries(l.stats.visitatori)
+        .sort((a,b)=>b[1]-a[1]).slice(0,5)
+        .map(([uid,c]) => `<span class="nome-link" data-uid="${uid}">${esc(utentiMap[uid]?.nome||uid)}</span> (${c})`);
+      const card = document.createElement('div');
+      card.className = 'luogo-card';
+      card.innerHTML = `<div class="lc-head"><span class="lc-emoji">${l.emoji}</span><span class="lc-nome">${esc(l.nome)}</span></div>
+        <div class="lc-totale">${l.stats.totale}</div>
+        <div class="lc-list">${visitList.join(' · ')}</div>`;
+      cardsWrap.appendChild(card);
+    });
+    s2.appendChild(cardsWrap);
+  }
+  main.appendChild(s2);
+
+  // ══ SEZIONE 3: Meteo del cuore ════════════════════════════════════════════
+  const s3 = document.createElement('div');
+  s3.className = 'sezione';
+  s3.innerHTML = `<h2>🧭 Il meteo del cuore</h2>`;
+
+  if (naufraghiUids.length && giorni.length) {
+    const giorniPerMeteo = [...giorni].reverse();
+    let th3 = `<th class="col-data">Naufrago</th>`;
+    giorniPerMeteo.forEach(g => { th3 += `<th>${fmtDataBreve(g)}</th>`; });
+    let tbody3 = '';
+    naufraghiUids.forEach(uid => {
+      const nome = utentiMap[uid]?.nome || uid;
+      let tds = `<td class="col-data"><span class="nome-link" data-uid="${uid}">${esc(nome)}</span></td>`;
+      giorniPerMeteo.forEach(g => {
+        const entry = mapUidData[uid]?.[g];
+        if (!entry) { tds += '<td></td>'; return; }
+        const bg = METEO_BG[entry.meteo] || '';
+        tds += `<td class="meteo-cell" style="background:${bg}">${entry.meteo||''}
+          <div class="tooltip">${esc(entry.luogoNome)}</div></td>`;
+      });
+      tbody3 += `<tr>${tds}</tr>`;
+    });
+    const t3 = document.createElement('div');
+    t3.className = 'table-scroll';
+    t3.innerHTML = `<table><thead><tr>${th3}</tr></thead><tbody>${tbody3}</tbody></table>`;
+    s3.appendChild(t3);
+  } else {
+    s3.innerHTML += '<div class="empty-msg">Nessun dato nel periodo.</div>';
+  }
+  main.appendChild(s3);
+
+  // ══ SEZIONE 4: Statistiche di gruppo ══════════════════════════════════════
+  const s4 = document.createElement('div');
+  s4.className = 'sezione';
+  s4.innerHTML = `<h2>📊 Il gruppo nel periodo</h2>`;
+
+  // 4A: Barre emozioni
+  const w4a = document.createElement('div');
+  w4a.className = 'chart-wrap';
+  w4a.innerHTML = '<h3>Emozioni del gruppo</h3>';
+  const ca = document.createElement('canvas');
+  ca.id = 'chart-emozioni'; ca.height = 180;
+  w4a.appendChild(ca); s4.appendChild(w4a);
+
+  // 4B: Barre luoghi
+  const w4b = document.createElement('div');
+  w4b.className = 'chart-wrap';
+  w4b.innerHTML = '<h3>Luoghi più abitati</h3>';
+  const cb = document.createElement('canvas');
+  cb.id = 'chart-luoghi'; cb.height = 260;
+  w4b.appendChild(cb); s4.appendChild(w4b);
+
+  // 4C: Trend (solo se >3 giorni)
+  let chartTrendEl = null;
+  if (giorniCrono.length > 3) {
+    const w4c = document.createElement('div');
+    w4c.className = 'chart-wrap';
+    w4c.innerHTML = '<h3>Trend emozioni nel tempo</h3>';
+    const cc = document.createElement('canvas');
+    cc.id = 'chart-trend'; cc.height = 200;
+    w4c.appendChild(cc); s4.appendChild(w4c);
+    chartTrendEl = cc;
+  }
+
+  // 4D: Stat rapide
+  const totalMeteo = Object.values(meteoStats).reduce((a,b)=>a+b,0);
+  const meteoTop = Object.entries(meteoStats).sort((a,b)=>b[1]-a[1])[0];
+  const luogoTop = LUOGHI.map(l=>({ ...l, totale: luogoStats[l.id]?.totale||0 })).sort((a,b)=>b.totale-a.totale)[0];
+  const naufragoTopUid = Object.entries(naufragoStats).sort((a,b)=>b[1]-a[1])[0];
+  const totNaufraghi = Object.keys(utentiMap).length;
+  const attivi = new Set(allNotti.map(n=>n.uid)).size;
+  const pct = totNaufraghi ? Math.round(attivi/totNaufraghi*100) : 0;
+
+  const statCards = document.createElement('div');
+  statCards.className = 'stat-cards';
+  statCards.innerHTML = `
+    <div class="stat-card"><div class="sc-val">${meteoTop?.[0]||'—'}</div><div class="sc-lbl">Emozione più frequente</div></div>
+    <div class="stat-card"><div class="sc-val">${luogoTop?.totale ? luogoTop.emoji+' '+luogoTop.nome : '—'}</div><div class="sc-lbl">Luogo più abitato</div></div>
+    <div class="stat-card"><div class="sc-val"><span class="nome-link" data-uid="${naufragoTopUid?.[0]||''}">${esc(naufragoTopUid ? utentiMap[naufragoTopUid[0]]?.nome : '—')}</span></div><div class="sc-lbl">Naufrago più attivo (${naufragoTopUid?.[1]||0} notti)</div></div>
+    <div class="stat-card"><div class="sc-val">${giornoTop ? fmtDataBreve(giornoTop[0])+' ('+giornoTop[1]+')' : '—'}</div><div class="sc-lbl">Giorno più affollato</div></div>
+    <div class="stat-card"><div class="sc-val">${pct}%</div><div class="sc-lbl">Naufraghi con almeno una notte</div></div>
+  `;
+  s4.appendChild(statCards);
+  main.appendChild(s4);
+
+  // ── Render canvas dopo il DOM ─────────────────────────────────────────────
+  requestAnimationFrame(() => {
+    disegnaBarreEmozioni(document.getElementById('chart-emozioni'), meteoStats, totalMeteo);
+    disegnaBarreLuoghi(document.getElementById('chart-luoghi'), luogoStats);
+    if (chartTrendEl) disegnaTrend(chartTrendEl, giorniCrono, meteoTrend);
+  });
+
+  // ── Delegazione click nome ────────────────────────────────────────────────
+  main.addEventListener('click', e => {
+    const el = e.target.closest('.nome-link');
+    if (el && el.dataset.uid) apriDrawer(el.dataset.uid);
+  });
+}
+
+// ══ CANVAS: Barre emozioni ═══════════════════════════════════════════════════
+function disegnaBarreEmozioni(canvas, meteoStats, totale) {
+  if (!canvas) return;
+  const dpr = window.devicePixelRatio || 1;
+  const W = canvas.parentElement.clientWidth - 28;
+  const H = 180;
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+  const ctx = canvas.getContext('2d'); ctx.scale(dpr, dpr);
+
+  const entries = METEO.map(m => ({ m, v: meteoStats[m]||0 })).sort((a,b)=>b.v-a.v);
+  const maxVal = entries[0]?.v || 1;
+  const rh = 22, gap = 5, lbl = 60, pad = 10;
+  ctx.font = '13px Lora,serif';
+
+  entries.forEach((e, i) => {
+    const y = pad + i*(rh+gap);
+    const barW = Math.round(((W-lbl-60)*e.v) / maxVal);
+    ctx.fillStyle = METEO_COLORI_CANVAS[e.m] || '#ddd';
+    ctx.beginPath();
+    ctx.roundRect(lbl, y, Math.max(barW,2), rh, 4);
+    ctx.fill();
+    ctx.fillStyle = '#333';
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'left';
+    ctx.fillText(e.m, 4, y+rh/2);
+    ctx.fillStyle = '#555';
+    ctx.textAlign = 'left';
+    ctx.fillText(`${e.v} (${totale?Math.round(e.v/totale*100):0}%)`, lbl + barW + 6, y+rh/2);
+  });
+}
+
+// ══ CANVAS: Barre luoghi ══════════════════════════════════════════════════════
+function disegnaBarreLuoghi(canvas, luogoStats) {
+  if (!canvas) return;
+  const dpr = window.devicePixelRatio || 1;
+  const W = canvas.parentElement.clientWidth - 28;
+  const entries = LUOGHI.map(l => ({ nome:l.emoji+' '+l.nome, v: luogoStats[l.id]?.totale||0 }))
+    .filter(e=>e.v>0).sort((a,b)=>b.v-a.v);
+  const H = Math.max(50, entries.length * 27 + 20);
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+  const ctx = canvas.getContext('2d'); ctx.scale(dpr, dpr);
+  if (!entries.length) { ctx.fillStyle='#aaa'; ctx.fillText('Nessun dato',10,30); return; }
+
+  const maxVal = entries[0]?.v || 1;
+  const rh = 20, gap = 7, lbl = 110, pad = 10;
+  ctx.font = '12px Lora,serif';
+
+  entries.forEach((e, i) => {
+    const y = pad + i*(rh+gap);
+    const barW = Math.round(((W-lbl-40)*e.v) / maxVal);
+    ctx.fillStyle = '#c8860a55';
+    ctx.beginPath();
+    ctx.roundRect(lbl, y, Math.max(barW,2), rh, 3);
+    ctx.fill();
+    ctx.fillStyle = '#1a3a5c';
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'right';
+    ctx.fillText(e.nome, lbl-6, y+rh/2);
+    ctx.fillStyle = '#555';
+    ctx.textAlign = 'left';
+    ctx.fillText(e.v, lbl + barW + 5, y+rh/2);
+  });
+}
+
+// ══ CANVAS: Trend linee ═══════════════════════════════════════════════════════
+function disegnaTrend(canvas, giorni, meteoTrend) {
+  if (!canvas || giorni.length < 2) return;
+  const dpr = window.devicePixelRatio || 1;
+  const W = canvas.parentElement.clientWidth - 28;
+  const H = 200;
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+  const ctx = canvas.getContext('2d'); ctx.scale(dpr, dpr);
+
+  const padL=30, padR=20, padT=14, padB=30;
+  const cW = W-padL-padR, cH = H-padT-padB;
+  const allVals = METEO.flatMap(m => meteoTrend[m]);
+  const maxY = Math.max(1, ...allVals);
+  const n = giorni.length;
+
+  // assi
+  ctx.strokeStyle='#ccc'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(padL,padT); ctx.lineTo(padL,padT+cH); ctx.lineTo(padL+cW,padT+cH); ctx.stroke();
+
+  // etichette X
+  ctx.fillStyle='#888'; ctx.font='10px Lora,serif'; ctx.textAlign='center'; ctx.textBaseline='top';
+  const step = Math.max(1, Math.floor(n/6));
+  giorni.forEach((g,i) => {
+    if (i%step===0 || i===n-1) {
+      const x = padL + (i/(n-1))*cW;
+      ctx.fillText(fmtDataBreve(g), x, padT+cH+3);
+    }
+  });
+
+  // linee
+  METEO.forEach(m => {
+    const vals = meteoTrend[m];
+    if (!vals.some(v=>v>0)) return;
+    ctx.strokeStyle = METEO_COLORI_CANVAS[m] || '#999';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    vals.forEach((v,i) => {
+      const x = padL + (i/(n-1))*cW;
+      const y = padT + cH - (v/maxY)*cH;
+      i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+    });
+    ctx.stroke();
+    // label ultimo punto
+    const lastX = padL + cW;
+    const lastY = padT + cH - (vals[n-1]/maxY)*cH;
+    ctx.fillStyle = METEO_COLORI_CANVAS[m];
+    ctx.textAlign='left'; ctx.textBaseline='middle'; ctx.font='12px serif';
+    ctx.fillText(m, lastX+2, lastY);
+  });
+}
+
+// ══ Drawer singolo naufrago ═══════════════════════════════════════════════════
+window.chiudiDrawer = function() {
+  document.getElementById('drawer').classList.remove('open');
+  document.getElementById('drawer-overlay').classList.remove('open');
+};
+
+window.apriDrawer = function(uid) {
+  const utente = utentiMap[uid] || {};
+  document.getElementById('d-foto').src = utente.fotoProfiloUrl || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(utente.nome||'?') + '&background=1a3a5c&color=fff&size=64';
+  document.getElementById('d-nome').textContent = utente.nome || uid;
+
+  const notti = allNotti.filter(n=>n.uid===uid).sort((a,b)=>b.data.localeCompare(a.data));
+  const body = document.getElementById('drawer-body');
+  body.innerHTML = '';
+
+  // Timeline
+  const sec1 = document.createElement('div');
+  sec1.className = 'drawer-section';
+  sec1.innerHTML = '<h4>🗓️ Timeline notti</h4>';
+  if (!notti.length) sec1.innerHTML += '<div class="empty-msg">Nessuna notte nel periodo.</div>';
+  notti.forEach(n => {
+    const div = document.createElement('div');
+    div.className = 'timeline-item';
+    div.innerHTML = `<div class="ti-date">${fmtDataLunga(n.data)}</div>
+      <div class="ti-body">
+        <div class="ti-luogo">${LUOGO_MAP[n.luogoId]?.emoji||''} ${esc(n.luogoNome)} ${n.meteo}</div>
+        ${n.pensiero ? `<div class="ti-pensiero">"${esc(n.pensiero)}"</div>` : ''}
+        ${n.fotoUrl||n.videoUrl ? `<div class="miniature">${n.fotoUrl?`<img class="miniatura" src="${esc(n.fotoUrl)}" onclick="window.open('${esc(n.fotoUrl)}')">`:''} ${n.videoUrl?`<video class="miniatura" src="${esc(n.videoUrl)}" controls></video>`:''}</div>` : ''}
+      </div>`;
+    sec1.appendChild(div);
+  });
+  body.appendChild(sec1);
+
+  // Grafici torta
+  const sec2 = document.createElement('div');
+  sec2.className = 'drawer-section';
+  sec2.innerHTML = '<h4>📊 Le tue distribuzioni</h4><div style="display:flex;gap:12px;flex-wrap:wrap;">' +
+    '<canvas id="d-pie-meteo" width="140" height="140"></canvas>' +
+    '<canvas id="d-pie-luogo" width="140" height="140"></canvas></div>';
+  body.appendChild(sec2);
+
+  document.getElementById('drawer-overlay').classList.add('open');
+  document.getElementById('drawer').classList.add('open');
+
+  requestAnimationFrame(() => {
+    // Torta meteo
+    const meteoD = {};
+    METEO.forEach(m => meteoD[m]=0);
+    notti.forEach(n => { if(n.meteo) meteoD[n.meteo]=(meteoD[n.meteo]||0)+1; });
+    disegnaTorta(document.getElementById('d-pie-meteo'),
+      METEO.filter(m=>meteoD[m]>0).map(m=>({ label:m, val:meteoD[m], col:METEO_COLORI_CANVAS[m] })));
+    // Torta luoghi
+    const luogoD = {};
+    notti.forEach(n => { luogoD[n.luogoId]=(luogoD[n.luogoId]||0)+1; });
+    disegnaTorta(document.getElementById('d-pie-luogo'),
+      Object.entries(luogoD).map(([id,v])=>({ label:(LUOGO_MAP[id]?.emoji||id), val:v, col:'#c8860a' })));
+  });
+};
+
+function disegnaTorta(canvas, slices) {
+  if (!canvas || !slices.length) return;
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = 140*dpr; canvas.height = 140*dpr;
+  canvas.style.width='140px'; canvas.style.height='140px';
+  const ctx = canvas.getContext('2d'); ctx.scale(dpr,dpr);
+  const total = slices.reduce((s,e)=>s+e.val,0);
+  let ang = -Math.PI/2;
+  const cx=70, cy=70, r=55;
+  const colors = ['#c8860a','#1a3a5c','#4caf50','#2196f3','#e91e63','#ff9800','#9c27b0','#00bcd4','#ff5722','#607d8b'];
+  slices.forEach((s,i) => {
+    const sweep = (s.val/total)*Math.PI*2;
+    ctx.beginPath(); ctx.moveTo(cx,cy);
+    ctx.arc(cx,cy,r,ang,ang+sweep);
+    ctx.closePath();
+    ctx.fillStyle = s.col || colors[i%colors.length];
+    ctx.fill();
+    // label
+    const midAng = ang + sweep/2;
+    const lx = cx + Math.cos(midAng)*(r*0.65);
+    const ly = cy + Math.sin(midAng)*(r*0.65);
+    ctx.fillStyle='#fff'; ctx.font='bold 12px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(s.label, lx, ly);
+    ang += sweep;
+  });
+}
+
+// ══ Esporta CSV ═══════════════════════════════════════════════════════════════
+window.esportaCSV = function() {
+  const { da, a } = getDateRange();
+  const giorni = [...new Set(allNotti.map(n=>n.data))].sort().reverse();
+  const naufraghiUids = [...new Set(allNotti.map(n=>n.uid))].sort((a,b)=>(utentiMap[a]?.nome||'').localeCompare(utentiMap[b]?.nome||''));
+
+  // Foglio 1: presenze per luogo
+  let csv1 = 'Data,' + LUOGHI.map(l=>l.emoji+' '+l.nome).join(',') + '\n';
+  giorni.forEach(g => {
+    const riga = [g];
+    LUOGHI.forEach(l => {
+      const nomi = allNotti.filter(n=>n.data===g&&n.luogoId===l.id).map(n=>n.nome);
+      riga.push('"' + nomi.join('; ') + '"');
+    });
+    csv1 += riga.join(',') + '\n';
+  });
+
+  // Foglio 2: emozioni per naufrago
+  let csv2 = 'Naufrago,' + giorni.join(',') + '\n';
+  naufraghiUids.forEach(uid => {
+    const riga = ['"'+(utentiMap[uid]?.nome||uid)+'"'];
+    giorni.forEach(g => {
+      const n = allNotti.find(x=>x.uid===uid&&x.data===g);
+      riga.push(n?.meteo||'');
+    });
+    csv2 += riga.join(',') + '\n';
+  });
+
+  // Foglio 3: riassunto
+  let csv3 = 'Statistica,Valore\n';
+  csv3 += `Periodo,${da} → ${a}\n`;
+  csv3 += `Notti totali,${allNotti.length}\n`;
+  csv3 += `Naufraghi attivi,${new Set(allNotti.map(n=>n.uid)).size}\n`;
+  METEO.forEach(m => { csv3 += `Emozione ${m},${allNotti.filter(n=>n.meteo===m).length}\n`; });
+  LUOGHI.forEach(l => { csv3 += `Luogo ${l.nome},${allNotti.filter(n=>n.luogoId===l.id).length}\n`; });
+
+  const combined = '=== PRESENZE PER LUOGO ===\n' + csv1 + '\n=== EMOZIONI ===\n' + csv2 + '\n=== RIASSUNTO ===\n' + csv3;
+  const blob = new Blob(['﻿'+combined], { type:'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a2 = document.createElement('a');
+  a2.href=url; a2.download=`robinson-isola-${da}-${a}.csv`;
+  document.body.appendChild(a2); a2.click();
+  document.body.removeChild(a2); URL.revokeObjectURL(url);
+};
+</script>
+</body>
+</html>

@@ -208,7 +208,10 @@ service cloud.firestore {
 
     // ── Isola dei Sentimenti ─────────────────────────────────
     match /robinson_isola/{uid}/notti/{data} {
-      allow read: if isLoggedIn() && (isOwner(uid) || isAdmin());
+      allow read: if isLoggedIn() && (
+        isOwner(uid) || isAdmin() ||
+        get(/databases/$(database)/documents/utenti/$(request.auth.uid)).data.ruolo == 'admin'
+      );
       allow write: if isLoggedIn() && isOwner(uid);
     }
 
