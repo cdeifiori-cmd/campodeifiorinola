@@ -9,13 +9,57 @@
   <style>
     :root { --navy:#1a3a5c; --oro:#c8860a; --carta:#f5f0e8; --carta-scura:#e8e0d0; --inchiostro:#2c2c2c; --muted:#6b6b6b; --rosso:#c0392b; }
     * { box-sizing:border-box; }
-    body { background:var(--carta); font-family:'Lora',serif; color:var(--inchiostro); margin:0; padding:0; }
 
-    .feed { max-width:640px; margin:0 auto; padding:10px 10px 80px; display:flex; flex-direction:column; gap:7px; }
+    body {
+      font-family:'Lora',serif; color:var(--inchiostro); margin:0; padding:0;
+      background-image: url('appunti.png');
+      background-size: cover;
+      background-position: top center;
+      background-attachment: fixed;
+      min-height: 100vh;
+    }
+
+    /* ── Header fisso ── */
+    .appunti-header-fixed {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 32vw;
+      max-height: 200px;
+      background-image: url('appunti.png');
+      background-size: cover;
+      background-position: top center;
+      z-index: 100;
+    }
+    @media (min-width:769px) {
+      .appunti-header-fixed { height: 18vw; max-height: 220px; }
+    }
+
+    /* ── Avatar in alto a destra ── */
+    #nav-auth-slot-wrap {
+      position: fixed;
+      top: 6px; right: 8px;
+      z-index: 300;
+    }
+    @media (max-width:768px) {
+      #nav-auth-slot-wrap .nav-user-name { display:none; }
+      #nav-auth-slot-wrap img { width:28px !important; height:28px !important; }
+    }
+
+    /* ── Contenuto con padding-top ── */
+    .appunti-content {
+      padding-top: calc(min(32vw, 200px) + 8px);
+      padding-bottom: 80px;
+    }
+    @media (min-width:769px) {
+      .appunti-content { padding-top: 228px; }
+    }
+
+    .feed { max-width:640px; margin:0 auto; padding:10px 10px 0; display:flex; flex-direction:column; gap:7px; }
 
     /* ── Card anteprima ── */
     .preview-card {
-      background:#faf7f0;
+      background: rgba(250,247,240,0.95);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.10);
       border-radius:10px;
       border-left:3px solid var(--navy);
       padding:10px 10px 10px 12px;
@@ -24,12 +68,12 @@
       text-decoration:none; color:inherit;
       transition:box-shadow 0.15s;
     }
-    .preview-card:hover { box-shadow:0 4px 14px rgba(0,0,0,0.12); }
+    .preview-card:hover { box-shadow:0 4px 16px rgba(0,0,0,0.18); }
     .preview-card.fonte-spiaggia { border-left-color:#1a3a5c; }
     .preview-card.fonte-diario   { border-left-color:#c8860a; }
     .preview-card.fonte-isola    { border-left-color:#4a9e6b; }
 
-    /* Avatar */
+    /* Avatar card */
     .pv-avatar { width:34px; height:34px; border-radius:50%; object-fit:cover; flex-shrink:0; background:var(--carta-scura); }
     .pv-avatar-placeholder { width:34px; height:34px; border-radius:50%; background:var(--navy); color:#fff; display:flex; align-items:center; justify-content:center; font-size:0.95rem; flex-shrink:0; }
 
@@ -43,7 +87,6 @@
     .badge-isola    { background:#e4f5e8; color:#2a7a3a; }
     .pv-data { font-size:0.64rem; color:var(--muted); margin-left:auto; white-space:nowrap; }
     .pv-testo { font-size:0.82rem; color:#444; line-height:1.4; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-    .pv-luogo { font-size:0.75rem; color:var(--muted); margin-top:1px; }
 
     /* Miniatura destra */
     .pv-thumb { width:52px; height:52px; border-radius:7px; object-fit:cover; flex-shrink:0; }
@@ -55,21 +98,18 @@
     .spinner { display:flex; justify-content:center; padding:30px; }
     .spinner:after { content:''; width:34px; height:34px; border:3px solid var(--carta-scura); border-top-color:var(--oro); border-radius:50%; animation:spin 0.7s linear infinite; }
     @keyframes spin { to { transform:rotate(360deg); } }
-    .empty-msg { text-align:center; color:var(--muted); padding:30px; font-size:0.9rem; }
+    .empty-msg { text-align:center; color:var(--muted); padding:30px; font-size:0.9rem; background:rgba(250,247,240,0.9); border-radius:10px; }
   </style>
 </head>
 <body>
 
-<header class="top-header">
-  <div>
-    <div class="header-title-main">📓 Appunti di Viaggio</div>
-    <div class="header-title-sub">tutto quello che succede sull'isola</div>
-  </div>
-  <div id="nav-auth-slot"></div>
-</header>
+<div class="appunti-header-fixed"></div>
+<div id="nav-auth-slot-wrap"><div id="nav-auth-slot"></div></div>
 
-<div id="feed" class="feed">
-  <div class="spinner"></div>
+<div class="appunti-content">
+  <div id="feed" class="feed">
+    <div class="spinner"></div>
+  </div>
 </div>
 
 <nav class="bottom-nav">
