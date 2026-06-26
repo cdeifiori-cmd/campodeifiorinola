@@ -6,16 +6,51 @@
   <title>I Naufraghi – Robinson</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lora:ital,wght@0,400;0,600;1,400&family=Dancing+Script:wght@600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/robinson.css">
+  <style>
+    body {
+      background: url('naufraghi.png') center top / cover no-repeat fixed;
+      min-height: 100vh;
+    }
+    .top-header { background: transparent; box-shadow: none; }
+    #nav-auth-slot-wrap {
+      position: fixed;
+      top: 12px;
+      right: 12px;
+      z-index: 200;
+    }
+    .search-bar {
+      background: rgba(26,58,92,0.75);
+      backdrop-filter: blur(4px);
+      border-radius: 10px;
+      margin: 12px 16px;
+    }
+    .search-bar input { background: transparent; color: #f5f0e8; }
+    .search-bar input::placeholder { color: #c8b89a; }
+    #grid.grid-naufraghi {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      padding: 8px 16px 100px;
+    }
+    @media (max-width: 600px) {
+      #grid.grid-naufraghi { grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 8px 10px 100px; }
+    }
+    .card-naufrago {
+      background: rgba(255,255,255,0.18);
+      border: 1.5px solid rgba(200,134,10,0.35);
+      border-radius: 10px;
+      backdrop-filter: blur(2px);
+    }
+    .card-naufrago:hover { background: rgba(255,255,255,0.32); }
+    .card-nome { color: #1a3a5c; text-shadow: 0 1px 2px rgba(255,255,255,0.7); }
+    .card-ruolo { color: #6b4c10; }
+  </style>
 </head>
 <body>
 
-<header class="top-header">
-  <div>
-    <div class="header-title-main">👤 I Naufraghi</div>
-    <div class="header-title-sub">compagni di isola</div>
-  </div>
+<div id="nav-auth-slot-wrap">
   <div id="nav-auth-slot"></div>
-</header>
+</div>
 
 <div id="admin-banner" style="display:none;" class="admin-banner">
   <a href="admin-classifica.html">📊 Vai alla Classifica →</a>
@@ -27,7 +62,7 @@
 </div>
 
 <div id="grid" class="grid-naufraghi">
-  <div class="spinner" style="grid-column:span 2;"></div>
+  <div class="spinner" style="grid-column:span 3;"></div>
 </div>
 
 <!-- Modal Carta d'Identità -->
