@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>L'Isola – Robinson</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lora:ital,wght@0,400;0,600;1,400&family=Dancing+Script:wght@600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/robinson.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --navy:#1a3a5c; --oro:#c8860a; --carta:#f5f0e8; --muted:#6b5c45; --rosso:#c0392b; }
+
+    body {
+      background: #1a3a5c;
+      font-family: 'Lora', serif;
+      color: var(--navy);
+      padding-bottom: 90px;
+      min-height: 100vh;
+    }
+
+    /* ── Avatar ── */
+    #nav-auth-slot-wrap {
+      position: fixed; top: 8px; right: 10px; z-index: 400;
+    }
+
+    /* ── Titolo pagina ── */
+    .isola-title {
+      text-align: center;
+      padding: 14px 16px 8px;
+      font-family: 'Playfair Display', serif;
+      font-size: 1.3rem;
+      color: var(--carta);
+      letter-spacing: 0.05em;
+    }
+    .isola-subtitle {
+      text-align: center;
+      font-size: 0.78rem;
+      color: #c8b89a;
+      font-style: italic;
+      margin-bottom: 10px;
+    }
+
+    /* ── Mappa ── */
+    .mappa-outer {
+      width: 100%;
+      overflow: hidden;
+      touch-action: none;
+      user-select: none;
+      background: #0d2240;
+      position: relative;
+    }
+    .mappa-inner {
+      position: relative;
+      transform-origin: top left;
+      transition: transform 0.1s ease;
+      display: inline-block;
+      width: 100%;
+    }
+    .mappa-inner img {
+      display: block;
+      width: 100%;
+      height: auto;
+      pointer-events: none;
+    }
+
+    /* ── Zoom controls ── */
+    .zoom-controls {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 50;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .zoom-btn {
+      width: 34px; height: 34px;
+      background: rgba(26,58,92,0.88);
+      color: var(--oro);
+      border: 1.5px solid var(--oro);
+      border-radius: 8px;
+      font-size: 1.2rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      line-height: 1;
+    }
+    .zoom-btn:hover { background: rgba(26,58,92,1); }
+
+    /* ── Hotspot ── */
+    .hotspot {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1px;
+      background: none;
+      border: none;
+      padding: 2px;
+      border-radius: 8px;
+      transition: filter 0.15s, transform 0.15s;
+      z-index: 10;
+    }
+    .hotspot:hover, .hotspot:focus {
+      filter: drop-shadow(0 0 6px #c8860a) drop-shadow(0 0 10px #c8860aa0);
+      transform: translate(-50%, -50%) scale(1.15);
+      outline: none;
+    }
+    .hotspot-emoji {
+      font-size: clamp(18px, 4vw, 30px);
+      line-height: 1;
+    }
+    .hotspot-count {
+      font-size: clamp(9px, 1.8vw, 12px);
+      color: #fff;
+      background: rgba(200,134,10,0.9);
+      border-radius: 10px;
+      padding: 1px 4px;
+      font-weight: 700;
+      white-space: nowrap;
+      line-height: 1.2;
+    }
+
+    /* ── Modal ── */
+    .modal-backdrop {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.65);
+      z-index: 500;
+      display: flex; align-items: flex-end; justify-content: center;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.2s;
+    }
+    .modal-backdrop.open { opacity: 1; pointer-events: all; }
+
+    .modal-sheet {
+      background: var(--carta);
+      border-radius: 20px 20px 0 0;
+      width: 100%; max-width: 560px;
+      padding: 20px 18px 32px;
+      max-height: 88vh;
+      overflow-y: auto;
+      transform: translateY(100%);
+      transition: transform 0.25s ease;
+    }
+    .modal-backdrop.open .modal-sheet { transform: translateY(0); }
+
+    .modal-header {
+      display: flex; align-items: flex-start;
+      justify-content: space-between; margin-bottom: 10px;
+    }
+    .modal-emoji { font-size: 2rem; margin-right: 10px; }
+    .modal-title-wrap { flex: 1; }
+    .modal-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.1rem; font-weight: 700; color: var(--navy);
+    }
+    .modal-desc { font-style: italic; font-size: 0.85rem; color: var(--muted); margin-top: 3px; }
+    .modal-close {
+      background: #e0d8cc; border: none; border-radius: 50%;
+      width: 32px; height: 32px; font-size: 1rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+
+    .banner-presenze {
+      background: linear-gradient(135deg, #c8860a22, #c8860a44);
+      border: 1.5px solid var(--oro);
+      border-radius: 10px;
+      padding: 10px 14px;
+      margin: 10px 0;
+      font-size: 0.88rem;
+      color: var(--navy);
+      font-weight: 600;
+      display: none;
+    }
+
+    .modal-domanda {
+      background: var(--navy);
+      color: var(--carta);
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin: 12px 0;
+      font-size: 0.9rem;
+      font-style: italic;
+      line-height: 1.5;
+    }
+
+    .form-label {
+      font-size: 0.78rem; font-weight: 700;
+      color: var(--muted); margin-bottom: 4px; display: block;
+    }
+    .form-textarea {
+      width: 100%;
+      border: 1.5px solid #c8b89a; border-radius: 10px;
+      padding: 9px 12px; font-family: 'Lora', serif;
+      font-size: 0.92rem; resize: none; outline: none;
+      min-height: 80px; background: #fff;
+      transition: border-color 0.15s; margin-bottom: 12px;
+    }
+    .form-textarea:focus { border-color: var(--oro); }
+
+    .meteo-label { font-size: 0.78rem; font-weight: 700; color: var(--muted); margin-bottom: 6px; }
+    .meteo-grid {
+      display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px;
+    }
+    .meteo-btn {
+      background: #fff; border: 1.5px solid #c8b89a;
+      border-radius: 20px; padding: 5px 10px;
+      font-size: 0.82rem; cursor: pointer;
+      transition: background 0.12s, border-color 0.12s;
+      font-family: 'Lora', serif;
+    }
+    .meteo-btn.selected {
+      background: #f5ead5; border-color: var(--oro); font-weight: 700;
+    }
+
+    .media-btns {
+      display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px;
+    }
+    .media-btn {
+      display: flex; align-items: center; gap: 5px;
+      background: #fff; border: 1.5px solid #c8b89a;
+      border-radius: 20px; padding: 6px 14px;
+      font-family: 'Lora', serif; font-size: 0.82rem;
+      font-weight: 600; cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .media-btn:hover { background: #f5ead5; border-color: var(--oro); }
+
+    .preview-mini {
+      display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;
+    }
+    .preview-mini img, .preview-mini video {
+      width: 70px; height: 70px; object-fit: cover;
+      border-radius: 8px; background: #eee;
+    }
+
+    .btn-salva {
+      width: 100%;
+      background: var(--navy); color: var(--oro);
+      border: 2px solid var(--oro); border-radius: 14px;
+      padding: 13px; font-family: 'Lora', serif;
+      font-size: 1rem; font-weight: 700; cursor: pointer;
+      margin-top: 6px; transition: background 0.15s;
+    }
+    .btn-salva:hover:not(:disabled) { background: #0f2540; }
+    .btn-salva:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .msg-primo {
+      text-align: center;
+      color: var(--oro);
+      font-weight: 700;
+      font-size: 0.88rem;
+      margin-top: 10px;
+      display: none;
+    }
+
+    /* ── Forziere ── */
+    .forziere-section {
+      background: var(--carta);
+      margin: 16px 12px;
+      border-radius: 16px;
+      padding: 18px 16px;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.22);
+    }
+    .forziere-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.15rem; font-weight: 700;
+      color: var(--navy); margin-bottom: 14px;
+    }
+    .notte-card {
+      background: #fff;
+      border: 1px solid #e0d4c0;
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 10px;
+      position: relative;
+    }
+    .notte-card-top {
+      display: flex; align-items: center; gap: 8px; margin-bottom: 6px;
+    }
+    .notte-emoji { font-size: 1.4rem; }
+    .notte-data { font-size: 0.72rem; color: var(--muted); }
+    .notte-luogo { font-weight: 700; font-size: 0.88rem; color: var(--navy); }
+    .notte-meteo { font-size: 1rem; }
+    .notte-pensiero {
+      font-style: italic; font-size: 0.85rem; color: #444;
+      margin-top: 4px; line-height: 1.4;
+    }
+    .notte-thumb img, .notte-thumb video {
+      width: 60px; height: 60px; object-fit: cover;
+      border-radius: 6px; margin-top: 6px;
+    }
+    .notte-del-btn {
+      position: absolute; top: 8px; right: 10px;
+      background: none; border: none; cursor: pointer;
+      font-size: 0.75rem; color: #ccc;
+      transition: color 0.12s;
+    }
+    .notte-del-btn:hover { color: var(--rosso); }
+    .empty-forziere {
+      text-align: center; color: var(--muted);
+      font-style: italic; font-size: 0.88rem; padding: 16px 0;
+    }
+
+    .spinner { width: 32px; height: 32px; border: 3px solid #e8e0d0; border-top-color: var(--oro); border-radius: 50%; animation: spin 0.7s linear infinite; margin: 2rem auto; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<!-- Avatar -->
+<div id="nav-auth-slot-wrap">
+  <div id="nav-auth-slot"></div>
+</div>
+
+<!-- Titolo -->
+<div class="isola-title">🏝️ L'Isola dei Sentimenti</div>
+<div class="isola-subtitle">Dove sei stasera, naufrago?</div>
+
+<!-- Mappa -->
+<div class="mappa-outer" id="mappaOuter">
+  <div class="zoom-controls">
+    <button class="zoom-btn" id="zoomIn" title="Zoom +">+</button>
+    <button class="zoom-btn" id="zoomOut" title="Zoom −">−</button>
+  </div>
+  <div class="mappa-inner" id="mappaInner">
+    <img src="isola.png" alt="Mappa dell'isola" id="mappaImg" draggable="false">
+    <!-- Hotspot inseriti via JS -->
+  </div>
+</div>
+
+<!-- Modal luogo -->
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal-sheet">
+    <div class="modal-header">
+      <span class="modal-emoji" id="modalEmoji"></span>
+      <div class="modal-title-wrap">
+        <div class="modal-title" id="modalTitolo"></div>
+        <div class="modal-desc" id="modalDesc"></div>
+      </div>
+      <button class="modal-close" id="modalClose">✕</button>
+    </div>
+
+    <div class="banner-presenze" id="bannerPresenze"></div>
+
+    <div class="modal-domanda" id="modalDomanda"></div>
+
+    <label class="form-label">Il mio pensiero della sera</label>
+    <textarea class="form-textarea" id="formPensiero" placeholder="Scrivi qui…" rows="3"></textarea>
+
+    <div class="meteo-label">Meteo del cuore</div>
+    <div class="meteo-grid" id="meteoGrid">
+      <button class="meteo-btn" data-meteo="☀️">☀️ Sereno</button>
+      <button class="meteo-btn" data-meteo="🌤️">🌤️ Abbastanza bene</button>
+      <button class="meteo-btn" data-meteo="🌧️">🌧️ Triste</button>
+      <button class="meteo-btn" data-meteo="⛈️">⛈️ Arrabbiato</button>
+      <button class="meteo-btn" data-meteo="🌫️">🌫️ Confuso</button>
+      <button class="meteo-btn" data-meteo="🌈">🌈 Fiducioso</button>
+    </div>
+
+    <div class="media-btns">
+      <label class="media-btn">🖼️ Foto<input type="file" accept="image/*" id="inputFoto" multiple style="display:none"></label>
+      <label class="media-btn">📹 Video<input type="file" accept="video/*" id="inputVideo" style="display:none"></label>
+    </div>
+    <div class="preview-mini" id="previewMini"></div>
+
+    <button class="btn-salva" id="btnSalva">🏕️ Salva notte sull'isola</button>
+    <div class="msg-primo" id="msgPrimo">🌟 Sei il primo naufrago ad arrivare qui stasera!</div>
+  </div>
+</div>
+
+<!-- Forziere -->
+<div class="forziere-section" id="forziere" style="display:none;">
+  <div class="forziere-title">🏴‍☠️ Forziere dell'Isola</div>
+  <div id="forziere-lista"><div class="spinner"></div></div>
+</div>
+
+<!-- Bottom nav -->
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item"><span class="nav-icon">🏠</span><span>Home</span></a>
+  <a href="spiaggia.html" class="nav-item"><span class="nav-icon">🏖️</span><span>Spiaggia</span></a>
+  <a href="naufraghi.html" class="nav-item"><span class="nav-icon">🧍</span><span>Naufraghi</span></a>
+  <a href="isola.html" class="nav-item active"><span class="nav-icon">🗺️</span><span>Isola</span></a>
+  <a href="ciurma.html" class="nav-item"><span class="nav-icon">⚓</span><span>Ciurma</span></a>
+  <a href="appunti.html" class="nav-item"><span class="nav-icon">📔</span><span>Appunti</span></a>
+</nav>
+
+<script type="module">
+import { db, auth, CLOUD_NAME, CLOUD_PRESET } from './js/robinson-firebase.js';
+import { setupNavAuth } from './js/robinson-nav.js';
+import { esc } from './js/robinson-utils.js';
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import {
+  doc, getDoc, setDoc, deleteDoc, collection, getDocs,
+  query, orderBy, updateDoc, increment, serverTimestamp, onSnapshot
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+setupNavAuth('nav-auth-slot');
+
+const luoghiIsola = [
+  { id:"spiaggia-fiducia",      nome:"Spiaggia della Fiducia",    emoji:"🌴", x:31, y:29,
+    descrizione:"Mi sento sereno e in pace.",
+    domanda:"Chi o che cosa oggi ti ha fatto sentire al sicuro?" },
+  { id:"faro-sogni",            nome:"Faro dei Sogni",            emoji:"🗼", x:49, y:21,
+    descrizione:"Guardo lontano e sogno il futuro.",
+    domanda:"Quale sogno oggi hai sentito più vicino?" },
+  { id:"promontorio-coraggio",  nome:"Promontorio del Coraggio",  emoji:"🧭", x:66, y:23,
+    descrizione:"Affronto le sfide con forza.",
+    domanda:"Quale piccola o grande sfida hai affrontato oggi?" },
+  { id:"baia-calma",            nome:"Baia della Calma",          emoji:"🌊", x:84, y:31,
+    descrizione:"Trovo tranquillità e respiro.",
+    domanda:"In quale momento oggi ti sei sentito in pace?" },
+  { id:"villaggio-amicizia",    nome:"Villaggio dell'Amicizia",   emoji:"🤝", x:18, y:43,
+    descrizione:"Mi sento parte del gruppo.",
+    domanda:"Chi oggi ti ha fatto sentire parte della ciurma?" },
+  { id:"vulcano-rabbia",        nome:"Vulcano della Rabbia",      emoji:"🌋", x:46, y:49,
+    descrizione:"Oggi è tutto molto difficile.",
+    domanda:"Che cosa sta bruciando dentro di te?" },
+  { id:"laguna-pazienza",       nome:"Laguna della Pazienza",     emoji:"🐢", x:12, y:65,
+    descrizione:"Respiro, aspetto e mi prendo tempo.",
+    domanda:"In quale momento hai avuto bisogno di pazienza?" },
+  { id:"caverna-tristezza",     nome:"Caverna della Tristezza",   emoji:"🌧️", x:69, y:50,
+    descrizione:"Ho bisogno di stare con i miei pensieri.",
+    domanda:"Che cosa ti ha reso triste o ti ha fatto chiudere un po'?" },
+  { id:"tempesta-caos",         nome:"Tempesta del Caos",         emoji:"⛈️", x:84, y:57,
+    descrizione:"Tutto mi sembra confuso e pesante.",
+    domanda:"Quale pensiero oggi ti ha creato confusione?" },
+  { id:"deserto-solitudine",    nome:"Deserto della Solitudine",  emoji:"🌪️", x:36, y:70,
+    descrizione:"Mi sento solo e incompreso.",
+    domanda:"Quando oggi ti sei sentito distante dagli altri?" },
+  { id:"scoglio-dolore",        nome:"Scoglio del Dolore",        emoji:"💔", x:56, y:70,
+    descrizione:"Porto con me ferite e ricordi.",
+    domanda:"C'è qualcosa che oggi ti ha fatto male?" },
+  { id:"nebbia-dubbi",          nome:"Nebbia dei Dubbi",          emoji:"🌫️", x:76, y:74,
+    descrizione:"Non so cosa scegliere.",
+    domanda:"Su cosa senti di avere ancora dubbi?" },
+  { id:"isola-paure",           nome:"Isola delle Paure",         emoji:"🔒", x:24, y:86,
+    descrizione:"Le mie paure sono grandi.",
+    domanda:"Quale paura oggi ti ha accompagnato?" },
+  { id:"bivio-scelte",          nome:"Bivio delle Scelte",        emoji:"🚧", x:49, y:89,
+    descrizione:"Sono indeciso, ho bisogno di capire.",
+    domanda:"Davanti a quale scelta ti sei sentito oggi?" },
+  { id:"tramonto-gratitudine",  nome:"Tramonto della Gratitudine",emoji:"🌅", x:72, y:88,
+    descrizione:"Ringrazio per ciò che ho vissuto.",
+    domanda:"Per che cosa vuoi dire grazie questa sera?" }
+];
+
+// ── Data odierna ─────────────────────────────────────────────────────────────
+function oggi() {
+  const d = new Date();
+  return d.getFullYear() + '-' +
+    String(d.getMonth()+1).padStart(2,'0') + '-' +
+    String(d.getDate()).padStart(2,'0');
+}
+
+// ── Stato ────────────────────────────────────────────────────────────────────
+let currentUser = null;
+let luogoAttivo = null;
+let meteoSelezionato = '';
+let mediaItems = [];
+let presenzeUnsub = null;
+const presenzeMap = {}; // luogoId → count
+const nottiPersonali = {}; // luogoId → count
+
+// ── Auth ─────────────────────────────────────────────────────────────────────
+onAuthStateChanged(auth, async user => {
+  currentUser = user;
+  if (user) {
+    document.getElementById('forziere').style.display = '';
+    await caricaNottiPersonali();
+    caricaForziere();
+  }
+  buildHotspot();
+  startPresenzeListener();
+});
+
+// ── Mappa & Hotspot ───────────────────────────────────────────────────────────
+function buildHotspot() {
+  const inner = document.getElementById('mappaInner');
+  inner.querySelectorAll('.hotspot').forEach(el => el.remove());
+  luoghiIsola.forEach(luogo => {
+    const btn = document.createElement('button');
+    btn.className = 'hotspot';
+    btn.dataset.id = luogo.id;
+    btn.style.left = luogo.x + '%';
+    btn.style.top = luogo.y + '%';
+    btn.tabIndex = 0;
+    btn.title = luogo.nome;
+    btn.setAttribute('aria-label', luogo.nome);
+
+    const emojiEl = document.createElement('span');
+    emojiEl.className = 'hotspot-emoji';
+    emojiEl.textContent = luogo.emoji;
+    btn.appendChild(emojiEl);
+
+    const countEl = document.createElement('span');
+    countEl.className = 'hotspot-count';
+    countEl.id = 'hcount-' + luogo.id;
+    countEl.style.display = 'none';
+    btn.appendChild(countEl);
+
+    if (nottiPersonali[luogo.id]) {
+      const badge = document.createElement('span');
+      badge.className = 'hotspot-count';
+      badge.style.background = 'rgba(120,60,160,0.85)';
+      badge.textContent = '⭐ ' + nottiPersonali[luogo.id];
+      btn.appendChild(badge);
+    }
+
+    btn.addEventListener('click', () => apriModal(luogo));
+    btn.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); apriModal(luogo); } });
+    inner.appendChild(btn);
+  });
+}
+
+// ── Presenze real-time ────────────────────────────────────────────────────────
+function startPresenzeListener() {
+  if (presenzeUnsub) presenzeUnsub();
+  const data = oggi();
+  // Ascolta tutta la collection filtrando per data (legge tutti i doc del giorno)
+  // Usiamo un query su campo 'data'
+  const { query: fsQuery, where } = { query: null, where: null }; // import sotto
+  // Usa onSnapshot su documenti individuali per ogni luogo
+  luoghiIsola.forEach(luogo => {
+    const docId = data + '_' + luogo.id;
+    onSnapshot(doc(db, 'robinson_isola_presenze', docId), snap => {
+      const count = snap.exists() ? (snap.data().count || 0) : 0;
+      presenzeMap[luogo.id] = count;
+      aggiornaHotspotCount(luogo.id, count);
+    });
+  });
+}
+
+function aggiornaHotspotCount(luogoId, count) {
+  const el = document.getElementById('hcount-' + luogoId);
+  if (!el) return;
+  if (count >= 1) {
+    el.textContent = '🏕️ ' + count;
+    el.style.display = '';
+  } else {
+    el.style.display = 'none';
+  }
+  // Aggiorna banner se modal aperta per questo luogo
+  if (luogoAttivo && luogoAttivo.id === luogoId) {
+    aggiornaBannerPresenze(luogoId, count);
+  }
+}
+
+function aggiornaBannerPresenze(luogoId, count) {
+  const banner = document.getElementById('bannerPresenze');
+  // Il count include già il naufrago corrente se ha già salvato?
+  // Mostriamo "altri N" = count - 1 se il naufrago è tra quelli
+  // Per semplicità mostriamo count direttamente se > 0
+  if (count > 0) {
+    banner.textContent = '🏕️ Stasera ' + (count === 1 ? '1 naufrago è' : count + ' naufraghi sono') + ' qui con te';
+    banner.style.display = '';
+  } else {
+    banner.style.display = 'none';
+  }
+}
+
+// ── Modal ─────────────────────────────────────────────────────────────────────
+function apriModal(luogo) {
+  if (!currentUser) { alert('Devi accedere per segnare la tua posizione sull\'isola.'); return; }
+  luogoAttivo = luogo;
+  meteoSelezionato = '';
+  mediaItems = [];
+
+  document.getElementById('modalEmoji').textContent = luogo.emoji;
+  document.getElementById('modalTitolo').textContent = luogo.nome;
+  document.getElementById('modalDesc').textContent = luogo.descrizione;
+  document.getElementById('modalDomanda').textContent = '"' + luogo.domanda + '"';
+  document.getElementById('formPensiero').value = '';
+  document.getElementById('previewMini').innerHTML = '';
+  document.getElementById('msgPrimo').style.display = 'none';
+
+  // Reset meteo
+  document.querySelectorAll('.meteo-btn').forEach(b => b.classList.remove('selected'));
+
+  // Presenze
+  const count = presenzeMap[luogo.id] || 0;
+  aggiornaBannerPresenze(luogo.id, count);
+
+  document.getElementById('modalBackdrop').classList.add('open');
+}
+
+function chiudiModal() {
+  document.getElementById('modalBackdrop').classList.remove('open');
+  luogoAttivo = null;
+  mediaItems = [];
+}
+
+document.getElementById('modalClose').addEventListener('click', chiudiModal);
+document.getElementById('modalBackdrop').addEventListener('click', e => {
+  if (e.target === document.getElementById('modalBackdrop')) chiudiModal();
+});
+
+// Meteo
+document.getElementById('meteoGrid').addEventListener('click', e => {
+  const btn = e.target.closest('.meteo-btn');
+  if (!btn) return;
+  document.querySelectorAll('.meteo-btn').forEach(b => b.classList.remove('selected'));
+  meteoSelezionato = btn.dataset.meteo;
+  btn.classList.add('selected');
+});
+
+// Media
+document.getElementById('inputFoto').addEventListener('change', e => {
+  Array.from(e.target.files).forEach(f => {
+    mediaItems.push({ file: f, type: 'image', previewUrl: URL.createObjectURL(f) });
+  });
+  renderPreview();
+  e.target.value = '';
+});
+document.getElementById('inputVideo').addEventListener('change', e => {
+  const f = e.target.files[0];
+  if (f) mediaItems.push({ file: f, type: 'video', previewUrl: URL.createObjectURL(f) });
+  renderPreview();
+  e.target.value = '';
+});
+
+function renderPreview() {
+  const wrap = document.getElementById('previewMini');
+  wrap.innerHTML = mediaItems.map((item, i) => {
+    if (item.type === 'image') return `<img src="${esc(item.previewUrl)}" alt="">`;
+    return `<video src="${esc(item.previewUrl)}" muted playsinline></video>`;
+  }).join('');
+}
+
+// ── Upload Cloudinary ─────────────────────────────────────────────────────────
+async function uploadFile(file, type) {
+  const fd = new FormData();
+  fd.append('file', file);
+  fd.append('upload_preset', CLOUD_PRESET);
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${type === 'image' ? 'image' : 'video'}/upload`, { method: 'POST', body: fd });
+  const data = await res.json();
+  if (!data.secure_url) throw new Error('Upload fallito: ' + file.name);
+  return data.secure_url;
+}
+
+// ── Salvataggio ───────────────────────────────────────────────────────────────
+document.getElementById('btnSalva').addEventListener('click', async () => {
+  if (!currentUser || !luogoAttivo) return;
+  const pensiero = document.getElementById('formPensiero').value.trim();
+  const btn = document.getElementById('btnSalva');
+  btn.disabled = true; btn.textContent = '⏳ Salvo…';
+
+  try {
+    const data = oggi();
+
+    // Upload media
+    let fotoUrl = null, videoUrl = null;
+    for (const item of mediaItems) {
+      const url = await uploadFile(item.file, item.type);
+      if (item.type === 'image' && !fotoUrl) fotoUrl = url;
+      if (item.type === 'video' && !videoUrl) videoUrl = url;
+    }
+
+    const docData = {
+      data, luogoId: luogoAttivo.id, luogoNome: luogoAttivo.nome,
+      emoji: luogoAttivo.emoji, meteo: meteoSelezionato,
+      pensiero, fotoUrl: fotoUrl || null, videoUrl: videoUrl || null,
+      uid: currentUser.uid, timestamp: serverTimestamp()
+    };
+
+    // Salva notte
+    const notteRef = doc(db, 'robinson_isola', currentUser.uid, 'notti', data);
+    await setDoc(notteRef, docData);
+
+    // Salva in localStorage backup
+    try {
+      localStorage.setItem('isola_notte_' + data, JSON.stringify({ ...docData, timestamp: new Date().toISOString() }));
+    } catch(_) {}
+
+    // Incrementa presenze
+    const presenzeRef = doc(db, 'robinson_isola_presenze', data + '_' + luogoAttivo.id);
+    const presenzeSnap = await getDoc(presenzeRef);
+    const eraIlPrimo = !presenzeSnap.exists() || (presenzeSnap.data().count || 0) === 0;
+
+    if (presenzeSnap.exists()) {
+      await updateDoc(presenzeRef, { count: increment(1) });
+    } else {
+      await setDoc(presenzeRef, { data, luogoId: luogoAttivo.id, count: 1 });
+    }
+
+    // Punteggio
+    await aggiungiPunteggio(currentUser.uid);
+
+    // Feedback
+    if (eraIlPrimo) {
+      document.getElementById('msgPrimo').style.display = '';
+    }
+
+    chiudiModal();
+    await caricaNottiPersonali();
+    caricaForziere();
+    buildHotspot();
+
+  } catch(err) {
+    alert('Errore: ' + err.message);
+  } finally {
+    btn.disabled = false; btn.textContent = '🏕️ Salva notte sull\'isola';
+  }
+});
+
+async function aggiungiPunteggio(uid) {
+  try {
+    await updateDoc(doc(db, 'robinson_naufraghi', uid), { punteggio: increment(3) });
+  } catch(_) {}
+}
+
+// ── Notti personali ───────────────────────────────────────────────────────────
+async function caricaNottiPersonali() {
+  if (!currentUser) return;
+  try {
+    const snap = await getDocs(collection(db, 'robinson_isola', currentUser.uid, 'notti'));
+    snap.forEach(d => {
+      const luogoId = d.data().luogoId;
+      if (luogoId) nottiPersonali[luogoId] = (nottiPersonali[luogoId] || 0) + 1;
+    });
+  } catch(_) {}
+}
+
+// ── Forziere ─────────────────────────────────────────────────────────────────
+async function caricaForziere() {
+  if (!currentUser) return;
+  const lista = document.getElementById('forziere-lista');
+  lista.innerHTML = '<div class="spinner"></div>';
+  try {
+    const q = query(collection(db, 'robinson_isola', currentUser.uid, 'notti'), orderBy('timestamp', 'desc'));
+    const snap = await getDocs(q);
+    if (snap.empty) {
+      lista.innerHTML = '<div class="empty-forziere">Nessuna notte sull\'isola ancora. Clicca un luogo sulla mappa!</div>';
+      return;
+    }
+    lista.innerHTML = '';
+    snap.forEach(d => {
+      const data = d.id;
+      const nd = d.data();
+      const card = document.createElement('div');
+      card.className = 'notte-card';
+      const dataFmt = data.split('-').reverse().join('/');
+      card.innerHTML = `
+        <button class="notte-del-btn" data-id="${esc(data)}" title="Elimina">🗑️</button>
+        <div class="notte-card-top">
+          <span class="notte-emoji">${esc(nd.emoji || '')}</span>
+          <div>
+            <div class="notte-luogo">${esc(nd.luogoNome || '')}</div>
+            <div class="notte-data">${esc(dataFmt)} ${nd.meteo ? '· ' + nd.meteo : ''}</div>
+          </div>
+        </div>
+        ${nd.pensiero ? `<div class="notte-pensiero">"${esc(nd.pensiero.slice(0,100))}${nd.pensiero.length > 100 ? '…' : ''}"</div>` : ''}
+        ${nd.fotoUrl ? `<div class="notte-thumb"><img src="${esc(nd.fotoUrl)}" alt="foto"></div>` : ''}
+        ${nd.videoUrl ? `<div class="notte-thumb"><video src="${esc(nd.videoUrl)}" muted playsinline></video></div>` : ''}`;
+      card.querySelector('.notte-del-btn').addEventListener('click', async () => {
+        if (!confirm('Eliminare questa notte dal forziere?')) return;
+        try {
+          await deleteDoc(doc(db, 'robinson_isola', currentUser.uid, 'notti', data));
+          card.remove();
+          if (!lista.querySelector('.notte-card')) {
+            lista.innerHTML = '<div class="empty-forziere">Nessuna notte sull\'isola ancora.</div>';
+          }
+        } catch(err) { alert(err.message); }
+      });
+      lista.appendChild(card);
+    });
+  } catch(err) {
+    lista.innerHTML = `<div style="color:red;font-size:0.8rem;">Errore: ${esc(err.message)}</div>`;
+  }
+}
+
+// ── Zoom ─────────────────────────────────────────────────────────────────────
+let zoomLevel = 1;
+const ZOOM_MIN = 1, ZOOM_MAX = 2.5, ZOOM_STEP = 0.25;
+let panX = 0, panY = 0;
+
+function applyZoom() {
+  const inner = document.getElementById('mappaInner');
+  inner.style.transform = `scale(${zoomLevel}) translate(${panX}px, ${panY}px)`;
+}
+
+document.getElementById('zoomIn').addEventListener('click', () => {
+  zoomLevel = Math.min(ZOOM_MAX, zoomLevel + ZOOM_STEP);
+  applyZoom();
+});
+document.getElementById('zoomOut').addEventListener('click', () => {
+  zoomLevel = Math.max(ZOOM_MIN, zoomLevel - ZOOM_STEP);
+  if (zoomLevel === ZOOM_MIN) { panX = 0; panY = 0; }
+  applyZoom();
+});
+
+// Pinch-to-zoom
+let touch1 = null, touch2 = null, initDist = 0, initZoom = 1;
+const outer = document.getElementById('mappaOuter');
+
+outer.addEventListener('touchstart', e => {
+  if (e.touches.length === 2) {
+    touch1 = e.touches[0];
+    touch2 = e.touches[1];
+    initDist = Math.hypot(touch2.clientX - touch1.clientX, touch2.clientY - touch1.clientY);
+    initZoom = zoomLevel;
+    e.preventDefault();
+  }
+}, { passive: false });
+
+outer.addEventListener('touchmove', e => {
+  if (e.touches.length === 2) {
+    const t1 = e.touches[0], t2 = e.touches[1];
+    const dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+    zoomLevel = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, initZoom * (dist / initDist)));
+    applyZoom();
+    e.preventDefault();
+  }
+}, { passive: false });
+</script>
+</body>
+</html>
