@@ -18,9 +18,28 @@
 
     #nav-auth-slot-wrap { position: fixed; top: 12px; right: 12px; z-index: 200; }
 
-    /* Nasconde il vecchio header img */
+    /* Header fisso con scritta "I Naufraghi" sempre visibile */
+    .naufraghi-header-fixed {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 38vw;
+      max-height: 220px;
+      background-image: url('naufraghi.png');
+      background-size: cover;
+      background-position: top center;
+      z-index: 100;
+    }
+
+    /* Nasconde il vecchio header img inline */
     .naufraghi-header { display: none; }
-    .naufraghi-content { padding-bottom: 100px; }
+
+    /* Il contenuto parte sotto l'header fisso */
+    .naufraghi-content {
+      padding-bottom: 100px;
+      padding-top: calc(min(38vw, 220px) + 8px);
+    }
 
     .search-bar { margin: 12px 16px 6px; }
 
@@ -52,13 +71,9 @@
   <img src="naufraghi.png" alt="I Naufraghi">
 </div>
 
-<div style="height:38vh;"></div>
+<div class="naufraghi-header-fixed"></div>
 
 <div class="naufraghi-content">
-  <div id="admin-banner" style="display:none;" class="admin-banner">
-    <a href="admin-classifica.html">📊 Vai alla Classifica →</a>
-  </div>
-
   <div class="search-bar">
     <span>🔍</span>
     <input type="text" id="search-inp" placeholder="Cerca per nome...">
@@ -103,7 +118,6 @@ let currentUserModal = null;
 
 requireAuth(async user => {
   currentUserModal = user;
-  if (user.uid === ADMIN_UID) document.getElementById('admin-banner').style.display = 'block';
   await loadNaufraghi();
 });
 
