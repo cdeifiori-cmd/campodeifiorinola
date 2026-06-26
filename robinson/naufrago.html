@@ -59,6 +59,20 @@
     /* Accordion carta */
     .ci-accordion-toggle { cursor:pointer; user-select:none; display:flex; justify-content:space-between; align-items:center; }
     .ci-accordion-body[style*="display:block"] { padding:16px; min-height:60px; background:#faf7f0; border:1px solid #c8860a40; border-top:none; margin-bottom:8px; }
+    /* Sfondo tramonto fisso */
+    body {
+      background-image: url('naufrago_sfondo.png');
+      background-size: cover;
+      background-position: top center;
+      background-attachment: fixed;
+    }
+    .profilo-header {
+      background-image: url('naufrago_sfondo.png');
+      background-size: cover;
+      background-position: top center;
+    }
+    /* Offset contenuto per header */
+    .tab-panel { padding-top: 16px; }
   </style>
 </head>
 <body>
@@ -558,10 +572,19 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 async function loadProfilo() {
   let d = null;
   try {
-    let snap = await getDoc(doc(db, 'robinson_naufraghi', pageUid));
-    if (!snap.exists()) snap = await getDoc(doc(db, 'utenti', pageUid));
-    if (!snap.exists()) snap = await getDoc(doc(db, 'staff', pageUid));
-    if (snap.exists()) d = snap.data();
+    const [snapN, snapU, snapS] = await Promise.all([
+      getDoc(doc(db, 'robinson_naufraghi', pageUid)),
+      getDoc(doc(db, 'utenti', pageUid)),
+      getDoc(doc(db, 'staff', pageUid)),
+    ]);
+    // Merge: utenti.nome ha priorità, poi robinson_naufraghi, poi staff
+    const dN = snapN.exists() ? snapN.data() : {};
+    const dU = snapU.exists() ? snapU.data() : {};
+    const dSt = snapS.exists() ? snapS.data() : {};
+    d = { ...dN, ...dU, ...dSt };
+    // Nome: utenti > naufraghi > staff > fallback
+    d.nome = dU.nome || dN.nome || dSt.nome || dU.displayName || 'Naufrago';
+    d.fotoProfilo = dU.fotoProfiloUrl || dU.fotoProfilo || dN.fotoProfiloUrl || dN.fotoProfilo || dU.photoURL || '';
   } catch(_) {}
 
   // Try carta_identita dati

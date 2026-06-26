@@ -150,9 +150,11 @@ async function loadNaufraghi() {
     ]);
     const robinsonMap = {};
     snapRobinson.docs.forEach(d => { robinsonMap[d.id] = d.data(); });
+    const uidsVisti = new Set();
     allNaufraghi = snapUtenti.docs
       .map(d => ({ uid: d.id, ...d.data(), ...(robinsonMap[d.id] || {}) }))
-      .filter(u => u.ruolo !== 'admin' && u.ruolo !== 'ciurma');
+      .filter(u => u.ruolo !== 'admin' && u.ruolo !== 'ciurma')
+      .filter(u => { if (uidsVisti.has(u.uid)) return false; uidsVisti.add(u.uid); return true; });
     renderGrid(allNaufraghi);
   } catch(e) {
     grid.innerHTML = `<div style="grid-column:span 2;text-align:center;padding:20px;color:var(--rosso);">Errore caricamento: ${esc(e.message)}</div>`;
