@@ -49,8 +49,8 @@
     /* Azioni */
     .btn-azione { background:none; border:1px solid var(--carta-scura); border-radius:6px; padding:4px 8px; font-size:0.78rem; cursor:pointer; transition:background 0.1s; margin-right:4px; }
     .btn-azione:hover { background:var(--carta-scura); }
-    .btn-azione.crea { border-color:var(--oro); color:var(--oro); }
-    .btn-azione.crea:hover { background:#fef3de; }
+    .btn-azione.crea { border-color:var(--oro); color:#fff; background:var(--oro); font-weight:600; }
+    .btn-azione.crea:hover { background:#b57508; }
 
     /* Modal */
     .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:500; align-items:center; justify-content:center; }
@@ -174,10 +174,29 @@ async function loadAll() {
   const utMap = {};
   utSnap.forEach(d => { utMap[d.id] = d.data(); });
 
-  naufraghi = nSnap.docs.map(d => {
-    const u = utMap[d.id] || {};
-    return { uid: d.id, nome: u.nome || u.nomeCompleto || u.displayName || d.id, foto: u.fotoProfilo || u.fotoProfiloUrl || '' };
-  }).sort((a,b) => a.nome.localeCompare(b.nome, 'it'));
+  // Funzione per estrarre nome e foto da un doc utenti
+  function infoUtente(uid) {
+    const u = utMap[uid] || {};
+    const nome = u.nome || u.nomeCompleto || u.displayName || u.email?.split('@')[0] || uid;
+    const foto = u.fotoProfilo || u.fotoProfiloUrl || u.photoURL || '';
+    return { nome, foto };
+  }
+
+  // 1. Tutti i naufraghi registrati su Robinson
+  const uidSet = new Set();
+  nSnap.forEach(d => uidSet.add(d.id));
+
+  // 2. Aggiungi utenti che non sono admin/staff/ciurma
+  const RUOLI_ESCLUSI = new Set(['admin', 'staff', 'ciurma', 'operatore']);
+  utSnap.forEach(d => {
+    const ruolo = d.data().ruolo || '';
+    if (!RUOLI_ESCLUSI.has(ruolo)) uidSet.add(d.id);
+  });
+
+  naufraghi = [...uidSet].map(uid => {
+    const { nome, foto } = infoUtente(uid);
+    return { uid, nome, foto };
+  }).sort((a, b) => a.nome.localeCompare(b.nome, 'it'));
 
   pinMap = {};
   pSnap.forEach(d => { pinMap[d.id] = d.data(); });
