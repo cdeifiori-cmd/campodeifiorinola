@@ -196,10 +196,13 @@ const modalCarta = document.getElementById('modal-carta');
 const modalBody = document.getElementById('modal-carta-body');
 const modalDiarioBtn = document.getElementById('modal-carta-diario-btn');
 
-document.getElementById('modal-carta-close').addEventListener('click', () => { modalCarta.style.display = 'none'; });
-modalCarta.addEventListener('click', e => { if (e.target === modalCarta) modalCarta.style.display = 'none'; });
+function chiudiCartaModal() { modalCarta.style.display = 'none'; }
+document.getElementById('modal-carta-close').addEventListener('click', () => { chiudiCartaModal(); history.back(); });
+modalCarta.addEventListener('click', e => { if (e.target === modalCarta) { chiudiCartaModal(); history.back(); } });
+window.addEventListener('popstate', () => { if (modalCarta.style.display === 'block') chiudiCartaModal(); });
 
 async function apriCartaModal(uid) {
+  history.pushState({ modal: 'carta', uid }, '', location.href);
   modalCarta.style.display = 'block';
   modalBody.innerHTML = '<div style="padding:20px;text-align:center;color:#1a3a5c;">⏳ Caricamento…</div>';
   modalDiarioBtn.textContent = '📔 Vai al diario';
