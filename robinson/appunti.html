@@ -3,21 +3,115 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Appunti – Robinson</title>
+  <title>Appunti di Viaggio – Robinson</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/robinson.css">
+  <style>
+    :root { --navy:#1a3a5c; --oro:#c8860a; --carta:#f5f0e8; --carta-scura:#e8e0d0; --inchiostro:#2c2c2c; --muted:#6b6b6b; --rosso:#c0392b; }
+    * { box-sizing:border-box; }
+    body { background:var(--carta); font-family:'Lora',serif; color:var(--inchiostro); margin:0; padding:0; }
+
+    /* ── Card post ── */
+    .feed { max-width:640px; margin:0 auto; padding:12px 10px 80px; display:flex; flex-direction:column; gap:12px; }
+
+    .post-card {
+      background:#fff;
+      border-radius:14px;
+      box-shadow:0 2px 12px rgba(0,0,0,0.07);
+      overflow:hidden;
+    }
+    .post-card-inner { padding:12px 14px 8px; }
+
+    /* Header card: avatar + meta + badge */
+    .pc-header { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+    .pc-avatar { width:38px; height:38px; border-radius:50%; object-fit:cover; border:2px solid var(--carta-scura); flex-shrink:0; background:var(--carta-scura); }
+    .pc-avatar-placeholder { width:38px; height:38px; border-radius:50%; background:var(--navy); color:#fff; display:flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0; }
+    .pc-meta { flex:1; min-width:0; }
+    .pc-nome { font-weight:700; font-size:0.88rem; color:var(--navy); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .pc-data { font-size:0.70rem; color:var(--muted); margin-top:1px; }
+    .pc-badge { font-size:0.72rem; font-weight:700; padding:3px 9px; border-radius:12px; white-space:nowrap; flex-shrink:0; }
+    .badge-spiaggia { background:#e0f0ff; color:#1a5c8a; }
+    .badge-diario   { background:#f5ead5; color:#8a5c0a; }
+    .badge-isola    { background:#e8f5e9; color:#2a7a3a; }
+
+    /* Testo */
+    .pc-testo { font-size:0.9rem; line-height:1.6; color:var(--inchiostro); margin-bottom:8px; white-space:pre-wrap; }
+    .pc-testo.truncated { display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; overflow:hidden; }
+    .btn-leggi-tutto { background:none; border:none; color:var(--oro); font-size:0.78rem; cursor:pointer; font-family:'Lora',serif; padding:0; margin-bottom:6px; }
+
+    /* Isola extra */
+    .pc-isola-meta { display:flex; align-items:center; gap:8px; margin-bottom:6px; font-size:0.82rem; }
+    .pc-isola-luogo { font-weight:700; color:var(--navy); }
+    .pc-isola-meteo { font-size:1.1rem; }
+    .pc-privato { font-style:italic; color:var(--muted); font-size:0.8rem; }
+
+    /* Media */
+    .media-grid { display:grid; gap:3px; margin:6px 0; }
+    .media-grid.c1 { grid-template-columns:1fr; }
+    .media-grid.c2 { grid-template-columns:1fr 1fr; }
+    .media-grid.c3 { grid-template-columns:1fr 1fr 1fr; }
+    .media-item img, .media-item video { width:100%; height:160px; object-fit:cover; display:block; border-radius:6px; cursor:pointer; }
+    .media-item audio { width:100%; margin:4px 0; }
+
+    /* Reactions */
+    .post-reactions-wrap { display:flex; align-items:center; gap:4px; flex-wrap:wrap; padding:6px 14px 4px; border-top:1px solid var(--carta-scura); }
+    .reaction-btn {
+      display:inline-flex; align-items:center; gap:3px;
+      background:var(--carta); border:1.5px solid var(--carta-scura);
+      border-radius:20px; padding:3px 9px;
+      font-size:0.88rem; font-weight:700; cursor:pointer;
+      transition:background 0.15s, border-color 0.15s; color:var(--navy);
+    }
+    .reaction-btn.active { background:#f5ead5; border-color:var(--oro); color:var(--oro); }
+    .reaction-btn:hover { background:#f5ead5; }
+
+    /* Commenti */
+    .btn-comments {
+      background:none; border:none; color:var(--muted); font-size:0.8rem;
+      cursor:pointer; font-family:'Lora',serif; padding:0 14px 8px; display:block;
+    }
+    .btn-comments:hover { color:var(--oro); }
+    .comments-section { display:none; padding:0 14px 10px; }
+    .comments-section.open { display:block; }
+    .comment-list { display:flex; flex-direction:column; gap:8px; margin-bottom:8px; }
+    .comment-item { background:var(--carta); border-radius:10px; padding:8px 10px; }
+    .comment-header { display:flex; align-items:center; gap:6px; margin-bottom:3px; }
+    .comment-avatar { width:24px; height:24px; border-radius:50%; object-fit:cover; }
+    .comment-nome { font-weight:700; font-size:0.78rem; color:var(--navy); }
+    .comment-data { font-size:0.68rem; color:var(--muted); margin-left:auto; }
+    .comment-testo { font-size:0.82rem; line-height:1.5; }
+    .comment-reactions { display:flex; gap:3px; flex-wrap:wrap; margin-top:5px; }
+    .comment-reaction-btn { background:var(--carta-scura); border:1px solid #ddd; border-radius:12px; padding:2px 7px; font-size:0.74rem; font-weight:700; cursor:pointer; color:var(--navy); transition:background 0.12s; }
+    .comment-reaction-btn.active { background:#f5ead5; border-color:var(--oro); }
+    .comment-input-wrap { display:flex; gap:8px; align-items:flex-end; margin-top:8px; }
+    .comment-input { flex:1; border:1.5px solid var(--carta-scura); border-radius:10px; padding:7px 10px; font-family:'Lora',serif; font-size:0.85rem; resize:none; background:var(--carta); color:var(--inchiostro); }
+    .comment-input:focus { outline:none; border-color:var(--oro); }
+    .btn-send-comment { background:var(--navy); color:#fff; border:none; border-radius:10px; padding:7px 14px; font-size:0.82rem; cursor:pointer; white-space:nowrap; }
+    .btn-send-comment:hover { background:var(--oro); }
+
+    /* Lightbox */
+    .lightbox { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:1000; align-items:center; justify-content:center; }
+    .lightbox.open { display:flex; }
+    .lightbox img, .lightbox video { max-width:96vw; max-height:92vh; object-fit:contain; border-radius:8px; }
+    .lb-close { position:absolute; top:12px; right:16px; color:#fff; font-size:2rem; cursor:pointer; line-height:1; }
+
+    .spinner { display:flex; justify-content:center; padding:30px; }
+    .spinner:after { content:''; width:34px; height:34px; border:3px solid var(--carta-scura); border-top-color:var(--oro); border-radius:50%; animation:spin 0.7s linear infinite; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    .empty-msg { text-align:center; color:var(--muted); padding:30px; font-size:0.9rem; }
+  </style>
 </head>
 <body>
 
 <header class="top-header">
   <div>
-    <div class="header-title-main">📔 Gli Appunti</div>
-    <div class="header-title-sub">tutto quello che è stato scritto</div>
+    <div class="header-title-main">📓 Appunti di Viaggio</div>
+    <div class="header-title-sub">tutto quello che succede sull'isola</div>
   </div>
   <div id="nav-auth-slot"></div>
 </header>
 
-<div id="lista" style="max-width:640px;margin:0 auto;padding:12px 8px 80px;">
+<div id="feed" class="feed">
   <div class="spinner"></div>
 </div>
 
@@ -30,69 +124,454 @@
   <a href="appunti.html" class="nav-item active"><span class="nav-icon">📔</span><span>Appunti</span></a>
 </nav>
 
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <span class="lb-close">✕</span>
+  <img id="lb-img" src="" style="display:none">
+  <video id="lb-vid" src="" controls playsinline style="display:none"></video>
+</div>
+
 <script type="module">
-import { db, auth } from './js/robinson-firebase.js';
+import { db, auth, ADMIN_UID, EMOJIS } from './js/robinson-firebase.js';
 import { requireAuth } from './js/robinson-auth.js';
 import { setupNavAuth } from './js/robinson-nav.js';
-import { esc, fmtDate, risolviNome, renderMediaGrid, normalizeMedia } from './js/robinson-utils.js';
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { collection, collectionGroup, getDocs, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { esc, fmtDate, normalizeMedia } from './js/robinson-utils.js';
+import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import {
+  collection, collectionGroup, getDocs, doc, getDoc,
+  query, orderBy, limit, addDoc, updateDoc, setDoc,
+  increment, serverTimestamp, onSnapshot, deleteDoc
+} from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 setupNavAuth('nav-auth-slot');
 
-requireAuth(async async user => {
-  await loadAppunti();
+let currentUser = null;
+
+// ── Luoghi isola ──────────────────────────────────────────────────────────────
+const LUOGO_MAP = {
+  'spiaggia-fiducia':     { nome:'Fiducia',     emoji:'🌴' },
+  'faro-sogni':           { nome:'Sogni',        emoji:'🗼' },
+  'promontorio-coraggio': { nome:'Coraggio',     emoji:'🧭' },
+  'baia-calma':           { nome:'Calma',        emoji:'🌊' },
+  'villaggio-amicizia':   { nome:'Amicizia',     emoji:'🤝' },
+  'vulcano-rabbia':       { nome:'Rabbia',       emoji:'🌋' },
+  'laguna-pazienza':      { nome:'Pazienza',     emoji:'🐢' },
+  'caverna-tristezza':    { nome:'Tristezza',    emoji:'🌧️' },
+  'tempesta-caos':        { nome:'Caos',         emoji:'⛈️' },
+  'deserto-solitudine':   { nome:'Solitudine',   emoji:'🌪️' },
+  'scoglio-dolore':       { nome:'Dolore',       emoji:'💔' },
+  'nebbia-dubbi':         { nome:'Dubbi',        emoji:'🌫️' },
+  'isola-paure':          { nome:'Paure',        emoji:'🔒' },
+  'bivio-scelte':         { nome:'Scelte',       emoji:'🚧' },
+  'tramonto-gratitudine': { nome:'Gratitudine',  emoji:'🌅' },
+};
+
+// ── Cache utenti ──────────────────────────────────────────────────────────────
+const utentiCache = {};
+async function buildCache() {
+  const snap = await getDocs(collection(db, 'utenti'));
+  snap.forEach(d => { utentiCache[d.id] = d.data(); });
+}
+function getUtente(uid) { return utentiCache[uid] || {}; }
+
+// ── Reactions state ───────────────────────────────────────────────────────────
+const myReactionsCache = new Map(); // collPath+'|'+postId → Set<emoji>
+const myCommentReactionsCache = new Map();
+
+// ── Auth ──────────────────────────────────────────────────────────────────────
+onAuthStateChanged(auth, async user => {
+  currentUser = user;
+  if (!user) { location.href = 'login.html'; return; }
+  await buildCache();
+  await loadFeed();
 });
 
-async function loadAppunti() {
-  const lista = document.getElementById('lista');
+// ── Lightbox ──────────────────────────────────────────────────────────────────
+window.openLightbox = function(src, isVid) {
+  const lb = document.getElementById('lightbox');
+  const img = document.getElementById('lb-img');
+  const vid = document.getElementById('lb-vid');
+  if (isVid) { vid.src = src; vid.style.display=''; img.style.display='none'; }
+  else { img.src = src; img.style.display=''; vid.style.display='none'; }
+  lb.classList.add('open');
+};
+window.closeLightbox = function() {
+  document.getElementById('lightbox').classList.remove('open');
+  document.getElementById('lb-vid').pause?.();
+};
+
+// ── Load feed ─────────────────────────────────────────────────────────────────
+async function loadFeed() {
+  const feed = document.getElementById('feed');
   try {
-    // 1) Post spiaggia
-    const spSnap = await getDocs(query(collection(db, 'robinson_spiaggia'), orderBy('timestamp', 'desc'), limit(40)));
-    const spiaggiaPosts = spSnap.docs.map(d => ({
-      id: d.id, fonte: 'spiaggia', badge: '🏖️', badgeClass: 'badge-navy', ...d.data()
-    }));
+    const eventi = [];
 
-    // 2) Diari (collectionGroup 'posts' sotto robinson_diari)
-    const diariSnap = await getDocs(query(collectionGroup(db, 'posts'), orderBy('timestamp', 'desc'), limit(40)));
-    const diariPosts = diariSnap.docs
-      .filter(d => d.ref.path.startsWith('robinson_diari/'))
-      .map(d => ({
-        id: d.id, fonte: 'diario', badge: '📔', badgeClass: 'badge-oro', ...d.data()
-      }));
+    // 1. Spiaggia
+    const spSnap = await getDocs(query(collection(db, 'robinson_spiaggia'), orderBy('timestamp','desc'), limit(40)));
+    spSnap.forEach(d => {
+      eventi.push({ _id: d.id, _fonte: 'spiaggia', _collPath: 'robinson_spiaggia', ...d.data() });
+    });
 
-    // Merge e sort per timestamp
-    const tutti = [...spiaggiaPosts, ...diariPosts].sort((a, b) => {
+    // 2. Diari (collectionGroup 'posts' sotto robinson_diari)
+    const diariSnap = await getDocs(query(collectionGroup(db, 'posts'), orderBy('timestamp','desc'), limit(40)));
+    diariSnap.forEach(d => {
+      if (!d.ref.path.startsWith('robinson_diari/')) return;
+      // path: robinson_diari/{uid}/posts/{dataKey}
+      const uid = d.ref.parent.parent.id;
+      const collPath = `robinson_diari/${uid}/posts`;
+      eventi.push({ _id: d.id, _uid_owner: uid, _fonte: 'diario', _collPath: collPath, authorId: uid, ...d.data() });
+    });
+
+    // 3. Isola (collectionGroup 'notti' sotto robinson_isola)
+    const isolaSnap = await getDocs(collectionGroup(db, 'notti'));
+    isolaSnap.forEach(d => {
+      if (!d.ref.path.startsWith('robinson_isola/')) return;
+      const uid = d.ref.parent.parent.id;
+      eventi.push({ _id: d.id, _fonte: 'isola', _uid_owner: uid, authorId: uid, ...d.data() });
+    });
+
+    // Ordina per timestamp desc
+    eventi.sort((a, b) => {
       const ta = a.timestamp?.toMillis?.() || 0;
       const tb = b.timestamp?.toMillis?.() || 0;
       return tb - ta;
-    }).slice(0, 80);
+    });
 
-    if (!tutti.length) {
-      lista.innerHTML = '<div class="empty-msg">📔 Nessun appunto ancora.</div>';
+    feed.innerHTML = '';
+    if (!eventi.length) {
+      feed.innerHTML = '<div class="empty-msg">📓 Nessun appunto ancora.</div>';
       return;
     }
 
-    lista.innerHTML = '';
-    for (const p of tutti) {
-      const nome = p.authorName || await risolviNome(p.authorId) || 'Anonimo';
-      const media = normalizeMedia(p);
-      const testo = p.text || p.titolo || p.approdo || '';
-      const div = document.createElement('div');
-      div.className = 'appunto-card';
-      div.innerHTML = `
-        <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
-          <span class="badge ${esc(p.badgeClass)}">${p.badge} ${p.fonte === 'spiaggia' ? 'Spiaggia' : 'Diario'}</span>
-          <span style="font-size:0.75rem;font-weight:600;color:var(--navy);">${esc(nome)}</span>
-          <span style="font-size:0.68rem;color:var(--muted);margin-left:auto;">${fmtDate(p.timestamp)}</span>
-        </div>
-        ${testo ? `<div style="font-size:0.88rem;line-height:1.55;color:var(--inchiostro);">${esc(testo.slice(0, 200))}${testo.length > 200 ? '…' : ''}</div>` : ''}
-        ${renderMediaGrid(media)}`;
-      lista.appendChild(div);
-    }
-  } catch(e) {
-    lista.innerHTML = `<div style="text-align:center;padding:20px;color:var(--rosso);">Errore: ${esc(e.message)}</div>`;
+    eventi.slice(0, 80).forEach(p => feed.appendChild(buildCard(p)));
+
+  } catch(err) {
+    feed.innerHTML = `<div class="empty-msg" style="color:var(--rosso);">Errore: ${esc(err.message)}</div>`;
+    console.error(err);
   }
+}
+
+// ── Build card ────────────────────────────────────────────────────────────────
+function buildCard(p) {
+  const uid = p.authorId || p._uid_owner || '';
+  const utente = getUtente(uid);
+  const nome = p.authorName || utente.nome || 'Anonimo';
+  const foto = p.authorPhoto || utente.fotoProfiloUrl || utente.fotoProfilo || '';
+
+  const wrap = document.createElement('div');
+  wrap.className = 'post-card';
+  const inner = document.createElement('div');
+  inner.className = 'post-card-inner';
+
+  // Avatar
+  const avatarHtml = foto
+    ? `<img class="pc-avatar" src="${esc(foto)}" alt="${esc(nome)}" loading="lazy">`
+    : `<div class="pc-avatar-placeholder">${p._fonte === 'spiaggia' ? '🏖️' : p._fonte === 'diario' ? '📔' : '🏝️'}</div>`;
+
+  // Badge
+  let badge = '';
+  let badgeCls = '';
+  if (p._fonte === 'spiaggia') { badge = '🏖️ Spiaggia'; badgeCls = 'badge-spiaggia'; }
+  else if (p._fonte === 'diario') { badge = '📔 Diario'; badgeCls = 'badge-diario'; }
+  else { badge = '🏝️ Isola'; badgeCls = 'badge-isola'; }
+
+  inner.innerHTML = `
+    <div class="pc-header">
+      ${avatarHtml}
+      <div class="pc-meta">
+        <div class="pc-nome">${esc(nome)}</div>
+        <div class="pc-data">${fmtDate(p.timestamp)}</div>
+      </div>
+      <span class="pc-badge ${badgeCls}">${badge}</span>
+    </div>`;
+
+  // Contenuto specifico per fonte
+  if (p._fonte === 'isola') {
+    const luogo = LUOGO_MAP[p.luogoId] || {};
+    const luogoNome = p.luogoNome || luogo.nome || p.luogoId || '';
+    const luogoEmoji = luogo.emoji || '';
+    const meteo = p.meteo || '';
+    if (luogoNome || meteo) {
+      const isolaMeta = document.createElement('div');
+      isolaMeta.className = 'pc-isola-meta';
+      isolaMeta.innerHTML = `<span class="pc-isola-luogo">${esc(luogoEmoji)} ${esc(luogoNome)}</span>
+        ${meteo ? `<span class="pc-isola-meteo">${meteo}</span>` : ''}`;
+      inner.appendChild(isolaMeta);
+    }
+    if (p.privato) {
+      const priv = document.createElement('div');
+      priv.className = 'pc-privato';
+      priv.textContent = '🔒 Pensiero privato';
+      inner.appendChild(priv);
+    } else if (p.pensiero) {
+      appendTesto(inner, p.pensiero);
+    }
+    // Media isola
+    if (p.fotoUrl || p.videoUrl) {
+      const media = [];
+      if (p.fotoUrl) media.push({ url: p.fotoUrl, type: 'image' });
+      if (p.videoUrl) media.push({ url: p.videoUrl, type: 'video' });
+      inner.appendChild(buildMediaGrid(media));
+    }
+  } else {
+    // Spiaggia / Diario
+    const testo = p.text || p.titolo || p.approdo || p.contenuto || '';
+    if (testo) appendTesto(inner, testo);
+    const media = normalizeMedia(p);
+    if (media.length) inner.appendChild(buildMediaGrid(media));
+  }
+
+  wrap.appendChild(inner);
+
+  // Reactions (solo per spiaggia e diari, non isola)
+  if (p._fonte !== 'isola' && p._collPath) {
+    const reactWrap = document.createElement('div');
+    reactWrap.className = 'post-reactions-wrap';
+    const postId = p._id;
+    const collPath = p._collPath;
+    reactWrap.innerHTML = EMOJIS.map(emoji => {
+      const cnt = (p.reactions || {})[emoji] || 0;
+      return `<button class="reaction-btn" data-emoji="${emoji}">${emoji}${cnt > 0 ? ` <span>${cnt}</span>` : ''}</button>`;
+    }).join('');
+    wrap.appendChild(reactWrap);
+
+    // Carica reazioni utente e applica .active
+    initPostReactions(postId, collPath, reactWrap);
+
+    reactWrap.querySelectorAll('.reaction-btn').forEach(btn => {
+      btn.addEventListener('click', () => toggleReaction(postId, collPath, btn.dataset.emoji, btn));
+    });
+
+    // Commenti
+    const commLink = document.createElement('button');
+    commLink.className = 'btn-comments';
+    const cnt = p.commentsCount || 0;
+    commLink.textContent = `💬 ${cnt > 0 ? cnt + ' commenti' : 'Commenta'}`;
+    const csId = `cs-${collPath.replace(/\//g,'_')}_${postId}`;
+    commLink.addEventListener('click', () => toggleComments(postId, collPath, csId));
+    wrap.appendChild(commLink);
+
+    const commSec = document.createElement('div');
+    commSec.className = 'comments-section';
+    commSec.id = csId;
+    wrap.appendChild(commSec);
+  }
+
+  return wrap;
+}
+
+// ── Testo con leggi-tutto ─────────────────────────────────────────────────────
+function appendTesto(parent, testo) {
+  const div = document.createElement('div');
+  div.className = 'pc-testo';
+  if (testo.length > 280) {
+    div.classList.add('truncated');
+    div.textContent = testo;
+    const btn = document.createElement('button');
+    btn.className = 'btn-leggi-tutto';
+    btn.textContent = 'Leggi tutto';
+    btn.addEventListener('click', () => { div.classList.remove('truncated'); btn.remove(); });
+    parent.appendChild(div);
+    parent.appendChild(btn);
+  } else {
+    div.textContent = testo;
+    parent.appendChild(div);
+  }
+}
+
+// ── Media grid ────────────────────────────────────────────────────────────────
+function buildMediaGrid(media) {
+  const imgs = media.filter(m => m.type === 'image');
+  const vids = media.filter(m => m.type === 'video');
+  const auds = media.filter(m => m.type === 'audio');
+  const vis = [...imgs, ...vids];
+  const wrap = document.createElement('div');
+  if (vis.length) {
+    const grid = document.createElement('div');
+    grid.className = `media-grid ${vis.length===1?'c1':vis.length===2?'c2':'c3'}`;
+    vis.forEach(m => {
+      const item = document.createElement('div');
+      item.className = 'media-item';
+      if (m.type === 'image') {
+        const img = document.createElement('img');
+        img.src = m.url; img.loading = 'lazy'; img.alt = 'foto';
+        img.addEventListener('click', () => openLightbox(m.url, false));
+        item.appendChild(img);
+      } else {
+        const vid = document.createElement('video');
+        vid.src = m.url; vid.controls = true; vid.playsInline = true;
+        vid.addEventListener('click', e => { e.stopPropagation(); });
+        item.appendChild(vid);
+      }
+      grid.appendChild(item);
+    });
+    wrap.appendChild(grid);
+  }
+  auds.forEach(m => {
+    const item = document.createElement('div');
+    item.className = 'media-item';
+    const audio = document.createElement('audio');
+    audio.src = m.url; audio.controls = true;
+    item.appendChild(audio);
+    wrap.appendChild(item);
+  });
+  return wrap;
+}
+
+// ── Reactions ─────────────────────────────────────────────────────────────────
+async function initPostReactions(postId, collPath, reactWrap) {
+  if (!currentUser) return;
+  const key = collPath + '|' + postId;
+  if (!myReactionsCache.has(key)) {
+    try {
+      const uSnap = await getDoc(doc(db, collPath, postId, 'user_reactions', currentUser.uid));
+      myReactionsCache.set(key, new Set(uSnap.exists() ? (uSnap.data().emojis || []) : []));
+    } catch(_) { myReactionsCache.set(key, new Set()); }
+  }
+  const mine = myReactionsCache.get(key);
+  reactWrap.querySelectorAll('.reaction-btn').forEach(btn => {
+    btn.classList.toggle('active', mine.has(btn.dataset.emoji));
+  });
+}
+
+async function toggleReaction(postId, collPath, emoji, btn) {
+  if (!currentUser) { alert('Accedi per reagire!'); return; }
+  const key = collPath + '|' + postId;
+  if (!myReactionsCache.has(key)) myReactionsCache.set(key, new Set());
+  const mine = myReactionsCache.get(key);
+  const wasActive = btn.classList.contains('active');
+  btn.classList.toggle('active', !wasActive);
+  // aggiorna count UI
+  const spanEl = btn.querySelector('span');
+  const cur = parseInt(spanEl?.textContent || '0') || 0;
+  if (wasActive) {
+    if (cur <= 1) { if(spanEl) spanEl.remove(); }
+    else if(spanEl) spanEl.textContent = cur - 1;
+    mine.delete(emoji);
+  } else {
+    if (spanEl) spanEl.textContent = cur + 1;
+    else btn.insertAdjacentHTML('beforeend', ` <span>1</span>`);
+    mine.add(emoji);
+  }
+  try {
+    const pRef = doc(db, collPath, postId);
+    const uRef = doc(db, collPath, postId, 'user_reactions', currentUser.uid);
+    await updateDoc(pRef, { [`reactions.${emoji}`]: increment(wasActive ? -1 : 1) });
+    await setDoc(uRef, { emojis: [...mine] }, { merge: true });
+  } catch(err) { console.error('toggleReaction err', err); }
+}
+
+// ── Comments ──────────────────────────────────────────────────────────────────
+const loadedCs = new Set();
+function toggleComments(postId, collPath, csId) {
+  const sec = document.getElementById(csId);
+  if (!sec) return;
+  const open = sec.classList.toggle('open');
+  if (open && !loadedCs.has(csId)) {
+    loadedCs.add(csId);
+    loadComments(postId, collPath, sec);
+  }
+}
+
+function loadComments(postId, collPath, sec) {
+  sec.innerHTML = '<div style="color:var(--muted);font-size:0.8rem;padding:4px 0">Caricamento…</div>';
+  const q = query(collection(db, collPath, postId, 'comments'), orderBy('timestamp', 'asc'));
+  onSnapshot(q, snap => {
+    const list = document.createElement('div');
+    list.className = 'comment-list';
+    snap.forEach(d => list.appendChild(buildCommentEl(postId, collPath, d.id, d.data())));
+    const existingInput = sec.querySelector('.comment-input-wrap');
+    sec.innerHTML = '';
+    sec.appendChild(list);
+
+    // Input commento
+    const inputWrap = document.createElement('div');
+    inputWrap.className = 'comment-input-wrap';
+    const textarea = document.createElement('textarea');
+    textarea.className = 'comment-input';
+    textarea.placeholder = 'Scrivi un commento…';
+    textarea.rows = 2;
+    const sendBtn = document.createElement('button');
+    sendBtn.className = 'btn-send-comment';
+    sendBtn.textContent = 'Invia';
+    sendBtn.addEventListener('click', async () => {
+      const testo = textarea.value.trim();
+      if (!testo || !currentUser) return;
+      sendBtn.disabled = true;
+      try {
+        const utente = getUtente(currentUser.uid);
+        await addDoc(collection(db, collPath, postId, 'comments'), {
+          authorId: currentUser.uid,
+          authorName: utente.nome || currentUser.displayName || 'Anonimo',
+          authorPhoto: utente.fotoProfiloUrl || currentUser.photoURL || '',
+          text: testo,
+          timestamp: serverTimestamp(),
+          reactions: {}
+        });
+        textarea.value = '';
+        // Aggiorna commentsCount
+        await updateDoc(doc(db, collPath, postId), { commentsCount: increment(1) }).catch(() => {});
+      } catch(err) { alert('Errore: ' + err.message); }
+      sendBtn.disabled = false;
+    });
+    inputWrap.appendChild(textarea);
+    inputWrap.appendChild(sendBtn);
+    sec.appendChild(inputWrap);
+  });
+}
+
+function buildCommentEl(postId, collPath, commentId, data) {
+  const foto = data.authorPhoto || '';
+  const nome = data.authorName || 'Anonimo';
+  const div = document.createElement('div');
+  div.className = 'comment-item';
+  div.innerHTML = `
+    <div class="comment-header">
+      ${foto ? `<img class="comment-avatar" src="${esc(foto)}" alt="">` : `<div class="comment-avatar" style="background:var(--navy);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.8rem;color:#fff;">👤</div>`}
+      <span class="comment-nome">${esc(nome)}</span>
+      <span class="comment-data">${fmtDate(data.timestamp)}</span>
+    </div>
+    <div class="comment-testo">${esc(data.text || '')}</div>
+    <div class="comment-reactions" id="cr-${commentId}">
+      ${(EMOJIS||[]).map(emoji => {
+        const cnt = (data.reactions||{})[emoji]||0;
+        return `<button class="comment-reaction-btn" data-emoji="${emoji}" data-pid="${postId}" data-cid="${commentId}" data-coll="${collPath}">${emoji}${cnt>0?` <span>${cnt}</span>`:''}</button>`;
+      }).join('')}
+    </div>`;
+
+  // Init comment reaction active state
+  const crKey = collPath + '|' + postId + '|' + commentId;
+  if (!myCommentReactionsCache.has(crKey) && currentUser) {
+    getDoc(doc(db, collPath, postId, 'comments', commentId, 'user_reactions', currentUser.uid))
+      .then(snap => {
+        const mine = new Set(snap.exists() ? (snap.data().emojis||[]) : []);
+        myCommentReactionsCache.set(crKey, mine);
+        div.querySelectorAll('.comment-reaction-btn').forEach(b => b.classList.toggle('active', mine.has(b.dataset.emoji)));
+      }).catch(()=>{});
+  }
+
+  div.querySelectorAll('.comment-reaction-btn').forEach(btn => {
+    btn.addEventListener('click', () => toggleCommentReaction(postId, collPath, commentId, btn.dataset.emoji, btn));
+  });
+
+  return div;
+}
+
+async function toggleCommentReaction(postId, collPath, commentId, emoji, btn) {
+  if (!currentUser) return;
+  const crKey = collPath + '|' + postId + '|' + commentId;
+  if (!myCommentReactionsCache.has(crKey)) myCommentReactionsCache.set(crKey, new Set());
+  const mine = myCommentReactionsCache.get(crKey);
+  const wasActive = btn.classList.contains('active');
+  btn.classList.toggle('active', !wasActive);
+  const spanEl = btn.querySelector('span');
+  const cur = parseInt(spanEl?.textContent||'0')||0;
+  if (wasActive) { if(cur<=1){if(spanEl)spanEl.remove();}else if(spanEl)spanEl.textContent=cur-1; mine.delete(emoji); }
+  else { if(spanEl)spanEl.textContent=cur+1; else btn.insertAdjacentHTML('beforeend',` <span>1</span>`); mine.add(emoji); }
+  try {
+    await updateDoc(doc(db, collPath, postId, 'comments', commentId), { [`reactions.${emoji}`]: increment(wasActive?-1:1) });
+    await setDoc(doc(db, collPath, postId, 'comments', commentId, 'user_reactions', currentUser.uid), { emojis:[...mine] }, { merge: true });
+  } catch(err) { console.error(err); }
 }
 </script>
 </body>
