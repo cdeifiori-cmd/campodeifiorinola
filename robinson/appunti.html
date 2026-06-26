@@ -202,14 +202,17 @@ async function loadFeed() {
         snap.forEach(d => {
           const data = d.data();
           if (!data.timestamp) return;
-          // Un post diario reale deve avere testo scritto dall'utente
-          // (solo media senza testo = allegato giornaliero automatico, non un post)
           const hasTesto = (data.testo && data.testo.trim().length > 3) ||
                            (data.text && data.text.trim().length > 3) ||
                            (data.titolo && data.titolo.trim().length > 3) ||
                            (data.approdo && data.approdo.trim().length > 3) ||
                            (data.contenuto && data.contenuto.trim().length > 3);
-          if (!hasTesto) return;
+          const hasMedia = (data.fotoUrl && data.fotoUrl.startsWith('http')) ||
+                           (data.videoUrl && data.videoUrl.startsWith('http')) ||
+                           (data.audioUrl && data.audioUrl.startsWith('http')) ||
+                           (Array.isArray(data.media) && data.media.length > 0);
+          // Scarta documenti vuoti (né testo né media)
+          if (!hasTesto && !hasMedia) return;
           eventi.push({
             _id: d.id, _fonte: 'diario',
             _collPath: `robinson_diari/${uid}/posts`,
@@ -275,15 +278,24 @@ function buildCard(p) {
   const nome = p.authorName || utente.nome || 'Anonimo';
   const foto = p.authorPhoto || utente.fotoProfiloUrl || utente.fotoProfilo || '';
 
+  // Determina se il post diario è un tesoro (solo media, nessun testo)
+  const hasTesto = (p.testo && p.testo.trim().length > 0) ||
+                   (p.text && p.text.trim().length > 0) ||
+                   (p.titolo && p.titolo.trim().length > 0) ||
+                   (p.approdo && p.approdo.trim().length > 0) ||
+                   (p.contenuto && p.contenuto.trim().length > 0);
+  const isTesoro = p._fonte === 'diario' && !hasTesto;
+
   // Link destinazione
   let href = 'spiaggia.html';
-  if (p._fonte === 'spiaggia') href = `spiaggia.html#${p._id}`;
-  else if (p._fonte === 'diario') href = `naufrago.html?uid=${uid}#tab-diario`;
-  else href = 'isola.html';
+  if (p._fonte === 'spiaggia')      href = `spiaggia.html#${p._id}`;
+  else if (p._fonte === 'diario')   href = `naufrago.html?uid=${uid}#${isTesoro ? 'tab-tesori' : 'tab-diario'}`;
+  else                              href = 'isola.html';
 
   // Badge
   let badge, badgeCls, borderCls;
   if (p._fonte === 'spiaggia')    { badge = '🏖️ Spiaggia'; badgeCls = 'badge-spiaggia'; borderCls = 'fonte-spiaggia'; }
+  else if (isTesoro)              { badge = '📸 Tesori';   badgeCls = 'badge-diario';   borderCls = 'fonte-diario'; }
   else if (p._fonte === 'diario') { badge = '📔 Diario';   badgeCls = 'badge-diario';   borderCls = 'fonte-diario'; }
   else                            { badge = '🏝️ Isola';    badgeCls = 'badge-isola';    borderCls = 'fonte-isola'; }
 
