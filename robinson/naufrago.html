@@ -59,6 +59,19 @@
     /* Accordion carta */
     .ci-accordion-toggle { cursor:pointer; user-select:none; display:flex; justify-content:space-between; align-items:center; }
     .ci-accordion-body[style*="display:block"] { padding:16px; min-height:60px; background:#faf7f0; border:1px solid #c8860a40; border-top:none; margin-bottom:8px; }
+    /* Banner visitatore */
+    .vista-visitatore-banner {
+      background: rgba(26,58,92,0.85);
+      color: #c8860a;
+      text-align: center;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-family: 'Lora', serif;
+      font-style: italic;
+      position: sticky;
+      top: 0;
+      z-index: 200;
+    }
     /* Sfondo campi diario/emozioni */
     .campo-diario {
       background: rgba(250,247,240,0.95);
@@ -565,7 +578,15 @@ requireAuth(async user => {
     setupCartaIdentita();
     initAccordionNaufrago();
   }
-  if (!isOwner && !isAdmin) lockAllForms();
+  if (!isOwner && !isAdmin) {
+    lockAllForms();
+    // Banner visitatore
+    const nome = document.getElementById('ph-nome')?.textContent?.trim() || 'questo naufrago';
+    const banner = document.createElement('div');
+    banner.className = 'vista-visitatore-banner';
+    banner.textContent = `👁️ Stai visitando il diario di ${nome}`;
+    document.body.insertBefore(banner, document.body.firstChild);
+  }
   setupDicono(user);
 });
 
@@ -1649,16 +1670,49 @@ function loadDiconoCommenti(container, postId, currentUser) {
 
 // ── Lock forms per visitatori ─────────────────────────────────────────────
 function lockAllForms(lock = true) {
-  const selectors = ['#d-approdo','#d-titolo','#d-sensazione','#r-scoperto','#r-bello','#r-scoglio','#r-tesoro','#r-falo-altro','#e-bussola-note','#e-mare-note','#e-meteo-umore-note','#bussola-altro','#e-altro'];
-  selectors.forEach(s => {
-    const el = document.querySelector(s);
-    if (el) el.readOnly = lock;
-  });
-  ['btn-salva-diario','btn-salva-emozioni','btn-salva-riflessioni','btn-carica-tesori','t-audio-rec'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.style.display = lock ? 'none' : '';
-  });
-  if (lock) document.getElementById('btn-sblocca-diario').style.display = isAdmin ? 'inline-block' : 'none';
+  if (lock) {
+    // Disabilita tutti gli input/textarea nelle tab private
+    const tabPrivate = ['#tab-diario','#tab-emozioni','#tab-riflessioni','#tab-tesori','#tab-isola','.ci-accordion-body'];
+    tabPrivate.forEach(sel => {
+      document.querySelectorAll(`${sel} input, ${sel} textarea, ${sel} select`).forEach(el => {
+        el.readOnly = true;
+        el.disabled = true;
+        el.style.cursor = 'default';
+      });
+    });
+    // Disabilita meteo picker e stelle emozioni
+    document.querySelectorAll('.meteo-opt, .meteo-opt-umore, .stella-star, .zona-card, .falo-check label').forEach(el => {
+      el.style.pointerEvents = 'none';
+      el.style.opacity = '0.7';
+    });
+    // Nascondi bottoni salvataggio e upload
+    ['btn-salva-diario','btn-salva-emozioni','btn-salva-riflessioni','btn-carica-tesori','t-audio-rec',
+     'btn-salva-carta','btn-sblocca-diario'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = 'none';
+    });
+    // Nascondi bottoni upload media tesori
+    document.querySelectorAll('#tab-tesori label[for], #tab-tesori .rec-btn, #btn-carica-tesori').forEach(el => {
+      el.style.display = 'none';
+    });
+  } else {
+    // Riabilita (usato da admin sblocca)
+    ['#tab-diario','#tab-emozioni','#tab-riflessioni'].forEach(sel => {
+      document.querySelectorAll(`${sel} input, ${sel} textarea`).forEach(el => {
+        el.readOnly = false;
+        el.disabled = false;
+        el.style.cursor = '';
+      });
+    });
+    document.querySelectorAll('.meteo-opt, .meteo-opt-umore, .stella-star, .zona-card, .falo-check label').forEach(el => {
+      el.style.pointerEvents = '';
+      el.style.opacity = '';
+    });
+    ['btn-salva-diario','btn-salva-emozioni','btn-salva-riflessioni','btn-carica-tesori','t-audio-rec'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = '';
+    });
+  }
 }
 </script>
 <script>
