@@ -398,10 +398,17 @@ function renderPreview(items, containerId, onRemove) {
 
 // ── Modal nuovo post ────────────────────────────────────────────────────────
 const postItems = [];
+function refreshPostPreview() {
+  renderPreview(postItems, 'post-preview', i => {
+    URL.revokeObjectURL(postItems[i].previewUrl);
+    postItems.splice(i, 1);
+    refreshPostPreview();
+  });
+}
 function postAddFile(f, type) {
   if (postItems.length >= MAX_FILES) { alert(`Max ${MAX_FILES} allegati.`); return; }
   postItems.push({ file: f, type, name: f.name || type, previewUrl: URL.createObjectURL(f) });
-  renderPreview(postItems, 'post-preview', i => { URL.revokeObjectURL(postItems[i].previewUrl); postItems.splice(i,1); renderPreview(postItems,'post-preview', arguments.callee); });
+  refreshPostPreview();
 }
 
 const backdrop = document.getElementById('modal-backdrop');
@@ -759,10 +766,17 @@ function buildCommentInput(postId) {
 
   textarea.addEventListener('input', () => { textarea.style.height='auto'; textarea.style.height=textarea.scrollHeight+'px'; });
 
+  function refreshCPreview() {
+    renderPreview(cItems, previewId, i => {
+      URL.revokeObjectURL(cItems[i].previewUrl);
+      cItems.splice(i, 1);
+      refreshCPreview();
+    });
+  }
   function cAddFile(f, type) {
     if (cItems.length >= MAX_FILES) return;
     cItems.push({ file:f, type, name:f.name||type, previewUrl:URL.createObjectURL(f) });
-    renderPreview(cItems, previewId, i => { URL.revokeObjectURL(cItems[i].previewUrl); cItems.splice(i,1); renderPreview(cItems,previewId,arguments.callee); });
+    refreshCPreview();
   }
 
   wrap.querySelector('.ci-foto').addEventListener('change', e => { Array.from(e.target.files).forEach(f=>cAddFile(f,'image')); e.target.value=''; });
