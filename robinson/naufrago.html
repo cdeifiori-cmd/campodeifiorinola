@@ -149,7 +149,8 @@
       <span class="meteo-opt-umore" data-v="🌈">🌈</span>
       <span class="meteo-opt-umore" data-v="⭐">⭐</span>
     </div>
-    <input type="text" id="e-meteo-umore-note" placeholder="Oggi mi sono sentito/a..." style="margin-top:10px;width:100%;padding:8px 12px;border:1.5px solid #c8b89a;border-radius:8px;font-family:'Lora',serif;font-size:0.88rem;background:var(--post-bg);color:var(--inchiostro);">
+    <div id="e-meteo-umore-interp" style="display:none;margin-top:8px;background:rgba(200,134,10,0.1);border-left:3px solid #c8860a;padding:8px 12px;border-radius:0 6px 6px 0;font-style:italic;color:#2c1e0f;font-size:0.88rem;font-family:'Lora',serif;"></div>
+    <input type="text" id="e-meteo-umore-note" placeholder="Oggi mi sono sentit*... (aggiungi dettagli tuoi)" style="margin-top:10px;width:100%;padding:8px 12px;border:1.5px solid #c8b89a;border-radius:8px;font-family:'Lora',serif;font-size:0.88rem;background:var(--post-bg);color:var(--inchiostro);">
   </div>
   <div class="campo-diario">
     <label>🧭 Bussola delle emozioni (1–5 stelle)</label>
@@ -180,7 +181,9 @@
       <label><input type="radio" name="bussola" value="Calma"><span class="rl">🌊 Calma</span></label>
       <label><input type="radio" name="bussola" value="Avventura"><span class="rl">🗺️ Avventura</span></label>
       <label><input type="radio" name="bussola" value="Casa"><span class="rl">🏡 Casa</span></label>
+      <label><input type="radio" name="bussola" value="altro"><span class="rl">✏️ Altro...</span></label>
     </div>
+    <input type="text" id="bussola-altro" placeholder="Dove punta la tua bussola domani?" style="display:none;margin-top:10px;width:100%;padding:8px 12px;border:1.5px solid #c8b89a;border-radius:8px;font-family:'Lora',serif;font-size:0.88rem;background:var(--post-bg);color:var(--inchiostro);">
   </div>
   <div class="campo-diario">
     <label>📝 Altro</label>
@@ -216,10 +219,7 @@
       <label><input type="checkbox" value="pensieri"><span>I pensieri negativi su di me</span></label>
       <label><input type="checkbox" value="brutto"><span>Un momento brutto</span></label>
     </div>
-  </div>
-  <div class="campo-diario">
-    <label>🗺️ La rotta di domani...</label>
-    <textarea id="r-rotta" placeholder="Cosa vuoi portare con te domani?"></textarea>
+    <input type="text" id="r-falo-altro" placeholder="Altro cosa hai lasciato bruciare?" style="margin-top:10px;width:100%;padding:8px 12px;border:1.5px solid #c8b89a;border-radius:8px;font-family:'Lora',serif;font-size:0.88rem;background:var(--post-bg);color:var(--inchiostro);">
   </div>
   <button class="btn btn-primary" id="btn-salva-riflessioni">💾 Salva riflessioni</button>
   <div id="riflessioni-msg" style="margin-top:8px;font-size:0.8rem;"></div>
@@ -676,11 +676,28 @@ function selMeteo(v) {
   });
 }
 
+const meteoInterpretazioni = {
+  '🌞': 'Giornata piena di luce — ti sei sentit* bene con tutto',
+  '🌤️': "Qualche nuvola ma il sole c'era — abbastanza bene",
+  '⛅': 'Né bene né male — una giornata così così',
+  '🌧️': 'Un po\' di pioggia dentro — hai avuto momenti difficili',
+  '⛈️': 'Temporale interiore — è stata una giornata pesante',
+  '🌪️': 'Tutto sottosopra — ti sei sentit* confus* e sopraffatt*',
+  '🌈': 'Dopo la pioggia il sole — ce l\'hai fatta nonostante tutto',
+  '⭐': 'Momento speciale — hai vissuto qualcosa di bello oggi'
+};
+
 function selMeteoUmore(v) {
   meteoUmoreSel = v;
   document.querySelectorAll('.meteo-opt-umore').forEach(o => {
     o.classList.toggle('sel', o.dataset.v === v);
   });
+  const interpEl = document.getElementById('e-meteo-umore-interp');
+  if (interpEl) {
+    const testo = meteoInterpretazioni[v] || '';
+    interpEl.textContent = testo;
+    interpEl.style.display = testo ? 'block' : 'none';
+  }
 }
 
 document.querySelectorAll('.meteo-opt').forEach(o => {
@@ -694,6 +711,14 @@ document.querySelectorAll('.meteo-opt-umore').forEach(o => {
   o.addEventListener('click', () => {
     if (!isOwner && !isAdmin) return;
     selMeteoUmore(o.dataset.v);
+  });
+});
+
+// Bussola di domani: mostra/nascondi campo "Altro"
+document.querySelectorAll('input[name=bussola]').forEach(r => {
+  r.addEventListener('change', () => {
+    const altroInput = document.getElementById('bussola-altro');
+    if (altroInput) altroInput.style.display = r.value === 'altro' ? 'block' : 'none';
   });
 });
 
@@ -763,7 +788,11 @@ function prefillEmozioni(em) {
   if (em.bussolaNote) document.getElementById('e-bussola-note').value = em.bussolaNote;
   if (em.mare) { const r = document.querySelector(`input[name=mare][value="${em.mare}"]`); if(r) r.checked = true; }
   if (em.mareNote) document.getElementById('e-mare-note').value = em.mareNote;
-  if (em.bussola) { const r = document.querySelector(`input[name=bussola][value="${em.bussola}"]`); if(r) r.checked = true; }
+  if (em.bussola) {
+    const r = document.querySelector(`input[name=bussola][value="${em.bussola}"]`);
+    if (r) { r.checked = true; if (em.bussola === 'altro') document.getElementById('bussola-altro').style.display = 'block'; }
+  }
+  if (em.bussolaAltro) document.getElementById('bussola-altro').value = em.bussolaAltro;
   if (em.altro) document.getElementById('e-altro').value = em.altro;
 }
 
@@ -781,6 +810,7 @@ document.getElementById('btn-salva-emozioni').addEventListener('click', async ()
     mare: document.querySelector('input[name=mare]:checked')?.value || '',
     mareNote: document.getElementById('e-mare-note').value.trim(),
     bussola: document.querySelector('input[name=bussola]:checked')?.value || '',
+    bussolaAltro: document.getElementById('bussola-altro').value.trim(),
     altro: document.getElementById('e-altro').value.trim()
   };
   try {
@@ -805,7 +835,7 @@ function prefillRiflessioni(r) {
       cb.checked = r.falo.includes(cb.value);
     });
   }
-  if (r.rotta) document.getElementById('r-rotta').value = r.rotta;
+  if (r.faloAltro) document.getElementById('r-falo-altro').value = r.faloAltro;
 }
 
 document.getElementById('btn-salva-riflessioni').addEventListener('click', async () => {
@@ -817,7 +847,7 @@ document.getElementById('btn-salva-riflessioni').addEventListener('click', async
     scoglio: document.getElementById('r-scoglio').value.trim(),
     tesoro: document.getElementById('r-tesoro').value.trim(),
     falo,
-    rotta: document.getElementById('r-rotta').value.trim()
+    faloAltro: document.getElementById('r-falo-altro').value.trim()
   };
   try {
     await setDoc(doc(db, 'robinson_diari', pageUid, 'posts', oggiKey), { riflessioni, timestamp: serverTimestamp() }, { merge: true });
@@ -1619,7 +1649,7 @@ function loadDiconoCommenti(container, postId, currentUser) {
 
 // ── Lock forms per visitatori ─────────────────────────────────────────────
 function lockAllForms(lock = true) {
-  const selectors = ['#d-approdo','#d-titolo','#d-sensazione','#r-scoperto','#r-bello','#r-scoglio','#r-tesoro','#r-rotta','#e-bussola-note','#e-mare-note','#e-altro'];
+  const selectors = ['#d-approdo','#d-titolo','#d-sensazione','#r-scoperto','#r-bello','#r-scoglio','#r-tesoro','#r-falo-altro','#e-bussola-note','#e-mare-note','#e-meteo-umore-note','#bussola-altro','#e-altro'];
   selectors.forEach(s => {
     const el = document.querySelector(s);
     if (el) el.readOnly = lock;
