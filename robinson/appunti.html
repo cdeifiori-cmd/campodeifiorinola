@@ -138,9 +138,9 @@ import { setupNavAuth } from './js/robinson-nav.js';
 import { esc, fmtDate, normalizeMedia } from './js/robinson-utils.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import {
-  collection, collectionGroup, getDocs, doc, getDoc,
+  collection, getDocs, doc, getDoc,
   query, orderBy, limit, addDoc, updateDoc, setDoc,
-  increment, serverTimestamp, onSnapshot, deleteDoc
+  increment, serverTimestamp, onSnapshot
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 setupNavAuth('nav-auth-slot');
@@ -206,31 +206,66 @@ async function loadFeed() {
   try {
     const eventi = [];
 
-    // 1. Spiaggia
-    const spSnap = await getDocs(query(collection(db, 'robinson_spiaggia'), orderBy('timestamp','desc'), limit(40)));
-    spSnap.forEach(d => {
-      eventi.push({ _id: d.id, _fonte: 'spiaggia', _collPath: 'robinson_spiaggia', ...d.data() });
-    });
+    // Recupera lista uid naufraghi (da robinson_naufraghi + utenti)
+    const [naufraghiSnap, utentiSnap] = await Promise.all([
+      getDocs(collection(db, 'robinson_naufraghi')),
+      getDocs(collection(db, 'utenti'))
+    ]);
+    const uids = new Set();
+    naufraghiSnap.forEach(d => uids.add(d.id));
+    utentiSnap.forEach(d => uids.add(d.id));
+    const uidList = [...uids];
 
-    // 2. Diari (collectionGroup 'posts' sotto robinson_diari)
-    const diariSnap = await getDocs(query(collectionGroup(db, 'posts'), orderBy('timestamp','desc'), limit(40)));
-    diariSnap.forEach(d => {
-      if (!d.ref.path.startsWith('robinson_diari/')) return;
-      // path: robinson_diari/{uid}/posts/{dataKey}
-      const uid = d.ref.parent.parent.id;
-      const collPath = `robinson_diari/${uid}/posts`;
-      eventi.push({ _id: d.id, _uid_owner: uid, _fonte: 'diario', _collPath: collPath, authorId: uid, ...d.data() });
-    });
+    // 1. Spiaggia — query diretta, funziona già
+    try {
+      const spSnap = await getDocs(query(
+        collection(db, 'robinson_spiaggia'),
+        orderBy('timestamp','desc'),
+        limit(20)
+      ));
+      spSnap.forEach(d => {
+        eventi.push({ _id: d.id, _fonte: 'spiaggia', _collPath: 'robinson_spiaggia', ...d.data() });
+      });
+    } catch(e) { console.warn('spiaggia:', e.message); }
 
-    // 3. Isola (collectionGroup 'notti' sotto robinson_isola)
-    const isolaSnap = await getDocs(collectionGroup(db, 'notti'));
-    isolaSnap.forEach(d => {
-      if (!d.ref.path.startsWith('robinson_isola/')) return;
-      const uid = d.ref.parent.parent.id;
-      eventi.push({ _id: d.id, _fonte: 'isola', _uid_owner: uid, authorId: uid, ...d.data() });
-    });
+    // 2. Diari — query per-uid su robinson_diari/{uid}/posts
+    await Promise.all(uidList.map(async uid => {
+      try {
+        const snap = await getDocs(query(
+          collection(db, 'robinson_diari', uid, 'posts'),
+          orderBy('timestamp','desc'),
+          limit(5)
+        ));
+        snap.forEach(d => {
+          eventi.push({
+            _id: d.id, _fonte: 'diario',
+            _collPath: `robinson_diari/${uid}/posts`,
+            _uid_owner: uid, authorId: uid,
+            ...d.data()
+          });
+        });
+      } catch(_) {}
+    }));
 
-    // Ordina per timestamp desc
+    // 3. Isola — query per-uid su robinson_isola/{uid}/notti
+    await Promise.all(uidList.map(async uid => {
+      try {
+        const snap = await getDocs(query(
+          collection(db, 'robinson_isola', uid, 'notti'),
+          orderBy('timestamp','desc'),
+          limit(20)
+        ));
+        snap.forEach(d => {
+          eventi.push({
+            _id: d.id, _fonte: 'isola',
+            _uid_owner: uid, authorId: uid,
+            ...d.data()
+          });
+        });
+      } catch(_) {}
+    }));
+
+    // Ordina per timestamp desc e prendi i primi 80
     eventi.sort((a, b) => {
       const ta = a.timestamp?.toMillis?.() || 0;
       const tb = b.timestamp?.toMillis?.() || 0;
