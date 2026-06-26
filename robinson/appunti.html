@@ -87,6 +87,8 @@
     .badge-isola     { background:#e4f5e8; color:#2a7a3a; }
     .badge-commento  { background:#ede4f5; color:#5a2a7a; }
     .fonte-commento  { border-left-color:#6a3a8a !important; }
+    .badge-dicono    { background:#e4f5e8; color:#2a7a3a; }
+    .fonte-dicono    { border-left-color:#4a9e6b !important; }
     .pv-dest { font-size:0.72rem; color:var(--muted); margin-top:1px; }
     .pv-data { font-size:0.64rem; color:var(--muted); margin-left:auto; white-space:nowrap; }
     .pv-testo { font-size:0.82rem; color:#444; line-height:1.4; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -285,7 +287,31 @@ async function loadFeed() {
       } catch(_) {}
     }));
 
-    // 5. Isola — query per-uid su robinson_isola/{uid}/notti
+    // 5. Dicono di me — per ogni uid carica ultimi 3 post da robinson_dicono/{uid}/posts
+    await Promise.all(uidList.map(async uid => {
+      try {
+        const snap = await getDocs(query(
+          collection(db, 'robinson_dicono', uid, 'posts'),
+          orderBy('timestamp', 'desc'), limit(3)
+        ));
+        snap.forEach(d => {
+          const data = d.data();
+          if (!data.testo?.trim() && !data.mediaUrl) return;
+          eventi.push({
+            _id: d.id, _fonte: 'dicono', _uid_owner: uid,
+            authorId: data.uid || '',
+            authorName: data.nomeAutore || '',
+            authorPhoto: data.fotoAutore || '',
+            testo: data.testo || '',
+            mediaUrl: data.mediaUrl || '',
+            mediaKind: data.mediaKind || '',
+            timestamp: data.timestamp
+          });
+        });
+      } catch(_) {}
+    }));
+
+    // 6. Isola — query per-uid su robinson_isola/{uid}/notti
     await Promise.all(uidList.map(async uid => {
       try {
         const snap = await getDocs(query(
@@ -327,6 +353,10 @@ async function loadFeed() {
       if (p._fonte === 'commento' && !p._postAuthorName && p._postAuthorId) {
         p._postAuthorName = await risolviNome(p._postAuthorId);
       }
+      // Per "Dicono di me" risolvi il nome del naufrago destinatario
+      if (p._fonte === 'dicono' && !p._nomeNaufrago && p._uid_owner) {
+        p._nomeNaufrago = await risolviNome(p._uid_owner);
+      }
     }));
 
     slice.forEach(p => feed.appendChild(buildCard(p)));
@@ -352,6 +382,7 @@ function buildCard(p) {
                    (p.contenuto && p.contenuto.trim().length > 0);
   const isTesoro = p._fonte === 'diario' && !hasTesto;
   const isCommento = p._fonte === 'commento';
+  const isDicono   = p._fonte === 'dicono';
 
   // Link destinazione
   let href = 'spiaggia.html';
@@ -359,22 +390,26 @@ function buildCard(p) {
     href = p._subFonte === 'spiaggia'
       ? `spiaggia.html#${p._postId}`
       : `naufrago.html?uid=${p._uid_owner}#tab-diario`;
-  } else if (p._fonte === 'spiaggia')    href = `spiaggia.html#${p._id}`;
+  } else if (isDicono)                   href = `naufrago.html?uid=${p._uid_owner}#tab-carta`;
+  else if (p._fonte === 'spiaggia')      href = `spiaggia.html#${p._id}`;
   else if (p._fonte === 'diario')        href = `naufrago.html?uid=${uid}#${isTesoro ? 'tab-tesori' : 'tab-diario'}`;
   else                                   href = 'isola.html';
 
   // Badge
   let badge, badgeCls, borderCls;
-  if (isCommento)             { badge = '💬 Commento'; badgeCls = 'badge-commento'; borderCls = 'fonte-commento'; }
-  else if (p._fonte === 'spiaggia')    { badge = '🏖️ Spiaggia'; badgeCls = 'badge-spiaggia'; borderCls = 'fonte-spiaggia'; }
-  else if (isTesoro)                   { badge = '📸 Tesori';   badgeCls = 'badge-diario';   borderCls = 'fonte-diario'; }
-  else if (p._fonte === 'diario')      { badge = '📔 Diario';   badgeCls = 'badge-diario';   borderCls = 'fonte-diario'; }
-  else                                 { badge = '🏝️ Isola';    badgeCls = 'badge-isola';    borderCls = 'fonte-isola'; }
+  if (isCommento)                        { badge = '💬 Commento';    badgeCls = 'badge-commento'; borderCls = 'fonte-commento'; }
+  else if (isDicono)                     { badge = '💬 Dicono di me';badgeCls = 'badge-dicono';   borderCls = 'fonte-dicono'; }
+  else if (p._fonte === 'spiaggia')      { badge = '🏖️ Spiaggia';   badgeCls = 'badge-spiaggia'; borderCls = 'fonte-spiaggia'; }
+  else if (isTesoro)                     { badge = '📸 Tesori';      badgeCls = 'badge-diario';   borderCls = 'fonte-diario'; }
+  else if (p._fonte === 'diario')        { badge = '📔 Diario';      badgeCls = 'badge-diario';   borderCls = 'fonte-diario'; }
+  else                                   { badge = '🏝️ Isola';       badgeCls = 'badge-isola';    borderCls = 'fonte-isola'; }
 
   // Testo anteprima (max 100 chars)
   let testo = '';
   if (isCommento) {
     testo = p.text || '';
+  } else if (isDicono) {
+    testo = p.testo || '';
   } else if (p._fonte === 'isola') {
     if (p.privato) testo = '🔒 Pensiero privato';
     else {
@@ -387,14 +422,18 @@ function buildCard(p) {
   }
   const anteprima = testo.length > 100 ? testo.slice(0, 100) + '…' : testo;
 
-  // Riga "su post di…" per i commenti
-  const destHtml = isCommento && p._postAuthorName
-    ? `<div class="pv-dest">su post di ${esc(p._postAuthorName)}</div>`
-    : '';
+  // Riga sottotitolo: "su post di…" o "su [nome naufrago]"
+  let destHtml = '';
+  if (isCommento && p._postAuthorName)    destHtml = `<div class="pv-dest">su post di ${esc(p._postAuthorName)}</div>`;
+  else if (isDicono && p._nomeNaufrago)   destHtml = `<div class="pv-dest">su ${esc(p._nomeNaufrago)}</div>`;
 
-  // Miniatura media (solo per non-commenti)
+  // Miniatura media
   let mediaHtml = '';
-  if (!isCommento) {
+  if (isDicono) {
+    if (p.mediaUrl && p.mediaKind === 'image')      mediaHtml = `<img class="pv-thumb" src="${esc(p.mediaUrl)}" loading="lazy" alt="">`;
+    else if (p.mediaUrl && p.mediaKind === 'video') mediaHtml = `<div class="pv-media-icon">🎬</div>`;
+    else if (p.mediaUrl && p.mediaKind === 'audio') mediaHtml = `<div class="pv-media-icon">🎙️</div>`;
+  } else if (!isCommento) {
     if (p._fonte === 'isola') {
       if (p.fotoUrl)       mediaHtml = `<img class="pv-thumb" src="${esc(p.fotoUrl)}" loading="lazy" alt="">`;
       else if (p.videoUrl) mediaHtml = `<div class="pv-media-icon">🎬</div>`;
@@ -410,7 +449,7 @@ function buildCard(p) {
   }
 
   // Avatar
-  const placeholderEmoji = isCommento ? '💬' : p._fonte === 'spiaggia' ? '🏖️' : p._fonte === 'diario' ? '📔' : '🏝️';
+  const placeholderEmoji = isDicono ? '💬' : isCommento ? '💬' : p._fonte === 'spiaggia' ? '🏖️' : p._fonte === 'diario' ? '📔' : '🏝️';
   const avatarHtml = foto
     ? `<img class="pv-avatar" src="${esc(foto)}" alt="" loading="lazy">`
     : `<div class="pv-avatar-placeholder">${placeholderEmoji}</div>`;
