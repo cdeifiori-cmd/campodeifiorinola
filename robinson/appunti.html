@@ -175,15 +175,9 @@ async function loadFeed() {
   try {
     const eventi = [];
 
-    // Recupera lista uid naufraghi (da robinson_naufraghi + utenti)
-    const [naufraghiSnap, utentiSnap] = await Promise.all([
-      getDocs(collection(db, 'robinson_naufraghi')),
-      getDocs(collection(db, 'utenti'))
-    ]);
-    const uids = new Set();
-    naufraghiSnap.forEach(d => uids.add(d.id));
-    utentiSnap.forEach(d => uids.add(d.id));
-    const uidList = [...uids];
+    // Usa SOLO robinson_naufraghi per la lista uid — evita di pescare utenti non-Robinson
+    const naufraghiSnap = await getDocs(collection(db, 'robinson_naufraghi'));
+    const uidList = naufraghiSnap.docs.map(d => d.id);
 
     // 1. Spiaggia — query diretta, funziona già
     try {
