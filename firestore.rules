@@ -248,6 +248,12 @@ service cloud.firestore {
       allow write: if isLoggedIn();
     }
 
+    // ── Villaggio ────────────────────────────────────────────
+    match /robinson_villaggio/{casaId} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
+    }
+
     // ── Richieste di modifica carta d'identità ───────────────
     match /robinson_richieste/{uid} {
       allow read: if isAdmin();

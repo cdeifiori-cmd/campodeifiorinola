@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Villaggio – Robinson</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/robinson.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body { width: 100vw; height: 100vh; overflow: hidden; background: #0d2240; }
+
+    .villaggio-bg {
+      position: fixed; inset: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+      object-position: center;
+      z-index: 0;
+    }
+
+    #nav-auth-slot-wrap {
+      position: fixed; top: 10px; right: 12px; z-index: 300;
+    }
+
+    .hotspot-layer {
+      position: fixed; inset: 0; z-index: 10;
+    }
+
+    .casa-hotspot {
+      position: absolute;
+      width: 80px; height: 100px;
+      background: transparent;
+      cursor: pointer;
+      transform: translate(-50%, -50%);
+      border-radius: 8px;
+      transition: background 0.2s, border 0.2s;
+      border: 2px solid transparent;
+    }
+    .casa-hotspot:hover {
+      background: rgba(200,134,10,0.2);
+      border: 2px solid #c8860a;
+    }
+
+    /* Popup overlay */
+    .popup-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 199;
+      display: none;
+    }
+    .popup-overlay.open { display: block; }
+
+    /* Popup casa */
+    .casa-popup {
+      position: fixed;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      background: #f5f0e8;
+      border: 2px solid #c8860a;
+      border-radius: 12px;
+      padding: 16px;
+      width: 90%;
+      max-width: 360px;
+      max-height: 80vh;
+      overflow-y: auto;
+      z-index: 200;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      font-family: 'Lora', serif;
+      display: none;
+    }
+    .casa-popup.open { display: block; }
+
+    .casa-popup-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 12px; padding-bottom: 8px;
+      border-bottom: 1px solid #c8860a40;
+    }
+    .casa-nome {
+      font-family: 'Playfair Display', serif;
+      font-size: 18px; color: #1a3a5c; font-weight: 700;
+    }
+    .popup-close {
+      background: transparent; border: none;
+      font-size: 18px; cursor: pointer; color: #888;
+    }
+    .casa-sezione { margin-bottom: 12px; }
+    .casa-sezione-title {
+      font-size: 11px; color: #888;
+      text-transform: uppercase; letter-spacing: 0.05em;
+      margin-bottom: 6px;
+    }
+    .casa-capitano {
+      font-size: 15px; color: #1a3a5c; font-weight: 500;
+      padding: 6px 10px; background: #ede8dc;
+      border-radius: 6px; border-left: 3px solid #c8860a;
+    }
+    .casa-abitanti {
+      font-size: 14px; color: #2c1e0f; line-height: 1.8;
+    }
+    .turno-row {
+      display: flex; justify-content: space-between;
+      padding: 5px 0; border-bottom: 1px solid #c8860a20;
+      font-size: 13px;
+    }
+    .turno-giorno { color: #888; font-style: italic; }
+    .turno-nome { color: #2c1e0f; font-weight: 500; }
+
+    /* Admin panel */
+    .admin-panel {
+      margin-top: 14px; padding-top: 12px;
+      border-top: 1px dashed #c8860a60;
+    }
+    .btn-modifica-casa {
+      width: 100%; padding: 8px 12px;
+      background: #1a3a5c; color: #c8860a;
+      border: none; border-radius: 8px;
+      font-family: 'Lora', serif; font-size: 0.85rem;
+      cursor: pointer;
+    }
+    .btn-modifica-casa:hover { background: #0f2540; }
+
+    /* Form modifica */
+    .modifica-form { margin-top: 12px; }
+    .modifica-form label {
+      display: block; font-size: 11px; color: #888;
+      text-transform: uppercase; letter-spacing: 0.05em;
+      margin-bottom: 3px; margin-top: 10px;
+    }
+    .modifica-form input, .modifica-form textarea {
+      width: 100%; padding: 7px 10px;
+      border: 1.5px solid #c8b89a; border-radius: 6px;
+      font-family: 'Lora', serif; font-size: 0.85rem;
+      background: #fff; outline: none;
+    }
+    .modifica-form input:focus, .modifica-form textarea:focus {
+      border-color: #1a3a5c;
+    }
+    .modifica-form textarea { resize: vertical; min-height: 70px; }
+    .turni-grid { display: grid; grid-template-columns: 90px 1fr; gap: 6px 10px; align-items: center; margin-top: 4px; }
+    .turni-grid .giorno-lbl { font-size: 12px; color: #6b5c45; font-style: italic; }
+    .modifica-btns { display: flex; gap: 8px; margin-top: 14px; }
+    .btn-salva-casa {
+      flex: 1; padding: 9px; background: #1a3a5c; color: #c8860a;
+      border: none; border-radius: 8px; font-family: 'Lora', serif;
+      font-size: 0.88rem; cursor: pointer;
+    }
+    .btn-annulla-casa {
+      padding: 9px 14px; background: none; color: #888;
+      border: 1px solid #ccc; border-radius: 8px;
+      font-family: 'Lora', serif; font-size: 0.88rem; cursor: pointer;
+    }
+
+    .popup-loading { text-align: center; padding: 20px; color: #888; font-style: italic; }
+
+    /* Bottom nav — compatta per 7 voci */
+    .bottom-nav .nav-item span:last-child { font-size: 0.6rem; }
+  </style>
+</head>
+<body>
+
+<img class="villaggio-bg" src="Robinson_Republic_Village.png" alt="Villaggio Robinson">
+
+<div id="nav-auth-slot-wrap">
+  <div id="nav-auth-slot"></div>
+</div>
+
+<div class="hotspot-layer">
+  <div class="casa-hotspot" id="hs-perla_centrale"
+       style="left:18%;top:58%;" title="Perla Centrale"></div>
+  <div class="casa-hotspot" id="hs-atlantide"
+       style="left:45%;top:55%;" title="Atlantide"></div>
+  <div class="casa-hotspot" id="hs-nautilus"
+       style="left:72%;top:58%;" title="Nautilus"></div>
+</div>
+
+<div class="popup-overlay" id="popup-overlay"></div>
+<div class="casa-popup" id="casa-popup">
+  <div class="casa-popup-header">
+    <span class="casa-nome" id="popup-casa-nome"></span>
+    <button class="popup-close" id="popup-close">✕</button>
+  </div>
+  <div id="popup-body"></div>
+</div>
+
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item"><span class="nav-icon">🏝️</span><span>Home</span></a>
+  <a href="spiaggia.html" class="nav-item"><span class="nav-icon">🏖️</span><span>Spiaggia</span></a>
+  <a href="naufraghi.html" class="nav-item"><span class="nav-icon">🧍</span><span>Naufraghi</span></a>
+  <a href="ciurma.html" class="nav-item"><span class="nav-icon">⚓</span><span>Ciurma</span></a>
+  <a href="diari.html" class="nav-item"><span class="nav-icon">📖</span><span>Diari</span></a>
+  <a href="villaggio.html" class="nav-item active"><span class="nav-icon">🏡</span><span>Villaggio</span></a>
+</nav>
+
+<script type="module">
+import { db, ADMIN_UID } from './js/robinson-firebase.js';
+import { requireAuth } from './js/robinson-auth.js';
+import { setupNavAuth } from './js/robinson-nav.js';
+import { esc } from './js/robinson-utils.js';
+import {
+  doc, getDoc, setDoc, serverTimestamp
+} from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+setupNavAuth('nav-auth-slot');
+
+const GIORNI = ['Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato','Domenica'];
+
+const CASE = {
+  perla_centrale: { nome: 'Perla Centrale', emoji: '🏠' },
+  atlantide:      { nome: 'Atlantide',       emoji: '🏠' },
+  nautilus:       { nome: 'Nautilus',        emoji: '🏠' },
+};
+
+let _currentUser = null;
+let _isAdmin = false;
+let _currentCasaId = null;
+let _modifica = false;
+
+requireAuth(async user => {
+  _currentUser = user;
+  _isAdmin = user.uid === ADMIN_UID;
+
+  ['perla_centrale','atlantide','nautilus'].forEach(id => {
+    document.getElementById('hs-' + id).addEventListener('click', () => apriCasa(id));
+  });
+
+  document.getElementById('popup-close').addEventListener('click', chiudiPopup);
+  document.getElementById('popup-overlay').addEventListener('click', chiudiPopup);
+});
+
+async function apriCasa(casaId) {
+  _currentCasaId = casaId;
+  _modifica = false;
+  const meta = CASE[casaId];
+  document.getElementById('popup-casa-nome').textContent = meta.emoji + ' ' + meta.nome;
+  document.getElementById('popup-body').innerHTML = '<div class="popup-loading">⏳ Caricamento...</div>';
+  document.getElementById('popup-overlay').classList.add('open');
+  document.getElementById('casa-popup').classList.add('open');
+
+  try {
+    const snap = await getDoc(doc(db, 'robinson_villaggio', casaId));
+    const d = snap.exists() ? snap.data() : {};
+    renderCasa(casaId, d);
+  } catch(e) {
+    document.getElementById('popup-body').innerHTML = `<div style="color:#c0392b;padding:12px;">${esc(e.message)}</div>`;
+  }
+}
+
+function chiudiPopup() {
+  document.getElementById('popup-overlay').classList.remove('open');
+  document.getElementById('casa-popup').classList.remove('open');
+  _currentCasaId = null;
+}
+
+function renderCasa(casaId, d) {
+  const capitano = d.capitano || '—';
+  const abitanti = Array.isArray(d.abitanti) ? d.abitanti : [];
+  const turni = d.turni || {};
+
+  const abitantiHtml = abitanti.length
+    ? abitanti.map(n => `<div>${esc(n)}</div>`).join('')
+    : '<div style="color:#aaa;font-style:italic;">Nessun abitante</div>';
+
+  const turniHtml = GIORNI.map(g => `
+    <div class="turno-row">
+      <span class="turno-giorno">${g}</span>
+      <span class="turno-nome">${esc(turni[g] || '—')}</span>
+    </div>`).join('');
+
+  const adminHtml = _isAdmin ? `
+    <div class="admin-panel">
+      <button class="btn-modifica-casa" id="btn-mod">✏️ Modifica casa</button>
+    </div>` : '';
+
+  document.getElementById('popup-body').innerHTML = `
+    <div class="casa-sezione">
+      <div class="casa-sezione-title">⚓ Capitano</div>
+      <div class="casa-capitano">${esc(capitano)}</div>
+    </div>
+    <div class="casa-sezione">
+      <div class="casa-sezione-title">🧍 Abitanti</div>
+      <div class="casa-abitanti">${abitantiHtml}</div>
+    </div>
+    <div class="casa-sezione">
+      <div class="casa-sezione-title">🧹 Turni di pulizia</div>
+      <div class="casa-turni">${turniHtml}</div>
+    </div>
+    ${adminHtml}`;
+
+  if (_isAdmin) {
+    document.getElementById('btn-mod').addEventListener('click', () => apriModifica(casaId, d));
+  }
+}
+
+function apriModifica(casaId, d) {
+  const capitano = d.capitano || '';
+  const abitanti = Array.isArray(d.abitanti) ? d.abitanti.join('\n') : '';
+  const turni = d.turni || {};
+
+  const turniInputs = GIORNI.map(g => `
+    <div class="giorno-lbl">${g}</div>
+    <input type="text" id="turno-${g}" value="${esc(turni[g] || '')}" placeholder="Nome">`).join('');
+
+  document.getElementById('popup-body').innerHTML += `
+    <div class="modifica-form" id="modifica-form">
+      <label>Capitano</label>
+      <input type="text" id="mod-capitano" value="${esc(capitano)}">
+      <label>Abitanti (uno per riga)</label>
+      <textarea id="mod-abitanti">${esc(abitanti)}</textarea>
+      <label>Turni di pulizia</label>
+      <div class="turni-grid">${turniInputs}</div>
+      <div class="modifica-btns">
+        <button class="btn-salva-casa" id="btn-salva">💾 Salva</button>
+        <button class="btn-annulla-casa" id="btn-annulla">Annulla</button>
+      </div>
+      <div id="mod-error" style="color:#c0392b;font-size:0.78rem;margin-top:6px;"></div>
+    </div>`;
+
+  document.getElementById('popup-body').querySelector('.admin-panel').style.display = 'none';
+
+  document.getElementById('btn-salva').addEventListener('click', () => salvaCasa(casaId));
+  document.getElementById('btn-annulla').addEventListener('click', () => apriCasa(casaId));
+}
+
+async function salvaCasa(casaId) {
+  const capitano = document.getElementById('mod-capitano').value.trim();
+  const abitantiRaw = document.getElementById('mod-abitanti').value;
+  const abitanti = abitantiRaw.split('\n').map(s => s.trim()).filter(Boolean);
+  const turni = {};
+  GIORNI.forEach(g => {
+    const v = document.getElementById('turno-' + g)?.value.trim();
+    if (v) turni[g] = v;
+  });
+
+  const btn = document.getElementById('btn-salva');
+  btn.disabled = true; btn.textContent = '⏳ Salvataggio...';
+
+  try {
+    await setDoc(doc(db, 'robinson_villaggio', casaId), {
+      nome: CASE[casaId].nome,
+      emoji: CASE[casaId].emoji,
+      capitano,
+      abitanti,
+      turni,
+      aggiornatoAt: serverTimestamp()
+    });
+    await apriCasa(casaId);
+  } catch(e) {
+    const errEl = document.getElementById('mod-error');
+    if (errEl) errEl.textContent = 'Errore: ' + e.message;
+    btn.disabled = false; btn.textContent = '💾 Salva';
+  }
+}
+</script>
+</body>
+</html>
