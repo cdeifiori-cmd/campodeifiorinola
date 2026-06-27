@@ -21,12 +21,9 @@
 
     #nav-auth-slot-wrap { position: fixed; top: 12px; right: 12px; z-index: 200; }
 
-    /* Header fisso con scritta "I Naufraghi" sempre visibile */
     .naufraghi-header-fixed {
       position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
+      top: 0; left: 0; right: 0;
       height: 38vw;
       max-height: 220px;
       background-image: url('naufraghi.png');
@@ -35,17 +32,11 @@
       z-index: 100;
     }
     @media (min-width: 769px) {
-      .naufraghi-header-fixed {
-        background-image: url('naufraghi-pc.png');
-        height: 22vw;
-        max-height: 280px;
-      }
+      .naufraghi-header-fixed { background-image: url('naufraghi-pc.png'); height: 22vw; max-height: 280px; }
     }
 
-    /* Nasconde il vecchio header img inline */
     .naufraghi-header { display: none; }
 
-    /* Il contenuto parte sotto l'header fisso */
     .naufraghi-content {
       padding-bottom: 100px;
       padding-top: calc(min(38vw, 220px) + 8px);
@@ -103,17 +94,6 @@
   </div>
 </div>
 
-<!-- Modal Carta d'Identità -->
-<div id="modal-carta" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;overflow-y:auto;padding:20px 12px;">
-  <div id="modal-carta-box" style="background:#f5f0e8;background-image:radial-gradient(circle,#c8b89a22 1px,transparent 1px);background-size:20px 20px;max-width:480px;margin:0 auto;border-radius:12px;padding:0;position:relative;overflow:hidden;">
-    <button id="modal-carta-close" style="position:absolute;top:10px;right:12px;background:none;border:none;font-size:1.4rem;cursor:pointer;color:#1a3a5c;z-index:10;">✕</button>
-    <div id="modal-carta-body" style="padding:16px;"></div>
-    <div style="padding:0 16px 20px;">
-      <button id="modal-carta-diario-btn" class="btn btn-primary" style="width:100%;">⚓ Entra nel diario</button>
-    </div>
-  </div>
-</div>
-
 <nav class="bottom-nav">
   <a href="index.html" class="nav-item"><span class="nav-icon">🏝️</span><span>Home</span></a>
   <a href="spiaggia.html" class="nav-item"><span class="nav-icon">🏖️</span><span>Spiaggia</span></a>
@@ -129,15 +109,15 @@ import { requireAuth } from './js/robinson-auth.js';
 import { setupNavAuth } from './js/robinson-nav.js';
 import { esc } from './js/robinson-utils.js';
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { collection, getDocs, query, orderBy, doc, getDoc, addDoc, deleteDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { init as modalInit, apriModal } from './js/robinson-modal-profilo.js';
 
 setupNavAuth('nav-auth-slot');
 
 let allNaufraghi = [];
-let currentUserModal = null;
 
 requireAuth(async user => {
-  currentUserModal = user;
+  modalInit(user);
   await loadNaufraghi();
 });
 
@@ -157,7 +137,7 @@ async function loadNaufraghi() {
       .filter(u => { if (uidsVisti.has(u.uid)) return false; uidsVisti.add(u.uid); return true; });
     renderGrid(allNaufraghi);
   } catch(e) {
-    grid.innerHTML = `<div style="grid-column:span 2;text-align:center;padding:20px;color:var(--rosso);">Errore caricamento: ${esc(e.message)}</div>`;
+    grid.innerHTML = `<div style="grid-column:span 2;text-align:center;padding:20px;color:var(--rosso);">Errore: ${esc(e.message)}</div>`;
   }
 }
 
@@ -177,7 +157,7 @@ function renderGrid(lista) {
     </div>`;
   }).join('');
   grid.querySelectorAll('.card-naufrago').forEach(card => {
-    card.addEventListener('click', () => apriCartaModal(card.dataset.uid));
+    card.addEventListener('click', () => apriModal(card.dataset.uid));
   });
 }
 
@@ -185,253 +165,6 @@ document.getElementById('search-inp').addEventListener('input', e => {
   const q = e.target.value.toLowerCase();
   renderGrid(allNaufraghi.filter(n => (n.nome || '').toLowerCase().includes(q) || (n.soprannome || '').toLowerCase().includes(q)));
 });
-
-// ── Modal Carta d'Identità ─────────────────────────────────────────────────
-const modalCarta = document.getElementById('modal-carta');
-const modalBody = document.getElementById('modal-carta-body');
-const modalDiarioBtn = document.getElementById('modal-carta-diario-btn');
-
-function chiudiCartaModal() { modalCarta.style.display = 'none'; }
-document.getElementById('modal-carta-close').addEventListener('click', () => { chiudiCartaModal(); history.back(); });
-modalCarta.addEventListener('click', e => { if (e.target === modalCarta) { chiudiCartaModal(); history.back(); } });
-window.addEventListener('popstate', () => { if (modalCarta.style.display === 'block') chiudiCartaModal(); });
-
-async function apriCartaModal(uid) {
-  history.pushState({ modal: 'carta', uid }, '', location.href);
-  modalCarta.style.display = 'block';
-  modalBody.innerHTML = '<div style="padding:20px;text-align:center;color:#1a3a5c;">⏳ Caricamento…</div>';
-  modalDiarioBtn.textContent = '⚓ Entra nel diario';
-  modalDiarioBtn.onclick = () => { location.href = `naufrago.html?uid=${uid}`; };
-
-  try {
-    const [snapN, snapU, snapCI] = await Promise.all([
-      getDoc(doc(db, 'robinson_naufraghi', uid)),
-      getDoc(doc(db, 'utenti', uid)),
-      getDoc(doc(db, 'robinson_naufraghi', uid, 'carta_identita', 'dati'))
-    ]);
-    const dN = snapN.exists() ? snapN.data() : {};
-    const dU = snapU.exists() ? snapU.data() : {};
-    const ci = snapCI.exists() ? snapCI.data() : null;
-
-    const foto = dN.fotoProfilo || dU.fotoProfilo || dU.photoURL || '';
-    const nome = ci?.nome || dN.nome || dU.nome || dU.displayName || 'Naufrago';
-    const codice = ci?.codiceRR || '';
-    const sbarco = dN.primoAccesso?.toDate?.()?.toLocaleDateString('it-IT') || dN.dataInizio?.toDate?.()?.toLocaleDateString('it-IT') || '';
-
-    let html = `
-      <div style="background:#1a3a5c;padding:16px;display:flex;align-items:center;gap:12px;">
-        ${foto ? `<img src="${esc(foto)}" style="width:60px;height:60px;border-radius:50%;object-fit:cover;border:2px solid #c8860a;">` : '<div style="width:60px;height:60px;border-radius:50%;background:#c8b89a;display:flex;align-items:center;justify-content:center;font-size:1.5rem;">⚓</div>'}
-        <div>
-          <div style="font-family:\'Playfair Display\',serif;font-size:1.1rem;font-weight:700;color:#f5f0e8;">${esc(nome)}</div>
-          ${codice ? `<div style="font-size:0.75rem;color:#c8860a;letter-spacing:0.1em;font-weight:700;">${esc(codice)}</div>` : ''}
-          ${sbarco ? `<div style="font-size:0.72rem;color:#c8b89a;margin-top:2px;">Sbarcato/a il: ${esc(sbarco)}</div>` : ''}
-        </div>
-      </div>`;
-
-    if (!ci) {
-      html += `<div style="padding:20px;text-align:center;color:#1a3a5c;font-style:italic;">Questo naufrago non ha ancora compilato la sua Carta d'Identità.</div>`;
-      modalBody.innerHTML = html;
-      modalDiarioBtn.textContent = `⚓ Entra nel diario di ${esc(nome)}`;
-      return;
-    }
-
-    const sezione = (titolo, contenuto) => contenuto.trim()
-      ? `<div style="border:2px dashed #c8860a;border-radius:8px;margin:12px 0;overflow:hidden;">
-           <div style="background:#1a3a5c;color:#c8860a;font-family:\'Playfair Display\',serif;padding:6px 10px;font-size:0.82rem;font-weight:700;">${titolo}</div>
-           <div style="background:#faf7f0;padding:10px 12px;">${contenuto}</div>
-         </div>` : '';
-    const riga = (label, val) => val ? `<div style="margin-bottom:6px;"><span style="font-size:0.72rem;color:#1a3a5c;font-weight:600;">${label}:</span> <span style="font-size:0.86rem;">${esc(val)}</span></div>` : '';
-
-    // Ritratto
-    const treParole = (ci.treParole||[]).filter(Boolean).join(' · ');
-    let ritratto = '';
-    if (treParole) ritratto += `<div style="margin-bottom:8px;font-size:0.9rem;font-style:italic;color:#1a3a5c;">"${esc(treParole)}"</div>`;
-    ritratto += riga('Difficoltà', ci.difficolta) + riga('Pregio', ci.pregio) + riga('Vorrei imparare', ci.vorreiImparare) + riga('So fare bene', ci.soFareBene);
-    html += sezione('🖼️ Ritratto di Me', ritratto);
-
-    // Bussola
-    let bussola = riga('Cosa mi rende felice', ci.rendeFelice) + riga('Cosa mi fa arrabbiare', ci.faArrabbiare) + riga('Quando sono triste', ci.quandoTriste);
-    html += sezione('🧭 La Mia Bussola', bussola);
-
-    // Risorse
-    const persone = (ci.persone||[]).filter(Boolean).join(', ');
-    const qualita = (ci.qualita||[]).join(', ');
-    let risorse = riga('Persone su cui conto', persone) + riga('Le mie qualità', qualita);
-    html += sezione('🤝 Le Mie Risorse', risorse);
-
-    // Sfida e Motto
-    html += sezione('⚔️ La Mia Sfida', riga('', ci.sfida));
-    html += sezione('💬 Il Mio Motto', ci.motto ? `<div style="font-style:italic;font-size:0.9rem;">"${esc(ci.motto)}"</div>` : '');
-
-    // Isola deserta (solo se ha almeno un campo)
-    const idKeys = ['libro','canzone','film','serie','piatto','dolce','alimento','bevanda','persona',
-      'animale','gioco','sport','colore','luogo','casa','oggetto_caro','oggetto_utile',
-      'foto','parola','ricordo','sogno','qualita','valore','famoso','personaggio',
-      'pianta','profumo','momento','emozione','una_cosa'];
-    const idLabels = {'libro':'📚 Libro','canzone':'🎵 Canzone','film':'🎬 Film','serie':'📺 Serie','piatto':'🍕 Piatto','dolce':'🍰 Dolce','alimento':'🍎 Alimento','bevanda':'🥤 Bevanda','persona':'👤 Persona','animale':'🐶 Animale','gioco':'🎮 Gioco','sport':'⚽ Sport','colore':'🎨 Colore','luogo':'🌳 Luogo','casa':'🏠 Casa','oggetto_caro':'🧸 Oggetto caro','oggetto_utile':'🎒 Oggetto utile','foto':'📷 Foto','parola':'💬 Parola','ricordo':'❤️ Ricordo','sogno':'🌟 Sogno','qualita':'💪 Qualità','valore':'🤝 Valore','famoso':'😂 Famoso/a','personaggio':'🎭 Personaggio','pianta':'🌴 Pianta','profumo':'🌊 Profumo','momento':'⏰ Momento','emozione':'🌦️ Emozione','una_cosa':'⭐ La cosa più importante'};
-    const id = ci.isolaDeserta || {};
-    const idHasData = idKeys.some(k => id[k]) || id.altro;
-    if (idHasData) {
-      let isolaHtml = idKeys.filter(k => id[k]).map(k => riga(idLabels[k], id[k])).join('');
-      if (id.altro) isolaHtml += riga('✏️ Altro', id.altro);
-      html += sezione('🏝️ Isola Deserta', isolaHtml);
-    }
-
-    // Firma
-    if (ci.firma) {
-      html += `<div style="text-align:center;margin:16px 0 8px;font-family:\'Dancing Script\',cursive;font-size:1.4rem;color:#1a3a5c;">${esc(ci.firma)}</div>`;
-    }
-
-    // Timbro
-    html += `<div style="width:80px;height:80px;border:3px solid #c8860a;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;margin:16px auto 8px;opacity:0.4;transform:rotate(-15deg);">
-      <div style="font-size:0.42rem;font-weight:700;color:#1a3a5c;letter-spacing:0.12em;text-align:center;line-height:1.4;">🌴<br>ROBINSON<br>REPUBLIC</div>
-    </div>`;
-
-    modalBody.innerHTML = html;
-    modalDiarioBtn.textContent = `⚓ Entra nel diario di ${esc(nome)}`;
-
-    // Dicono di me
-    setTimeout(() => caricaModalDicono(uid), 100);
-  } catch(e) {
-    modalBody.innerHTML = `<div style="padding:20px;color:red;">Errore: ${esc(e.message)}</div>`;
-  }
-}
-
-// ── Dicono di me nel modal ─────────────────────────────────────────────────
-const EMOJIS_MODAL = ['❤️','😂','👏','🔥','😢'];
-
-async function caricaModalDicono(uid) {
-  // Crea il container e appendilo al modalBody
-  const existing = document.getElementById('modal-dicono-wrap');
-  if (existing) existing.remove();
-
-  const wrap = document.createElement('div');
-  wrap.id = 'modal-dicono-wrap';
-  wrap.style.cssText = 'padding:0 16px 16px;';
-
-  const sezioneDiv = document.createElement('div');
-  sezioneDiv.style.cssText = 'border:2px dashed #c8860a;border-radius:8px;margin:12px 0;overflow:hidden;';
-  sezioneDiv.innerHTML = `<div style="background:#1a3a5c;color:#c8860a;font-family:'Playfair Display',serif;padding:6px 10px;font-size:0.82rem;font-weight:700;">💬 Dicono di me</div>`;
-
-  const body = document.createElement('div');
-  body.style.cssText = 'background:#faf7f0;padding:10px 12px;';
-
-  // Form (solo se loggato e non è il proprio profilo)
-  if (currentUserModal && currentUserModal.uid !== uid) {
-    const formDiv = document.createElement('div');
-    formDiv.style.marginBottom = '12px';
-    formDiv.innerHTML = `
-      <textarea id="modal-dicono-testo-${uid}" placeholder="Scrivi qualcosa su questo naufrago..." rows="2" style="width:100%;padding:7px 9px;border:1.5px solid #c8b89a;border-radius:6px;font-family:'Lora',serif;font-size:0.85rem;background:#fff8ee;resize:vertical;box-sizing:border-box;"></textarea>
-      <button id="modal-dicono-pub-${uid}" style="margin-top:7px;width:100%;background:#1a3a5c;color:#c8860a;border:none;border-radius:6px;padding:7px;cursor:pointer;font-family:'Lora',serif;font-size:0.82rem;">📨 Pubblica</button>
-      <div id="modal-dicono-msg-${uid}" style="margin-top:4px;font-size:0.75rem;"></div>`;
-    body.appendChild(formDiv);
-
-    formDiv.querySelector(`#modal-dicono-pub-${uid}`).addEventListener('click', async () => {
-      const testo = formDiv.querySelector(`#modal-dicono-testo-${uid}`).value.trim();
-      if (!testo) return;
-      const msgEl = formDiv.querySelector(`#modal-dicono-msg-${uid}`);
-      let nomeAutore = currentUserModal.displayName || '';
-      let fotoAutore = '';
-      try {
-        const su = await getDoc(doc(db, 'utenti', currentUserModal.uid));
-        if (su.exists()) { nomeAutore = su.data().nome || nomeAutore; fotoAutore = su.data().fotoProfilo || ''; }
-      } catch(_) {}
-      await addDoc(collection(db, 'robinson_dicono', uid, 'posts'), {
-        testo, mediaUrl: '', mediaType: '',
-        autorId: currentUserModal.uid, autoreNome: nomeAutore, autoreFoto: fotoAutore,
-        timestamp: serverTimestamp()
-      });
-      formDiv.querySelector(`#modal-dicono-testo-${uid}`).value = '';
-      msgEl.style.color = '#c8860a';
-      msgEl.textContent = '✅ Pubblicato!';
-      setTimeout(() => msgEl.textContent = '', 2000);
-      await renderModalFeed(uid, feedDiv);
-    });
-  }
-
-  const feedDiv = document.createElement('div');
-  feedDiv.id = `modal-dicono-feed-${uid}`;
-  body.appendChild(feedDiv);
-
-  sezioneDiv.appendChild(body);
-  wrap.appendChild(sezioneDiv);
-  document.getElementById('modal-carta-body').appendChild(wrap);
-
-  await renderModalFeed(uid, feedDiv);
-}
-
-async function renderModalFeed(uid, container) {
-  container.innerHTML = '<div style="text-align:center;font-size:0.8rem;color:#999;">⏳</div>';
-  try {
-    const snap = await getDocs(query(
-      collection(db, 'robinson_dicono', uid, 'posts'),
-      orderBy('timestamp', 'desc')
-    ));
-    if (snap.empty) {
-      container.innerHTML = '<div style="text-align:center;color:#999;font-style:italic;font-size:0.8rem;padding:8px;">Ancora nessun messaggio.</div>';
-      return;
-    }
-    container.innerHTML = '';
-    for (const d of snap.docs) {
-      const postId = d.id;
-      const data = d.data();
-      const nomeA = data.autoreNome || 'Naufrago';
-      const fotoA = data.autoreFoto || '';
-      const dataStr = data.timestamp?.toDate ? data.timestamp.toDate().toLocaleDateString('it-IT', {day:'2-digit',month:'short',year:'numeric'}) : '';
-
-      const postEl = document.createElement('div');
-      postEl.style.cssText = 'background:#fff8ee;border:1px solid #e0d0b0;border-radius:8px;padding:8px 10px;margin-bottom:8px;';
-      postEl.innerHTML = `
-        <div style="display:flex;align-items:center;gap:7px;margin-bottom:5px;">
-          ${fotoA ? `<img src="${esc(fotoA)}" style="width:24px;height:24px;border-radius:50%;object-fit:cover;border:1px solid #c8860a;">` : '<span style="font-size:0.9rem;">⚓</span>'}
-          <span style="font-weight:600;font-size:0.8rem;color:#1a3a5c;">${esc(nomeA)}</span>
-          <span style="font-size:0.68rem;color:#999;margin-left:auto;">${esc(dataStr)}</span>
-        </div>
-        ${data.testo ? `<p style="font-size:0.85rem;color:#2c1810;margin:0 0 5px;white-space:pre-wrap;">${esc(data.testo)}</p>` : ''}
-        ${data.mediaUrl && data.mediaType === 'image' ? `<img src="${esc(data.mediaUrl)}" style="max-width:100%;border-radius:5px;margin-bottom:5px;">` : ''}
-        <div class="modal-reactions-${uid}-${postId}" style="display:flex;gap:3px;flex-wrap:wrap;margin-top:4px;"></div>`;
-
-      container.appendChild(postEl);
-
-      // Reactions
-      const reactContainer = postEl.querySelector(`.modal-reactions-${uid}-${postId}`);
-      await loadModalReactions(uid, postId, reactContainer);
-    }
-  } catch(e) {
-    container.innerHTML = `<div style="color:red;font-size:0.78rem;">Errore: ${esc(e.message)}</div>`;
-  }
-}
-
-async function loadModalReactions(uid, postId, container) {
-  if (!container) return;
-  try {
-    const snap = await getDocs(collection(db, 'robinson_dicono', uid, 'posts', postId, 'reactions'));
-    const counts = {};
-    const myReactions = new Set();
-    snap.forEach(d => {
-      const e = d.data().emoji;
-      counts[e] = (counts[e]||0) + 1;
-      if (currentUserModal && d.data().uid === currentUserModal.uid) myReactions.add(e);
-    });
-    container.innerHTML = EMOJIS_MODAL.map(e => {
-      const c = counts[e] || 0;
-      const active = myReactions.has(e);
-      return `<button class="modal-react-btn" data-emoji="${e}" style="background:${active?'#c8860a22':'#f5f0e8'};border:1.5px solid ${active?'#c8860a':'#c8b89a'};border-radius:20px;padding:2px 7px;cursor:pointer;font-size:0.78rem;display:flex;align-items:center;gap:2px;">${e}${c>0?`<span style="font-size:0.68rem;color:#1a3a5c;">${c}</span>`:''}</button>`;
-    }).join('');
-    container.querySelectorAll('.modal-react-btn').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        if (!currentUserModal) return;
-        const emoji = btn.dataset.emoji;
-        const rId = currentUserModal.uid + '_' + emoji;
-        const rRef = doc(db, 'robinson_dicono', uid, 'posts', postId, 'reactions', rId);
-        const rSnap = await getDoc(rRef);
-        if (rSnap.exists()) await deleteDoc(rRef);
-        else await setDoc(rRef, { uid: currentUserModal.uid, emoji, timestamp: serverTimestamp() });
-        await loadModalReactions(uid, postId, container);
-      });
-    });
-  } catch(_) {}
-}
 </script>
 </body>
 </html>
