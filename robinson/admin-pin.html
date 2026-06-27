@@ -207,39 +207,26 @@ async function loadAll() {
   const utMap = {};
   utSnap.forEach(d => { utMap[d.id] = d.data(); });
 
-  function infoUtente(uid) {
-    const u = utMap[uid] || {};
-    const nome = u.nome || u.nomeCompleto || u.displayName || u.email?.split('@')[0] || uid;
-    const rSnap = await getDoc(doc(db, 'robinson_naufraghi', uid)).catch(()=>null);
-    const rData = rSnap?.exists() ? rSnap.data() : {};
-    const foto = rData.fotoRobinson || u.fotoProfilo || u.fotoProfiloUrl || u.photoURL || '';
-    return { nome, foto };
-  }
+  // Fonte di verità: robinson_naufraghi, escluso l'admin
+  naufraghi = nSnap.docs
+    .filter(d => d.id !== ADMIN_UID)
+    .map(d => {
+      const rData = d.data();
+      const uData = utMap[d.id] || {};
+      const nome = rData.nome || uData.nome || uData.displayName || uData.email?.split('@')[0] || d.id;
+      const foto = rData.fotoRobinson || rData.fotoProfilo || uData.fotoProfilo || uData.fotoProfiloUrl || uData.photoURL || '';
+      return { uid: d.id, nome, foto };
+    })
+    .sort((a, b) => a.nome.localeCompare(b.nome, 'it'));
 
-  // Costruisci lista naufraghi: robinson_naufraghi + utenti non-staff
-  const uidSet = new Set();
-  nSnap.forEach(d => uidSet.add(d.id));
-  const RUOLI_ESCLUSI = new Set(['admin', 'staff', 'ciurma', 'operatore', 'naufrago']); // 'naufrago' = account pin creato da noi
-  utSnap.forEach(d => {
-    const u = d.data();
-    const ruolo = u.ruolo || '';
-    // Escludi account robinson fittizi (hanno originalUid) e ruoli staff
-    if (!RUOLI_ESCLUSI.has(ruolo) && !u.originalUid) uidSet.add(d.id);
-  });
-
-  naufraghi = [...uidSet].map(uid => {
-    const { nome, foto } = infoUtente(uid);
-    return { uid, nome, foto };
-  }).sort((a, b) => a.nome.localeCompare(b.nome, 'it'));
-
-  // Costruisci pinMap indicizzato per originalUid
+  // pinMap indicizzato per uid (doc.id = uid del naufrago)
   pinMap = {};
   pinLookup = {};
   pSnap.forEach(d => {
     const pd = d.data();
-    const key = pd.originalUid || pd.uid || d.id;
+    const key = pd.uid || d.id;
     pinMap[key] = { ...pd, _docId: d.id };
-    if (pd.pin) pinLookup[pd.pin] = pd.uid || d.id;
+    if (pd.pin) pinLookup[pd.pin] = key;
   });
 
   renderStats();
