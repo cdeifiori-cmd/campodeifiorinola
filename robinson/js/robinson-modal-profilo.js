@@ -218,7 +218,7 @@ window._rmpCambiaFoto = async function(input, uid) {
     const data = await res.json();
     if (!data.secure_url) throw new Error(data.error?.message || 'Upload fallito');
     const fotoUrl = data.secure_url;
-    await updateDoc(doc(db, 'robinson_naufraghi', uid), { fotoRobinson: fotoUrl });
+    await setDoc(doc(db, 'robinson_naufraghi', uid), { fotoRobinson: fotoUrl }, { merge: true });
     const av = document.querySelector('.modal-avatar');
     if (av?.tagName === 'IMG') av.src = fotoUrl;
     _mostraToast('✅ Foto Robinson aggiornata!');

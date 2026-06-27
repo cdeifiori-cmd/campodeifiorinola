@@ -150,10 +150,7 @@ service cloud.firestore {
     // I Naufraghi - profili
     match /robinson_naufraghi/{uid} {
       allow read: if isLoggedIn();
-      allow write: if isLoggedIn() && (
-        isOwner(uid) ||
-        get(/databases/$(database)/documents/utenti/$(request.auth.uid)).data.ruolo == 'admin'
-      );
+      allow write: if isLoggedIn() && (isOwner(uid) || isAdmin());
 
       match /profilo/{docId} {
         allow read: if isLoggedIn();
