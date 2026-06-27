@@ -42,6 +42,19 @@
       border: 2px solid #c8860a;
     }
 
+    /* Mobile coordinates */
+    .casa-hotspot[data-casa="perla_centrale"] { left:18%; top:58%; }
+    .casa-hotspot[data-casa="atlantide"]       { left:45%; top:55%; }
+    .casa-hotspot[data-casa="nautilus"]        { left:72%; top:58%; }
+
+    /* Desktop coordinates — ricalibrate per villaggio_pc.png */
+    @media (min-width: 769px) {
+      .casa-hotspot { width: 120px; height: 150px; }
+      .casa-hotspot[data-casa="perla_centrale"] { left:20%; top:60%; }
+      .casa-hotspot[data-casa="atlantide"]       { left:48%; top:57%; }
+      .casa-hotspot[data-casa="nautilus"]        { left:74%; top:60%; }
+    }
+
     /* Popup overlay */
     .popup-overlay {
       position: fixed; inset: 0;
@@ -180,12 +193,9 @@
 </div>
 
 <div class="hotspot-layer">
-  <div class="casa-hotspot" id="hs-perla_centrale"
-       style="left:18%;top:58%;" title="Perla Centrale"></div>
-  <div class="casa-hotspot" id="hs-atlantide"
-       style="left:45%;top:55%;" title="Atlantide"></div>
-  <div class="casa-hotspot" id="hs-nautilus"
-       style="left:72%;top:58%;" title="Nautilus"></div>
+  <div class="casa-hotspot" id="hs-perla_centrale" data-casa="perla_centrale" title="Perla Centrale"></div>
+  <div class="casa-hotspot" id="hs-atlantide"      data-casa="atlantide"      title="Atlantide"></div>
+  <div class="casa-hotspot" id="hs-nautilus"       data-casa="nautilus"       title="Nautilus"></div>
 </div>
 
 <div class="popup-overlay" id="popup-overlay"></div>
@@ -216,6 +226,14 @@ import {
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 setupNavAuth('nav-auth-slot');
+
+// Immagine responsive: mobile vs desktop
+const _bg = document.querySelector('.villaggio-bg');
+function _aggiornaBg() {
+  _bg.src = window.innerWidth >= 769 ? 'villaggio_pc.png' : 'Robinson_Republic_Village.png';
+}
+_aggiornaBg();
+window.addEventListener('resize', _aggiornaBg);
 
 const GIORNI = ['Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato','Domenica'];
 
