@@ -98,6 +98,20 @@
     .casa-abitanti {
       font-size: 14px; color: #2c1e0f; line-height: 1.8;
     }
+    .stanzette-grid {
+      display: grid; gap: 8px; margin-top: 4px;
+    }
+    .stanzette-grid.col2 { grid-template-columns: 1fr 1fr; }
+    .stanzette-grid.col3 { grid-template-columns: 1fr 1fr 1fr; }
+    .stanzetta {
+      background: #ede8dc; border-radius: 8px;
+      padding: 8px 10px; border-top: 2px solid #c8860a;
+    }
+    .stanzetta-title {
+      font-size: 10px; color: #888; text-transform: uppercase;
+      letter-spacing: 0.05em; margin-bottom: 5px;
+    }
+    .stanzetta-abitanti { font-size: 13px; color: #2c1e0f; line-height: 1.7; }
     .turno-row {
       display: flex; justify-content: space-between;
       padding: 5px 0; border-bottom: 1px solid #c8860a20;
@@ -252,14 +266,29 @@ function chiudiPopup() {
   _currentCasaId = null;
 }
 
+// Stanzette per casa: Perla Centrale e Nautilus 2 colonne, Atlantide 3 colonne
+const STANZETTE_CFG = {
+  perla_centrale: ['sinistra', 'destra'],
+  nautilus:       ['sinistra', 'destra'],
+  atlantide:      ['sinistra', 'centrale', 'destra'],
+};
+const STANZETTE_LABEL = { sinistra: 'Sinistra', centrale: 'Centrale', destra: 'Destra' };
+
 function renderCasa(casaId, d) {
   const capitano = d.capitano || '—';
-  const abitanti = Array.isArray(d.abitanti) ? d.abitanti : [];
   const turni = d.turni || {};
+  const stanzette = d.stanzette || {};
+  const cols = STANZETTE_CFG[casaId] || ['sinistra', 'destra'];
 
-  const abitantiHtml = abitanti.length
-    ? abitanti.map(n => `<div>${esc(n)}</div>`).join('')
-    : '<div style="color:#aaa;font-style:italic;">Nessun abitante</div>';
+  const stanzetteHtml = `<div class="stanzette-grid ${cols.length === 3 ? 'col3' : 'col2'}">
+    ${cols.map(k => {
+      const lista = Array.isArray(stanzette[k]) ? stanzette[k] : [];
+      return `<div class="stanzetta">
+        <div class="stanzetta-title">${STANZETTE_LABEL[k]}</div>
+        <div class="stanzetta-abitanti">${lista.length ? lista.map(n => esc(n)).join('<br>') : '<span style="color:#aaa;font-style:italic;">—</span>'}</div>
+      </div>`;
+    }).join('')}
+  </div>`;
 
   const turniHtml = GIORNI.map(g => `
     <div class="turno-row">
@@ -278,8 +307,8 @@ function renderCasa(casaId, d) {
       <div class="casa-capitano">${esc(capitano)}</div>
     </div>
     <div class="casa-sezione">
-      <div class="casa-sezione-title">🧍 Abitanti</div>
-      <div class="casa-abitanti">${abitantiHtml}</div>
+      <div class="casa-sezione-title">🧍 Stanzette</div>
+      ${stanzetteHtml}
     </div>
     <div class="casa-sezione">
       <div class="casa-sezione-title">🧹 Turni di pulizia</div>
@@ -294,19 +323,26 @@ function renderCasa(casaId, d) {
 
 function apriModifica(casaId, d) {
   const capitano = d.capitano || '';
-  const abitanti = Array.isArray(d.abitanti) ? d.abitanti.join('\n') : '';
   const turni = d.turni || {};
+  const stanzette = d.stanzette || {};
+  const cols = STANZETTE_CFG[casaId] || ['sinistra', 'destra'];
 
   const turniInputs = GIORNI.map(g => `
     <div class="giorno-lbl">${g}</div>
     <input type="text" id="turno-${g}" value="${esc(turni[g] || '')}" placeholder="Nome">`).join('');
 
+  const stanzetteInputs = cols.map(k => {
+    const val = Array.isArray(stanzette[k]) ? stanzette[k].join('\n') : '';
+    return `<label>${STANZETTE_LABEL[k]} (uno per riga)</label>
+    <textarea id="mod-stanzetta-${k}">${esc(val)}</textarea>`;
+  }).join('');
+
   document.getElementById('popup-body').innerHTML += `
     <div class="modifica-form" id="modifica-form">
       <label>Capitano</label>
       <input type="text" id="mod-capitano" value="${esc(capitano)}">
-      <label>Abitanti (uno per riga)</label>
-      <textarea id="mod-abitanti">${esc(abitanti)}</textarea>
+      <label style="margin-top:10px;">🧍 Stanzette</label>
+      ${stanzetteInputs}
       <label>Turni di pulizia</label>
       <div class="turni-grid">${turniInputs}</div>
       <div class="modifica-btns">
@@ -324,8 +360,12 @@ function apriModifica(casaId, d) {
 
 async function salvaCasa(casaId) {
   const capitano = document.getElementById('mod-capitano').value.trim();
-  const abitantiRaw = document.getElementById('mod-abitanti').value;
-  const abitanti = abitantiRaw.split('\n').map(s => s.trim()).filter(Boolean);
+  const cols = STANZETTE_CFG[casaId] || ['sinistra', 'destra'];
+  const stanzette = {};
+  cols.forEach(k => {
+    const raw = document.getElementById('mod-stanzetta-' + k)?.value || '';
+    stanzette[k] = raw.split('\n').map(s => s.trim()).filter(Boolean);
+  });
   const turni = {};
   GIORNI.forEach(g => {
     const v = document.getElementById('turno-' + g)?.value.trim();
@@ -340,7 +380,7 @@ async function salvaCasa(casaId) {
       nome: CASE[casaId].nome,
       emoji: CASE[casaId].emoji,
       capitano,
-      abitanti,
+      stanzette,
       turni,
       aggiornatoAt: serverTimestamp()
     });
