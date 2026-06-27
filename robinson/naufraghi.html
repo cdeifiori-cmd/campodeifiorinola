@@ -124,11 +124,11 @@ requireAuth(async user => {
 async function loadNaufraghi() {
   const grid = document.getElementById('grid');
   try {
-    const snap = await getDocs(collection(db, 'robinson_pin'));
+    const snap = await getDocs(collection(db, 'robinson_naufraghi'));
     const entries = await Promise.all(snap.docs.map(async d => {
       const data = d.data();
       const uid = d.id;
-      const foto = await getFotoRobinson(uid);
+      const foto = data.fotoRobinson || data.fotoProfilo || await getFotoRobinson(uid);
       return { uid, nome: data.nome || uid, foto: foto || '' };
     }));
     allNaufraghi = entries
