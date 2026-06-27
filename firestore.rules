@@ -248,6 +248,12 @@ service cloud.firestore {
       allow write: if isLoggedIn();
     }
 
+    // ── Richieste di modifica carta d'identità ───────────────
+    match /robinson_richieste/{uid} {
+      allow read: if isAdmin();
+      allow write: if isLoggedIn() && (isOwner(uid) || isAdmin());
+    }
+
     // ── Messaggi in Bottiglia ────────────────────────────────
     match /messaggiBottiglia/{bottId} {
       allow read: if true;  // lettura pubblica (sola lettura per non loggati)
