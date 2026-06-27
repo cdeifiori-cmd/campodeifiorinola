@@ -836,7 +836,7 @@ async function loadProfilo() {
     d = { ...dN, ...dU, ...dSt };
     // Nome: utenti > naufraghi > staff > fallback
     d.nome = dU.nome || dN.nome || dSt.nome || dU.displayName || 'Naufrago';
-    d.fotoProfilo = dU.fotoProfiloUrl || dU.fotoProfilo || dN.fotoProfiloUrl || dN.fotoProfilo || dU.photoURL || '';
+    d.fotoProfilo = dN.fotoRobinson || dU.fotoProfiloUrl || dU.fotoProfilo || dN.fotoProfiloUrl || dN.fotoProfilo || dU.photoURL || '';
   } catch(_) {}
 
   // Try carta_identita dati
@@ -1684,7 +1684,7 @@ async function loadCartaIdentita() {
     const snapU = await getDoc(doc(db, 'utenti', pageUid));
     const dN = snapN.exists() ? snapN.data() : {};
     const dU = snapU.exists() ? snapU.data() : {};
-    const foto = dN.fotoProfilo || dU.fotoProfilo || dU.photoURL || '';
+    const foto = dN.fotoRobinson || dN.fotoProfilo || dU.fotoProfilo || dU.photoURL || '';
     const nomeBase = dN.nome || dU.nome || dU.displayName || '';
 
     const fotoImg = document.getElementById('ci-foto-img');

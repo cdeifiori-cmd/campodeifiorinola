@@ -230,7 +230,9 @@ requireAuth(async user => {
     try {
       const uSnap = await getDoc(doc(db, 'utenti', uid));
       const d = uSnap.data() || {};
-      naufraghiInfo[uid] = { nome: d.nome || uid, foto: d.fotoProfiloUrl || d.fotoProfilo || '' };
+      const rSnap = await getDoc(doc(db, 'robinson_naufraghi', uid)).catch(()=>null);
+      const rData = rSnap?.exists() ? rSnap.data() : {};
+      naufraghiInfo[uid] = { nome: d.nome || uid, foto: rData.fotoRobinson || d.fotoProfiloUrl || d.fotoProfilo || '' };
     } catch(_) { naufraghiInfo[uid] = { nome: uid, foto: '' }; }
   }));
 

@@ -372,7 +372,7 @@ function buildCard(p) {
   const uid = p.authorId || p._uid_owner || '';
   const utente = getUtente(uid);
   const nome = p.authorName || utente.nome || 'Anonimo';
-  const foto = p.authorPhoto || utente.fotoProfiloUrl || utente.fotoProfilo || '';
+  const foto = p.authorPhoto || utente.fotoRobinson || utente.fotoProfiloUrl || utente.fotoProfilo || '';
 
   // Determina se il post diario è un tesoro (solo media, nessun testo)
   const hasTesto = (p.testo && p.testo.trim().length > 0) ||

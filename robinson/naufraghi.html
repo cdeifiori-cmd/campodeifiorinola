@@ -145,7 +145,7 @@ function renderGrid(lista) {
   const grid = document.getElementById('grid');
   if (!lista.length) { grid.innerHTML = '<div class="empty-msg" style="grid-column:span 2;">Nessun naufrago trovato.</div>'; return; }
   grid.innerHTML = lista.map(n => {
-    const foto = n.fotoProfilo || n.photoURL || '';
+    const foto = n.fotoRobinson || n.fotoProfilo || n.photoURL || '';
     const nome = n.nome || n.displayName || 'Naufrago';
     const soprannome = n.soprannome || '';
     return `<div class="card-naufrago" data-uid="${esc(n.uid)}" style="cursor:pointer;">

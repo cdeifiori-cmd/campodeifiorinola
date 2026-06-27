@@ -26,6 +26,17 @@ export function fmtDateShort(ts) {
   return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
 }
 
+// ── Foto Robinson (separata da campodeifiori.org) ─────────────────────────────
+export async function getFotoRobinson(uid) {
+  try {
+    const docR = await getDoc(doc(db, 'robinson_naufraghi', uid));
+    if (docR.exists() && docR.data().fotoRobinson) return docR.data().fotoRobinson;
+    const docU = await getDoc(doc(db, 'utenti', uid));
+    if (docU.exists() && docU.data().fotoProfilo) return docU.data().fotoProfilo;
+  } catch(_) {}
+  return null;
+}
+
 // ── Cache nomi ─────────────────────────────────────────────────────────────────
 const _nomiCache = {};
 

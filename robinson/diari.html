@@ -272,7 +272,7 @@ async function caricaDiari() {
     gruppi[giorno].forEach(({ uid, dataKey, post }) => {
       const profilo = profili[uid] || {};
       const nome = profilo.nome || risolviNome(uid) || '?';
-      const avatarUrl = profilo.avatarUrl || '';
+      const avatarUrl = profilo.fotoRobinson || profilo.avatarUrl || profilo.fotoProfilo || '';
       const titolo = post.titolo || '';
       const r = post.riflessioni || {};
 

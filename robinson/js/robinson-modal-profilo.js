@@ -1,5 +1,5 @@
 // robinson-modal-profilo.js — modal stack con 3 ruoli: proprietario | visitatore | admin
-import { db, auth, ADMIN_UID } from './robinson-firebase.js';
+import { db, auth, ADMIN_UID, CLOUD_NAME, CLOUD_PRESET } from './robinson-firebase.js';
 import { esc, uploadOne } from './robinson-utils.js';
 import {
   doc, getDoc, getDocs, setDoc, addDoc, deleteDoc, updateDoc,
@@ -58,7 +58,7 @@ export async function apriModal(uid, params = {}) {
     ]);
     const dN = snapN.exists() ? snapN.data() : {};
     const dU = snapU.exists() ? snapU.data() : {};
-    const foto = dN.fotoProfilo || dU.fotoProfilo || dU.photoURL || params.foto || '';
+    const foto = dN.fotoRobinson || dN.fotoProfilo || dU.fotoProfilo || dU.photoURL || params.foto || '';
     const nome = dN.nome || dU.nome || dU.displayName || params.nome || 'Naufrago';
     const ruoloLabel = params.ruolo || dN.ruolo || dU.ruolo || '';
     await _push('scelta', { uid, nome, foto, ruolo, ruoloLabel });
@@ -137,6 +137,21 @@ function _createModal() {
     .rmp-cal-cell.oggi-owner { background:#3a8a4a;color:#fff;cursor:pointer;font-weight:600; }
     .rmp-cal-cell.oggi-owner:hover { background:#2a6a3a; }
     .rmp-cal-cell.oggi { outline:2px solid #1a3a5c; }
+    .rmp-cambia-foto-admin {
+      position:absolute; bottom:0; right:0;
+      background:#c8860a; color:#fff; border-radius:50%;
+      width:24px; height:24px;
+      display:flex; align-items:center; justify-content:center;
+      font-size:12px; cursor:pointer; line-height:1;
+      border:2px solid #1a3a5c;
+    }
+    .rmp-toast {
+      position:fixed; bottom:80px; left:50%; transform:translateX(-50%);
+      background:#1a3a5c; color:#c8860a; padding:10px 20px; border-radius:20px;
+      font-family:'Lora',serif; font-size:0.85rem; z-index:9999;
+      animation: rmpFadeOut 2.5s forwards;
+    }
+    @keyframes rmpFadeOut { 0%{opacity:1} 70%{opacity:1} 100%{opacity:0} }
   `;
   document.head.appendChild(style);
 
@@ -168,10 +183,14 @@ function _createModal() {
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────
-function _header(foto, nome, ruoloLabel, back=false) {
-  const fotoHtml = foto
-    ? `<img src="${esc(foto)}" style="width:56px;height:56px;border-radius:50%;object-fit:cover;border:2px solid #c8860a;flex-shrink:0;">`
-    : '<div style="width:56px;height:56px;border-radius:50%;background:#c8b89a;display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0;">⚓</div>';
+function _header(foto, nome, ruoloLabel, back=false, uid='', ruolo='') {
+  const fotoImg = foto
+    ? `<img class="modal-avatar" src="${esc(foto)}" style="width:56px;height:56px;border-radius:50%;object-fit:cover;border:2px solid #c8860a;flex-shrink:0;">`
+    : '<div class="modal-avatar" style="width:56px;height:56px;border-radius:50%;background:#c8b89a;display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0;">⚓</div>';
+  const adminBtn = (ruolo === 'admin' && uid)
+    ? `<label class="rmp-cambia-foto-admin" title="Cambia foto Robinson">📷<input type="file" accept="image/*" style="display:none" onchange="window._rmpCambiaFoto(this,'${esc(uid)}')"></label>`
+    : '';
+  const fotoHtml = `<div style="position:relative;flex-shrink:0;">${fotoImg}${adminBtn}</div>`;
   return `<div style="background:#1a3a5c;padding:16px;display:flex;align-items:center;gap:10px;border-radius:12px 12px 0 0;">
     ${back?'<button class="rmp-back-btn" onclick="window._rmpBack()">←</button>':''}
     ${fotoHtml}
@@ -181,6 +200,30 @@ function _header(foto, nome, ruoloLabel, back=false) {
     </div>
   </div>`;
 }
+
+function _mostraToast(msg) {
+  const t = document.createElement('div'); t.className='rmp-toast'; t.textContent=msg;
+  document.body.appendChild(t); setTimeout(()=>t.remove(),2600);
+}
+
+window._rmpCambiaFoto = async function(input, uid) {
+  if (!input.files[0]) return;
+  _mostraToast('⏳ Caricamento foto...');
+  try {
+    const fd = new FormData();
+    fd.append('file', input.files[0]);
+    fd.append('upload_preset', CLOUD_PRESET);
+    fd.append('folder', 'robinson/profili');
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method:'POST', body:fd });
+    const data = await res.json();
+    if (!data.secure_url) throw new Error(data.error?.message || 'Upload fallito');
+    const fotoUrl = data.secure_url;
+    await updateDoc(doc(db, 'robinson_naufraghi', uid), { fotoRobinson: fotoUrl });
+    const av = document.querySelector('.modal-avatar');
+    if (av?.tagName === 'IMG') av.src = fotoUrl;
+    _mostraToast('✅ Foto Robinson aggiornata!');
+  } catch(e) { _mostraToast('❌ Errore: ' + e.message); }
+};
 
 function _acc(titolo, contenuto, aperto=false) {
   if (!contenuto?.trim()) return '';
@@ -224,7 +267,7 @@ async function _scelta({ uid, nome, foto, ruolo, ruoloLabel }) {
       <button class="rmp-scelta-btn" id="sb-d">📖 Il Diario<span class="rmp-scelta-sub">I giorni sull'isola</span></button>`;
   }
 
-  _content.innerHTML = `${_header(foto, nome, ruoloLabel, false)}<div style="padding:20px;">${btns}</div>`;
+  _content.innerHTML = `${_header(foto, nome, ruoloLabel, false, uid, ruolo)}<div style="padding:20px;">${btns}</div>`;
 
   document.getElementById('sb-ci').onclick = () => _push('carta', { uid, nome, foto, ruolo, ruoloLabel });
   document.getElementById('sb-d').onclick  = () => _push('diario', { uid, nome, foto, ruolo, ruoloLabel });
@@ -236,7 +279,7 @@ async function _scelta({ uid, nome, foto, ruolo, ruoloLabel }) {
 async function _carta({ uid, nome, foto, ruolo, ruoloLabel }) {
   _cartaParams = { uid, nome, foto, ruolo, ruoloLabel };
 
-  _content.innerHTML = `${_header(foto, nome, ruoloLabel, true)}<div id="rmp-ci-body" style="padding:16px;"><div style="text-align:center;">⏳</div></div>`;
+  _content.innerHTML = `${_header(foto, nome, ruoloLabel, true, uid, ruolo)}<div id="rmp-ci-body" style="padding:16px;"><div style="text-align:center;">⏳</div></div>`;
   const ciBody = document.getElementById('rmp-ci-body');
 
   try {
@@ -610,7 +653,7 @@ async function _diario({ uid, nome, foto, ruolo, ruoloLabel }) {
   const todayNotCompiled = !savedDates.has(todayStr);
 
   _content.innerHTML = `
-    ${_header(foto, nome, ruoloLabel, true)}
+    ${_header(foto, nome, ruoloLabel, true, uid, ruolo)}
     <div style="padding:16px;">
       <div style="font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;color:#1a3a5c;margin-bottom:14px;text-align:center;">📖 Il diario di ${esc(nome)}</div>
       ${isOwnerRole && todayNotCompiled ? '<div style="background:#e8f5e9;border:1px solid #3a8a4a;border-radius:6px;padding:8px 12px;font-size:0.82rem;color:#2a5a3a;margin-bottom:10px;">📝 Hai ancora tempo per scrivere il diario di oggi! Tocca il giorno verde per iniziare.</div>' : ''}

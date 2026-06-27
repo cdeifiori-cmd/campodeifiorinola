@@ -187,7 +187,9 @@ async function loadAll() {
   function infoUtente(uid) {
     const u = utMap[uid] || {};
     const nome = u.nome || u.nomeCompleto || u.displayName || u.email?.split('@')[0] || uid;
-    const foto = u.fotoProfilo || u.fotoProfiloUrl || u.photoURL || '';
+    const rSnap = await getDoc(doc(db, 'robinson_naufraghi', uid)).catch(()=>null);
+    const rData = rSnap?.exists() ? rSnap.data() : {};
+    const foto = rData.fotoRobinson || u.fotoProfilo || u.fotoProfiloUrl || u.photoURL || '';
     return { nome, foto };
   }
 
