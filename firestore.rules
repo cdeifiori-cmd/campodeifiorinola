@@ -171,14 +171,17 @@ service cloud.firestore {
     }
 
     // Diari personali naufraghi
+    match /robinson_diari/{uid}/{document=**} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == uid;
+    }
+
     match /robinson_diari/{uid}/posts/{postId} {
-      allow read: if isLoggedIn();
-      allow create: if isLoggedIn() && request.auth.uid == uid;
-      allow update: if isLoggedIn() && (
-        isAdmin() ||
-        (isOwner(uid) && !(
-          'salvato' in resource.data && resource.data.salvato == true
-        ))
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.auth.uid == uid;
+      allow update: if request.auth != null && (
+        request.auth.uid == uid ||
+        isAdmin()
       );
       allow delete: if isAdmin();
 
@@ -220,10 +223,15 @@ service cloud.firestore {
     }
 
     // ── Isola dei Sentimenti ─────────────────────────────────
+    match /robinson_isola/{uid} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == uid;
+    }
+
     match /robinson_isola/{uid}/notti/{data} {
       allow read: if request.auth != null;
       allow create: if request.auth != null && request.auth.uid == uid;
-      allow update: if false; // non modificabile dopo la creazione
+      allow update: if false;
       allow delete: if isAdmin();
     }
 
@@ -250,10 +258,37 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // ── Punteggi Robinson ────────────────────────────────────
+    match /robinson_punteggi/{uid} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // ── Bottiglie Robinson (messaggi tra naufraghi) ──────────
+    match /robinson_bottiglie/{uid}/messaggi/{msgId} {
+      allow read: if request.auth != null &&
+        (request.auth.uid == uid || isAdmin());
+      allow create: if request.auth != null;
+      allow update: if request.auth != null &&
+        (request.auth.uid == uid || isAdmin());
+      allow delete: if request.auth != null &&
+        (request.auth.uid == uid || isAdmin());
+    }
+
+    // ── Inviati Robinson (copia messaggi inviati) ────────────
+    match /robinson_inviati/{uid}/messaggi/{msgId} {
+      allow read: if request.auth != null &&
+        (request.auth.uid == uid || isAdmin());
+      allow create: if request.auth != null && request.auth.uid == uid;
+      allow delete: if isAdmin();
+    }
+
     // ── Richieste di modifica carta d'identità ───────────────
     match /robinson_richieste/{uid} {
-      allow read: if isAdmin();
-      allow write: if isLoggedIn() && (isOwner(uid) || isAdmin());
+      allow read: if request.auth != null &&
+        (request.auth.uid == uid || isAdmin());
+      allow write: if request.auth != null &&
+        (request.auth.uid == uid || isAdmin());
     }
 
     // ── Messaggi in Bottiglia ────────────────────────────────
