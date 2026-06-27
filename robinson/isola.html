@@ -284,6 +284,9 @@ function startPresenzeListener() {
         presenzeMap[dati.luogoId] = dati.count || 0;
         if (dati.presenze && dati.presenze.length > 0) {
           await aggiornaOmini(dati.luogoId, dati.presenze);
+        } else if (dati.count > 0) {
+          const fakePresenze = Array.from({ length: dati.count }, () => ({ uid: null }));
+          await aggiornaOmini(dati.luogoId, fakePresenze);
         }
         if (luogoPopup && luogoPopup.id === dati.luogoId) aggiornaPopupCount(dati.count || 0);
       }
