@@ -158,6 +158,36 @@
     }
     /* Offset contenuto per header */
     .tab-panel { padding-top: 16px; }
+    /* Banner scheda salvata */
+    .salvato-banner {
+      background: rgba(26,58,92,0.92); color: #c8860a;
+      text-align: center; padding: 8px 12px;
+      font-family: 'Lora', serif; font-size: 12px; font-style: italic;
+      border-radius: 6px; margin: 8px 12px 0;
+    }
+    .sblocca-admin-btn {
+      background: #c8860a; color: #1a3a5c; border: none;
+      padding: 6px 14px; border-radius: 20px; cursor: pointer;
+      font-family: 'Lora', serif; font-size: 12px;
+      display: block; margin: 6px auto 0;
+    }
+    /* Lucchetto riflessioni */
+    .lucchetto-btn {
+      background: transparent; border: none; font-size: 18px;
+      cursor: pointer; padding: 2px 6px; border-radius: 50%;
+      transition: all 0.2s; -webkit-tap-highlight-color: transparent;
+    }
+    .lucchetto-btn:hover { background: rgba(200,134,10,0.15); }
+    .riflessione-header {
+      display: flex; align-items: center;
+      justify-content: space-between; margin-bottom: 4px;
+    }
+    /* Campo privato (per visitatori) */
+    .campo-privato {
+      background: #f0ebe0; border-left: 3px solid #8a6a3a;
+      padding: 8px 12px; font-style: italic; color: #8a6a3a;
+      font-size: 12px; border-radius: 0 4px 4px 0;
+    }
   </style>
 </head>
 <body>
@@ -272,23 +302,42 @@
 <!-- TAB C: Riflessioni -->
 <div class="tab-panel" id="tab-riflessioni">
   <div class="campo-diario">
-    <label>💡 Oggi ho scoperto che...</label>
+    <div class="riflessione-header">
+      <label>💡 Oggi ho scoperto che...</label>
+      <button class="lucchetto-btn" data-campo="scoperto" onclick="toggleLucchetto(this)" title="Clicca per rendere privato">🔓</button>
+    </div>
     <textarea id="r-scoperto" placeholder="…"></textarea>
+    <input type="hidden" id="r-scoperto_privato" value="false">
   </div>
   <div class="campo-diario">
-    <label>✨ Il momento più bello è stato...</label>
+    <div class="riflessione-header">
+      <label>✨ Il momento più bello è stato...</label>
+      <button class="lucchetto-btn" data-campo="bello" onclick="toggleLucchetto(this)" title="Clicca per rendere privato">🔓</button>
+    </div>
     <textarea id="r-bello" placeholder="…"></textarea>
+    <input type="hidden" id="r-bello_privato" value="false">
   </div>
   <div class="campo-diario">
-    <label>🪨 Lo scoglio incontrato è stato...</label>
+    <div class="riflessione-header">
+      <label>🪨 Lo scoglio incontrato è stato...</label>
+      <button class="lucchetto-btn" data-campo="scoglio" onclick="toggleLucchetto(this)" title="Clicca per rendere privato">🔓</button>
+    </div>
     <textarea id="r-scoglio" placeholder="…"></textarea>
+    <input type="hidden" id="r-scoglio_privato" value="false">
   </div>
   <div class="campo-diario">
-    <label>💎 Il tesoro che mi porto con me è...</label>
+    <div class="riflessione-header">
+      <label>💎 Il tesoro che mi porto con me è...</label>
+      <button class="lucchetto-btn" data-campo="tesoro" onclick="toggleLucchetto(this)" title="Clicca per rendere privato">🔓</button>
+    </div>
     <textarea id="r-tesoro" placeholder="…"></textarea>
+    <input type="hidden" id="r-tesoro_privato" value="false">
   </div>
   <div class="campo-diario">
-    <label>🔥 Falò della sera – cosa brucio stanotte?</label>
+    <div class="riflessione-header">
+      <label>🔥 Falò della sera – cosa brucio stanotte?</label>
+      <button class="lucchetto-btn" data-campo="falo" onclick="toggleLucchetto(this)" title="Clicca per rendere privato">🔓</button>
+    </div>
     <div class="falo-check" id="r-falo">
       <label><input type="checkbox" value="paura"><span>La paura di sbagliare</span></label>
       <label><input type="checkbox" value="rabbia"><span>La rabbia verso qualcuno</span></label>
@@ -296,6 +345,7 @@
       <label><input type="checkbox" value="brutto"><span>Un momento brutto</span></label>
     </div>
     <input type="text" id="r-falo-altro" placeholder="Altro cosa hai lasciato bruciare?" style="margin-top:10px;width:100%;padding:8px 12px;border:1.5px solid #c8b89a;border-radius:8px;font-family:'Lora',serif;font-size:0.88rem;background:var(--post-bg);color:var(--inchiostro);">
+    <input type="hidden" id="r-falo_privato" value="false">
   </div>
   <button class="btn btn-primary" id="btn-salva-riflessioni">💾 Salva riflessioni</button>
   <div id="riflessioni-msg" style="margin-top:8px;font-size:0.8rem;"></div>
@@ -612,7 +662,7 @@
   <a href="naufraghi.html" class="nav-item"><span class="nav-icon">👤</span><span>Naufraghi</span></a>
   <a href="isola.html" class="nav-item"><span class="nav-icon">🗺️</span><span>Isola</span></a>
   <a href="ciurma.html" class="nav-item"><span class="nav-icon">⚓</span><span>Ciurma</span></a>
-  <a href="appunti.html" class="nav-item"><span class="nav-icon">📔</span><span>Appunti</span></a>
+  <a href="diari.html" class="nav-item"><span class="nav-icon">📖</span><span>Diari</span></a>
 </nav>
 
 <script>
@@ -622,7 +672,23 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-// accordion viene inizializzato dopo il caricamento completo (vedi script dopo il modulo)
+function toggleLucchetto(btn) {
+  const campo = btn.dataset.campo;
+  const hiddenInput = document.getElementById('r-' + campo + '_privato');
+  if (!hiddenInput) return;
+  const isPrivato = hiddenInput.value === 'true';
+  if (isPrivato) {
+    hiddenInput.value = 'false';
+    btn.textContent = '🔓';
+    btn.title = 'Visibile a tutti — clicca per rendere privato';
+    btn.style.opacity = '1';
+  } else {
+    hiddenInput.value = 'true';
+    btn.textContent = '🔒';
+    btn.title = "Privato — solo tu e l'admin lo vedete";
+    btn.style.opacity = '0.7';
+  }
+}
 </script>
 <script type="module">
 import { db, auth, ADMIN_UID, CLOUD_NAME, CLOUD_PRESET } from './js/robinson-firebase.js';
@@ -631,7 +697,7 @@ import { aggiungiPunteggio } from './js/robinson-punteggio.js';
 import { esc, fmtDate, fmtDateShort, risolviNome, uploadOne, renderMediaGrid, renderPreview } from './js/robinson-utils.js';
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import {
-  doc, getDoc, setDoc, addDoc, deleteDoc,
+  doc, getDoc, setDoc, addDoc, deleteDoc, updateDoc,
   collection, getDocs, query, orderBy, serverTimestamp, onSnapshot, increment
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { setupNavAuth } from './js/robinson-nav.js';
@@ -836,12 +902,41 @@ async function loadDiario() {
       if (d.media?.length) renderGalleriaTesori(d.media);
 
       if (!isOwner && !isAdmin) lockAllForms();
-      if (!isAdmin && !isOwner) {
-        // Blocca per altri
-        document.getElementById('btn-salva-diario').style.display = 'none';
-      }
+      if (d.salvato === true && (isOwner || isAdmin)) bloccaTutti();
     }
   } catch(_) {}
+}
+
+function bloccaTutti() {
+  const tabPrivate = ['#tab-diario','#tab-emozioni','#tab-riflessioni','#tab-tesori'];
+  tabPrivate.forEach(sel => {
+    document.querySelectorAll(`${sel} input, ${sel} textarea, ${sel} select`).forEach(el => {
+      el.readOnly = true; el.disabled = true; el.style.cursor = 'default';
+    });
+  });
+  document.querySelectorAll('.meteo-opt,.meteo-opt-umore,.stella-star,.falo-check label,.lucchetto-btn').forEach(el => {
+    el.style.pointerEvents = 'none'; el.style.opacity = '0.7';
+  });
+  ['btn-salva-diario','btn-salva-emozioni','btn-salva-riflessioni','btn-carica-tesori','t-audio-rec','btn-salva-carta','btn-sblocca-diario'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.style.display = 'none';
+  });
+
+  const banner = document.createElement('div');
+  banner.className = 'salvato-banner';
+  banner.innerHTML = `✅ Scheda del <strong>${oggiKey}</strong> salvata — non modificabile`;
+  const tabsNav = document.getElementById('tabs-nav');
+  tabsNav.parentNode.insertBefore(banner, tabsNav);
+
+  if (isAdmin) {
+    const btnSblocca = document.createElement('button');
+    btnSblocca.textContent = '🔓 Sblocca per modifica (Admin)';
+    btnSblocca.className = 'sblocca-admin-btn';
+    btnSblocca.onclick = async () => {
+      await updateDoc(doc(db, 'robinson_diari', pageUid, 'posts', oggiKey), { salvato: false });
+      location.reload();
+    };
+    tabsNav.parentNode.insertBefore(btnSblocca, tabsNav);
+  }
 }
 
 function selMeteo(v) {
@@ -905,7 +1000,9 @@ document.getElementById('btn-salva-diario').addEventListener('click', async () =
     titolo: document.getElementById('d-titolo').value.trim(),
     meteo: meteoSel,
     sensazione: document.getElementById('d-sensazione').value.trim(),
-    timestamp: serverTimestamp()
+    timestamp: serverTimestamp(),
+    salvato: true,
+    salvatoAt: serverTimestamp()
   };
   try {
     await setDoc(dRef, data, { merge: true });
@@ -1001,31 +1098,50 @@ document.getElementById('btn-salva-emozioni').addEventListener('click', async ()
 
 // ── Riflessioni ───────────────────────────────────────────────────────────
 function prefillRiflessioni(r) {
-  if (r.scoperto) document.getElementById('r-scoperto').value = r.scoperto;
-  if (r.bello) document.getElementById('r-bello').value = r.bello;
-  if (r.scoglio) document.getElementById('r-scoglio').value = r.scoglio;
-  if (r.tesoro) document.getElementById('r-tesoro').value = r.tesoro;
-  if (r.falo && Array.isArray(r.falo)) {
-    document.querySelectorAll('#r-falo input[type=checkbox]').forEach(cb => {
-      cb.checked = r.falo.includes(cb.value);
-    });
+  // Compatibilità sia con struttura vecchia (stringa) che nuova ({ testo, privato })
+  function valTesto(v) { return typeof v === 'object' && v !== null ? (v.testo || '') : (v || ''); }
+  function valPrivato(v) { return typeof v === 'object' && v !== null ? !!v.privato : false; }
+
+  function setLucchetto(campo, privato) {
+    const inp = document.getElementById('r-' + campo + '_privato');
+    const btn = document.querySelector(`.lucchetto-btn[data-campo="${campo}"]`);
+    if (!inp || !btn) return;
+    inp.value = privato ? 'true' : 'false';
+    btn.textContent = privato ? '🔒' : '🔓';
+    btn.style.opacity = privato ? '0.7' : '1';
+    btn.title = privato ? "Privato — solo tu e l'admin lo vedete" : 'Visibile a tutti — clicca per rendere privato';
   }
-  if (r.faloAltro) document.getElementById('r-falo-altro').value = r.faloAltro;
+
+  ['scoperto','bello','scoglio','tesoro'].forEach(k => {
+    const el = document.getElementById('r-' + k);
+    if (el && r[k] !== undefined) { el.value = valTesto(r[k]); setLucchetto(k, valPrivato(r[k])); }
+  });
+
+  // Falò: vecchio = array, nuovo = { voci, altro, privato }
+  const faloVoci = Array.isArray(r.falo) ? r.falo : (r.falo?.voci || []);
+  document.querySelectorAll('#r-falo input[type=checkbox]').forEach(cb => {
+    cb.checked = faloVoci.includes(cb.value);
+  });
+  const faloAltro = r.faloAltro || (r.falo?.altro) || '';
+  if (faloAltro) document.getElementById('r-falo-altro').value = faloAltro;
+  setLucchetto('falo', valPrivato(r.falo));
 }
 
 document.getElementById('btn-salva-riflessioni').addEventListener('click', async () => {
   if (!isOwner && !isAdmin) return;
-  const falo = Array.from(document.querySelectorAll('#r-falo input[type=checkbox]:checked')).map(c => c.value);
+  const getPrivato = campo => document.getElementById('r-' + campo + '_privato')?.value === 'true';
+  const faloVoci = Array.from(document.querySelectorAll('#r-falo input[type=checkbox]:checked')).map(c => c.value);
   const riflessioni = {
-    scoperto: document.getElementById('r-scoperto').value.trim(),
-    bello: document.getElementById('r-bello').value.trim(),
-    scoglio: document.getElementById('r-scoglio').value.trim(),
-    tesoro: document.getElementById('r-tesoro').value.trim(),
-    falo,
-    faloAltro: document.getElementById('r-falo-altro').value.trim()
+    scoperto: { testo: document.getElementById('r-scoperto').value.trim(), privato: getPrivato('scoperto') },
+    bello:    { testo: document.getElementById('r-bello').value.trim(),    privato: getPrivato('bello') },
+    scoglio:  { testo: document.getElementById('r-scoglio').value.trim(),  privato: getPrivato('scoglio') },
+    tesoro:   { testo: document.getElementById('r-tesoro').value.trim(),   privato: getPrivato('tesoro') },
+    falo:     { voci: faloVoci, altro: document.getElementById('r-falo-altro').value.trim(), privato: getPrivato('falo') }
   };
   try {
-    await setDoc(doc(db, 'robinson_diari', pageUid, 'posts', oggiKey), { riflessioni, timestamp: serverTimestamp() }, { merge: true });
+    await setDoc(doc(db, 'robinson_diari', pageUid, 'posts', oggiKey),
+      { riflessioni, timestamp: serverTimestamp(), salvato: true, salvatoAt: serverTimestamp() },
+      { merge: true });
     const msg = document.getElementById('riflessioni-msg');
     msg.style.color = 'var(--oro)';
     msg.textContent = '✅ Salvato!';

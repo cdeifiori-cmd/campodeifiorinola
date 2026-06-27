@@ -167,7 +167,13 @@ service cloud.firestore {
     match /robinson_diari/{uid}/posts/{postId} {
       allow read: if isLoggedIn();
       allow create: if isLoggedIn() && request.auth.uid == uid;
-      allow update, delete: if isLoggedIn() && (isOwner(uid) || isAdmin());
+      allow update: if isLoggedIn() && (
+        isAdmin() ||
+        (isOwner(uid) && !(
+          'salvato' in resource.data && resource.data.salvato == true
+        ))
+      );
+      allow delete: if isAdmin();
 
       match /reactions/{userId} {
         allow read: if isLoggedIn();
