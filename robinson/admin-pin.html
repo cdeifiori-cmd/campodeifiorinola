@@ -97,6 +97,27 @@
     <div class="stat-card"><div class="stat-num" id="st-last" style="font-size:0.9rem;">–</div><div class="stat-lbl">Ultimo accesso</div></div>
   </div>
 
+  <!-- Form aggiungi naufrago -->
+  <div style="background:#fff;border:1.5px solid var(--carta-scura);border-radius:12px;padding:18px 20px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,0.05);">
+    <div style="font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;color:var(--navy);margin-bottom:14px;">➕ Aggiungi nuovo naufrago</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+      <div style="flex:2;min-width:160px;">
+        <label style="font-size:0.72rem;color:var(--muted);display:block;margin-bottom:4px;font-weight:600;">NOME COMPLETO</label>
+        <input type="text" id="new-nome" placeholder="Es. Mario Rossi" style="width:100%;padding:10px 12px;border:1.5px solid #c8b89a;border-radius:8px;font-family:'Lora',serif;font-size:0.9rem;outline:none;">
+      </div>
+      <div style="min-width:110px;">
+        <label style="font-size:0.72rem;color:var(--muted);display:block;margin-bottom:4px;font-weight:600;">PIN</label>
+        <div style="display:flex;gap:6px;">
+          <input type="tel" id="new-pin" placeholder="0000" maxlength="6" inputmode="numeric" pattern="[0-9]*"
+            style="width:80px;padding:10px 8px;border:1.5px solid #c8b89a;border-radius:8px;font-family:monospace;font-size:1rem;letter-spacing:4px;text-align:center;outline:none;">
+          <button id="new-genera" style="padding:10px 10px;background:var(--carta-scura);border:1.5px solid #c8b89a;border-radius:8px;cursor:pointer;font-size:1rem;" title="Genera PIN casuale">🎲</button>
+        </div>
+      </div>
+      <button id="new-aggiungi" style="padding:10px 18px;background:var(--navy);color:var(--oro);border:none;border-radius:8px;cursor:pointer;font-family:'Lora',serif;font-size:0.9rem;font-weight:600;white-space:nowrap;">➕ Aggiungi naufrago</button>
+    </div>
+    <div id="new-error" style="margin-top:8px;font-size:0.8rem;color:var(--rosso);min-height:18px;"></div>
+  </div>
+
   <!-- Tabella -->
   <div class="pin-table-wrap">
     <table class="pin-table">
@@ -465,6 +486,79 @@ async function salvaPin() {
   }
   btnSalva.disabled = false; btnSalva.textContent = '💾 Salva';
 }
+
+// ── Aggiungi nuovo naufrago ───────────────────────────────────────────────────
+document.getElementById('new-genera').addEventListener('click', () => {
+  let pin, t = 0;
+  do { pin = String(Math.floor(1000 + Math.random() * 9000)); t++; }
+  while (pinLookup[pin] && t < 200);
+  document.getElementById('new-pin').value = pin;
+  document.getElementById('new-error').textContent = '';
+});
+
+document.getElementById('new-aggiungi').addEventListener('click', async () => {
+  const nome = document.getElementById('new-nome').value.trim();
+  const pin = document.getElementById('new-pin').value.trim();
+  const errEl = document.getElementById('new-error');
+  errEl.textContent = '';
+
+  if (!nome) { errEl.textContent = 'Inserisci il nome del naufrago.'; return; }
+  if (!/^\d{4,6}$/.test(pin)) { errEl.textContent = 'PIN deve essere 4-6 cifre.'; return; }
+  if (pinLookup[pin]) { errEl.textContent = 'Questo PIN è già usato.'; return; }
+
+  const btn = document.getElementById('new-aggiungi');
+  btn.disabled = true; btn.textContent = '⏳ Creazione...';
+
+  try {
+    const email = nomeToEmail(nome);
+    const password = 'RR' + pin;
+
+    // Crea account Firebase Auth via REST
+    const res = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${API_KEY}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password, returnSecureToken: true })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+    const uid = data.localId;
+
+    // robinson_naufraghi
+    await setDoc(doc(db, 'robinson_naufraghi', uid), {
+      uid, nome, ruolo: 'naufrago', attivo: true, fotoProfilo: ''
+    });
+    // utenti
+    await setDoc(doc(db, 'utenti', uid), {
+      uid, nome, ruolo: 'naufrago', email
+    });
+    // robinson_pin
+    await setDoc(doc(db, 'robinson_pin', uid), {
+      uid, nome, pin, email,
+      createdAt: serverTimestamp(), lastLogin: null
+    });
+    // robinson_pin_lookup
+    await setDoc(doc(db, 'robinson_pin_lookup', pin), { uid, email, password });
+
+    // Aggiorna stato locale e ricarica tabella
+    pinLookup[pin] = uid;
+    pinMap[uid] = { uid, _docId: uid, nome, pin, email, lastLogin: null, createdAt: null };
+    naufraghi.push({ uid, nome, foto: '' });
+    naufraghi.sort((a, b) => a.nome.localeCompare(b.nome, 'it'));
+
+    document.getElementById('new-nome').value = '';
+    document.getElementById('new-pin').value = '';
+    errEl.style.color = 'var(--verde)';
+    errEl.textContent = `✅ ${nome} aggiunto con PIN ${pin}`;
+    setTimeout(() => { errEl.textContent = ''; errEl.style.color = 'var(--rosso)'; }, 3000);
+
+    renderStats();
+    renderTable();
+
+  } catch(e) {
+    errEl.textContent = 'Errore: ' + e.message;
+  }
+  btn.disabled = false; btn.textContent = '➕ Aggiungi naufrago';
+});
 </script>
 </body>
 </html>
