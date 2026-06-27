@@ -192,9 +192,9 @@ const luoghiIsola = [
   { id:"tramonto-gratitudine", nome:"Tramonto della Gratitudine", emoji:"🌅", x:72, y:88 }
 ];
 
-// Mostra messaggio fuori orario (05:00-22:59)
-function isOraCompilazione() { const h = new Date().getHours(); return h >= 23 || h < 5; }
-if (!isOraCompilazione()) document.getElementById('msg-orario').style.display = '';
+// TODO: ripristinare controllo orario prima del lancio
+function isOraCompilazione() { return true; } // temporaneamente sempre accessibile per test
+document.getElementById('msg-orario').style.display = 'none';
 
 function getDataNotte() {
   const now = new Date();

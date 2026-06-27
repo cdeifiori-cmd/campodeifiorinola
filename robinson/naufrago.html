@@ -1279,16 +1279,17 @@ function getDataNotte() {
   return now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
 }
 
-function isOraIsola() { const h = new Date().getHours(); return h >= 23 || h < 5; }
+// TODO: ripristinare controllo orario prima del lancio
+function isOraIsola() { return true; } // temporaneamente sempre accessibile per test
 
 async function loadIsola() {
   initIsolaMappa();
   loadForziereIsola();
 
-  // Fuori orario: mostra messaggio
-  if (!isOraIsola()) {
-    document.getElementById('n-isola-orario-msg').style.display = '';
-  }
+  // Fuori orario: messaggio disabilitato per test
+  // if (!isOraIsola()) {
+  //   document.getElementById('n-isola-orario-msg').style.display = '';
+  // }
 
   // Controlla se già salvato stanotte
   const dataNotte = getDataNotte();
