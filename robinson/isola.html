@@ -81,16 +81,25 @@
     }
     .hotspot:hover { background: rgba(200,134,10,0.15) !important; border-radius: 50%; }
 
-    /* ── Badge presenze ── */
-    .presenza-badge {
-      position: absolute; top: -8px; right: -8px;
-      background: #1a3a5c; color: #c8860a;
-      border-radius: 50%; width: 20px; height: 20px;
-      font-size: 11px; font-weight: bold;
-      display: flex; align-items: center; justify-content: center;
-      font-family: 'Playfair Display', serif;
-      border: 1.5px solid #c8860a; pointer-events: none;
+    /* ── Omini presenze ── */
+    .omini-container {
+      position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
+      display: flex; flex-wrap: wrap; justify-content: center; gap: 1px;
+      max-width: 80px; z-index: 20; pointer-events: none;
     }
+    .omino {
+      font-size: clamp(12px, 3vw, 18px);
+      animation: pulse-omino 1.5s ease-in-out infinite;
+      filter: drop-shadow(0 1px 3px rgba(0,0,0,0.6));
+    }
+    @keyframes pulse-omino {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.6; transform: scale(0.85); }
+    }
+    .omino:nth-child(2) { animation-delay: 0.3s; }
+    .omino:nth-child(3) { animation-delay: 0.6s; }
+    .omino:nth-child(4) { animation-delay: 0.9s; }
+    .omino:nth-child(5) { animation-delay: 1.2s; }
 
     /* ── Popup leggero ── */
     .popup-overlay {
@@ -170,7 +179,10 @@
 import { db, auth } from './js/robinson-firebase.js';
 import { setupNavAuth } from './js/robinson-nav.js';
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import {
+  doc, getDoc, setDoc, getDocs, collection, query, where,
+  onSnapshot, arrayUnion, increment, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 setupNavAuth('nav-auth-slot');
 
@@ -219,32 +231,97 @@ function buildHotspot() {
   luoghiIsola.forEach(luogo => {
     const btn = document.createElement('button');
     btn.className = 'hotspot';
+    btn.dataset.id = luogo.id;
     btn.style.left = luogo.x + '%';
     btn.style.top = luogo.y + '%';
     btn.title = luogo.nome;
     btn.setAttribute('aria-label', luogo.nome);
     btn.textContent = luogo.emoji;
-    const badge = document.createElement('span');
-    badge.className = 'presenza-badge';
-    badge.id = 'hcount-' + luogo.id;
-    badge.style.display = 'none';
-    btn.appendChild(badge);
     btn.addEventListener('click', () => apriPopup(luogo));
     inner.appendChild(btn);
   });
 }
 
+async function getFigura(uid) {
+  try {
+    const snap = await getDoc(doc(db, 'robinson_naufraghi', uid, 'carta_identita', 'dati'));
+    if (snap.exists()) {
+      const gen = snap.data().identificazione;
+      if (gen === 'ragazzo') return '🧍‍♂️';
+      if (gen === 'ragazza') return '🧍‍♀️';
+    }
+  } catch(e) {}
+  return '🧍';
+}
+
+async function aggiornaOmini(luogoId, presenze) {
+  const hotspot = document.querySelector(`.hotspot[data-id="${luogoId}"]`);
+  if (!hotspot) return;
+  const old = hotspot.querySelector('.omini-container');
+  if (old) old.remove();
+  if (!presenze || presenze.length === 0) return;
+  const container = document.createElement('div');
+  container.className = 'omini-container';
+  for (const p of presenze) {
+    const figura = await getFigura(p.uid);
+    const omino = document.createElement('span');
+    omino.className = 'omino';
+    omino.textContent = figura;
+    container.appendChild(omino);
+  }
+  hotspot.appendChild(container);
+}
+
 function startPresenzeListener() {
   const data = getDataNotte();
-  luoghiIsola.forEach(luogo => {
-    onSnapshot(doc(db, 'robinson_isola_presenze', data + '_' + luogo.id), snap => {
-      const count = snap.exists() ? (snap.data().count || 0) : 0;
-      presenzeMap[luogo.id] = count;
-      const el = document.getElementById('hcount-' + luogo.id);
-      if (el) { el.textContent = count; el.style.display = count >= 1 ? 'flex' : 'none'; }
-      if (luogoPopup && luogoPopup.id === luogo.id) aggiornaPopupCount(count);
+  onSnapshot(
+    query(collection(db, 'robinson_isola_presenze'), where('data', '==', data)),
+    async (snap) => {
+      document.querySelectorAll('.omini-container').forEach(el => el.remove());
+      Object.keys(presenzeMap).forEach(k => delete presenzeMap[k]);
+      for (const d of snap.docs) {
+        const dati = d.data();
+        presenzeMap[dati.luogoId] = dati.count || 0;
+        if (dati.presenze && dati.presenze.length > 0) {
+          await aggiornaOmini(dati.luogoId, dati.presenze);
+        }
+        if (luogoPopup && luogoPopup.id === dati.luogoId) aggiornaPopupCount(dati.count || 0);
+      }
+    }
+  );
+  scheduleReset();
+}
+
+async function salvaArchivioNotte() {
+  const dataNotte = getDataNotte();
+  try {
+    const snap = await getDocs(query(
+      collection(db, 'robinson_isola_presenze'),
+      where('data', '==', dataNotte)
+    ));
+    const archivio = {};
+    snap.forEach(d => {
+      const dati = d.data();
+      archivio[dati.luogoId] = { count: dati.count || 0, presenze: dati.presenze || [] };
     });
-  });
+    await setDoc(
+      doc(db, 'robinson_isola_archivio', dataNotte),
+      { data: dataNotte, luoghi: archivio, salvatoAt: serverTimestamp() }
+    );
+  } catch(e) { console.error('Archivio notte:', e); }
+}
+
+function scheduleReset() {
+  const ora = new Date();
+  const reset = new Date();
+  reset.setHours(3, 0, 0, 0);
+  if (ora >= reset) reset.setDate(reset.getDate() + 1);
+  const msToReset = reset - ora;
+  setTimeout(async () => {
+    await salvaArchivioNotte();
+    document.querySelectorAll('.omini-container').forEach(el => el.remove());
+    console.log('🌅 Notte conclusa, omini rimossi.');
+  }, msToReset);
 }
 
 function apriPopup(luogo) {
