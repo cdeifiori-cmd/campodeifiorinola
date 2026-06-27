@@ -98,6 +98,13 @@
       padding:10px 14px; font-size:0.82rem; color:var(--muted);
       text-align:center; font-style:italic; margin-bottom:10px;
     }
+    /* Legenda isola real-time */
+    .isola-legenda { background:rgba(26,58,92,0.85); border-radius:8px; padding:10px 14px; margin-bottom:10px; border:1px solid #c8860a40; }
+    .legenda-titolo { font-size:11px; color:#c8860a; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px; font-family:'Lora',serif; }
+    .legenda-row { display:flex; justify-content:space-between; align-items:center; padding:4px 0; border-bottom:1px solid #ffffff15; font-family:'Lora',serif; font-size:13px; color:#f5f0e8; }
+    .legenda-row:last-child { border-bottom:none; }
+    .legenda-count { background:#c8860a; color:#1a3a5c; border-radius:50%; width:22px; height:22px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:bold; font-family:'Playfair Display',serif; flex-shrink:0; }
+    .legenda-empty { font-size:12px; color:#a0b8d0; font-style:italic; text-align:center; padding:6px 0; }
     /* Forziere isola */
     .forziere-isola-title {
       font-family:'Playfair Display',serif; font-size:1rem; font-weight:700;
@@ -421,6 +428,12 @@
 <div class="tab-panel" id="tab-isola">
   <div id="n-isola-orario-msg" class="n-isola-orario-msg" style="display:none;">🌅 Puoi scegliere il tuo luogo dalle 23:00 alle 05:00</div>
   <div id="n-isola-gia-scelto" class="n-isola-msg" style="display:none;"></div>
+
+  <!-- Legenda presenze real-time -->
+  <div class="isola-legenda">
+    <div class="legenda-titolo">🏝️ Dove sono stanotte</div>
+    <div id="isola-legenda-body"><div class="legenda-empty">Nessun naufrago ancora stanotte...</div></div>
+  </div>
 
   <div class="n-mappa-container" id="n-mappa-container">
     <div class="n-zoom-controls">
@@ -1357,17 +1370,40 @@ async function loadIsola() {
     buildHotspotNaufrago(null);
   }
 
-  // Ascolta presenze in real-time
+  // Ascolta presenze in real-time — aggiorna badge hotspot E legenda
   isolaPresenzeUnsubs.forEach(u => u());
   isolaPresenzeUnsubs = [];
+  const _isolaPresenze = {};
   luoghiIsola.forEach(luogo => {
     const unsub = onSnapshot(doc(db, 'robinson_isola_presenze', dataNotte + '_' + luogo.id), snap => {
       const count = snap.exists() ? (snap.data().count || 0) : 0;
       const el = document.getElementById('ni-hcount-' + luogo.id);
       if (el) { el.textContent = count; el.style.display = count >= 1 ? 'flex' : 'none'; }
+      _isolaPresenze[luogo.id] = count;
+      aggiornaLegendaIsola(_isolaPresenze);
     });
     isolaPresenzeUnsubs.push(unsub);
   });
+}
+
+const _luoghiInfo = Object.fromEntries(
+  (typeof luoghiIsola !== 'undefined' ? luoghiIsola : []).map(l => [l.id, { emoji: l.emoji, nome: l.nome }])
+);
+
+function aggiornaLegendaIsola(presenze) {
+  const legenda = document.getElementById('isola-legenda-body');
+  if (!legenda) return;
+  const attivi = Object.entries(presenze)
+    .filter(([, c]) => c > 0)
+    .sort(([, a], [, b]) => b - a);
+  if (!attivi.length) {
+    legenda.innerHTML = '<div class="legenda-empty">Nessun naufrago ancora stanotte...</div>';
+    return;
+  }
+  legenda.innerHTML = attivi.map(([id, count]) => {
+    const info = _luoghiInfo[id] || { emoji: '🏝️', nome: id };
+    return `<div class="legenda-row"><span>${info.emoji} ${esc(info.nome)}</span><span class="legenda-count">${count}</span></div>`;
+  }).join('');
 }
 
 function mostraIsolaGiaSalvata(d) {
