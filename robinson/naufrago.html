@@ -77,6 +77,7 @@
       border:none !important; padding:0; cursor:pointer;
       font-size:0 !important; color:transparent !important;
       -webkit-tap-highlight-color:transparent; z-index:10; outline:none;
+      overflow:visible;
     }
     .n-hotspot:hover { background:rgba(200,134,10,0.15) !important; border-radius:50%; }
     .n-hotspot.scelto { background:rgba(200,134,10,0.3) !important; border-radius:50%; border:2px solid #c8860a !important; }
@@ -1440,6 +1441,13 @@ function buildHotspotNaufrago(luogoSceltoId) {
     });
     inner.appendChild(btn);
   });
+  // DEBUG TEST: forza tutti i badge visibili con "1"
+  setTimeout(() => {
+    document.querySelectorAll('.n-presenza-badge').forEach(b => {
+      b.textContent = '1';
+      b.style.display = 'flex';
+    });
+  }, 300);
 }
 
 function apriModalIsola(luogo) {
