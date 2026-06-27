@@ -51,6 +51,8 @@
     .btn-azione:hover { background:var(--carta-scura); }
     .btn-azione.crea { border-color:var(--oro); color:#fff; background:var(--oro); font-weight:600; }
     .btn-azione.crea:hover { background:#b57508; }
+    .btn-elimina { background:transparent; border:1px solid #cc3333; color:#cc3333; border-radius:12px; padding:4px 10px; font-size:11px; cursor:pointer; font-family:'Lora',serif; }
+    .btn-elimina:hover { background:#cc333320; }
 
     /* Modal */
     .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:500; align-items:center; justify-content:center; }
@@ -298,10 +300,13 @@ function renderTable() {
 
     // Azioni: usa dataset invece di stringhe inline per evitare problemi con apostrofi
     const btnId = `btn-${n.uid}`;
+    const elimId = `del-${n.uid}`;
     const azioniHtml = haPin
       ? `<button class="btn-azione" onclick="copiaPIN('${esc(pd.pin)}')">📋 Copia</button>
-         <button class="btn-azione" id="${btnId}" data-uid="${n.uid}" data-nome="${esc(n.nome)}" data-change="1">🔄 Cambia</button>`
-      : `<button class="btn-azione crea" id="${btnId}" data-uid="${n.uid}" data-nome="${esc(n.nome)}" data-change="0">➕ Crea PIN</button>`;
+         <button class="btn-azione" id="${btnId}" data-uid="${n.uid}" data-nome="${esc(n.nome)}" data-change="1">🔄 Cambia</button>
+         <button class="btn-elimina" id="${elimId}" data-uid="${n.uid}" data-nome="${esc(n.nome)}">🗑️ Elimina</button>`
+      : `<button class="btn-azione crea" id="${btnId}" data-uid="${n.uid}" data-nome="${esc(n.nome)}" data-change="0">➕ Crea PIN</button>
+         <button class="btn-elimina" id="${elimId}" data-uid="${n.uid}" data-nome="${esc(n.nome)}">🗑️ Elimina</button>`;
 
     tr.innerHTML = `
       <td>${avatarHtml}</td>
@@ -317,6 +322,8 @@ function renderTable() {
     if (btn) btn.addEventListener('click', () => {
       aprirModal(btn.dataset.uid, btn.dataset.nome, btn.dataset.change === '1');
     });
+    const elimBtn = document.getElementById(elimId);
+    if (elimBtn) elimBtn.addEventListener('click', () => eliminaNaufrago(elimBtn.dataset.uid, elimBtn.dataset.nome));
   });
 }
 
@@ -485,6 +492,43 @@ async function salvaPin() {
     errEl.textContent = e.message;
   }
   btnSalva.disabled = false; btnSalva.textContent = '💾 Salva';
+}
+
+// ── Elimina naufrago ──────────────────────────────────────────────────────────
+async function eliminaNaufrago(uid, nome) {
+  if (!confirm(`Sei sicuro di voler eliminare ${nome}?\nQuesta azione elimina il profilo Robinson ma NON l'account su campodeifiori.org`)) return;
+
+  try {
+    const pd = pinMap[uid];
+
+    // Elimina robinson_pin_lookup/{pin}
+    if (pd?.pin) {
+      try { await deleteDoc(doc(db, 'robinson_pin_lookup', pd.pin)); } catch(_) {}
+    }
+    // Elimina robinson_pin/{uid}
+    const pinUid = pd?.uid || uid;
+    try { await deleteDoc(doc(db, 'robinson_pin', pinUid)); } catch(_) {}
+    // Elimina robinson_naufraghi/{uid}
+    try { await deleteDoc(doc(db, 'robinson_naufraghi', uid)); } catch(_) {}
+    // Elimina utenti/{uid} solo se ruolo === 'naufrago'
+    try {
+      const uSnap = await getDoc(doc(db, 'utenti', pinUid));
+      if (uSnap.exists() && uSnap.data().ruolo === 'naufrago') {
+        await deleteDoc(doc(db, 'utenti', pinUid));
+      }
+    } catch(_) {}
+
+    // Aggiorna stato locale
+    if (pd?.pin) delete pinLookup[pd.pin];
+    delete pinMap[uid];
+    const idx = naufraghi.findIndex(n => n.uid === uid);
+    if (idx !== -1) naufraghi.splice(idx, 1);
+
+    renderStats();
+    renderTable();
+  } catch(e) {
+    alert('Errore durante l\'eliminazione: ' + e.message);
+  }
 }
 
 // ── Aggiungi nuovo naufrago ───────────────────────────────────────────────────
