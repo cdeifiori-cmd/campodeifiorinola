@@ -168,8 +168,8 @@
 import { db, auth, ADMIN_UID } from './js/robinson-firebase.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import {
-  collection, collectionGroup, getDocs, getDoc, doc,
-  query, orderBy, where
+  collection, getDocs, getDoc, doc,
+  query, orderBy, limit
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { esc } from './js/robinson-utils.js';
 
@@ -255,33 +255,53 @@ async function caricaDati() {
   const { da, a } = getDateRange();
 
   try {
-    // 1. Carica tutti gli utenti
-    const utentiSnap = await getDocs(collection(db, 'utenti'));
+    // 1. Carica lista uid da robinson_pin e robinson_naufraghi
+    const [pinSnap, naufraghiSnap] = await Promise.all([
+      getDocs(collection(db, 'robinson_pin')),
+      getDocs(collection(db, 'robinson_naufraghi'))
+    ]);
     utentiMap = {};
-    utentiSnap.forEach(d => {
-      utentiMap[d.id] = { nome: d.data().nome || d.data().email || d.id, fotoProfiloUrl: d.data().fotoProfiloUrl || '' };
+    naufraghiSnap.forEach(d => {
+      const data = d.data();
+      utentiMap[d.id] = {
+        nome: data.nome || data.email || d.id,
+        fotoProfiloUrl: data.fotoRobinson || data.fotoProfilo || data.fotoProfiloUrl || ''
+      };
+    });
+    // Integra con robinson_pin per nomi mancanti
+    pinSnap.forEach(d => {
+      if (!utentiMap[d.id]) {
+        utentiMap[d.id] = { nome: d.data().nome || d.id, fotoProfiloUrl: '' };
+      }
     });
 
-    // 2. Carica tutte le notti (collectionGroup 'notti' sotto robinson_isola)
-    const nottiSnap = await getDocs(collectionGroup(db, 'notti'));
+    const uids = pinSnap.docs.map(d => d.id);
+
+    // 2. Query per-uid su robinson_isola/{uid}/notti (evita collectionGroup)
     allNotti = [];
-    nottiSnap.forEach(d => {
-      const data = d.id; // YYYY-MM-DD
-      if (data < da || data > a) return;
-      const uid = d.ref.parent.parent.id;
-      const row = d.data();
-      allNotti.push({
-        uid, data,
-        luogoId: row.luogoId || '',
-        luogoNome: row.luogoNome || (LUOGO_MAP[row.luogoId]?.nome ?? row.luogoId),
-        meteo: row.meteo || '',
-        pensiero: row.pensiero || '',
-        fotoUrl: row.fotoUrl || '',
-        videoUrl: row.videoUrl || '',
-        nome: utentiMap[uid]?.nome || 'Anonimo',
-        fotoProfiloUrl: utentiMap[uid]?.fotoProfiloUrl || ''
-      });
-    });
+    await Promise.all(uids.map(async uid => {
+      try {
+        const nottiSnap = await getDocs(
+          query(collection(db, 'robinson_isola', uid, 'notti'), orderBy('timestamp', 'desc'), limit(60))
+        );
+        nottiSnap.forEach(d => {
+          const data = d.id; // YYYY-MM-DD
+          if (data < da || data > a) return;
+          const row = d.data();
+          allNotti.push({
+            uid, data,
+            luogoId: row.luogoId || '',
+            luogoNome: row.luogoNome || (LUOGO_MAP[row.luogoId]?.nome ?? row.luogoId),
+            meteo: row.meteo || '',
+            pensiero: row.pensiero || '',
+            fotoUrl: row.fotoUrl || '',
+            videoUrl: row.videoUrl || '',
+            nome: utentiMap[uid]?.nome || 'Anonimo',
+            fotoProfiloUrl: utentiMap[uid]?.fotoProfiloUrl || ''
+          });
+        });
+      } catch(_) { /* uid senza notti isola, skip */ }
+    }));
 
     // 3. Contatore
     const nNaufraghi = new Set(allNotti.map(n => n.uid)).size;
