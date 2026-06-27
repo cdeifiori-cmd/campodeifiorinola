@@ -167,7 +167,8 @@ import { db, auth, ADMIN_UID } from './js/robinson-firebase.js';
 import { requireAuth } from './js/robinson-auth.js';
 import { esc, fmtDate } from './js/robinson-utils.js';
 import {
-  collection, getDocs, getDoc, doc, setDoc, deleteDoc, serverTimestamp
+  collection, getDocs, getDoc, doc, setDoc, deleteDoc, serverTimestamp,
+  query, where
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 const API_KEY = 'AIzaSyC18lzwqhYcW29TsEO6Oy4Bqvb2PMBUmAg';
@@ -541,27 +542,47 @@ document.getElementById('new-aggiungi').addEventListener('click', async () => {
   btn.disabled = true; btn.textContent = '⏳ Creazione...';
 
   try {
-    const email = nomeToEmail(nome);
     const password = 'RR' + pin;
 
-    // Crea account Firebase Auth via REST
-    const res = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${API_KEY}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password, returnSecureToken: true })
-    });
-    const data = await res.json();
-    if (data.error) throw new Error(data.error.message);
-    const uid = data.localId;
+    // Cerca se esiste già un utente con questo nome in utenti
+    const existingSnap = await getDocs(query(
+      collection(db, 'utenti'),
+      where('nome', '>=', nome),
+      where('nome', '<=', nome + '')
+    ));
+    // Filtra match esatto (la query range può restituire prefissi)
+    const existingDoc = existingSnap.docs.find(d => d.data().nome === nome && !d.data().ruolo?.includes('admin'));
 
-    // robinson_naufraghi
+    let uid, email, isExisting;
+    if (existingDoc) {
+      // USA UID ESISTENTE — non creare nuovo account
+      uid = existingDoc.id;
+      email = existingDoc.data().email || nomeToEmail(nome);
+      isExisting = true;
+      // Aggiorna ruolo a naufrago se non già impostato
+      await setDoc(doc(db, 'utenti', uid), { ruolo: 'naufrago' }, { merge: true });
+    } else {
+      // CREA NUOVO ACCOUNT Firebase Auth via REST
+      email = nomeToEmail(nome);
+      const res = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${API_KEY}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, returnSecureToken: true })
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error.message);
+      uid = data.localId;
+      isExisting = false;
+      // Crea profilo utenti solo per account nuovi
+      await setDoc(doc(db, 'utenti', uid), {
+        uid, nome, ruolo: 'naufrago', email
+      });
+    }
+
+    // robinson_naufraghi (merge per non sovrascrivere foto esistente)
     await setDoc(doc(db, 'robinson_naufraghi', uid), {
-      uid, nome, ruolo: 'naufrago', attivo: true, fotoProfilo: ''
-    });
-    // utenti
-    await setDoc(doc(db, 'utenti', uid), {
-      uid, nome, ruolo: 'naufrago', email
-    });
+      uid, nome, ruolo: 'naufrago', attivo: true
+    }, { merge: true });
     // robinson_pin
     await setDoc(doc(db, 'robinson_pin', uid), {
       uid, nome, pin, email,
@@ -579,8 +600,10 @@ document.getElementById('new-aggiungi').addEventListener('click', async () => {
     document.getElementById('new-nome').value = '';
     document.getElementById('new-pin').value = '';
     errEl.style.color = 'var(--verde)';
-    errEl.textContent = `✅ ${nome} aggiunto con PIN ${pin}`;
-    setTimeout(() => { errEl.textContent = ''; errEl.style.color = 'var(--rosso)'; }, 3000);
+    errEl.textContent = isExisting
+      ? `✅ ${nome} collegato con PIN ${pin} (account esistente)`
+      : `✅ ${nome} aggiunto con PIN ${pin}`;
+    setTimeout(() => { errEl.textContent = ''; errEl.style.color = 'var(--rosso)'; }, 4000);
 
     renderStats();
     renderTable();
