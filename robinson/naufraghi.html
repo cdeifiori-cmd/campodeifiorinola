@@ -104,12 +104,11 @@
 </nav>
 
 <script type="module">
-import { db, auth, ADMIN_UID } from './js/robinson-firebase.js';
+import { db } from './js/robinson-firebase.js';
 import { requireAuth } from './js/robinson-auth.js';
 import { setupNavAuth } from './js/robinson-nav.js';
-import { esc } from './js/robinson-utils.js';
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { esc, getFotoRobinson } from './js/robinson-utils.js';
+import { collection, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { init as modalInit, apriModal } from './js/robinson-modal-profilo.js';
 
 setupNavAuth('nav-auth-slot');
@@ -124,35 +123,30 @@ requireAuth(async user => {
 async function loadNaufraghi() {
   const grid = document.getElementById('grid');
   try {
-    const [snapUtenti, snapRobinson] = await Promise.all([
-      getDocs(query(collection(db, 'utenti'), orderBy('nome'))),
-      getDocs(collection(db, 'robinson_naufraghi'))
-    ]);
-    const robinsonMap = {};
-    snapRobinson.docs.forEach(d => { robinsonMap[d.id] = d.data(); });
-    const uidsVisti = new Set();
-    allNaufraghi = snapUtenti.docs
-      .map(d => ({ uid: d.id, ...d.data(), ...(robinsonMap[d.id] || {}) }))
-      .filter(u => u.ruolo !== 'admin' && u.ruolo !== 'ciurma')
-      .filter(u => { if (uidsVisti.has(u.uid)) return false; uidsVisti.add(u.uid); return true; });
+    const snap = await getDocs(collection(db, 'robinson_pin'));
+    const entries = await Promise.all(snap.docs.map(async d => {
+      const data = d.data();
+      const uid = d.id;
+      const foto = await getFotoRobinson(uid);
+      return { uid, nome: data.nome || uid, foto: foto || '' };
+    }));
+    allNaufraghi = entries
+      .filter(n => !!n.nome)
+      .sort((a, b) => a.nome.localeCompare(b.nome, 'it'));
     renderGrid(allNaufraghi);
   } catch(e) {
-    grid.innerHTML = `<div style="grid-column:span 2;text-align:center;padding:20px;color:var(--rosso);">Errore: ${esc(e.message)}</div>`;
+    grid.innerHTML = `<div style="grid-column:span 3;text-align:center;padding:20px;color:var(--rosso);">Errore: ${esc(e.message)}</div>`;
   }
 }
 
 function renderGrid(lista) {
   const grid = document.getElementById('grid');
-  if (!lista.length) { grid.innerHTML = '<div class="empty-msg" style="grid-column:span 2;">Nessun naufrago trovato.</div>'; return; }
+  if (!lista.length) { grid.innerHTML = '<div class="empty-msg" style="grid-column:span 3;">Nessun naufrago trovato.</div>'; return; }
   grid.innerHTML = lista.map(n => {
-    const foto = n.fotoRobinson || n.fotoProfilo || n.photoURL || '';
-    const nome = n.nome || n.displayName || 'Naufrago';
-    const soprannome = n.soprannome || '';
     return `<div class="card-naufrago" data-uid="${esc(n.uid)}" style="cursor:pointer;">
-      <div class="card-foto">${foto ? `<img src="${esc(foto)}" alt="${esc(nome)}" loading="lazy">` : '⚓'}</div>
+      <div class="card-foto">${n.foto ? `<img src="${esc(n.foto)}" alt="${esc(n.nome)}" loading="lazy">` : '⚓'}</div>
       <div class="card-info">
-        <div class="card-nome">${esc(nome)}</div>
-        ${soprannome ? `<div class="card-ruolo">"${esc(soprannome)}"</div>` : ''}
+        <div class="card-nome">${esc(n.nome)}</div>
       </div>
     </div>`;
   }).join('');
@@ -163,7 +157,7 @@ function renderGrid(lista) {
 
 document.getElementById('search-inp').addEventListener('input', e => {
   const q = e.target.value.toLowerCase();
-  renderGrid(allNaufraghi.filter(n => (n.nome || '').toLowerCase().includes(q) || (n.soprannome || '').toLowerCase().includes(q)));
+  renderGrid(allNaufraghi.filter(n => n.nome.toLowerCase().includes(q)));
 });
 </script>
 </body>
