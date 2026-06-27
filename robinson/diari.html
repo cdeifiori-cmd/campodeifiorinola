@@ -40,45 +40,73 @@
       border: 1.5px solid var(--bordo);
       border-radius: 12px;
       padding: 14px 14px 12px;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
       cursor: pointer;
       transition: box-shadow 0.18s, border-color 0.18s;
-      text-decoration: none; color: inherit;
-      display: block;
     }
     .diario-card:hover { box-shadow: 0 3px 14px rgba(200,134,10,0.18); border-color: var(--oro); }
-    .diario-card-head {
-      display: flex; align-items: center; gap: 10px; margin-bottom: 8px;
+
+    /* Header card */
+    .diario-card-header {
+      display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
     }
     .diario-avatar {
-      width: 40px; height: 40px; border-radius: 50%;
+      width: 42px; height: 42px; border-radius: 50%;
       object-fit: cover; border: 2px solid var(--oro); flex-shrink: 0;
       background: var(--navy);
     }
     .diario-avatar-placeholder {
-      width: 40px; height: 40px; border-radius: 50%;
+      width: 42px; height: 42px; border-radius: 50%;
       background: var(--navy); border: 2px solid var(--oro);
       display: flex; align-items: center; justify-content: center;
-      font-size: 18px; flex-shrink: 0;
+      font-size: 20px; flex-shrink: 0;
     }
-    .diario-nome { font-weight: 700; font-size: 0.9rem; color: var(--inchiostro); }
-    .diario-meteo { font-size: 1.1rem; margin-left: auto; }
-    .diario-titolo {
-      font-size: 0.88rem; color: var(--inchiostro);
-      font-style: italic; margin-bottom: 6px;
-      line-height: 1.4;
-    }
-    .diario-titolo.vuoto { color: #a0b4c8; }
+    .diario-nome { font-weight: 700; font-size: 0.92rem; color: var(--inchiostro); }
+    .diario-data { font-size: 0.75rem; color: #8a9ab0; margin-top: 2px; }
+    .diario-arrow { margin-left: auto; font-size: 1.4rem; color: var(--oro); font-weight: 300; flex-shrink: 0; }
 
-    /* Riflessioni nella card */
-    .diario-riflessioni { margin-top: 8px; border-top: 1px solid var(--bordo); padding-top: 8px; }
-    .riflessione-riga { font-size: 0.8rem; color: #5a6a7a; margin-bottom: 4px; line-height: 1.4; }
-    .riflessione-label { color: var(--oro); font-weight: 600; }
+    /* Titolo giornata */
+    .diario-titolo {
+      font-size: 0.95rem; color: var(--inchiostro);
+      font-style: italic; font-weight: 600;
+      margin-bottom: 10px; line-height: 1.4;
+      padding: 0 2px;
+    }
+    .diario-titolo.vuoto { color: #a0b4c8; font-weight: 400; }
+
+    /* Sezioni contenuto */
+    .diario-sezione {
+      margin: 8px 0;
+      padding: 8px 10px;
+      background: rgba(250,247,240,0.9);
+      border-radius: 6px;
+      border-left: 3px solid rgba(200,134,10,0.25);
+    }
+    .diario-label {
+      font-size: 10px;
+      color: #8a6a3a;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: block;
+      margin-bottom: 3px;
+      font-family: 'Lora', serif;
+    }
+    .diario-testo {
+      font-size: 13px;
+      color: #2c1e0f;
+      font-style: italic;
+      font-family: 'Lora', serif;
+      line-height: 1.5;
+    }
+    .diario-meteo-display {
+      font-size: 14px;
+      color: #2c1e0f;
+      font-family: 'Lora', serif;
+    }
     .campo-privato {
-      display: inline-block;
-      background: #f0ebe0; border-left: 3px solid #8a6a3a;
-      padding: 2px 8px; font-style: italic; color: #8a6a3a;
-      font-size: 0.75rem; border-radius: 0 4px 4px 0;
+      font-size: 11px;
+      color: #8a6a3a;
+      font-style: italic;
     }
 
     /* Empty state */
@@ -119,18 +147,23 @@ import { setupNavAuth } from './js/robinson-nav.js';
 
 setupNavAuth(null);
 
+const meteoInterpretazioni = {
+  '🌞': 'Giornata piena di luce',
+  '🌤️': 'Abbastanza bene',
+  '⛅': 'Così così',
+  '🌧️': 'Momenti difficili',
+  '⛈️': 'Giornata pesante',
+  '🌪️': 'Tutto sottosopra',
+  '🌈': "Ce l'ha fatta nonostante tutto",
+  '⭐': 'Momento speciale'
+};
+
 onAuthStateChanged(auth, async user => {
   if (!user) { requireAuth(); return; }
   await caricaDiari();
 });
 
-const METEO_LABEL = {
-  sole: '☀️', nuvole: '⛅', pioggia: '🌧️', temporale: '⛈️',
-  neve: '❄️', vento: '💨', nebbia: '🌫️', arcobaleno: '🌈'
-};
-
 function fmtGiornoIt(key) {
-  // key = YYYY-MM-DD
   const [y, m, d] = key.split('-').map(Number);
   const date = new Date(y, m - 1, d);
   const giorni = ['Domenica','Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato'];
@@ -139,17 +172,62 @@ function fmtGiornoIt(key) {
   return `${giorni[date.getDay()]} ${d} ${mesi[m-1]} ${y}`;
 }
 
+function sezione(label, campo) {
+  // campo può essere stringa o { testo, privato }
+  if (!campo) return '';
+  const privato = typeof campo === 'object' ? campo.privato : false;
+  const testo = typeof campo === 'object' ? campo.testo : campo;
+  if (privato) {
+    return `<div class="diario-sezione">
+      <span class="diario-label">${label}</span>
+      <div class="campo-privato">🔒 Contenuto privato</div>
+    </div>`;
+  }
+  if (!testo || !testo.trim()) return '';
+  return `<div class="diario-sezione">
+    <span class="diario-label">${label}</span>
+    <div class="diario-testo">${esc(testo)}</div>
+  </div>`;
+}
+
+function sezioneMeteo(meteoUmore) {
+  if (!meteoUmore) return '';
+  const interp = meteoInterpretazioni[meteoUmore] || '';
+  return `<div class="diario-sezione">
+    <span class="diario-label">☀️ Meteo dell'umore</span>
+    <div class="diario-meteo-display">${esc(meteoUmore)}${interp ? ' — ' + esc(interp) : ''}</div>
+  </div>`;
+}
+
+function sezioneFalo(falo) {
+  if (!falo) return '';
+  const privato = falo.privato;
+  if (privato) {
+    return `<div class="diario-sezione">
+      <span class="diario-label">🔥 Falò della sera</span>
+      <div class="campo-privato">🔒 Contenuto privato</div>
+    </div>`;
+  }
+  // struttura vecchia: array; nuova: { voci, altro, privato }
+  const voci = Array.isArray(falo) ? falo : (falo.voci || []);
+  const altro = falo.altro || '';
+  const elenco = [...voci, ...(altro ? [altro] : [])].join(', ');
+  if (!elenco) return '';
+  return `<div class="diario-sezione">
+    <span class="diario-label">🔥 Falò della sera</span>
+    <div class="diario-testo">${esc(elenco)}</div>
+  </div>`;
+}
+
 async function caricaDiari() {
   const container = document.getElementById('diari-container');
   const loading = document.getElementById('loading-msg');
 
-  // Carica tutti i profili per avatar e nome
   const profiloSnap = await getDocs(collection(db, 'robinson_naufraghi'));
   const profili = {};
   profiloSnap.forEach(d => { profili[d.id] = d.data(); });
 
-  // Raccoglie tutti i post salvati da tutti gli utenti
-  const allPosts = []; // { uid, data (YYYY-MM-DD), post }
+  const allPosts = [];
   const tasks = Object.keys(profili).map(async uid => {
     try {
       const snap = await getDocs(
@@ -172,14 +250,12 @@ async function caricaDiari() {
     return;
   }
 
-  // Raggruppa per giorno (dataKey = YYYY-MM-DD)
   const gruppi = {};
   allPosts.forEach(item => {
     if (!gruppi[item.dataKey]) gruppi[item.dataKey] = [];
     gruppi[item.dataKey].push(item);
   });
 
-  // Ordine decrescente per data
   const giorni = Object.keys(gruppi).sort((a, b) => b.localeCompare(a));
 
   giorni.forEach(giorno => {
@@ -187,7 +263,6 @@ async function caricaDiari() {
     section.className = 'giorno-section';
     section.innerHTML = `<div class="giorno-header"><span class="giorno-dot"></span>${esc(fmtGiornoIt(giorno))}</div>`;
 
-    // Ordina i post del giorno per nome
     gruppi[giorno].sort((a, b) => {
       const na = profili[a.uid]?.nome || a.uid;
       const nb = profili[b.uid]?.nome || b.uid;
@@ -198,7 +273,6 @@ async function caricaDiari() {
       const profilo = profili[uid] || {};
       const nome = profilo.nome || risolviNome(uid) || '?';
       const avatarUrl = profilo.avatarUrl || '';
-      const meteoEmoji = METEO_LABEL[post.meteo] || '';
       const titolo = post.titolo || '';
       const r = post.riflessioni || {};
 
@@ -206,53 +280,37 @@ async function caricaDiari() {
         ? `<img class="diario-avatar" src="${esc(avatarUrl)}" alt="${esc(nome)}" onerror="this.style.display='none'">`
         : `<div class="diario-avatar-placeholder">🧍</div>`;
 
-      let rHtml = '';
-      if (Object.keys(r).length > 0) {
-        rHtml = '<div class="diario-riflessioni">';
-        const campi = [
-          { k: 'scoperto', label: '💡' },
-          { k: 'bello',    label: '✨' },
-          { k: 'scoglio',  label: '🪨' },
-          { k: 'tesoro',   label: '💎' },
-        ];
-        campi.forEach(({ k, label }) => {
-          const val = r[k];
-          if (!val) return;
-          const privato = typeof val === 'object' ? val.privato : false;
-          const testo = typeof val === 'object' ? val.testo : val;
-          if (privato) {
-            rHtml += `<div class="riflessione-riga"><span class="riflessione-label">${label}</span> <span class="campo-privato">🔒 Contenuto privato</span></div>`;
-          } else if (testo) {
-            rHtml += `<div class="riflessione-riga"><span class="riflessione-label">${label}</span> ${esc(testo)}</div>`;
-          }
-        });
-        // Falò
-        if (r.falo) {
-          const privato = r.falo.privato;
-          const voci = Array.isArray(r.falo) ? r.falo : (r.falo.voci || []);
-          const altro = r.falo.altro || '';
-          if (privato) {
-            rHtml += `<div class="riflessione-riga"><span class="riflessione-label">🔥</span> <span class="campo-privato">🔒 Contenuto privato</span></div>`;
-          } else if (voci.length || altro) {
-            const elenco = [...voci, ...(altro ? [altro] : [])].join(', ');
-            rHtml += `<div class="riflessione-riga"><span class="riflessione-label">🔥</span> ${esc(elenco)}</div>`;
-          }
-        }
-        rHtml += '</div>';
-      }
+      // riflessioni: compatibilità chiavi vecchie (scoperto/bello/scoglio/tesoro) e nuove (scoperta/momentoBello)
+      const scoperta = r.scoperta || r.scoperto;
+      const momentoBello = r.momentoBello || r.bello;
+      const scoglio = r.scoglio;
+      const tesoro = r.tesoro;
+      const falo = r.falo;
 
-      const card = document.createElement('a');
+      const card = document.createElement('div');
       card.className = 'diario-card';
-      card.href = `naufrago.html?uid=${encodeURIComponent(uid)}#tab-diario`;
+      card.onclick = () => { location.href = `naufrago.html?uid=${encodeURIComponent(uid)}#tab-diario`; };
+
       card.innerHTML = `
-        <div class="diario-card-head">
+        <div class="diario-card-header">
           ${avatarHtml}
-          <div class="diario-nome">${esc(nome)}</div>
-          <div class="diario-meteo">${meteoEmoji}</div>
+          <div>
+            <div class="diario-nome">${esc(nome)}</div>
+            <div class="diario-data">${esc(fmtGiornoIt(dataKey))}</div>
+          </div>
+          <span class="diario-arrow">›</span>
         </div>
-        <div class="diario-titolo${titolo ? '' : ' vuoto'}">${titolo ? esc(titolo) : 'Nessun titolo'}</div>
-        ${rHtml}
+        ${titolo ? `<div class="diario-titolo">"${esc(titolo)}"</div>` : ''}
+        ${sezione('⚓ Allora? com\'è andata oggi?', post.approdo)}
+        ${sezioneMeteo(post.meteoUmore || post.meteo)}
+        ${sezione('💬 Sensazione', post.sensazione)}
+        ${sezione('🌴 Ho scoperto che...', scoperta)}
+        ${sezione('⭐ Il momento più bello', momentoBello)}
+        ${sezione('🦈 Lo scoglio incontrato', scoglio)}
+        ${sezione('🐚 Il tesoro che mi porto', tesoro)}
+        ${sezioneFalo(falo)}
       `;
+
       section.appendChild(card);
     });
 
