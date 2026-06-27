@@ -1981,7 +1981,8 @@ function setupCartaIdentita() {
     document.getElementById('ci-qualita-altro').style.display = this.checked ? '' : 'none';
   });
 
-  // Foto profilo upload via Cloudinary
+  // Foto profilo upload via Cloudinary — solo admin
+  if (isAdmin) {
   document.getElementById('ci-foto-btn').style.display = '';
   document.getElementById('ci-foto-btn').addEventListener('click', () => {
     const widget = window.cloudinary?.createUploadWidget({
@@ -2008,6 +2009,7 @@ function setupCartaIdentita() {
     });
     widget.open();
   });
+  } // end isAdmin foto block
 
   // Salva carta
   document.getElementById('btn-salva-carta').addEventListener('click', async () => {
