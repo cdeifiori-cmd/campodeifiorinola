@@ -55,7 +55,7 @@
       cursor: grab; user-select: none;
     }
     #mappa-container:active { cursor: grabbing; }
-    #mappa-inner { position: relative; display: inline-block; transform-origin: 0 0; }
+    #mappa-inner { position: relative; display: inline-block; transform-origin: 0 0; overflow: visible; }
     #mappa-inner img { display: block; width: 100%; max-width: 100%; pointer-events: none; }
 
     .zoom-controls {
@@ -142,18 +142,14 @@
 <div class="isola-subtitle">Dove sono i naufraghi questa notte?</div>
 <div class="msg-orario" id="msg-orario">🌅 I naufraghi scelgono il loro luogo dalle 23:00</div>
 
-<div id="mappa-wrap" style="position:relative;">
-  <div id="mappa-container">
-    <div class="zoom-controls">
-      <button class="zoom-btn" id="zoomIn">+</button>
-      <button class="zoom-btn" id="zoomOut">−</button>
-    </div>
-    <div id="mappa-inner">
-      <img src="isola.png" alt="Mappa dell'isola" id="mappaImg" draggable="false">
-    </div>
+<div id="mappa-container">
+  <div class="zoom-controls">
+    <button class="zoom-btn" id="zoomIn">+</button>
+    <button class="zoom-btn" id="zoomOut">−</button>
   </div>
-  <!-- Layer omini sovrapposto, fuori da overflow:hidden -->
-  <div id="omini-layer" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:100;overflow:visible;"></div>
+  <div id="mappa-inner">
+    <img src="isola.png" alt="Mappa dell'isola" id="mappaImg" draggable="false">
+  </div>
 </div>
 
 <!-- Popup leggero (solo info, no form) -->
@@ -270,29 +266,39 @@ async function getFigura(uid) {
 }
 
 async function aggiornaOmini(luogoId, presenze) {
-  const layer = document.getElementById('omini-layer');
-  if (!layer) return;
-  // Rimuovi container precedente per questo luogo
-  const old = layer.querySelector(`[data-luogo="${luogoId}"]`);
-  if (old) old.remove();
+  document.querySelectorAll(`.omino-group[data-luogo="${luogoId}"]`).forEach(el => el.remove());
   if (!presenze || presenze.length === 0) return;
-  // Trova coordinate dal config luoghiIsola
-  const luogo = luoghiIsola.find(l => l.id === luogoId);
-  if (!luogo) { console.log('Luogo non trovato:', luogoId); return; }
-  const container = document.createElement('div');
-  container.dataset.luogo = luogoId;
-  // Posiziona al centro dell'hotspot, omini sopra
-  container.style.cssText = `position:absolute;left:${luogo.x}%;top:${luogo.y}%;transform:translate(-50%,-100%);display:flex;flex-wrap:wrap;justify-content:center;gap:1px;max-width:80px;pointer-events:none;`;
+  const inner = document.getElementById('mappa-inner');
+  const img = inner.querySelector('img');
+  const coords = luoghiIsola.find(l => l.id === luogoId);
+  if (!coords) return;
+  const x = (coords.x / 100) * img.offsetWidth;
+  const y = (coords.y / 100) * img.offsetHeight;
+  const gruppo = document.createElement('div');
+  gruppo.className = 'omino-group';
+  gruppo.dataset.luogo = luogoId;
+  gruppo.style.cssText = `position:absolute;left:${x}px;top:${y - 50}px;transform:translateX(-50%);display:flex;flex-wrap:wrap;justify-content:center;gap:2px;z-index:100;pointer-events:none;max-width:80px;`;
   for (const p of presenze) {
-    const figura = await getFigura(p.uid);
-    const omino = document.createElement('span');
-    omino.className = 'omino';
-    omino.textContent = figura;
-    omino.style.cssText = 'font-size:40px;animation:pulse-omino 1.5s ease-in-out infinite;filter:drop-shadow(0 4px 8px rgba(0,0,0,0.9));display:block;line-height:1;';
-    container.appendChild(omino);
+    const figura = await getFigura(p ? p.uid : null);
+    const span = document.createElement('span');
+    span.style.cssText = 'font-size:32px;display:inline-block;filter:drop-shadow(0 3px 6px rgba(0,0,0,0.9));animation:pulse-omino 1.5s ease-in-out infinite;line-height:1;';
+    span.textContent = figura;
+    gruppo.appendChild(span);
   }
-  layer.appendChild(container);
-  console.log('Omini aggiunti su:', luogoId, 'at', luogo.x+'%', luogo.y+'%, count:', presenze.length);
+  inner.appendChild(gruppo);
+  console.log('Omini aggiunti su:', luogoId, 'px:', x, y-50, 'count:', presenze.length);
+}
+
+function ricalcolaOmini() {
+  const inner = document.getElementById('mappa-inner');
+  const img = inner.querySelector('img');
+  inner.querySelectorAll('.omino-group').forEach(gruppo => {
+    const coords = luoghiIsola.find(l => l.id === gruppo.dataset.luogo);
+    if (coords) {
+      gruppo.style.left = (coords.x / 100) * img.offsetWidth + 'px';
+      gruppo.style.top = ((coords.y / 100) * img.offsetHeight - 50) + 'px';
+    }
+  });
 }
 
 function startPresenzeListener() {
@@ -387,6 +393,7 @@ function applyT() {
   [translateX, translateY] = clampT(translateX, translateY, scale);
   inner.style.transform = `translate(${translateX}px,${translateY}px) scale(${scale})`;
   inner.style.transformOrigin = '0 0';
+  ricalcolaOmini();
 }
 function setH() { if (mappaImg.naturalWidth) container.style.height = container.offsetWidth * (mappaImg.naturalHeight / mappaImg.naturalWidth) + 'px'; }
 mappaImg.addEventListener('load', setH); if (mappaImg.complete) setH();
