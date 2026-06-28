@@ -242,11 +242,22 @@ function buildHotspot() {
   });
 }
 
+// CSS animazione omini
+const _ominoStyle = document.createElement('style');
+_ominoStyle.textContent = `
+  @keyframes pulse-omino {
+    0%, 100% { opacity:1; transform:scale(1); }
+    50% { opacity:0.6; transform:scale(0.85); }
+  }
+`;
+document.head.appendChild(_ominoStyle);
+
 async function getFigura(uid) {
+  if (!uid) return '🧍';
   try {
-    const snap = await getDoc(doc(db, 'robinson_naufraghi', uid, 'carta_identita', 'dati'));
-    if (snap.exists()) {
-      const gen = snap.data().identificazione;
+    const d = await getDoc(doc(db, 'robinson_naufraghi', uid, 'carta_identita', 'dati'));
+    if (d.exists()) {
+      const gen = d.data().identificazione;
       if (gen === 'ragazzo') return '🧍‍♂️';
       if (gen === 'ragazza') return '🧍‍♀️';
     }
@@ -256,42 +267,48 @@ async function getFigura(uid) {
 
 async function aggiornaOmini(luogoId, presenze) {
   const hotspot = document.querySelector(`.hotspot[data-id="${luogoId}"]`);
-  if (!hotspot) return;
+  if (!hotspot) { console.log('Hotspot non trovato per:', luogoId); return; }
   const old = hotspot.querySelector('.omini-container');
   if (old) old.remove();
-  if (!presenze || presenze.length === 0) return;
   const container = document.createElement('div');
   container.className = 'omini-container';
+  container.style.cssText = 'position:absolute;bottom:100%;left:50%;transform:translateX(-50%);display:flex;flex-wrap:wrap;justify-content:center;gap:1px;max-width:80px;z-index:20;pointer-events:none;';
   for (const p of presenze) {
     const figura = await getFigura(p.uid);
     const omino = document.createElement('span');
     omino.className = 'omino';
     omino.textContent = figura;
+    omino.style.cssText = 'font-size:16px;animation:pulse-omino 1.5s ease-in-out infinite;filter:drop-shadow(0 1px 3px rgba(0,0,0,0.6));';
     container.appendChild(omino);
   }
+  hotspot.style.position = 'relative';
+  hotspot.style.overflow = 'visible';
   hotspot.appendChild(container);
+  console.log('Omini aggiunti su:', luogoId, 'count:', presenze.length);
 }
 
 function startPresenzeListener() {
-  const data = getDataNotte();
-  onSnapshot(
-    query(collection(db, 'robinson_isola_presenze'), where('data', '==', data)),
-    async (snap) => {
-      document.querySelectorAll('.omini-container').forEach(el => el.remove());
-      Object.keys(presenzeMap).forEach(k => delete presenzeMap[k]);
-      for (const d of snap.docs) {
-        const dati = d.data();
-        presenzeMap[dati.luogoId] = dati.count || 0;
-        if (dati.presenze && dati.presenze.length > 0) {
-          await aggiornaOmini(dati.luogoId, dati.presenze);
-        } else if (dati.count > 0) {
-          const fakePresenze = Array.from({ length: dati.count }, () => ({ uid: null }));
-          await aggiornaOmini(dati.luogoId, fakePresenze);
-        }
-        if (luogoPopup && luogoPopup.id === dati.luogoId) aggiornaPopupCount(dati.count || 0);
-      }
+  const dataNotte = getDataNotte();
+  console.log('Data notte cercata:', dataNotte);
+  const q = query(collection(db, 'robinson_isola_presenze'), where('data', '==', dataNotte));
+  onSnapshot(q, async (snap) => {
+    console.log('=== SNAPSHOT ISOLA PUBBLICA ===');
+    console.log('Docs trovati:', snap.docs.length);
+    snap.docs.forEach(d => console.log(d.id, d.data()));
+    document.querySelectorAll('.omini-container').forEach(el => el.remove());
+    Object.keys(presenzeMap).forEach(k => delete presenzeMap[k]);
+    for (const docSnap of snap.docs) {
+      const d = docSnap.data();
+      console.log('Luogo:', d.luogoId, 'count:', d.count, 'presenze:', d.presenze);
+      presenzeMap[d.luogoId] = d.count || 0;
+      const presenze = d.presenze && d.presenze.length > 0
+        ? d.presenze
+        : Array.from({ length: d.count || 0 }, () => ({ uid: null }));
+      console.log('Omini da mostrare:', presenze.length, 'per', d.luogoId);
+      if (presenze.length > 0) await aggiornaOmini(d.luogoId, presenze);
+      if (luogoPopup && luogoPopup.id === d.luogoId) aggiornaPopupCount(d.count || 0);
     }
-  );
+  });
   scheduleReset();
 }
 
