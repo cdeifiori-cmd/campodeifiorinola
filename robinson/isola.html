@@ -50,12 +50,12 @@
 
     /* ── Mappa ── */
     #mappa-container {
-      width: 100%; overflow: hidden; position: relative;
+      width: 100%; overflow: visible; position: relative;
       background: #0d2240; touch-action: none;
       cursor: grab; user-select: none;
     }
     #mappa-container:active { cursor: grabbing; }
-    #mappa-inner { position: relative; display: inline-block; transform-origin: 0 0; }
+    #mappa-inner { position: relative; display: inline-block; transform-origin: 0 0; overflow: visible; }
     #mappa-inner img { display: block; width: 100%; max-width: 100%; pointer-events: none; }
 
     .zoom-controls {
@@ -78,6 +78,7 @@
       padding: 0; cursor: pointer;
       font-size: 0 !important; color: transparent !important;
       -webkit-tap-highlight-color: transparent; z-index: 10; outline: none;
+      overflow: visible !important;
     }
     .hotspot:hover { background: rgba(200,134,10,0.15) !important; border-radius: 50%; }
 
@@ -142,18 +143,14 @@
 <div class="isola-subtitle">Dove sono i naufraghi questa notte?</div>
 <div class="msg-orario" id="msg-orario">🌅 I naufraghi scelgono il loro luogo dalle 23:00</div>
 
-<div id="mappa-wrap" style="position:relative;">
-  <div id="mappa-container">
-    <div class="zoom-controls">
-      <button class="zoom-btn" id="zoomIn">+</button>
-      <button class="zoom-btn" id="zoomOut">−</button>
-    </div>
-    <div id="mappa-inner">
-      <img src="isola.png" alt="Mappa dell'isola" id="mappaImg" draggable="false">
-    </div>
+<div id="mappa-container">
+  <div class="zoom-controls">
+    <button class="zoom-btn" id="zoomIn">+</button>
+    <button class="zoom-btn" id="zoomOut">−</button>
   </div>
-  <!-- Layer omini sovrapposto, fuori da overflow:hidden -->
-  <div id="omini-layer" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:100;overflow:visible;"></div>
+  <div id="mappa-inner">
+    <img src="isola.png" alt="Mappa dell'isola" id="mappaImg" draggable="false">
+  </div>
 </div>
 
 <!-- Popup leggero (solo info, no form) -->
@@ -270,29 +267,25 @@ async function getFigura(uid) {
 }
 
 async function aggiornaOmini(luogoId, presenze) {
-  const layer = document.getElementById('omini-layer');
-  if (!layer) return;
-  // Rimuovi container precedente per questo luogo
-  const old = layer.querySelector(`[data-luogo="${luogoId}"]`);
+  const hotspot = document.querySelector(`.hotspot[data-id="${luogoId}"]`);
+  if (!hotspot) { console.log('Hotspot non trovato per:', luogoId); return; }
+  const old = hotspot.querySelector('.omini-wrap');
   if (old) old.remove();
   if (!presenze || presenze.length === 0) return;
-  // Trova coordinate dal config luoghiIsola
-  const luogo = luoghiIsola.find(l => l.id === luogoId);
-  if (!luogo) { console.log('Luogo non trovato:', luogoId); return; }
-  const container = document.createElement('div');
-  container.dataset.luogo = luogoId;
-  // Posiziona al centro dell'hotspot, omini sopra
-  container.style.cssText = `position:absolute;left:${luogo.x}%;top:${luogo.y}%;transform:translate(-50%,-100%);display:flex;flex-wrap:wrap;justify-content:center;gap:1px;max-width:80px;pointer-events:none;`;
+  const wrap = document.createElement('div');
+  wrap.className = 'omini-wrap';
+  wrap.style.cssText = 'position:absolute !important;bottom:105% !important;left:50% !important;transform:translateX(-50%) !important;display:flex !important;flex-wrap:wrap !important;justify-content:center !important;gap:4px !important;z-index:9999 !important;pointer-events:none !important;';
   for (const p of presenze) {
     const figura = await getFigura(p.uid);
     const omino = document.createElement('span');
     omino.className = 'omino';
     omino.textContent = figura;
-    omino.style.cssText = 'font-size:16px;animation:pulse-omino 1.5s ease-in-out infinite;filter:drop-shadow(0 1px 3px rgba(0,0,0,0.6));display:block;';
-    container.appendChild(omino);
+    omino.style.cssText = 'font-size:40px !important;display:inline-block !important;line-height:1 !important;filter:drop-shadow(0 4px 8px rgba(0,0,0,0.9)) !important;animation:pulse-omino 2s ease-in-out infinite !important;';
+    wrap.appendChild(omino);
   }
-  layer.appendChild(container);
-  console.log('Omini aggiunti su:', luogoId, 'at', luogo.x+'%', luogo.y+'%, count:', presenze.length);
+  hotspot.style.overflow = 'visible';
+  hotspot.appendChild(wrap);
+  console.log('Omini aggiunti su:', luogoId, 'count:', presenze.length);
 }
 
 function startPresenzeListener() {
