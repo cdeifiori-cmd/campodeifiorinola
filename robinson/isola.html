@@ -81,25 +81,11 @@
     }
     .hotspot:hover { background: rgba(200,134,10,0.15) !important; border-radius: 50%; }
 
-    /* ── Omini presenze ── */
-    .omini-container {
-      position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
-      display: flex; flex-wrap: wrap; justify-content: center; gap: 1px;
-      max-width: 80px; z-index: 20; pointer-events: none;
+    /* ── Badge presenze ── */
+    @keyframes lampeggia {
+      0%, 100% { opacity:1; transform:translate(-50%,-100%) scale(1); }
+      50% { opacity:0.5; transform:translate(-50%,-100%) scale(0.9); }
     }
-    .omino {
-      font-size: clamp(12px, 3vw, 18px);
-      animation: pulse-omino 1.5s ease-in-out infinite;
-      filter: drop-shadow(0 1px 3px rgba(0,0,0,0.6));
-    }
-    @keyframes pulse-omino {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.6; transform: scale(0.85); }
-    }
-    .omino:nth-child(2) { animation-delay: 0.3s; }
-    .omino:nth-child(3) { animation-delay: 0.6s; }
-    .omino:nth-child(4) { animation-delay: 0.9s; }
-    .omino:nth-child(5) { animation-delay: 1.2s; }
 
     /* ── Popup leggero ── */
     .popup-overlay {
@@ -242,84 +228,45 @@ function buildHotspot() {
   });
 }
 
-// CSS animazione omini
-const _ominoStyle = document.createElement('style');
-_ominoStyle.textContent = `
-  @keyframes pulse-omino {
-    0%, 100% { opacity:1; transform:scale(1); }
-    50% { opacity:0.6; transform:scale(0.85); }
-  }
-`;
-document.head.appendChild(_ominoStyle);
-
-async function getFigura(uid) {
-  if (!uid) return '🧍';
-  try {
-    const d = await getDoc(doc(db, 'robinson_naufraghi', uid, 'carta_identita', 'dati'));
-    if (d.exists()) {
-      const gen = d.data().identificazione;
-      if (gen === 'ragazzo') return '🧍‍♂️';
-      if (gen === 'ragazza') return '🧍‍♀️';
-    }
-  } catch(e) {}
-  return '🧍';
-}
-
-async function aggiornaOmini(luogoId, presenze) {
-  document.querySelectorAll(`.omino-group[data-luogo="${luogoId}"]`).forEach(el => el.remove());
-  if (!presenze || presenze.length === 0) return;
+function aggiornaBadge(luogoId, count) {
+  document.querySelectorAll(`.presenza-badge[data-luogo="${luogoId}"]`).forEach(el => el.remove());
+  if (!count || count === 0) return;
   const inner = document.getElementById('mappa-inner');
   const img = inner.querySelector('img');
   const coords = luoghiIsola.find(l => l.id === luogoId);
   if (!coords) return;
   const x = (coords.x / 100) * img.offsetWidth;
   const y = (coords.y / 100) * img.offsetHeight;
-  const gruppo = document.createElement('div');
-  gruppo.className = 'omino-group';
-  gruppo.dataset.luogo = luogoId;
-  gruppo.style.cssText = `position:absolute;left:${x}px;top:${y - 50}px;transform:translateX(-50%);display:flex;flex-wrap:wrap;justify-content:center;gap:2px;z-index:100;pointer-events:none;max-width:80px;`;
-  for (const p of presenze) {
-    const figura = await getFigura(p ? p.uid : null);
-    const span = document.createElement('span');
-    span.style.cssText = 'font-size:32px;display:inline-block;filter:drop-shadow(0 3px 6px rgba(0,0,0,0.9));animation:pulse-omino 1.5s ease-in-out infinite;line-height:1;';
-    span.textContent = figura;
-    gruppo.appendChild(span);
-  }
-  inner.appendChild(gruppo);
-  console.log('Omini aggiunti su:', luogoId, 'px:', x, y-50, 'count:', presenze.length);
+  const badge = document.createElement('div');
+  badge.className = 'presenza-badge';
+  badge.dataset.luogo = luogoId;
+  badge.textContent = count;
+  badge.style.cssText = `position:absolute;left:${x}px;top:${y}px;transform:translate(-50%,-100%);background:#fff;color:#1a3a5c;border:3px solid #c8860a;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:900;font-family:'Playfair Display',serif;box-shadow:0 3px 8px rgba(0,0,0,0.8);z-index:100;pointer-events:none;animation:lampeggia 1.5s ease-in-out infinite;`;
+  inner.appendChild(badge);
 }
 
-function ricalcolaOmini() {
+function ricalcolaBadge() {
   const inner = document.getElementById('mappa-inner');
   const img = inner.querySelector('img');
-  inner.querySelectorAll('.omino-group').forEach(gruppo => {
-    const coords = luoghiIsola.find(l => l.id === gruppo.dataset.luogo);
+  inner.querySelectorAll('.presenza-badge').forEach(badge => {
+    const coords = luoghiIsola.find(l => l.id === badge.dataset.luogo);
     if (coords) {
-      gruppo.style.left = (coords.x / 100) * img.offsetWidth + 'px';
-      gruppo.style.top = ((coords.y / 100) * img.offsetHeight - 50) + 'px';
+      badge.style.left = (coords.x / 100) * img.offsetWidth + 'px';
+      badge.style.top = (coords.y / 100) * img.offsetHeight + 'px';
     }
   });
 }
 
 function startPresenzeListener() {
   const dataNotte = getDataNotte();
-  console.log('Data notte cercata:', dataNotte);
   const q = query(collection(db, 'robinson_isola_presenze'), where('data', '==', dataNotte));
-  onSnapshot(q, async (snap) => {
-    console.log('=== SNAPSHOT ISOLA PUBBLICA ===');
-    console.log('Docs trovati:', snap.docs.length);
-    snap.docs.forEach(d => console.log(d.id, d.data()));
-    document.querySelectorAll('.omini-container').forEach(el => el.remove());
+  onSnapshot(q, (snap) => {
+    document.querySelectorAll('.presenza-badge').forEach(el => el.remove());
     Object.keys(presenzeMap).forEach(k => delete presenzeMap[k]);
     for (const docSnap of snap.docs) {
       const d = docSnap.data();
-      console.log('Luogo:', d.luogoId, 'count:', d.count, 'presenze:', d.presenze);
       presenzeMap[d.luogoId] = d.count || 0;
-      const presenze = d.presenze && d.presenze.length > 0
-        ? d.presenze
-        : Array.from({ length: d.count || 0 }, () => ({ uid: null }));
-      console.log('Omini da mostrare:', presenze.length, 'per', d.luogoId);
-      if (presenze.length > 0) await aggiornaOmini(d.luogoId, presenze);
+      aggiornaBadge(d.luogoId, d.count || 0);
       if (luogoPopup && luogoPopup.id === d.luogoId) aggiornaPopupCount(d.count || 0);
     }
   });
@@ -353,8 +300,7 @@ function scheduleReset() {
   const msToReset = reset - ora;
   setTimeout(async () => {
     await salvaArchivioNotte();
-    document.querySelectorAll('.omini-container').forEach(el => el.remove());
-    console.log('🌅 Notte conclusa, omini rimossi.');
+    document.querySelectorAll('.presenza-badge').forEach(el => el.remove());
   }, msToReset);
 }
 
@@ -393,7 +339,7 @@ function applyT() {
   [translateX, translateY] = clampT(translateX, translateY, scale);
   inner.style.transform = `translate(${translateX}px,${translateY}px) scale(${scale})`;
   inner.style.transformOrigin = '0 0';
-  ricalcolaOmini();
+  ricalcolaBadge();
 }
 function setH() { if (mappaImg.naturalWidth) container.style.height = container.offsetWidth * (mappaImg.naturalHeight / mappaImg.naturalWidth) + 'px'; }
 mappaImg.addEventListener('load', setH); if (mappaImg.complete) setH();
