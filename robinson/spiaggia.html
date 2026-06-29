@@ -401,6 +401,17 @@ function renderPreview(items, containerId, onRemove) {
   wrap.querySelectorAll('.prev-remove').forEach(btn => btn.addEventListener('click', () => onRemove(parseInt(btn.dataset.idx))));
 }
 
+function getVideoDuration(file) {
+  return new Promise(resolve => {
+    const v = document.createElement('video');
+    v.preload = 'metadata';
+    const url = URL.createObjectURL(file);
+    v.onloadedmetadata = () => { URL.revokeObjectURL(url); resolve(v.duration); };
+    v.onerror = () => { URL.revokeObjectURL(url); resolve(0); };
+    v.src = url;
+  });
+}
+
 // ── Modal nuovo post ────────────────────────────────────────────────────────
 const postItems = [];
 function refreshPostPreview() {
@@ -410,11 +421,19 @@ function refreshPostPreview() {
     refreshPostPreview();
   });
 }
-function postAddFile(f, type) {
+async function postAddFile(f, type) {
   console.log('ROBINSON FILE SIZE:', f.size, 'tipo:', type, 'mime:', f.type);
   if (f.size > 50 * 1024 * 1024) {
     alert('Il file è troppo grande (max 50MB).\nPuoi comprimerlo con app come HandBrake (PC) o Compress Video (smartphone) prima di caricarlo.');
     return;
+  }
+  if (type === 'video') {
+    const dur = await getVideoDuration(f);
+    console.log('VIDEO DURATION:', dur);
+    if (dur > 60) {
+      alert('Il video è troppo lungo (max 60 secondi).\nRegistra un video più breve o usane uno già compresso.');
+      return;
+    }
   }
   if (postItems.length >= MAX_FILES) { alert(`Max ${MAX_FILES} allegati.`); return; }
   postItems.push({ file: f, type, name: f.name || type, previewUrl: URL.createObjectURL(f) });

@@ -553,16 +553,35 @@
       });
     }
 
+    function getVideoDuration(file) {
+      return new Promise(resolve => {
+        const v = document.createElement('video');
+        v.preload = 'metadata';
+        const url = URL.createObjectURL(file);
+        v.onloadedmetadata = () => { URL.revokeObjectURL(url); resolve(v.duration); };
+        v.onerror = () => { URL.revokeObjectURL(url); resolve(0); };
+        v.src = url;
+      });
+    }
+
     // ── Modal nuovo post ──────────────────────────────────────────────────
     // Array piatto degli allegati del post corrente.
     // Ogni elemento: { file: File, type: 'image'|'video'|'audio', name: string, previewUrl: string }
     const postItems = [];
 
-    function postAddFile(file, type) {
+    async function postAddFile(file, type) {
       console.log('FILE SIZE:', file.size, 'tipo:', type, 'mime:', file.type);
       if (file.size > 50 * 1024 * 1024) {
         alert('Il file è troppo grande (max 50MB).\nPuoi comprimerlo con app come HandBrake (PC) o Compress Video (smartphone) prima di caricarlo.');
         return;
+      }
+      if (type === 'video') {
+        const dur = await getVideoDuration(file);
+        console.log('VIDEO DURATION:', dur);
+        if (dur > 60) {
+          alert('Il video è troppo lungo (max 60 secondi).\nRegistra un video più breve o usane uno già compresso.');
+          return;
+        }
       }
       if (postItems.length >= MAX_FILES) { alert(`Massimo ${MAX_FILES} allegati per post.`); return; }
       postItems.push({ file, type, name: file.name || type, previewUrl: URL.createObjectURL(file) });
