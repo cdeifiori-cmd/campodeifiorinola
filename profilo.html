@@ -2099,8 +2099,17 @@
     }
     async function uploadToCloudinary(file, resourceType) {
       if (!file||file.size===0) throw new Error('File vuoto');
+      if (file.size > 50 * 1024 * 1024) {
+        alert('Il file è troppo grande (max 50MB).\nPuoi comprimerlo con app come HandBrake (PC) o Compress Video (smartphone) prima di caricarlo.');
+        throw new Error('File troppo grande');
+      }
       showProgress('Caricamento in corso…');
       const fd=new FormData(); fd.append('file',file); fd.append('upload_preset',CLOUD_PRESET);
+      if (file.type.startsWith('video/')) {
+        fd.append('quality', 'auto');
+        fd.append('format', 'mp4');
+        fd.append('video_codec', 'auto');
+      }
       const url=`https://api.cloudinary.com/v1_1/dxqyprtzh/${resourceType}/upload`;
       let pct=0; const bar=document.getElementById('upload-bar');
       const fakeP=setInterval(()=>{pct=Math.min(pct+6,80);bar.style.width=pct+'%';},250);

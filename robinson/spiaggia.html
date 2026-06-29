@@ -354,9 +354,18 @@ async function risolviNome(uid) {
 
 // ── Cloudinary ──────────────────────────────────────────────────────────────
 async function uploadOne(file, type) {
+  if (file.size > 50 * 1024 * 1024) {
+    alert('Il file è troppo grande (max 50MB).\nPuoi comprimerlo con app come HandBrake (PC) o Compress Video (smartphone) prima di caricarlo.');
+    return null;
+  }
   const fd = new FormData();
   fd.append('file', file);
   fd.append('upload_preset', CLOUD_PRESET);
+  if (file.type.startsWith('video/')) {
+    fd.append('quality', 'auto');
+    fd.append('format', 'mp4');
+    fd.append('video_codec', 'auto');
+  }
   const resType = type === 'image' ? 'image' : 'video';
   const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${resType}/upload`, { method:'POST', body:fd });
   const data = await res.json();
