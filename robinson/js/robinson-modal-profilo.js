@@ -293,7 +293,6 @@ async function _carta({ uid, nome, foto, ruolo, ruoloLabel }) {
       _cartaReadonly(uid, nome, ci, ruolo, ciBody);
     }
 
-    await _nottePartenza(uid, _isOwner(ruolo), _isAdmin(ruolo), ciBody);
     await _diconoDiMe(uid, ciBody);
   } catch(e) {
     ciBody.innerHTML = `<div style="color:red;padding:16px;">${esc(e.message)}</div>`;
@@ -468,87 +467,6 @@ function _cartaReadonly(uid, nome, ci, ruolo, container) {
     document.getElementById('rmp-sblocca-btn')?.addEventListener('click', async () => {
       await updateDoc(doc(db,'robinson_naufraghi',uid,'carta_identita','dati'), { salvato:false });
       if (_cartaParams) await _render('carta', { ..._cartaParams, ruolo:'proprietario' });
-    });
-  }
-}
-
-// ── NOTTE PRIMA DI PARTIRE ────────────────────────────────────────────────
-async function _nottePartenza(uid, isOwner, isAdminRole, container) {
-  const snapNP = await getDoc(doc(db,'robinson_naufraghi',uid,'notte_partenza','dati')).catch(()=>null);
-  const np = snapNP?.exists() ? snapNP.data() : null;
-  const salvato = np?.salvato === true;
-
-  let bodyHtml = '';
-  if (salvato) {
-    if (np.testo) bodyHtml += `<div style="font-style:italic;font-size:0.88rem;line-height:1.6;white-space:pre-wrap;color:#2c1810;margin-bottom:10px;">${esc(np.testo)}</div>`;
-    if (np.videoUrl) bodyHtml += `<video src="${esc(np.videoUrl)}" controls style="width:100%;border-radius:6px;margin-bottom:8px;"></video>`;
-    if (np.audioUrl) bodyHtml += `<audio src="${esc(np.audioUrl)}" controls style="width:100%;margin-bottom:8px;"></audio>`;
-    if (isAdminRole) bodyHtml += `<button class="rmp-admin-btn" id="rmp-np-sblocca">🔓 Modifica (Admin)</button>`;
-  } else if (isOwner || isAdminRole) {
-    bodyHtml = `
-      <div style="font-size:0.8rem;color:#8a6a3a;margin-bottom:8px;font-style:italic;">Cosa mi aspetto da questa esperienza?</div>
-      <textarea id="rmp-np-testo" rows="3" placeholder="Scrivi qui..." class="rmp-field"></textarea>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0;">
-        <button class="rmp-np-media-btn" id="rmp-np-vup">📹 Video</button>
-        <button class="rmp-np-media-btn" id="rmp-np-vrec">📷 Registra video</button>
-        <button class="rmp-np-media-btn" id="rmp-np-aup">🎵 Audio</button>
-        <button class="rmp-np-media-btn" id="rmp-np-arec">🎤 Registra audio</button>
-      </div>
-      <input type="file" id="rmp-np-vi" accept="video/*" style="display:none;">
-      <input type="file" id="rmp-np-vri" accept="video/*" capture="environment" style="display:none;">
-      <input type="file" id="rmp-np-ai" accept="audio/*" style="display:none;">
-      <input type="file" id="rmp-np-ari" accept="audio/*" capture="microphone" style="display:none;">
-      <div id="rmp-np-preview"></div>
-      <div id="rmp-np-prog" style="display:none;font-size:0.8rem;color:#c8860a;margin:4px 0;">⏳ Caricamento...</div>
-      <button class="rmp-save-btn" id="rmp-np-salva" style="margin-top:6px;">💾 Salva</button>
-      <div id="rmp-np-msg" style="margin-top:4px;font-size:0.75rem;"></div>`;
-  } else {
-    bodyHtml = '<div style="color:#999;font-style:italic;font-size:0.8rem;text-align:center;padding:8px;">Non ancora compilato.</div>';
-  }
-
-  const wrap = document.createElement('div');
-  wrap.innerHTML = `<div class="rmp-acc-toggle">🌅 Notte prima di partire <span class="rmp-arr">▼</span></div>
-    <div class="rmp-acc-body">${bodyHtml}</div>`;
-  container.appendChild(wrap);
-
-  if (!salvato && (isOwner || isAdminRole)) {
-    let _vidUrl=null, _audUrl=null;
-    const wire = (bId,iId,type) => {
-      const btn=document.getElementById(bId); const inp=document.getElementById(iId);
-      if(!btn||!inp) return;
-      btn.onclick=()=>inp.click();
-      inp.onchange=async()=>{
-        const file=inp.files[0]; if(!file) return;
-        const prog=document.getElementById('rmp-np-prog'); prog.style.display='block';
-        try {
-          const url=await uploadOne(file,'notte_partenza');
-          if(type==='video') _vidUrl=url; else _audUrl=url;
-          const pv=document.getElementById('rmp-np-preview');
-          if(type==='video') pv.innerHTML=`<video src="${esc(url)}" controls style="width:100%;border-radius:6px;margin-top:4px;"></video>`;
-          else pv.innerHTML+=`<audio src="${esc(url)}" controls style="width:100%;margin-top:4px;display:block;"></audio>`;
-          prog.style.display='none';
-        } catch(e){ prog.textContent='Errore: '+e.message; }
-      };
-    };
-    wire('rmp-np-vup','rmp-np-vi','video'); wire('rmp-np-vrec','rmp-np-vri','video');
-    wire('rmp-np-aup','rmp-np-ai','audio'); wire('rmp-np-arec','rmp-np-ari','audio');
-
-    document.getElementById('rmp-np-salva')?.addEventListener('click', async () => {
-      const testo=document.getElementById('rmp-np-testo')?.value.trim()||'';
-      const msg=document.getElementById('rmp-np-msg');
-      try {
-        await setDoc(doc(db,'robinson_naufraghi',uid,'notte_partenza','dati'),
-          { testo, videoUrl:_vidUrl||null, audioUrl:_audUrl||null, salvato:true, salvatoAt:serverTimestamp() });
-        msg.style.color='#c8860a'; msg.textContent='✅ Salvato!';
-        setTimeout(()=>{ if(_cartaParams) _render('carta',_cartaParams); }, 1200);
-      } catch(e){ msg.textContent='Errore: '+e.message; }
-    });
-  }
-
-  if (salvato && isAdminRole) {
-    document.getElementById('rmp-np-sblocca')?.addEventListener('click', async () => {
-      await updateDoc(doc(db,'robinson_naufraghi',uid,'notte_partenza','dati'),{salvato:false});
-      if (_cartaParams) await _render('carta',_cartaParams);
     });
   }
 }
