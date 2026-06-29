@@ -297,6 +297,12 @@ service cloud.firestore {
         (request.auth.uid == uid || isAdmin());
     }
 
+    // ── Notte prima dello sbarco (Robinson) ─────────────────
+    match /notte_sbarco/{uid} {
+      allow read: if isOwner(uid) || isAdmin();
+      allow write: if isOwner(uid) || isAdmin();
+    }
+
     // ── Messaggi in Bottiglia ────────────────────────────────
     match /messaggiBottiglia/{bottId} {
       allow read: if true;  // lettura pubblica (sola lettura per non loggati)
