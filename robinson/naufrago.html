@@ -560,66 +560,6 @@
 <div class="tab-panel" id="tab-carta">
   <div class="ci-wrap">
 
-    <!-- NOTTE PRIMA DI PARTIRE -->
-    <div id="ci-notte-wrap" style="margin-bottom:10px;border-top:3px solid #FFD700;padding-top:14px;">
-      <div id="ci-notte-body">
-        <!-- header -->
-        <div style="background:linear-gradient(160deg,#0d1b2a 0%,#1a1a4e 100%);border-radius:12px;padding:16px 14px;margin-bottom:14px;position:relative;overflow:hidden;">
-          <div style="position:absolute;inset:0;pointer-events:none;background-image:radial-gradient(1px 1px at 10% 15%,#fff 0%,transparent 100%),radial-gradient(1.5px 1.5px at 40% 10%,#fff 0%,transparent 100%),radial-gradient(1px 1px at 70% 8%,#fff 0%,transparent 100%),radial-gradient(1px 1px at 88% 80%,#fff 0%,transparent 100%),radial-gradient(1.5px 1.5px at 47% 88%,#fff 0%,transparent 100%);"></div>
-          <div style="position:relative;font-size:1.1rem;font-weight:700;color:#FFD700;margin-bottom:10px;">🌙 Notte prima di partire</div>
-          <p style="position:relative;color:#c8e6ff;font-size:0.84rem;line-height:1.6;margin:0 0 10px;">Il mare è ancora davanti a te. Domani, dopo un lungo viaggio, approderai sulla Robinson Republic insieme ad altri naufraghi. Nessuno sa cosa troverà sull'isola. Ognuno porta con sé qualcosa: sogni, paure, speranze, ricordi, talenti e ferite. Prima dello sbarco fermati qualche minuto. Questa pagina serve a te. Alla fine del campo la rileggerai e forse scoprirai che qualcosa dentro di te è cambiato.</p>
-          <div id="cn-saved-msg" style="display:none;text-align:center;background:#00FFD133;color:#00FFD1;border:1px solid #00FFD1;border-radius:20px;padding:2px 14px;font-size:0.78rem;transition:opacity 0.4s;">Salvato ✓</div>
-        </div>
-        <div id="cn-status-msg" style="display:none;margin-bottom:14px;padding:12px 16px;background:#FFD700;border-radius:10px;color:#1a1a00;font-size:0.87rem;font-weight:600;text-align:center;line-height:1.5;"></div>
-        <!-- 9 domande -->
-        <div style="display:grid;grid-template-columns:1fr;gap:12px;margin-bottom:16px;">
-          <div style="background:linear-gradient(135deg,#0d1b2a 0%,#11214a 100%);border:2px solid #FF6B00;border-radius:14px;padding:14px;">
-            <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;"><span style="font-size:1.4rem;flex-shrink:0;">🌊</span><div><div style="color:#fff;font-weight:600;font-size:0.88rem;line-height:1.3;">Con quale stato d'animo sto per approdare sull'isola?</div><div style="color:#7ECFFF;font-size:0.76rem;margin-top:3px;line-height:1.4;">Quali emozioni sento più forti questa sera?</div></div></div>
-            <textarea id="cn-r1" rows="3" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.07);color:#fff;border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:8px;font-size:0.85rem;line-height:1.5;resize:vertical;font-family:inherit;" placeholder="Scrivi qui…"></textarea>
-          </div>
-          <div style="background:linear-gradient(135deg,#0d1b2a 0%,#11214a 100%);border:2px solid #FF2D9B;border-radius:14px;padding:14px;">
-            <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;"><span style="font-size:1.4rem;flex-shrink:0;">🎒</span><div><div style="color:#fff;font-weight:600;font-size:0.88rem;line-height:1.3;">Cosa porto con me?</div><div style="color:#7ECFFF;font-size:0.76rem;margin-top:3px;line-height:1.4;">Non nello zaino, ma dentro di me. Quali sono le qualità che mi accompagneranno durante questa avventura?</div></div></div>
-            <textarea id="cn-r2" rows="3" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.07);color:#fff;border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:8px;font-size:0.85rem;line-height:1.5;resize:vertical;font-family:inherit;" placeholder="Scrivi qui…"></textarea>
-          </div>
-          <div style="background:linear-gradient(135deg,#0d1b2a 0%,#11214a 100%);border:2px solid #FF6B00;border-radius:14px;padding:14px;">
-            <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;"><span style="font-size:1.4rem;flex-shrink:0;">🌱</span><div><div style="color:#fff;font-weight:600;font-size:0.88rem;line-height:1.3;">Cosa spero di trovare sull'isola?</div><div style="color:#7ECFFF;font-size:0.76rem;margin-top:3px;line-height:1.4;">Che cosa mi piacerebbe vivere?</div></div></div>
-            <textarea id="cn-r3" rows="3" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.07);color:#fff;border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:8px;font-size:0.85rem;line-height:1.5;resize:vertical;font-family:inherit;" placeholder="Scrivi qui…"></textarea>
-          </div>
-          <div style="background:linear-gradient(135deg,#0d1b2a 0%,#11214a 100%);border:2px solid #FF2D9B;border-radius:14px;padding:14px;">
-            <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;"><span style="font-size:1.4rem;flex-shrink:0;">🧭</span><div><div style="color:#fff;font-weight:600;font-size:0.88rem;line-height:1.3;">Quale parte di me vorrei conoscere meglio?</div><div style="color:#7ECFFF;font-size:0.76rem;margin-top:3px;line-height:1.4;">C'è qualcosa che vorrei capire di me stesso?</div></div></div>
-            <textarea id="cn-r4" rows="3" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.07);color:#fff;border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:8px;font-size:0.85rem;line-height:1.5;resize:vertical;font-family:inherit;" placeholder="Scrivi qui…"></textarea>
-          </div>
-          <div style="background:linear-gradient(135deg,#0d1b2a 0%,#11214a 100%);border:2px solid #FF6B00;border-radius:14px;padding:14px;">
-            <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;"><span style="font-size:1.4rem;flex-shrink:0;">⛰️</span><div><div style="color:#fff;font-weight:600;font-size:0.88rem;line-height:1.3;">Quali sono gli scogli che temo di incontrare?</div><div style="color:#7ECFFF;font-size:0.76rem;margin-top:3px;line-height:1.4;">Quali difficoltà penso di dover affrontare?</div></div></div>
-            <textarea id="cn-r5" rows="3" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.07);color:#fff;border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:8px;font-size:0.85rem;line-height:1.5;resize:vertical;font-family:inherit;" placeholder="Scrivi qui…"></textarea>
-          </div>
-          <div style="background:linear-gradient(135deg,#0d1b2a 0%,#11214a 100%);border:2px solid #FF2D9B;border-radius:14px;padding:14px;">
-            <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;"><span style="font-size:1.4rem;flex-shrink:0;">🌊</span><div><div style="color:#fff;font-weight:600;font-size:0.88rem;line-height:1.3;">Quali onde fanno ancora paura?</div><div style="color:#7ECFFF;font-size:0.76rem;margin-top:3px;line-height:1.4;">Quali sono le paure che vorrei imparare ad affrontare?</div></div></div>
-            <textarea id="cn-r6" rows="3" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.07);color:#fff;border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:8px;font-size:0.85rem;line-height:1.5;resize:vertical;font-family:inherit;" placeholder="Scrivi qui…"></textarea>
-          </div>
-          <div style="background:linear-gradient(135deg,#0d1b2a 0%,#11214a 100%);border:2px solid #FF6B00;border-radius:14px;padding:14px;">
-            <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;"><span style="font-size:1.4rem;flex-shrink:0;">🔥</span><div><div style="color:#fff;font-weight:600;font-size:0.88rem;line-height:1.3;">Quale fuoco posso accendere per gli altri?</div><div style="color:#7ECFFF;font-size:0.76rem;margin-top:3px;line-height:1.4;">Quali qualità, capacità o gesti posso mettere a disposizione della mia ciurma?</div></div></div>
-            <textarea id="cn-r7" rows="3" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.07);color:#fff;border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:8px;font-size:0.85rem;line-height:1.5;resize:vertical;font-family:inherit;" placeholder="Scrivi qui…"></textarea>
-          </div>
-          <div style="background:linear-gradient(135deg,#0d1b2a 0%,#11214a 100%);border:2px solid #FF2D9B;border-radius:14px;padding:14px;">
-            <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;"><span style="font-size:1.4rem;flex-shrink:0;">🤝</span><div><div style="color:#fff;font-weight:600;font-size:0.88rem;line-height:1.3;">Che tipo di compagno di viaggio voglio essere?</div><div style="color:#7ECFFF;font-size:0.76rem;margin-top:3px;line-height:1.4;">Come vorrei che gli altri mi ricordassero al termine dell'avventura?</div></div></div>
-            <textarea id="cn-r8" rows="3" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.07);color:#fff;border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:8px;font-size:0.85rem;line-height:1.5;resize:vertical;font-family:inherit;" placeholder="Scrivi qui…"></textarea>
-          </div>
-          <div style="background:linear-gradient(135deg,#0d1b2a 0%,#11214a 100%);border:2px solid #FF6B00;border-radius:14px;padding:14px;">
-            <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;"><span style="font-size:1.4rem;flex-shrink:0;">⭐</span><div><div style="color:#fff;font-weight:600;font-size:0.88rem;line-height:1.3;">Se questa isola potesse regalarmi una sola cosa...</div><div style="color:#7ECFFF;font-size:0.76rem;margin-top:3px;line-height:1.4;">Che cosa vorrei portare con me quando tornerò a casa?</div></div></div>
-            <textarea id="cn-r9" rows="3" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.07);color:#fff;border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:8px;font-size:0.85rem;line-height:1.5;resize:vertical;font-family:inherit;" placeholder="Scrivi qui…"></textarea>
-          </div>
-        </div>
-        <!-- bottiglia -->
-        <div style="background:linear-gradient(135deg,#0a1e1c 0%,#0d2b2b 100%);border:2px solid #00FFD1;border-radius:14px;padding:16px;">
-          <div style="color:#00FFD1;font-size:1rem;font-weight:700;margin-bottom:6px;">🍾 Una bottiglia affidata al mare</div>
-          <p style="color:#a0f0e0;font-size:0.83rem;margin:0 0 2px;">Scrivi un messaggio al te stesso che lascerà l'isola.</p>
-          <p style="color:#7ECFFF;font-size:0.8rem;font-style:italic;margin:0 0 10px;">Se un giorno leggerai queste righe…</p>
-          <textarea id="cn-bottiglia" rows="6" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.07);color:#fff;border:1px solid rgba(0,255,209,0.3);border-radius:8px;padding:10px;font-size:0.85rem;line-height:1.5;resize:vertical;font-family:inherit;" placeholder="Caro me futuro…"></textarea>
-        </div>
-      </div>
-    </div>
-
     <!-- IDENTIFICAZIONE -->
     <div class="ci-sezione ci-accordion-item">
       <div class="ci-sezione-header ci-accordion-toggle">🪪 Identificazione <span class="arrow">▼</span></div>
@@ -2087,6 +2027,55 @@ async function setupNotteSbarco(isAdminUser) {
   const dopoFinestra = adesso >= notteFine;
   const canWrite     = isAdminUser || inFinestra;
 
+  const DOMANDE = [
+    { icon:'🌊', col:'#FF6B00', titolo:"Con quale stato d'animo sto per approdare sull'isola?", sub:'Quali emozioni sento più forti questa sera?' },
+    { icon:'🎒', col:'#FF2D9B', titolo:'Cosa porto con me?', sub:'Non nello zaino, ma dentro di me. Quali sono le qualità che mi accompagneranno durante questa avventura?' },
+    { icon:'🌱', col:'#FF6B00', titolo:"Cosa spero di trovare sull'isola?", sub:'Che cosa mi piacerebbe vivere?' },
+    { icon:'🧭', col:'#FF2D9B', titolo:'Quale parte di me vorrei conoscere meglio?', sub:'C\'è qualcosa che vorrei capire di me stesso?' },
+    { icon:'⛰️', col:'#FF6B00', titolo:'Quali sono gli scogli che temo di incontrare?', sub:'Quali difficoltà penso di dover affrontare?' },
+    { icon:'🌊', col:'#FF2D9B', titolo:'Quali onde fanno ancora paura?', sub:'Quali sono le paure che vorrei imparare ad affrontare?' },
+    { icon:'🔥', col:'#FF6B00', titolo:'Quale fuoco posso accendere per gli altri?', sub:'Quali qualità, capacità o gesti posso mettere a disposizione della mia ciurma?' },
+    { icon:'🤝', col:'#FF2D9B', titolo:'Che tipo di compagno di viaggio voglio essere?', sub:'Come vorrei che gli altri mi ricordassero al termine dell\'avventura?' },
+    { icon:'⭐', col:'#FF6B00', titolo:'Se questa isola potesse regalarmi una sola cosa...', sub:'Che cosa vorrei portare con me quando tornerò a casa?' }
+  ];
+
+  const cardsHtml = DOMANDE.map((d, i) => `
+    <div style="background:linear-gradient(135deg,#0d1b2a 0%,#11214a 100%);border:2px solid ${d.col};border-radius:14px;padding:14px;">
+      <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;">
+        <span style="font-size:1.4rem;flex-shrink:0;">${d.icon}</span>
+        <div>
+          <div style="color:#fff;font-weight:600;font-size:0.88rem;line-height:1.3;">${d.titolo}</div>
+          <div style="color:#7ECFFF;font-size:0.76rem;margin-top:3px;line-height:1.4;">${d.sub}</div>
+        </div>
+      </div>
+      <textarea id="cn-r${i+1}" rows="3" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.07);color:#fff;border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:8px;font-size:0.85rem;line-height:1.5;resize:vertical;font-family:inherit;" placeholder="Scrivi qui…"></textarea>
+    </div>`).join('');
+
+  const wrap = document.createElement('div');
+  wrap.id = 'ci-notte-wrap';
+  wrap.style.cssText = 'margin-bottom:10px;border-top:3px solid #FFD700;padding-top:14px;';
+  wrap.innerHTML = `
+    <div id="ci-notte-body">
+      <div style="background:linear-gradient(160deg,#0d1b2a 0%,#1a1a4e 100%);border-radius:12px;padding:16px 14px;margin-bottom:14px;position:relative;overflow:hidden;">
+        <div style="position:absolute;inset:0;pointer-events:none;background-image:radial-gradient(1px 1px at 10% 15%,#fff 0%,transparent 100%),radial-gradient(1.5px 1.5px at 40% 10%,#fff 0%,transparent 100%),radial-gradient(1px 1px at 70% 8%,#fff 0%,transparent 100%),radial-gradient(1px 1px at 88% 80%,#fff 0%,transparent 100%),radial-gradient(1.5px 1.5px at 47% 88%,#fff 0%,transparent 100%);"></div>
+        <div style="position:relative;font-size:1.1rem;font-weight:700;color:#FFD700;margin-bottom:10px;">🌙 Notte prima di partire</div>
+        <p style="position:relative;color:#c8e6ff;font-size:0.84rem;line-height:1.6;margin:0 0 10px;">Il mare è ancora davanti a te. Domani, dopo un lungo viaggio, approderai sulla Robinson Republic insieme ad altri naufraghi. Nessuno sa cosa troverà sull'isola. Ognuno porta con sé qualcosa: sogni, paure, speranze, ricordi, talenti e ferite. Prima dello sbarco fermati qualche minuto. Questa pagina serve a te. Alla fine del campo la rileggerai e forse scoprirai che qualcosa dentro di te è cambiato.</p>
+        <div id="cn-saved-msg" style="display:none;text-align:center;background:#00FFD133;color:#00FFD1;border:1px solid #00FFD1;border-radius:20px;padding:2px 14px;font-size:0.78rem;transition:opacity 0.4s;">Salvato ✓</div>
+      </div>
+      <div id="cn-status-msg" style="display:none;margin-bottom:14px;padding:12px 16px;background:#FFD700;border-radius:10px;color:#1a1a00;font-size:0.87rem;font-weight:600;text-align:center;line-height:1.5;"></div>
+      <div style="display:grid;grid-template-columns:1fr;gap:12px;margin-bottom:16px;">${cardsHtml}</div>
+      <div style="background:linear-gradient(135deg,#0a1e1c 0%,#0d2b2b 100%);border:2px solid #00FFD1;border-radius:14px;padding:16px;">
+        <div style="color:#00FFD1;font-size:1rem;font-weight:700;margin-bottom:6px;">🍾 Una bottiglia affidata al mare</div>
+        <p style="color:#a0f0e0;font-size:0.83rem;margin:0 0 2px;">Scrivi un messaggio al te stesso che lascerà l'isola.</p>
+        <p style="color:#7ECFFF;font-size:0.8rem;font-style:italic;margin:0 0 10px;">Se un giorno leggerai queste righe…</p>
+        <textarea id="cn-bottiglia" rows="6" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.07);color:#fff;border:1px solid rgba(0,255,209,0.3);border-radius:8px;padding:10px;font-size:0.85rem;line-height:1.5;resize:vertical;font-family:inherit;" placeholder="Caro me futuro…"></textarea>
+      </div>
+    </div>`;
+
+  // Inserisci come primo figlio di .ci-wrap
+  const ciWrap = document.querySelector('#tab-carta .ci-wrap');
+  if (ciWrap) ciWrap.insertBefore(wrap, ciWrap.firstChild);
+
   // Carica dati salvati
   try {
     const snap = await getDoc(doc(db, 'notte_sbarco', pageUid));
@@ -2704,6 +2693,10 @@ function lockAllForms(lock = true) {
 </script>
 <script>
 function initAccordionNaufrago() {
+  // Forza chiusura di tutti gli accordion (reset sicuro indipendente dallo stato HTML)
+  document.querySelectorAll('.ci-accordion-body').forEach(function(b) {
+    b.style.display = 'none';
+  });
   // Rimuovi listener precedenti clonando i nodi
   document.querySelectorAll('.ci-accordion-toggle').forEach(function(t) {
     var clone = t.cloneNode(true);
@@ -2717,8 +2710,6 @@ function initAccordionNaufrago() {
       body.style.display = body.style.display === 'block' ? 'none' : 'block';
     });
   });
-  // Apri prima sezione di default
-  // tutte le sezioni chiuse di default — l'utente apre quella che vuole
 }
 </script>
 </body>
