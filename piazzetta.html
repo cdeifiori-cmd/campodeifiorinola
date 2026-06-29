@@ -438,6 +438,7 @@
       let done = 0;
       const results = await Promise.all(
         items.map(item => uploadOne(item.file, item.type).then(url => {
+          if (url === null) throw new Error('Upload annullato: file troppo grande.');
           done++;
           if (barEl) barEl.style.width = Math.round(done / items.length * 100) + '%';
           return { url, type: item.type, name: item.name };
@@ -563,6 +564,11 @@
     const postItems = [];
 
     function postAddFile(file, type) {
+      console.log('FILE SIZE:', file.size, 'tipo:', type, 'mime:', file.type);
+      if (file.size > 50 * 1024 * 1024) {
+        alert('Il file è troppo grande (max 50MB).\nPuoi comprimerlo con app come HandBrake (PC) o Compress Video (smartphone) prima di caricarlo.');
+        return;
+      }
       if (postItems.length >= MAX_FILES) { alert(`Massimo ${MAX_FILES} allegati per post.`); return; }
       postItems.push({ file, type, name: file.name || type, previewUrl: URL.createObjectURL(file) });
       redrawPostPreview();
