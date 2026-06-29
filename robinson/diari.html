@@ -161,6 +161,8 @@ const meteoInterpretazioni = {
 
 onAuthStateChanged(auth, async user => {
   if (!user) { requireAuth(); return; }
+  const _apertura = new Date('2026-07-01T22:00:00');
+  if (user.uid !== 'mCSgNMVEphVIIf4HX0bkcKq2ZKv2' && new Date() < _apertura) { window.location.href = 'attesa.html'; return; }
   await caricaDiari();
 });
 

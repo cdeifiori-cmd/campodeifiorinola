@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Robinson Republic – In arrivo</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Lora', serif;
+      background: #0d1b2a;
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    /* Stelle di sfondo */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        radial-gradient(1px 1px at 8% 12%, rgba(255,255,255,0.9) 0%, transparent 100%),
+        radial-gradient(1.5px 1.5px at 25% 7%, rgba(255,255,255,0.7) 0%, transparent 100%),
+        radial-gradient(1px 1px at 42% 18%, rgba(255,255,255,0.8) 0%, transparent 100%),
+        radial-gradient(2px 2px at 60% 5%, rgba(255,255,255,0.6) 0%, transparent 100%),
+        radial-gradient(1px 1px at 78% 14%, rgba(255,255,255,0.9) 0%, transparent 100%),
+        radial-gradient(1.5px 1.5px at 90% 25%, rgba(255,255,255,0.7) 0%, transparent 100%),
+        radial-gradient(1px 1px at 15% 35%, rgba(255,255,255,0.5) 0%, transparent 100%),
+        radial-gradient(1px 1px at 55% 42%, rgba(255,255,255,0.6) 0%, transparent 100%),
+        radial-gradient(1.5px 1.5px at 85% 55%, rgba(255,255,255,0.8) 0%, transparent 100%),
+        radial-gradient(1px 1px at 30% 65%, rgba(255,255,255,0.5) 0%, transparent 100%),
+        radial-gradient(1px 1px at 70% 70%, rgba(255,255,255,0.7) 0%, transparent 100%),
+        radial-gradient(2px 2px at 5% 80%, rgba(255,255,255,0.6) 0%, transparent 100%),
+        radial-gradient(1px 1px at 48% 85%, rgba(255,255,255,0.8) 0%, transparent 100%),
+        radial-gradient(1.5px 1.5px at 92% 88%, rgba(255,255,255,0.7) 0%, transparent 100%);
+    }
+    /* Onde animate in fondo */
+    .onde {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      height: 80px;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .onde svg { width: 100%; height: 100%; }
+    .onda1 { animation: scorriOnda 6s linear infinite; }
+    .onda2 { animation: scorriOnda 9s linear infinite reverse; opacity: 0.5; }
+    @keyframes scorriOnda {
+      from { transform: translateX(0); }
+      to   { transform: translateX(-50%); }
+    }
+
+    .logo-wrap { margin-bottom: 24px; }
+    .logo-emoji { font-size: 3.5rem; display: block; margin-bottom: 8px; animation: dondola 3s ease-in-out infinite; }
+    @keyframes dondola { 0%,100%{ transform: rotate(-5deg); } 50%{ transform: rotate(5deg); } }
+    h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #FFD700;
+      text-shadow: 0 0 20px rgba(255,215,0,0.4);
+      margin-bottom: 6px;
+      letter-spacing: 0.02em;
+    }
+    .subtitle {
+      font-size: 0.85rem;
+      color: #7ECFFF;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 32px;
+    }
+    .testo-attesa {
+      max-width: 360px;
+      font-size: 1.05rem;
+      line-height: 1.7;
+      color: #c8e6ff;
+      margin-bottom: 36px;
+    }
+    .testo-attesa strong { color: #FFD700; }
+
+    /* Countdown */
+    .countdown-wrap {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin-bottom: 32px;
+      flex-wrap: wrap;
+    }
+    .cd-box {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,215,0,0.3);
+      border-radius: 12px;
+      padding: 14px 12px 10px;
+      min-width: 72px;
+      text-align: center;
+    }
+    .cd-num {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #FFD700;
+      line-height: 1;
+      display: block;
+    }
+    .cd-label {
+      font-size: 0.68rem;
+      color: #7ECFFF;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      margin-top: 4px;
+      display: block;
+    }
+    /* Messaggio quando arriva a zero */
+    #msg-zero {
+      display: none;
+      font-size: 1.1rem;
+      color: #FFD700;
+      font-weight: 700;
+      margin-bottom: 16px;
+      animation: pulse-msg 1s ease-in-out infinite;
+    }
+    @keyframes pulse-msg { 0%,100%{ opacity:1; } 50%{ opacity:0.5; } }
+
+    .firma {
+      font-size: 0.75rem;
+      color: rgba(255,255,255,0.3);
+      margin-top: 12px;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+
+<div class="logo-wrap">
+  <span class="logo-emoji">⚓</span>
+  <h1>Robinson Republic</h1>
+  <p class="subtitle">L'isola dei naufraghi</p>
+</div>
+
+<p class="testo-attesa">
+  🌊 Il viaggio sta per iniziare...<br><br>
+  Robinson Republic apre i battenti<br>
+  <strong>mercoledì 1 luglio alle ore 22:00</strong>.<br><br>
+  Preparati a salpare!
+</p>
+
+<div class="countdown-wrap">
+  <div class="cd-box"><span class="cd-num" id="cd-giorni">--</span><span class="cd-label">Giorni</span></div>
+  <div class="cd-box"><span class="cd-num" id="cd-ore">--</span><span class="cd-label">Ore</span></div>
+  <div class="cd-box"><span class="cd-num" id="cd-min">--</span><span class="cd-label">Minuti</span></div>
+  <div class="cd-box"><span class="cd-num" id="cd-sec">--</span><span class="cd-label">Secondi</span></div>
+</div>
+
+<div id="msg-zero">🏝️ Il viaggio è iniziato! Reindirizzamento…</div>
+
+<p class="firma">Ci vediamo sull'isola 🌴</p>
+
+<div class="onde">
+  <svg viewBox="0 0 1440 80" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+    <path class="onda1" d="M0 40 C180 10 360 70 540 40 C720 10 900 70 1080 40 C1260 10 1440 70 1440 40 L1440 80 L0 80 Z" fill="rgba(0,100,180,0.18)"/>
+    <path class="onda2" d="M0 50 C180 20 360 80 540 50 C720 20 900 80 1080 50 C1260 20 1440 80 1440 50 L1440 80 L0 80 Z" fill="rgba(0,150,220,0.12)"/>
+  </svg>
+</div>
+
+<script>
+  const TARGET = new Date('2026-07-01T22:00:00');
+
+  function pad(n) { return String(n).padStart(2, '0'); }
+
+  function tick() {
+    const diff = TARGET - new Date();
+    if (diff <= 0) {
+      document.getElementById('cd-giorni').textContent = '00';
+      document.getElementById('cd-ore').textContent = '00';
+      document.getElementById('cd-min').textContent = '00';
+      document.getElementById('cd-sec').textContent = '00';
+      document.getElementById('msg-zero').style.display = 'block';
+      setTimeout(() => { window.location.href = 'index.html'; }, 3000);
+      return;
+    }
+    const giorni = Math.floor(diff / 86400000);
+    const ore    = Math.floor((diff % 86400000) / 3600000);
+    const min    = Math.floor((diff % 3600000) / 60000);
+    const sec    = Math.floor((diff % 60000) / 1000);
+    document.getElementById('cd-giorni').textContent = pad(giorni);
+    document.getElementById('cd-ore').textContent    = pad(ore);
+    document.getElementById('cd-min').textContent    = pad(min);
+    document.getElementById('cd-sec').textContent    = pad(sec);
+  }
+
+  tick();
+  setInterval(tick, 1000);
+</script>
+</body>
+</html>
