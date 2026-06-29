@@ -605,7 +605,7 @@
     }
 
     // Registrazione audio post
-    let postRecorder = null, postAudioChunks = [], postRecording = false;
+    let postRecorder = null, postAudioChunks = [], postRecording = false, postRecTimer = null;
 
     const fab      = document.getElementById('fab-new-post');
     const backdrop = document.getElementById('modal-backdrop');
@@ -658,11 +658,13 @@
         postRecorder.start();
         postRecording = true;
         btnAudio.textContent = '⏹️ Stop'; btnAudio.classList.add('recording');
+        postRecTimer = setTimeout(() => { stopPostRec(); alert('Registrazione completata. Durata massima: 3 minuti.'); }, 180000);
       } catch(err) { alert('Microfono non disponibile: ' + err.message); }
     });
 
     function stopPostRec() {
       if (postRecorder && postRecording) {
+        clearTimeout(postRecTimer); postRecTimer = null;
         postRecorder.stop(); postRecording = false;
         btnAudio.textContent = '🎙️ Registra'; btnAudio.classList.remove('recording');
       }
@@ -1046,7 +1048,7 @@
       const cItems = [];
       const previewId = `cprev-${postId}-${Date.now()}`;
 
-      let cRec = null, cAudioChunks = [], cRecording = false;
+      let cRec = null, cAudioChunks = [], cRecording = false, cRecTimer = null;
 
       const wrap = document.createElement('div');
       wrap.className = 'comment-input-wrap';
@@ -1115,6 +1117,7 @@
 
       recBtn.addEventListener('click', async () => {
         if (cRecording) {
+          clearTimeout(cRecTimer); cRecTimer = null;
           cRec.stop(); cRecording = false;
           recBtn.textContent = '🎙️'; recBtn.classList.remove('recording'); return;
         }
@@ -1130,6 +1133,12 @@
           };
           cRec.start(); cRecording = true;
           recBtn.textContent = '⏹️'; recBtn.classList.add('recording');
+          cRecTimer = setTimeout(() => {
+            clearTimeout(cRecTimer); cRecTimer = null;
+            cRec.stop(); cRecording = false;
+            recBtn.textContent = '🎙️'; recBtn.classList.remove('recording');
+            alert('Registrazione completata. Durata massima: 3 minuti.');
+          }, 180000);
         } catch(err) { alert('Microfono non disponibile'); }
       });
 

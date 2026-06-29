@@ -457,7 +457,7 @@ function closeModal() {
 ['input-video','input-video-cam'].forEach(id => document.getElementById(id).addEventListener('change', e => { Array.from(e.target.files).forEach(f => postAddFile(f,'video')); e.target.value=''; }));
 document.getElementById('input-audio-file').addEventListener('change', e => { Array.from(e.target.files).forEach(f => postAddFile(f,'audio')); e.target.value=''; });
 
-let postRecorder=null, postAudioChunks=[], postRecording=false;
+let postRecorder=null, postAudioChunks=[], postRecording=false, postRecTimer=null;
 const btnAudio = document.getElementById('btn-audio');
 btnAudio.addEventListener('click', async () => {
   if (postRecording) { stopPostRec(); return; }
@@ -475,10 +475,12 @@ btnAudio.addEventListener('click', async () => {
     };
     postRecorder.start(); postRecording = true;
     btnAudio.textContent = '⏹️ Stop'; btnAudio.classList.add('recording');
+    postRecTimer = setTimeout(() => { stopPostRec(); alert('Registrazione completata. Durata massima: 3 minuti.'); }, 180000);
   } catch(err) { alert('Microfono non disponibile: ' + err.message); }
 });
 function stopPostRec() {
   if (postRecorder && postRecording) {
+    clearTimeout(postRecTimer); postRecTimer = null;
     postRecorder.stop(); postRecording = false;
     btnAudio.textContent = '🎙️ Audio'; btnAudio.classList.remove('recording');
   }
@@ -754,7 +756,7 @@ window.deleteComment = async (postId, commentId, btn) => {
 function buildCommentInput(postId) {
   const cItems = [];
   const previewId = `cprev-${postId}-${Date.now()}`;
-  let cRec = null, cAudioChunks = [], cRecording = false;
+  let cRec = null, cAudioChunks = [], cRecording = false, cRecTimer = null;
 
   const wrap = document.createElement('div');
   wrap.className = 'comment-input-wrap';
@@ -814,7 +816,10 @@ function buildCommentInput(postId) {
   wrap.querySelector('.ci-aud').addEventListener('change', e => { Array.from(e.target.files).forEach(f=>cAddFile(f,'audio')); e.target.value=''; });
 
   recBtn.addEventListener('click', async () => {
-    if (cRecording) { cRec.stop(); cRecording=false; recBtn.textContent='🎙️'; recBtn.classList.remove('recording'); return; }
+    if (cRecording) {
+      clearTimeout(cRecTimer); cRecTimer = null;
+      cRec.stop(); cRecording=false; recBtn.textContent='🎙️'; recBtn.classList.remove('recording'); return;
+    }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio:true });
       cAudioChunks = [];
@@ -823,6 +828,11 @@ function buildCommentInput(postId) {
       cRec.ondataavailable = e => cAudioChunks.push(e.data);
       cRec.onstop = () => { const ext=mimeType.includes('mp4')?'mp4':'webm'; cAddFile(new File([new Blob(cAudioChunks,{type:mimeType})],`rec_${Date.now()}.${ext}`,{type:mimeType}),'audio'); stream.getTracks().forEach(t=>t.stop()); };
       cRec.start(); cRecording=true; recBtn.textContent='⏹️'; recBtn.classList.add('recording');
+      cRecTimer = setTimeout(() => {
+        clearTimeout(cRecTimer); cRecTimer = null;
+        cRec.stop(); cRecording=false; recBtn.textContent='🎙️'; recBtn.classList.remove('recording');
+        alert('Registrazione completata. Durata massima: 3 minuti.');
+      }, 180000);
     } catch(err) { alert('Microfono non disponibile'); }
   });
 
