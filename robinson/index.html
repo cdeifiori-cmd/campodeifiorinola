@@ -146,7 +146,7 @@ const user = await getAuthUser();
 if (!user) {
   document.getElementById('btn-login-wrap').style.display = 'flex';
 } else {
-  const _apertura = new Date('2026-07-01T22:00:00');
+  const _apertura = new Date('2026-07-02T10:00:00');
   if (user.uid !== 'mCSgNMVEphVIIf4HX0bkcKq2ZKv2' && new Date() < _apertura) { window.location.href = 'attesa.html'; }
 
   const diarioLink = document.getElementById('nav-diario');

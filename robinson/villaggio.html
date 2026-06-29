@@ -253,7 +253,7 @@ requireAuth(async user => {
   _currentUser = user;
   _isAdmin = user.uid === ADMIN_UID;
 
-  const _apertura = new Date('2026-07-01T22:00:00');
+  const _apertura = new Date('2026-07-02T10:00:00');
   if (!_isAdmin && new Date() < _apertura) { window.location.href = 'attesa.html'; return; }
 
   ['perla_centrale','atlantide','nautilus'].forEach(id => {
