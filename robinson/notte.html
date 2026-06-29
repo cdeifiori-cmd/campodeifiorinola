@@ -31,6 +31,28 @@
     .notte-ta { width:100%; box-sizing:border-box; background:rgba(255,255,255,0.08); color:#fff; border:1px solid rgba(255,255,255,0.2); border-radius:8px; padding:10px; font-size:0.9rem; line-height:1.5; resize:vertical; font-family:'Lora',serif; }
     .notte-ta::placeholder { color:rgba(255,255,255,0.4); }
     .notte-ta:disabled { opacity:0.45; cursor:not-allowed; }
+    /* Audio controls */
+    .audio-controls { margin-top:8px; display:flex; flex-direction:column; gap:6px; }
+    .rec-btn {
+      background: rgba(220,50,50,0.15);
+      color: #ff8888;
+      border: 1px solid rgba(220,50,50,0.4);
+      border-radius:8px; padding:7px 12px;
+      cursor:pointer; font-family:'Lora',serif; font-size:0.82rem;
+      display:flex; align-items:center; gap:6px;
+      transition: background 0.2s;
+      width: fit-content;
+    }
+    .rec-btn:hover { background: rgba(220,50,50,0.28); }
+    .rec-btn.recording { background:rgba(220,50,50,0.6); color:#fff; animation: pulse-rec 1s infinite; }
+    .rec-btn:disabled { opacity:0.4; cursor:not-allowed; }
+    @keyframes pulse-rec { 0%,100%{ opacity:1; } 50%{ opacity:0.5; } }
+    .audio-player-wrap { display:none; align-items:center; gap:8px; background:rgba(255,255,255,0.06); border-radius:8px; padding:6px 8px; }
+    .audio-player-wrap audio { flex:1; height:36px; min-width:0; }
+    .del-audio-btn { background:none; border:none; color:#ff6b6b; cursor:pointer; font-size:1rem; padding:2px 4px; line-height:1; flex-shrink:0; }
+    .del-audio-btn:hover { color:#ff2d2d; }
+    .rec-status { font-size:0.75rem; color:#FFD700; display:none; }
+    .uploading-badge { font-size:0.75rem; color:#7ECFFF; display:none; }
     #cn-saved-msg { display:none; text-align:center; color:#00FFD1; font-weight:700; padding:10px 0; font-size:0.9rem; }
     .loading-msg { text-align:center; color:#7ECFFF; font-style:italic; padding:40px 0; }
   </style>
@@ -54,64 +76,164 @@
 
     <div id="cn-status-msg"></div>
 
+    <!-- Card 1 -->
     <div class="card" style="border:2px solid #FF6B00;">
       <div class="card-titolo">🌊 Con quale stato d'animo sto per approdare sull'isola?</div>
       <div class="card-sub">Quali emozioni sento più forti questa sera?</div>
       <textarea id="cn-r1" class="notte-ta" rows="3" placeholder="Scrivi qui…"></textarea>
+      <div class="audio-controls">
+        <button class="rec-btn" id="rec-r1">🎙️ Registra audio</button>
+        <span class="rec-status" id="recst-r1">⏺ Registrazione in corso…</span>
+        <span class="uploading-badge" id="up-r1">⏳ Caricamento audio…</span>
+        <div class="audio-player-wrap" id="player-r1">
+          <audio id="audio-r1" controls></audio>
+          <button class="del-audio-btn" id="del-r1" title="Elimina audio">✕</button>
+        </div>
+      </div>
     </div>
 
+    <!-- Card 2 -->
     <div class="card" style="border:2px solid #FF2D9B;">
       <div class="card-titolo">🎒 Cosa porto con me?</div>
       <div class="card-sub">Non nello zaino, ma dentro di me. Quali sono le qualità che mi accompagneranno durante questa avventura?</div>
       <textarea id="cn-r2" class="notte-ta" rows="3" placeholder="Scrivi qui…"></textarea>
+      <div class="audio-controls">
+        <button class="rec-btn" id="rec-r2">🎙️ Registra audio</button>
+        <span class="rec-status" id="recst-r2">⏺ Registrazione in corso…</span>
+        <span class="uploading-badge" id="up-r2">⏳ Caricamento audio…</span>
+        <div class="audio-player-wrap" id="player-r2">
+          <audio id="audio-r2" controls></audio>
+          <button class="del-audio-btn" id="del-r2" title="Elimina audio">✕</button>
+        </div>
+      </div>
     </div>
 
+    <!-- Card 3 -->
     <div class="card" style="border:2px solid #FF6B00;">
       <div class="card-titolo">🌱 Cosa spero di trovare sull'isola?</div>
       <div class="card-sub">Che cosa mi piacerebbe vivere?</div>
       <textarea id="cn-r3" class="notte-ta" rows="3" placeholder="Scrivi qui…"></textarea>
+      <div class="audio-controls">
+        <button class="rec-btn" id="rec-r3">🎙️ Registra audio</button>
+        <span class="rec-status" id="recst-r3">⏺ Registrazione in corso…</span>
+        <span class="uploading-badge" id="up-r3">⏳ Caricamento audio…</span>
+        <div class="audio-player-wrap" id="player-r3">
+          <audio id="audio-r3" controls></audio>
+          <button class="del-audio-btn" id="del-r3" title="Elimina audio">✕</button>
+        </div>
+      </div>
     </div>
 
+    <!-- Card 4 -->
     <div class="card" style="border:2px solid #FF2D9B;">
       <div class="card-titolo">🧭 Quale parte di me vorrei conoscere meglio?</div>
       <div class="card-sub">C'è qualcosa che vorrei capire di me stesso?</div>
       <textarea id="cn-r4" class="notte-ta" rows="3" placeholder="Scrivi qui…"></textarea>
+      <div class="audio-controls">
+        <button class="rec-btn" id="rec-r4">🎙️ Registra audio</button>
+        <span class="rec-status" id="recst-r4">⏺ Registrazione in corso…</span>
+        <span class="uploading-badge" id="up-r4">⏳ Caricamento audio…</span>
+        <div class="audio-player-wrap" id="player-r4">
+          <audio id="audio-r4" controls></audio>
+          <button class="del-audio-btn" id="del-r4" title="Elimina audio">✕</button>
+        </div>
+      </div>
     </div>
 
+    <!-- Card 5 -->
     <div class="card" style="border:2px solid #FF6B00;">
       <div class="card-titolo">⛰️ Quali sono gli scogli che temo di incontrare?</div>
       <div class="card-sub">Quali difficoltà penso di dover affrontare?</div>
       <textarea id="cn-r5" class="notte-ta" rows="3" placeholder="Scrivi qui…"></textarea>
+      <div class="audio-controls">
+        <button class="rec-btn" id="rec-r5">🎙️ Registra audio</button>
+        <span class="rec-status" id="recst-r5">⏺ Registrazione in corso…</span>
+        <span class="uploading-badge" id="up-r5">⏳ Caricamento audio…</span>
+        <div class="audio-player-wrap" id="player-r5">
+          <audio id="audio-r5" controls></audio>
+          <button class="del-audio-btn" id="del-r5" title="Elimina audio">✕</button>
+        </div>
+      </div>
     </div>
 
+    <!-- Card 6 -->
     <div class="card" style="border:2px solid #FF2D9B;">
       <div class="card-titolo">🌊 Quali onde fanno ancora paura?</div>
       <div class="card-sub">Quali sono le paure che vorrei imparare ad affrontare?</div>
       <textarea id="cn-r6" class="notte-ta" rows="3" placeholder="Scrivi qui…"></textarea>
+      <div class="audio-controls">
+        <button class="rec-btn" id="rec-r6">🎙️ Registra audio</button>
+        <span class="rec-status" id="recst-r6">⏺ Registrazione in corso…</span>
+        <span class="uploading-badge" id="up-r6">⏳ Caricamento audio…</span>
+        <div class="audio-player-wrap" id="player-r6">
+          <audio id="audio-r6" controls></audio>
+          <button class="del-audio-btn" id="del-r6" title="Elimina audio">✕</button>
+        </div>
+      </div>
     </div>
 
+    <!-- Card 7 -->
     <div class="card" style="border:2px solid #FF6B00;">
       <div class="card-titolo">🔥 Quale fuoco posso accendere per gli altri?</div>
       <div class="card-sub">Quali qualità, capacità o gesti posso mettere a disposizione della mia ciurma?</div>
       <textarea id="cn-r7" class="notte-ta" rows="3" placeholder="Scrivi qui…"></textarea>
+      <div class="audio-controls">
+        <button class="rec-btn" id="rec-r7">🎙️ Registra audio</button>
+        <span class="rec-status" id="recst-r7">⏺ Registrazione in corso…</span>
+        <span class="uploading-badge" id="up-r7">⏳ Caricamento audio…</span>
+        <div class="audio-player-wrap" id="player-r7">
+          <audio id="audio-r7" controls></audio>
+          <button class="del-audio-btn" id="del-r7" title="Elimina audio">✕</button>
+        </div>
+      </div>
     </div>
 
+    <!-- Card 8 -->
     <div class="card" style="border:2px solid #FF2D9B;">
       <div class="card-titolo">🤝 Che tipo di compagno di viaggio voglio essere?</div>
       <div class="card-sub">Come vorrei che gli altri mi ricordassero al termine dell'avventura?</div>
       <textarea id="cn-r8" class="notte-ta" rows="3" placeholder="Scrivi qui…"></textarea>
+      <div class="audio-controls">
+        <button class="rec-btn" id="rec-r8">🎙️ Registra audio</button>
+        <span class="rec-status" id="recst-r8">⏺ Registrazione in corso…</span>
+        <span class="uploading-badge" id="up-r8">⏳ Caricamento audio…</span>
+        <div class="audio-player-wrap" id="player-r8">
+          <audio id="audio-r8" controls></audio>
+          <button class="del-audio-btn" id="del-r8" title="Elimina audio">✕</button>
+        </div>
+      </div>
     </div>
 
+    <!-- Card 9 -->
     <div class="card" style="border:2px solid #FF6B00;">
       <div class="card-titolo">⭐ Se questa isola potesse regalarmi una sola cosa...</div>
       <div class="card-sub">Che cosa vorrei portare con me quando tornerò a casa?</div>
       <textarea id="cn-r9" class="notte-ta" rows="3" placeholder="Scrivi qui…"></textarea>
+      <div class="audio-controls">
+        <button class="rec-btn" id="rec-r9">🎙️ Registra audio</button>
+        <span class="rec-status" id="recst-r9">⏺ Registrazione in corso…</span>
+        <span class="uploading-badge" id="up-r9">⏳ Caricamento audio…</span>
+        <div class="audio-player-wrap" id="player-r9">
+          <audio id="audio-r9" controls></audio>
+          <button class="del-audio-btn" id="del-r9" title="Elimina audio">✕</button>
+        </div>
+      </div>
     </div>
 
+    <!-- Bottiglia -->
     <div class="card" style="border:2px solid #00FFD1; margin-top:20px;">
       <div class="card-titolo" style="color:#00FFD1;">🍾 Una bottiglia affidata al mare</div>
       <div class="card-sub">Scrivi un messaggio al te stesso che lascerà l'isola.<br><em>Se un giorno leggerai queste righe…</em></div>
       <textarea id="cn-bottiglia" class="notte-ta" rows="6" placeholder="Caro me futuro…" style="border-color:rgba(0,255,209,0.4);"></textarea>
+      <div class="audio-controls">
+        <button class="rec-btn" id="rec-bottiglia">🎙️ Registra audio</button>
+        <span class="rec-status" id="recst-bottiglia">⏺ Registrazione in corso…</span>
+        <span class="uploading-badge" id="up-bottiglia">⏳ Caricamento audio…</span>
+        <div class="audio-player-wrap" id="player-bottiglia">
+          <audio id="audio-bottiglia" controls></audio>
+          <button class="del-audio-btn" id="del-bottiglia" title="Elimina audio">✕</button>
+        </div>
+      </div>
     </div>
 
     <div id="cn-saved-msg">Salvato ✓</div>
@@ -131,7 +253,7 @@
 <div id="nav-auth-slot"></div>
 
 <script type="module">
-import { db, ADMIN_UID } from './js/robinson-firebase.js';
+import { db, ADMIN_UID, CLOUD_NAME, CLOUD_PRESET } from './js/robinson-firebase.js';
 import { requireAuth } from './js/robinson-auth.js';
 import { setupNavAuth } from './js/robinson-nav.js';
 import {
@@ -139,6 +261,34 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 setupNavAuth('nav-auth-slot');
+
+const FIELDS = ['r1','r2','r3','r4','r5','r6','r7','r8','r9','bottiglia'];
+
+async function uploadAudio(blob, ext) {
+  const fd = new FormData();
+  fd.append('file', blob, `notte_${Date.now()}.${ext}`);
+  fd.append('upload_preset', CLOUD_PRESET);
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/video/upload`, { method:'POST', body:fd });
+  if (!res.ok) throw new Error('Upload fallito');
+  const j = await res.json();
+  return j.secure_url;
+}
+
+function showPlayer(key, url) {
+  const audioEl = document.getElementById('audio-' + key);
+  const playerWrap = document.getElementById('player-' + key);
+  if (audioEl && playerWrap) {
+    audioEl.src = url;
+    playerWrap.style.display = 'flex';
+  }
+}
+
+function hidePlayer(key) {
+  const audioEl = document.getElementById('audio-' + key);
+  const playerWrap = document.getElementById('player-' + key);
+  if (audioEl) audioEl.src = '';
+  if (playerWrap) playerWrap.style.display = 'none';
+}
 
 requireAuth(async user => {
   const uid = user.uid;
@@ -155,25 +305,43 @@ requireAuth(async user => {
   const canWrite     = isAdmin || inFinestra;
 
   // Carica dati salvati
+  let savedData = {};
   try {
     const snap = await getDoc(doc(db, 'notte_sbarco', uid));
     if (snap.exists()) {
-      const d = snap.data();
+      savedData = snap.data();
       for (let i = 1; i <= 9; i++) {
         const el = document.getElementById('cn-r' + i);
-        if (el && d['risposta' + i]) el.value = d['risposta' + i];
+        if (el && savedData['risposta' + i]) el.value = savedData['risposta' + i];
+        // Audio
+        if (savedData['audio' + i]) showPlayer('r' + i, savedData['audio' + i]);
       }
       const bott = document.getElementById('cn-bottiglia');
-      if (bott && d.bottiglia) bott.value = d.bottiglia;
+      if (bott && savedData.bottiglia) bott.value = savedData.bottiglia;
+      if (savedData.audiobottiglia) showPlayer('bottiglia', savedData.audiobottiglia);
     }
   } catch(e) { console.warn('notte load:', e); }
 
-  const tas = [...Array(9).keys()].map(i => document.getElementById('cn-r' + (i+1)));
-  tas.push(document.getElementById('cn-bottiglia'));
+  // Salvataggio testo
+  let _deb = null;
+  const saveMsg = () => {
+    const m = document.getElementById('cn-saved-msg');
+    if (m) { m.style.display = 'block'; clearTimeout(m._t); m._t = setTimeout(() => m.style.display = 'none', 2000); }
+  };
+  const saveText = async () => {
+    try {
+      const dati = { ultimoSalvataggio: serverTimestamp() };
+      for (let i = 1; i <= 9; i++) dati['risposta' + i] = document.getElementById('cn-r' + i)?.value || '';
+      dati.bottiglia = document.getElementById('cn-bottiglia')?.value || '';
+      await setDoc(doc(db, 'notte_sbarco', uid), dati, { merge: true });
+      saveMsg();
+    } catch(e) { console.warn('notte save:', e); }
+  };
 
   const statusEl = document.getElementById('cn-status-msg');
   if (!canWrite) {
-    tas.forEach(el => { if (el) el.disabled = true; });
+    document.querySelectorAll('.notte-ta').forEach(el => { el.disabled = true; });
+    document.querySelectorAll('.rec-btn').forEach(btn => { btn.disabled = true; });
     if (statusEl) {
       statusEl.innerHTML = dopoFinestra
         ? '⚓ Il tuo viaggio è iniziato. Questa pagina è in sola lettura.'
@@ -181,20 +349,83 @@ requireAuth(async user => {
       statusEl.style.display = 'block';
     }
   } else {
-    let _deb = null;
-    const save = async () => {
-      try {
-        const dati = { ultimoSalvataggio: serverTimestamp() };
-        for (let i = 1; i <= 9; i++) dati['risposta' + i] = document.getElementById('cn-r' + i)?.value || '';
-        dati.bottiglia = document.getElementById('cn-bottiglia')?.value || '';
-        await setDoc(doc(db, 'notte_sbarco', uid), dati, { merge: true });
-        const m = document.getElementById('cn-saved-msg');
-        if (m) { m.style.display = 'block'; clearTimeout(m._t); m._t = setTimeout(() => m.style.display = 'none', 2000); }
-      } catch(e) { console.warn('notte save:', e); }
-    };
-    tas.forEach(el => {
-      if (!el) return;
-      el.addEventListener('input', () => { clearTimeout(_deb); _deb = setTimeout(save, 2000); });
+    // Listener autosave testo
+    document.querySelectorAll('.notte-ta').forEach(el => {
+      el.addEventListener('input', () => { clearTimeout(_deb); _deb = setTimeout(saveText, 2000); });
+    });
+
+    // Setup recorder per ogni campo
+    FIELDS.forEach(key => {
+      const recBtn    = document.getElementById('rec-' + key);
+      const recSt     = document.getElementById('recst-' + key);
+      const upBadge   = document.getElementById('up-' + key);
+      const delBtn    = document.getElementById('del-' + key);
+      if (!recBtn) return;
+
+      let recorder = null, chunks = [], recTimer = null, isRecording = false;
+      const mimeType = MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4' : 'audio/webm';
+      const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
+
+      async function stopRec() {
+        if (!isRecording) return;
+        clearTimeout(recTimer);
+        recorder.stop();
+        isRecording = false;
+        recBtn.textContent = '🎙️ Registra audio';
+        recBtn.classList.remove('recording');
+        if (recSt) recSt.style.display = 'none';
+      }
+
+      recBtn.addEventListener('click', async () => {
+        if (isRecording) { stopRec(); return; }
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          chunks = [];
+          recorder = new MediaRecorder(stream, { mimeType });
+          recorder.ondataavailable = e => chunks.push(e.data);
+          recorder.onstop = async () => {
+            stream.getTracks().forEach(t => t.stop());
+            const blob = new Blob(chunks, { type: mimeType });
+            if (upBadge) upBadge.style.display = 'inline';
+            recBtn.disabled = true;
+            try {
+              const url = await uploadAudio(blob, ext);
+              // Salva URL in Firestore
+              const firestoreKey = key === 'bottiglia' ? 'audiobottiglia' : 'audio' + key.replace('r','');
+              await setDoc(doc(db, 'notte_sbarco', uid), { [firestoreKey]: url, ultimoSalvataggio: serverTimestamp() }, { merge: true });
+              showPlayer(key, url);
+              saveMsg();
+            } catch(err) {
+              console.warn('upload audio:', err);
+              alert('Errore nel caricamento audio. Riprova.');
+            } finally {
+              if (upBadge) upBadge.style.display = 'none';
+              recBtn.disabled = false;
+            }
+          };
+          recorder.start();
+          isRecording = true;
+          recBtn.textContent = '⏹️ Ferma registrazione';
+          recBtn.classList.add('recording');
+          if (recSt) recSt.style.display = 'inline';
+          // Limite 3 minuti
+          recTimer = setTimeout(() => { stopRec(); }, 180000);
+        } catch(err) {
+          alert('Microfono non disponibile: ' + err.message);
+        }
+      });
+
+      // Elimina audio
+      if (delBtn) {
+        delBtn.addEventListener('click', async () => {
+          hidePlayer(key);
+          try {
+            const firestoreKey = key === 'bottiglia' ? 'audiobottiglia' : 'audio' + key.replace('r','');
+            await setDoc(doc(db, 'notte_sbarco', uid), { [firestoreKey]: '' }, { merge: true });
+            saveMsg();
+          } catch(e) { console.warn('delete audio:', e); }
+        });
+      }
     });
   }
 });
