@@ -294,9 +294,6 @@ requireAuth(async user => {
   const uid = user.uid;
   const isAdmin = uid === ADMIN_UID;
 
-  const _apertura = new Date('2026-07-01T22:00:00');
-  if (!isAdmin && new Date() < _apertura) { window.location.href = 'attesa.html'; return; }
-
   document.getElementById('loading-notte').style.display = 'none';
   document.getElementById('notte-content').style.display = 'block';
 
