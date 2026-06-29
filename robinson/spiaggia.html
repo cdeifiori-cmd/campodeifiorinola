@@ -411,6 +411,11 @@ function refreshPostPreview() {
   });
 }
 function postAddFile(f, type) {
+  console.log('ROBINSON FILE SIZE:', f.size, 'tipo:', type, 'mime:', f.type);
+  if (f.size > 50 * 1024 * 1024) {
+    alert('Il file è troppo grande (max 50MB).\nPuoi comprimerlo con app come HandBrake (PC) o Compress Video (smartphone) prima di caricarlo.');
+    return;
+  }
   if (postItems.length >= MAX_FILES) { alert(`Max ${MAX_FILES} allegati.`); return; }
   postItems.push({ file: f, type, name: f.name || type, previewUrl: URL.createObjectURL(f) });
   refreshPostPreview();

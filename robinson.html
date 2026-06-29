@@ -580,6 +580,11 @@
     const postItems = [];
 
     function postAddFile(file, type) {
+      console.log('ROBINSON FILE SIZE:', file.size, 'tipo:', type, 'mime:', file.type);
+      if (file.size > 50 * 1024 * 1024) {
+        alert('Il file è troppo grande (max 50MB).\nPuoi comprimerlo con app come HandBrake (PC) o Compress Video (smartphone) prima di caricarlo.');
+        return;
+      }
       if (postItems.length >= MAX_FILES) { alert(`Massimo ${MAX_FILES} allegati per post.`); return; }
       postItems.push({ file, type, name: file.name || type, previewUrl: URL.createObjectURL(file) });
       redrawPostPreview();
