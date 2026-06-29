@@ -287,13 +287,13 @@ async function _carta({ uid, nome, foto, ruolo, ruoloLabel }) {
     const ci = snapCI.exists() ? snapCI.data() : null;
     const compilata = ci?.salvato === true;
 
-    await _nottePartenza(uid, ruolo, ciBody);
-
     if (_isOwner(ruolo) && !compilata) {
       _cartaForm(uid, nome, ci, ciBody);
     } else {
       _cartaReadonly(uid, nome, ci, ruolo, ciBody);
     }
+
+    await _nottePartenza(uid, ruolo, ciBody);  // usa insertBefore → va in cima
 
     await _diconoDiMe(uid, ciBody);
   } catch(e) {
