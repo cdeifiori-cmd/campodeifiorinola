@@ -348,7 +348,7 @@
   <button class="tab-btn" data-tab="forziere">🏴‍☠️ Forziere</button>
   <button class="tab-btn" data-tab="bottiglia">🍾 Bottiglia</button>
   <button class="tab-btn" data-tab="dicono">💬 Vedono</button>
-  <button class="tab-btn" id="tab-btn-notte" data-tab="notte" style="display:none;">🌙 Notte</button>
+  <button class="tab-btn" id="tab-btn-notte" data-tab="notte">🌙 Notte</button>
   <button class="tab-btn" id="tab-btn-carta" data-tab="carta" style="display:none;">🪪 Carta</button>
 </div>
 
@@ -642,6 +642,8 @@
       <p class="notte-intro">Il mare è ancora davanti a te. Domani, dopo un lungo viaggio, approderai sulla Robinson Republic insieme ad altri naufraghi. Nessuno sa cosa troverà sull'isola. Ognuno porta con sé qualcosa: sogni, paure, speranze, ricordi, talenti e ferite. Prima dello sbarco fermati qualche minuto. Questa pagina serve a te. Alla fine del campo la rileggerai e forse scoprirai che qualcosa dentro di te è cambiato.</p>
       <div id="notte-saved-msg" class="notte-saved-msg" style="display:none;">Salvato ✓</div>
     </div>
+
+    <div id="notte-status-msg" style="display:none;margin:0 0 16px;padding:10px 14px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);border-radius:10px;color:#FFD700;font-size:0.88rem;text-align:center;"></div>
 
     <div class="notte-grid">
       <div class="notte-card" data-color="orange">
@@ -1008,19 +1010,13 @@ requireAuth(async user => {
   loadForziere();
   setupBottiglia();
   setupEmozioniStars();
-  // ── Notte prima dello sbarco: finestra temporale ────────────────────
-  const notteInizio = new Date('2026-07-01T10:00:00+02:00').getTime();
-  const notteFine   = new Date('2026-07-02T02:00:00+02:00').getTime();
-  const adesso      = Date.now();
-  const inFinestra  = adesso >= notteInizio && adesso < notteFine;
+  // ── Notte prima dello sbarco ─────────────────────────────────────────
+  const notteInizio  = new Date('2026-07-01T22:00:00+02:00').getTime();
+  const notteFine    = new Date('2026-07-02T02:00:00+02:00').getTime();
+  const adesso       = Date.now();
+  const inFinestra   = adesso >= notteInizio && adesso < notteFine;
   const dopoFinestra = adesso >= notteFine;
-  if (isAdmin || (isOwner && inFinestra) || (isOwner && dopoFinestra)) {
-    document.getElementById('tab-btn-notte').style.display = '';
-    await loadNotteSbarco();
-    if (!isAdmin && dopoFinestra) {
-      document.querySelectorAll('.notte-ta').forEach(ta => ta.disabled = true);
-    }
-  }
+  await loadNotteSbarco(isAdmin, inFinestra, dopoFinestra);
 
   if (isOwner || isAdmin) {
     document.getElementById('tab-btn-carta').style.display = '';
@@ -2163,7 +2159,7 @@ async function loadBottiglieinviati() {
 
 let _notteDebounce = null;
 
-async function loadNotteSbarco() {
+async function loadNotteSbarco(isAdmin, inFinestra, dopoFinestra) {
   try {
     const snap = await getDoc(doc(db, 'notte_sbarco', pageUid));
     if (snap.exists()) {
@@ -2177,13 +2173,24 @@ async function loadNotteSbarco() {
     }
   } catch(e) { console.warn('loadNotteSbarco errore:', e); }
 
-  // autosave con debounce 2s
-  document.querySelectorAll('.notte-ta').forEach(ta => {
-    ta.addEventListener('input', () => {
-      clearTimeout(_notteDebounce);
-      _notteDebounce = setTimeout(saveNotteSbarco, 2000);
+  const canWrite = isAdmin || inFinestra;
+  const statusEl = document.getElementById('notte-status-msg');
+  if (!canWrite) {
+    document.querySelectorAll('.notte-ta').forEach(ta => ta.disabled = true);
+    if (statusEl) {
+      statusEl.textContent = dopoFinestra
+        ? 'Questa pagina è ora in sola lettura. Il tuo viaggio è iniziato.'
+        : 'La scrittura sarà disponibile la sera del 1 luglio dalle 22:00.';
+      statusEl.style.display = 'block';
+    }
+  } else {
+    document.querySelectorAll('.notte-ta').forEach(ta => {
+      ta.addEventListener('input', () => {
+        clearTimeout(_notteDebounce);
+        _notteDebounce = setTimeout(saveNotteSbarco, 2000);
+      });
     });
-  });
+  }
 }
 
 async function saveNotteSbarco() {

@@ -299,7 +299,7 @@ service cloud.firestore {
 
     // ── Notte prima dello sbarco (Robinson) ─────────────────
     match /notte_sbarco/{uid} {
-      allow read: if isOwner(uid) || isAdmin();
+      allow read: if isLoggedIn();
       allow write: if isOwner(uid) || isAdmin();
     }
 
