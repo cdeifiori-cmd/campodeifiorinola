@@ -561,7 +561,7 @@
   <div class="ci-wrap">
 
     <!-- NOTTE PRIMA DI PARTIRE -->
-    <div id="ci-notte-wrap" style="margin-bottom:10px;">
+    <div id="ci-notte-wrap" style="margin-bottom:10px;border-top:3px solid #FFD700;padding-top:14px;">
       <div id="ci-notte-body">
         <!-- header -->
         <div style="background:linear-gradient(160deg,#0d1b2a 0%,#1a1a4e 100%);border-radius:12px;padding:16px 14px;margin-bottom:14px;position:relative;overflow:hidden;">
@@ -570,7 +570,7 @@
           <p style="position:relative;color:#c8e6ff;font-size:0.84rem;line-height:1.6;margin:0 0 10px;">Il mare è ancora davanti a te. Domani, dopo un lungo viaggio, approderai sulla Robinson Republic insieme ad altri naufraghi. Nessuno sa cosa troverà sull'isola. Ognuno porta con sé qualcosa: sogni, paure, speranze, ricordi, talenti e ferite. Prima dello sbarco fermati qualche minuto. Questa pagina serve a te. Alla fine del campo la rileggerai e forse scoprirai che qualcosa dentro di te è cambiato.</p>
           <div id="cn-saved-msg" style="display:none;text-align:center;background:#00FFD133;color:#00FFD1;border:1px solid #00FFD1;border-radius:20px;padding:2px 14px;font-size:0.78rem;transition:opacity 0.4s;">Salvato ✓</div>
         </div>
-        <div id="cn-status-msg" style="display:none;margin-bottom:14px;padding:10px 14px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);border-radius:10px;color:#FFD700;font-size:0.85rem;text-align:center;"></div>
+        <div id="cn-status-msg" style="display:none;margin-bottom:14px;padding:12px 16px;background:#FFD700;border-radius:10px;color:#1a1a00;font-size:0.87rem;font-weight:600;text-align:center;line-height:1.5;"></div>
         <!-- 9 domande -->
         <div style="display:grid;grid-template-columns:1fr;gap:12px;margin-bottom:16px;">
           <div style="background:linear-gradient(135deg,#0d1b2a 0%,#11214a 100%);border:2px solid #FF6B00;border-radius:14px;padding:14px;">
@@ -2106,11 +2106,11 @@ async function setupNotteSbarco(isAdminUser) {
 
   const statusEl = document.getElementById('cn-status-msg');
   if (!canWrite) {
-    tas.forEach(el => { if (el) { el.disabled = true; el.style.opacity = '0.65'; el.style.cursor = 'not-allowed'; } });
+    tas.forEach(el => { if (el) { el.disabled = true; el.style.opacity = '0.5'; el.style.cursor = 'not-allowed'; } });
     if (statusEl) {
-      statusEl.textContent = dopoFinestra
-        ? 'Questa pagina è ora in sola lettura. Il tuo viaggio è iniziato.'
-        : 'La scrittura sarà disponibile la sera del 1 luglio dalle 22:00.';
+      statusEl.innerHTML = dopoFinestra
+        ? '⚓ Il tuo viaggio è iniziato. Questa pagina è in sola lettura.'
+        : '🔒 La scrittura sarà disponibile la sera del 1 luglio dalle 22:00.<br>Puoi già leggere le domande e prepararti.';
       statusEl.style.display = 'block';
     }
   } else {
