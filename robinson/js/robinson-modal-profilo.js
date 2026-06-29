@@ -312,7 +312,7 @@ function _cartaForm(uid, nome, ci, container) {
     <div class="rmp-banner">✏️ Stai compilando la tua Carta d'Identità Robinson</div>
 
     <div class="rmp-acc-toggle">🖼️ Ritratto di Me <span class="rmp-arr">▼</span></div>
-    <div class="rmp-acc-body" style="display:block;">
+    <div class="rmp-acc-body">
       <label class="rmp-label">Nome Robinson</label>
       <input id="ci-nome" class="rmp-field" value="${esc(v('nome'))}">
       <label class="rmp-label">Codice RR</label>

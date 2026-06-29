@@ -622,7 +622,7 @@
 
     <!-- IDENTIFICAZIONE -->
     <div class="ci-sezione ci-accordion-item">
-      <div class="ci-sezione-header ci-accordion-toggle">🪪 Identificazione <span class="arrow">▲</span></div>
+      <div class="ci-sezione-header ci-accordion-toggle">🪪 Identificazione <span class="arrow">▼</span></div>
       <div class="ci-sezione-body ci-accordion-body" style="display:none;">
         <div class="ci-foto-wrap">
           <img id="ci-foto-img" class="ci-foto-img" src="" alt="foto profilo">
@@ -940,6 +940,7 @@ requireAuth(async user => {
     setupCartaIdentita();
     initAccordionNaufrago();
     await setupNotteSbarco(isAdmin);
+    console.log('NOTTE WRAP:', document.getElementById('ci-notte-wrap'));
   }
   if (!isOwner && !isAdmin) {
     lockAllForms();
