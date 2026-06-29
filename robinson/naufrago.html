@@ -272,6 +272,7 @@
   <button class="tab-btn" data-tab="forziere">🏴‍☠️ Forziere</button>
   <button class="tab-btn" data-tab="bottiglia">🍾 Bottiglia</button>
   <button class="tab-btn" data-tab="dicono">💬 Vedono</button>
+  <button class="tab-btn" id="tab-btn-notte" data-tab="notte" style="display:none;">🌙 Notte</button>
   <button class="tab-btn" id="tab-btn-carta" data-tab="carta" style="display:none;">🪪 Carta</button>
 </div>
 
@@ -725,6 +726,88 @@
   </div>
 </div>
 
+<!-- TAB: Notte prima dello sbarco -->
+<div class="tab-panel" id="tab-notte">
+  <div style="background:linear-gradient(#0d1b2a,#1a1a4e);padding:16px;border-radius:12px;color:white;">
+
+    <div style="text-align:center;margin-bottom:20px;">
+      <h2 style="color:#FFD700;margin:0 0 10px;">🌙 La notte prima dello sbarco</h2>
+      <p style="color:#7ECFFF;font-style:italic;font-size:0.87rem;line-height:1.6;margin:0;">
+        "Il mare è ancora davanti a te. Domani, dopo un lungo viaggio, approderai sulla Robinson Republic insieme ad altri naufraghi. Nessuno sa cosa troverà sull'isola. Ognuno porta con sé qualcosa: sogni, paure, speranze, ricordi, talenti e ferite. Prima dello sbarco fermati qualche minuto. Questa pagina serve a te. Alla fine del campo la rileggerai e forse scoprirai che qualcosa dentro di te è cambiato."
+      </p>
+    </div>
+
+    <div id="cn-status-msg" style="display:none;background:#FFD700;color:#0d1b2a;padding:10px;border-radius:8px;text-align:center;margin-bottom:16px;font-weight:bold;"></div>
+
+    <div style="display:grid;grid-template-columns:1fr;gap:12px;">
+
+      <div style="border:2px solid #FF6B00;border-radius:10px;padding:12px;">
+        <div style="font-size:1.1em;font-weight:bold;">🌊 Con quale stato d'animo sto per approdare sull'isola?</div>
+        <div style="color:#7ECFFF;font-size:0.85em;margin:4px 0 8px;">Quali emozioni sento più forti questa sera?</div>
+        <textarea id="cn-r1" rows="3" style="width:100%;background:rgba(255,255,255,0.1);color:white;border:1px solid #7ECFFF;border-radius:6px;padding:8px;box-sizing:border-box;font-family:inherit;font-size:0.9rem;resize:vertical;"></textarea>
+      </div>
+
+      <div style="border:2px solid #FF2D9B;border-radius:10px;padding:12px;">
+        <div style="font-size:1.1em;font-weight:bold;">🎒 Cosa porto con me?</div>
+        <div style="color:#7ECFFF;font-size:0.85em;margin:4px 0 8px;">Non nello zaino, ma dentro di me. Quali sono le qualità che mi accompagneranno durante questa avventura?</div>
+        <textarea id="cn-r2" rows="3" style="width:100%;background:rgba(255,255,255,0.1);color:white;border:1px solid #7ECFFF;border-radius:6px;padding:8px;box-sizing:border-box;font-family:inherit;font-size:0.9rem;resize:vertical;"></textarea>
+      </div>
+
+      <div style="border:2px solid #FF6B00;border-radius:10px;padding:12px;">
+        <div style="font-size:1.1em;font-weight:bold;">🌱 Cosa spero di trovare sull'isola?</div>
+        <div style="color:#7ECFFF;font-size:0.85em;margin:4px 0 8px;">Che cosa mi piacerebbe vivere?</div>
+        <textarea id="cn-r3" rows="3" style="width:100%;background:rgba(255,255,255,0.1);color:white;border:1px solid #7ECFFF;border-radius:6px;padding:8px;box-sizing:border-box;font-family:inherit;font-size:0.9rem;resize:vertical;"></textarea>
+      </div>
+
+      <div style="border:2px solid #FF2D9B;border-radius:10px;padding:12px;">
+        <div style="font-size:1.1em;font-weight:bold;">🧭 Quale parte di me vorrei conoscere meglio?</div>
+        <div style="color:#7ECFFF;font-size:0.85em;margin:4px 0 8px;">C'è qualcosa che vorrei capire di me stesso?</div>
+        <textarea id="cn-r4" rows="3" style="width:100%;background:rgba(255,255,255,0.1);color:white;border:1px solid #7ECFFF;border-radius:6px;padding:8px;box-sizing:border-box;font-family:inherit;font-size:0.9rem;resize:vertical;"></textarea>
+      </div>
+
+      <div style="border:2px solid #FF6B00;border-radius:10px;padding:12px;">
+        <div style="font-size:1.1em;font-weight:bold;">⛰️ Quali sono gli scogli che temo di incontrare?</div>
+        <div style="color:#7ECFFF;font-size:0.85em;margin:4px 0 8px;">Quali difficoltà penso di dover affrontare?</div>
+        <textarea id="cn-r5" rows="3" style="width:100%;background:rgba(255,255,255,0.1);color:white;border:1px solid #7ECFFF;border-radius:6px;padding:8px;box-sizing:border-box;font-family:inherit;font-size:0.9rem;resize:vertical;"></textarea>
+      </div>
+
+      <div style="border:2px solid #FF2D9B;border-radius:10px;padding:12px;">
+        <div style="font-size:1.1em;font-weight:bold;">🌊 Quali onde fanno ancora paura?</div>
+        <div style="color:#7ECFFF;font-size:0.85em;margin:4px 0 8px;">Quali sono le paure che vorrei imparare ad affrontare?</div>
+        <textarea id="cn-r6" rows="3" style="width:100%;background:rgba(255,255,255,0.1);color:white;border:1px solid #7ECFFF;border-radius:6px;padding:8px;box-sizing:border-box;font-family:inherit;font-size:0.9rem;resize:vertical;"></textarea>
+      </div>
+
+      <div style="border:2px solid #FF6B00;border-radius:10px;padding:12px;">
+        <div style="font-size:1.1em;font-weight:bold;">🔥 Quale fuoco posso accendere per gli altri?</div>
+        <div style="color:#7ECFFF;font-size:0.85em;margin:4px 0 8px;">Quali qualità, capacità o gesti posso mettere a disposizione della mia ciurma?</div>
+        <textarea id="cn-r7" rows="3" style="width:100%;background:rgba(255,255,255,0.1);color:white;border:1px solid #7ECFFF;border-radius:6px;padding:8px;box-sizing:border-box;font-family:inherit;font-size:0.9rem;resize:vertical;"></textarea>
+      </div>
+
+      <div style="border:2px solid #FF2D9B;border-radius:10px;padding:12px;">
+        <div style="font-size:1.1em;font-weight:bold;">🤝 Che tipo di compagno di viaggio voglio essere?</div>
+        <div style="color:#7ECFFF;font-size:0.85em;margin:4px 0 8px;">Come vorrei che gli altri mi ricordassero al termine dell'avventura?</div>
+        <textarea id="cn-r8" rows="3" style="width:100%;background:rgba(255,255,255,0.1);color:white;border:1px solid #7ECFFF;border-radius:6px;padding:8px;box-sizing:border-box;font-family:inherit;font-size:0.9rem;resize:vertical;"></textarea>
+      </div>
+
+      <div style="border:2px solid #FF6B00;border-radius:10px;padding:12px;">
+        <div style="font-size:1.1em;font-weight:bold;">⭐ Se questa isola potesse regalarmi una sola cosa...</div>
+        <div style="color:#7ECFFF;font-size:0.85em;margin:4px 0 8px;">Che cosa vorrei portare con me quando tornerò a casa?</div>
+        <textarea id="cn-r9" rows="3" style="width:100%;background:rgba(255,255,255,0.1);color:white;border:1px solid #7ECFFF;border-radius:6px;padding:8px;box-sizing:border-box;font-family:inherit;font-size:0.9rem;resize:vertical;"></textarea>
+      </div>
+
+    </div>
+
+    <div style="border:2px solid #00FFD1;border-radius:10px;padding:16px;margin-top:20px;">
+      <div style="font-size:1.1em;font-weight:bold;">🍾 Una bottiglia affidata al mare</div>
+      <div style="color:#7ECFFF;font-size:0.85em;margin:4px 0 8px;">Scrivi un messaggio al te stesso che lascerà l'isola.<br>"Se un giorno leggerai queste righe..."</div>
+      <textarea id="cn-bottiglia" rows="5" style="width:100%;background:rgba(255,255,255,0.1);color:white;border:1px solid #00FFD1;border-radius:6px;padding:8px;box-sizing:border-box;font-family:inherit;font-size:0.9rem;resize:vertical;"></textarea>
+    </div>
+
+    <div id="cn-saved-msg" style="display:none;text-align:center;color:#00FFD1;margin-top:12px;font-weight:bold;">Salvato ✓</div>
+
+  </div>
+</div>
+
 <!-- Modal forziere -->
 <div class="modal-overlay" id="modal-forziere">
   <div class="modal-box">
@@ -875,12 +958,12 @@ requireAuth(async user => {
   setupEmozioniStars();
 
   if (isOwner || isAdmin) {
+    document.getElementById('tab-btn-notte').style.display = '';
     document.getElementById('tab-btn-carta').style.display = '';
     await loadCartaIdentita();
     setupCartaIdentita();
     initAccordionNaufrago();
-    await setupNotteSbarco(isAdmin);
-    console.log('NOTTE WRAP:', document.getElementById('ci-notte-wrap'));
+    await setupTabNotte(isAdmin);
   }
   if (!isOwner && !isAdmin) {
     lockAllForms();
@@ -2018,6 +2101,66 @@ async function loadBottiglieinviati() {
 // ── Notte prima di partire ────────────────────────────────────────────────
 
 let _cnDebounce = null;
+
+async function setupTabNotte(isAdminUser) {
+  const notteInizio  = new Date('2026-07-01T22:00:00');
+  const notteFine    = new Date('2026-07-02T02:00:00');
+  const ora          = new Date();
+  const inFinestra   = ora >= notteInizio && ora < notteFine;
+  const dopoFinestra = ora >= notteFine;
+  const canWrite     = isAdminUser || inFinestra;
+
+  // Carica dati salvati
+  try {
+    const snap = await getDoc(doc(db, 'notte_sbarco', pageUid));
+    if (snap.exists()) {
+      const d = snap.data();
+      for (let i = 1; i <= 9; i++) {
+        const el = document.getElementById('cn-r' + i);
+        if (el && d['risposta' + i]) el.value = d['risposta' + i];
+      }
+      const bott = document.getElementById('cn-bottiglia');
+      if (bott && d.bottiglia) bott.value = d.bottiglia;
+    }
+  } catch(e) { console.warn('setupTabNotte load:', e); }
+
+  const tas = [...Array(9).keys()].map(i => document.getElementById('cn-r' + (i+1)));
+  tas.push(document.getElementById('cn-bottiglia'));
+
+  const statusEl = document.getElementById('cn-status-msg');
+  if (!canWrite) {
+    tas.forEach(el => { if (el) { el.disabled = true; el.style.opacity = '0.5'; el.style.cursor = 'not-allowed'; } });
+    if (statusEl) {
+      statusEl.innerHTML = dopoFinestra
+        ? '⚓ Il tuo viaggio è iniziato. Questa pagina è in sola lettura.'
+        : '🔒 La scrittura sarà disponibile la sera del 1 luglio dalle 22:00.';
+      statusEl.style.display = 'block';
+    }
+  } else {
+    tas.forEach(el => {
+      if (!el) return;
+      el.addEventListener('input', () => {
+        clearTimeout(_cnDebounce);
+        _cnDebounce = setTimeout(_saveTabNotte, 2000);
+      });
+    });
+  }
+}
+
+async function _saveTabNotte() {
+  try {
+    const dati = { ultimoSalvataggio: serverTimestamp() };
+    for (let i = 1; i <= 9; i++) dati['risposta' + i] = document.getElementById('cn-r' + i)?.value || '';
+    dati.bottiglia = document.getElementById('cn-bottiglia')?.value || '';
+    await setDoc(doc(db, 'notte_sbarco', pageUid), dati, { merge: true });
+    const m = document.getElementById('cn-saved-msg');
+    if (m) {
+      m.style.display = 'block';
+      clearTimeout(m._t);
+      m._t = setTimeout(() => { m.style.display = 'none'; }, 2000);
+    }
+  } catch(e) { console.warn('_saveTabNotte:', e); }
+}
 
 async function setupNotteSbarco(isAdminUser) {
   const notteInizio  = new Date('2026-07-01T22:00:00+02:00').getTime();
