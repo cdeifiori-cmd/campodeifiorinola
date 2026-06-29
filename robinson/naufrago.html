@@ -347,6 +347,7 @@
   <button class="tab-btn" data-tab="isola">🗺️ Isola</button>
   <button class="tab-btn" data-tab="forziere">🏴‍☠️ Forziere</button>
   <button class="tab-btn" data-tab="bottiglia">🍾 Bottiglia</button>
+  <button class="tab-btn" data-tab="dicono">💬 Vedono</button>
   <button class="tab-btn" id="tab-btn-notte" data-tab="notte" style="display:none;">🌙 Notte</button>
   <button class="tab-btn" id="tab-btn-carta" data-tab="carta" style="display:none;">🪪 Carta</button>
 </div>
@@ -602,6 +603,36 @@
   </div>
 </div>
 
+<!-- TAB: Come mi vedono gli altri -->
+<div class="tab-panel" id="tab-dicono">
+  <div id="dicono-sezione">
+    <div style="font-size:0.82rem;color:var(--muted);margin-bottom:12px;font-style:italic;padding:0 2px;">Cosa pensano gli altri di questo naufrago?</div>
+    <!-- Form solo per visitatori -->
+    <div id="dicono-form" style="display:none;margin-bottom:14px;background:#fff8ee;border:1.5px solid #c8b89a;border-radius:8px;padding:10px;">
+      <textarea id="dicono-testo" placeholder="Scrivi qualcosa su questo naufrago..." rows="3" style="width:100%;padding:8px 10px;border:1.5px solid #c8b89a;border-radius:6px;font-family:'Lora',serif;font-size:0.88rem;background:#fff;resize:vertical;box-sizing:border-box;"></textarea>
+      <div id="dicono-preview" style="margin-top:8px;display:none;position:relative;"></div>
+      <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
+        <button id="db-foto" title="Foto da libreria" style="background:#1a3a5c;color:#c8860a;border:none;border-radius:6px;padding:5px 8px;cursor:pointer;font-size:0.8rem;">📷</button>
+        <button id="db-cam" title="Scatta foto" style="background:#1a3a5c;color:#c8860a;border:none;border-radius:6px;padding:5px 8px;cursor:pointer;font-size:0.8rem;">📸</button>
+        <button id="db-video" title="Video da libreria" style="background:#1a3a5c;color:#c8860a;border:none;border-radius:6px;padding:5px 8px;cursor:pointer;font-size:0.8rem;">🎥</button>
+        <button id="db-vcam" title="Registra video" style="background:#1a3a5c;color:#c8860a;border:none;border-radius:6px;padding:5px 8px;cursor:pointer;font-size:0.8rem;">🎥📷</button>
+        <button id="db-audio" title="Audio da file" style="background:#1a3a5c;color:#c8860a;border:none;border-radius:6px;padding:5px 8px;cursor:pointer;font-size:0.8rem;">🎵</button>
+        <button id="db-rec" title="Registra audio" style="background:#1a3a5c;color:#c8860a;border:none;border-radius:6px;padding:5px 8px;cursor:pointer;font-size:0.8rem;">🎤</button>
+      </div>
+      <input type="file" id="db-inp-foto" accept="image/*" style="display:none;">
+      <input type="file" id="db-inp-cam" accept="image/*" capture="environment" style="display:none;">
+      <input type="file" id="db-inp-video" accept="video/*" style="display:none;">
+      <input type="file" id="db-inp-vcam" accept="video/*" capture="environment" style="display:none;">
+      <input type="file" id="db-inp-audio" accept="audio/*" style="display:none;">
+      <div id="dicono-progress" style="display:none;margin-top:6px;font-size:0.78rem;color:#c8860a;">⏳ Caricamento...</div>
+      <button id="dicono-pubblica-btn" class="btn btn-primary" style="margin-top:8px;width:100%;">📨 Pubblica</button>
+      <div id="dicono-msg" style="margin-top:4px;font-size:0.78rem;"></div>
+    </div>
+    <!-- Feed -->
+    <div id="dicono-feed" style="display:flex;flex-direction:column;gap:10px;"></div>
+  </div>
+</div>
+
 <!-- TAB I: Notte prima dello sbarco -->
 <div class="tab-panel" id="tab-notte">
   <div class="notte-wrap">
@@ -807,36 +838,6 @@
           <div class="ci-campo"><label>⭐ Se potessi portare una sola cosa in assoluto, quale sarebbe?</label><input type="text" id="id-una_cosa" placeholder="scrivi qui..."></div>
           <div class="ci-campo"><label>✏️ Vuoi aggiungere qualcos'altro?</label><textarea id="id-altro" rows="3" placeholder="Scrivi liberamente…"></textarea></div>
         </div>
-      </div>
-    </div>
-
-    <!-- DICONO DI ME -->
-    <div class="ci-sezione" id="dicono-sezione">
-      <div class="ci-sezione-header">💬 Dicono di me</div>
-      <div class="ci-sezione-body" style="padding:10px 12px;">
-        <!-- Form solo per visitatori -->
-        <div id="dicono-form" style="display:none;margin-bottom:14px;background:#fff8ee;border:1.5px solid #c8b89a;border-radius:8px;padding:10px;">
-          <textarea id="dicono-testo" placeholder="Scrivi qualcosa su questo naufrago..." rows="3" style="width:100%;padding:8px 10px;border:1.5px solid #c8b89a;border-radius:6px;font-family:'Lora',serif;font-size:0.88rem;background:#fff;resize:vertical;box-sizing:border-box;"></textarea>
-          <div id="dicono-preview" style="margin-top:8px;display:none;position:relative;"></div>
-          <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
-            <button id="db-foto" title="Foto da libreria" style="background:#1a3a5c;color:#c8860a;border:none;border-radius:6px;padding:5px 8px;cursor:pointer;font-size:0.8rem;">📷</button>
-            <button id="db-cam" title="Scatta foto" style="background:#1a3a5c;color:#c8860a;border:none;border-radius:6px;padding:5px 8px;cursor:pointer;font-size:0.8rem;">📸</button>
-            <button id="db-video" title="Video da libreria" style="background:#1a3a5c;color:#c8860a;border:none;border-radius:6px;padding:5px 8px;cursor:pointer;font-size:0.8rem;">🎥</button>
-            <button id="db-vcam" title="Registra video" style="background:#1a3a5c;color:#c8860a;border:none;border-radius:6px;padding:5px 8px;cursor:pointer;font-size:0.8rem;">🎥📷</button>
-            <button id="db-audio" title="Audio da file" style="background:#1a3a5c;color:#c8860a;border:none;border-radius:6px;padding:5px 8px;cursor:pointer;font-size:0.8rem;">🎵</button>
-            <button id="db-rec" title="Registra audio" style="background:#1a3a5c;color:#c8860a;border:none;border-radius:6px;padding:5px 8px;cursor:pointer;font-size:0.8rem;">🎤</button>
-          </div>
-          <input type="file" id="db-inp-foto" accept="image/*" style="display:none;">
-          <input type="file" id="db-inp-cam" accept="image/*" capture="environment" style="display:none;">
-          <input type="file" id="db-inp-video" accept="video/*" style="display:none;">
-          <input type="file" id="db-inp-vcam" accept="video/*" capture="environment" style="display:none;">
-          <input type="file" id="db-inp-audio" accept="audio/*" style="display:none;">
-          <div id="dicono-progress" style="display:none;margin-top:6px;font-size:0.78rem;color:#c8860a;">⏳ Caricamento...</div>
-          <button id="dicono-pubblica-btn" class="btn btn-primary" style="margin-top:8px;width:100%;">📨 Pubblica</button>
-          <div id="dicono-msg" style="margin-top:4px;font-size:0.78rem;"></div>
-        </div>
-        <!-- Feed -->
-        <div id="dicono-feed" style="display:flex;flex-direction:column;gap:10px;"></div>
       </div>
     </div>
 
