@@ -287,6 +287,8 @@ async function _carta({ uid, nome, foto, ruolo, ruoloLabel }) {
     const ci = snapCI.exists() ? snapCI.data() : null;
     const compilata = ci?.salvato === true;
 
+    await _nottePartenza(uid, ruolo, ciBody);
+
     if (_isOwner(ruolo) && !compilata) {
       _cartaForm(uid, nome, ci, ciBody);
     } else {
@@ -468,6 +470,110 @@ function _cartaReadonly(uid, nome, ci, ruolo, container) {
       await updateDoc(doc(db,'robinson_naufraghi',uid,'carta_identita','dati'), { salvato:false });
       if (_cartaParams) await _render('carta', { ..._cartaParams, ruolo:'proprietario' });
     });
+  }
+}
+
+// ── NOTTE PRIMA DI PARTIRE ────────────────────────────────────────────────
+let _notteDb = null;
+
+const NOTTE_DOMANDE = [
+  { icon:'🌊', titolo:'Con quale stato d\'animo sto per approdare sull\'isola?',   sub:'Quali emozioni sento più forti questa sera?', color:'#FF6B00' },
+  { icon:'🎒', titolo:'Cosa porto con me?',                                         sub:'Non nello zaino, ma dentro di me. Quali sono le qualità che mi accompagneranno durante questa avventura?', color:'#FF2D9B' },
+  { icon:'🌱', titolo:'Cosa spero di trovare sull\'isola?',                         sub:'Che cosa mi piacerebbe vivere?', color:'#FF6B00' },
+  { icon:'🧭', titolo:'Quale parte di me vorrei conoscere meglio?',                 sub:'C\'è qualcosa che vorrei capire di me stesso?', color:'#FF2D9B' },
+  { icon:'⛰️', titolo:'Quali sono gli scogli che temo di incontrare?',              sub:'Quali difficoltà penso di dover affrontare?', color:'#FF6B00' },
+  { icon:'🌊', titolo:'Quali onde fanno ancora paura?',                             sub:'Quali sono le paure che vorrei imparare ad affrontare?', color:'#FF2D9B' },
+  { icon:'🔥', titolo:'Quale fuoco posso accendere per gli altri?',                 sub:'Quali qualità, capacità o gesti posso mettere a disposizione della mia ciurma?', color:'#FF6B00' },
+  { icon:'🤝', titolo:'Che tipo di compagno di viaggio voglio essere?',             sub:'Come vorrei che gli altri mi ricordassero al termine dell\'avventura?', color:'#FF2D9B' },
+  { icon:'⭐', titolo:'Se questa isola potesse regalarmi una sola cosa...',         sub:'Che cosa vorrei portare con me quando tornerò a casa?', color:'#FF6B00' },
+];
+
+async function _nottePartenza(uid, ruolo, container) {
+  const notteInizio  = new Date('2026-07-01T22:00:00+02:00').getTime();
+  const notteFine    = new Date('2026-07-02T02:00:00+02:00').getTime();
+  const adesso       = Date.now();
+  const inFinestra   = adesso >= notteInizio && adesso < notteFine;
+  const dopoFinestra = adesso >= notteFine;
+  const isAdm        = _cu?.uid === ADMIN_UID;
+  const canWrite     = isAdm || inFinestra;
+
+  // Carica dati salvati
+  let saved = {};
+  try {
+    const snap = await getDoc(doc(db, 'notte_sbarco', uid));
+    if (snap.exists()) saved = snap.data();
+  } catch(_) {}
+
+  // Stato messaggio
+  let statoMsg = '';
+  if (!canWrite) {
+    statoMsg = dopoFinestra
+      ? 'Questa pagina è ora in sola lettura. Il tuo viaggio è iniziato.'
+      : 'La scrittura sarà disponibile la sera del 1 luglio dalle 22:00.';
+  }
+
+  // Griglia 9 domande
+  const cardsHtml = NOTTE_DOMANDE.map((d, i) => `
+    <div style="background:linear-gradient(135deg,#0d1b2a 0%,#11214a 100%);border:2px solid ${d.color};border-radius:14px;padding:14px;">
+      <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;">
+        <span style="font-size:1.4rem;flex-shrink:0;">${d.icon}</span>
+        <div>
+          <div style="color:#fff;font-weight:600;font-size:0.88rem;line-height:1.3;">${d.titolo}</div>
+          <div style="color:#7ECFFF;font-size:0.76rem;margin-top:3px;line-height:1.4;">${d.sub}</div>
+        </div>
+      </div>
+      <textarea id="np-r${i+1}" rows="3" ${canWrite ? '' : 'disabled'}
+        style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.07);color:#fff;border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:8px;font-size:0.85rem;line-height:1.5;resize:vertical;font-family:inherit;${canWrite ? '' : 'opacity:0.65;cursor:not-allowed;'}"
+        placeholder="Scrivi qui…">${esc(saved['risposta'+(i+1)] || '')}</textarea>
+    </div>`).join('');
+
+  const bodyHtml = `
+    <div style="background:linear-gradient(160deg,#0d1b2a 0%,#1a1a4e 100%);border-radius:12px;padding:16px 14px;margin-bottom:14px;position:relative;overflow:hidden;">
+      <div style="position:absolute;inset:0;pointer-events:none;background-image:
+        radial-gradient(1px 1px at 10% 15%,#fff 0%,transparent 100%),
+        radial-gradient(1.5px 1.5px at 40% 10%,#fff 0%,transparent 100%),
+        radial-gradient(1px 1px at 70% 8%,#fff 0%,transparent 100%),
+        radial-gradient(1px 1px at 88% 80%,#fff 0%,transparent 100%),
+        radial-gradient(1.5px 1.5px at 47% 88%,#fff 0%,transparent 100%);"></div>
+      <p style="position:relative;color:#c8e6ff;font-size:0.84rem;line-height:1.6;margin:0;">Il mare è ancora davanti a te. Domani, dopo un lungo viaggio, approderai sulla Robinson Republic insieme ad altri naufraghi. Nessuno sa cosa troverà sull'isola. Ognuno porta con sé qualcosa: sogni, paure, speranze, ricordi, talenti e ferite. Prima dello sbarco fermati qualche minuto. Questa pagina serve a te. Alla fine del campo la rileggerai e forse scoprirai che qualcosa dentro di te è cambiato.</p>
+      <div id="np-saved-msg" style="display:none;margin-top:8px;text-align:center;background:#00FFD133;color:#00FFD1;border:1px solid #00FFD1;border-radius:20px;padding:2px 14px;font-size:0.78rem;transition:opacity 0.4s;">Salvato ✓</div>
+    </div>
+    ${statoMsg ? `<div style="margin-bottom:14px;padding:10px 14px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);border-radius:10px;color:#FFD700;font-size:0.85rem;text-align:center;">${statoMsg}</div>` : ''}
+    <div style="display:grid;grid-template-columns:1fr;gap:12px;margin-bottom:16px;">
+      ${cardsHtml}
+    </div>
+    <div style="background:linear-gradient(135deg,#0a1e1c 0%,#0d2b2b 100%);border:2px solid #00FFD1;border-radius:14px;padding:16px;">
+      <div style="color:#00FFD1;font-size:1rem;font-weight:700;margin-bottom:6px;">🍾 Una bottiglia affidata al mare</div>
+      <p style="color:#a0f0e0;font-size:0.83rem;margin:0 0 2px;">Scrivi un messaggio al te stesso che lascerà l'isola.</p>
+      <p style="color:#7ECFFF;font-size:0.8rem;font-style:italic;margin:0 0 10px;">Se un giorno leggerai queste righe…</p>
+      <textarea id="np-bottiglia" rows="6" ${canWrite ? '' : 'disabled'}
+        style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.07);color:#fff;border:1px solid rgba(0,255,209,0.3);border-radius:8px;padding:10px;font-size:0.85rem;line-height:1.5;resize:vertical;font-family:inherit;${canWrite ? '' : 'opacity:0.65;cursor:not-allowed;'}"
+        placeholder="Caro me futuro…">${esc(saved.bottiglia || '')}</textarea>
+    </div>`;
+
+  const outer = document.createElement('div');
+  outer.style.marginBottom = '6px';
+  outer.innerHTML = `
+    <div class="rmp-acc-toggle" style="background:linear-gradient(90deg,#0d1b2a,#1a1a4e);color:#FFD700;border-color:#FFD70044;">🌙 Notte prima di partire <span class="rmp-arr">▼</span></div>
+    <div class="rmp-acc-body" style="display:block;background:transparent;border:none;padding:10px 0 0;">
+      ${bodyHtml}
+    </div>`;
+  container.insertBefore(outer, container.firstChild);
+
+  if (canWrite) {
+    const save = async () => {
+      try {
+        const dati = { ultimoSalvataggio: serverTimestamp() };
+        for (let i = 1; i <= 9; i++) dati['risposta'+i] = document.getElementById('np-r'+i)?.value || '';
+        dati.bottiglia = document.getElementById('np-bottiglia')?.value || '';
+        await setDoc(doc(db, 'notte_sbarco', uid), dati, { merge: true });
+        const m = document.getElementById('np-saved-msg');
+        if (m) { m.style.display='block'; m.style.opacity='1'; clearTimeout(m._t); m._t=setTimeout(()=>{ m.style.opacity='0'; setTimeout(()=>m.style.display='none',400); },2500); }
+      } catch(e) { console.warn('saveNotte:', e); }
+    };
+    const inputs = [...Array(9).keys()].map(i => document.getElementById('np-r'+(i+1)));
+    inputs.push(document.getElementById('np-bottiglia'));
+    inputs.forEach(el => { if(el) el.addEventListener('input', () => { clearTimeout(_notteDb); _notteDb = setTimeout(save, 2000); }); });
   }
 }
 

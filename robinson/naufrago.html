@@ -243,82 +243,6 @@
       font-size: 12px; border-radius: 0 4px 4px 0;
     }
 
-    /* ── Notte prima dello sbarco ─────────────────────────────────────── */
-    .notte-wrap { padding: 0 0 40px; }
-    .notte-header {
-      position: relative; overflow: hidden;
-      background: linear-gradient(160deg, #0d1b2a 0%, #1a1a4e 100%);
-      border-radius: 16px; padding: 24px 18px 20px;
-      margin-bottom: 18px; text-align: center;
-    }
-    .notte-stelle {
-      position: absolute; inset: 0; pointer-events: none;
-      background-image:
-        radial-gradient(1px 1px at 10% 15%, #fff 0%, transparent 100%),
-        radial-gradient(1px 1px at 25% 30%, #fff 0%, transparent 100%),
-        radial-gradient(1.5px 1.5px at 40% 10%, #fff 0%, transparent 100%),
-        radial-gradient(1px 1px at 55% 22%, #fff 0%, transparent 100%),
-        radial-gradient(1.5px 1.5px at 70% 8%, #fff 0%, transparent 100%),
-        radial-gradient(1px 1px at 82% 18%, #fff 0%, transparent 100%),
-        radial-gradient(1px 1px at 92% 35%, #fff 0%, transparent 100%),
-        radial-gradient(1px 1px at 15% 60%, #fff 0%, transparent 100%),
-        radial-gradient(1px 1px at 33% 70%, #fff 0%, transparent 100%),
-        radial-gradient(1.5px 1.5px at 60% 55%, #fff 0%, transparent 100%),
-        radial-gradient(1px 1px at 78% 65%, #fff 0%, transparent 100%),
-        radial-gradient(1px 1px at 88% 80%, #fff 0%, transparent 100%),
-        radial-gradient(1px 1px at 5% 85%, #fff 0%, transparent 100%),
-        radial-gradient(1.5px 1.5px at 47% 88%, #fff 0%, transparent 100%);
-    }
-    .notte-title {
-      position: relative; font-size: 1.5rem; font-weight: 700;
-      color: #FFD700; letter-spacing: 0.03em; margin-bottom: 12px;
-    }
-    .notte-intro {
-      position: relative; color: #c8e6ff; font-size: 0.88rem;
-      line-height: 1.6; margin: 0 0 10px;
-    }
-    .notte-saved-msg {
-      display: inline-block; background: #00FFD133; color: #00FFD1;
-      border: 1px solid #00FFD1; border-radius: 20px;
-      padding: 3px 14px; font-size: 0.8rem; margin-top: 6px;
-      transition: opacity 0.4s;
-    }
-    .notte-grid {
-      display: grid; grid-template-columns: 1fr;
-      gap: 14px; margin-bottom: 20px;
-    }
-    @media (min-width: 600px) { .notte-grid { grid-template-columns: 1fr 1fr; } }
-    @media (min-width: 900px) { .notte-grid { grid-template-columns: 1fr 1fr 1fr; } }
-    .notte-card {
-      background: linear-gradient(135deg, #0d1b2a 0%, #11214a 100%);
-      border-radius: 14px; padding: 16px;
-    }
-    .notte-card[data-color="orange"] { border: 2px solid #FF6B00; }
-    .notte-card[data-color="pink"]   { border: 2px solid #FF2D9B; }
-    .notte-card-header {
-      display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px;
-    }
-    .notte-icon { font-size: 1.5rem; flex-shrink: 0; margin-top: 1px; }
-    .notte-q-title { color: #fff; font-weight: 600; font-size: 0.9rem; line-height: 1.3; }
-    .notte-q-sub   { color: #7ECFFF; font-size: 0.78rem; margin-top: 4px; line-height: 1.4; }
-    .notte-ta {
-      width: 100%; box-sizing: border-box;
-      background: rgba(255,255,255,0.07); color: #fff;
-      border: 1px solid rgba(255,255,255,0.15); border-radius: 8px;
-      padding: 10px; font-size: 0.88rem; line-height: 1.5; resize: vertical;
-      font-family: inherit;
-    }
-    .notte-ta:focus { outline: none; border-color: #FFD700; }
-    .notte-ta:disabled { opacity: 0.6; cursor: not-allowed; }
-    .notte-bottiglia {
-      background: linear-gradient(135deg, #0a1e1c 0%, #0d2b2b 100%);
-      border: 2px solid #00FFD1; border-radius: 16px; padding: 20px;
-    }
-    .notte-bott-title { color: #00FFD1; font-size: 1.1rem; font-weight: 700; margin-bottom: 8px; }
-    .notte-bott-intro { color: #a0f0e0; font-size: 0.88rem; margin: 0 0 4px; }
-    .notte-bott-prompt { color: #7ECFFF; font-size: 0.82rem; font-style: italic; margin: 0 0 12px; }
-    .notte-ta-bott { border-color: rgba(0,255,209,0.3); }
-    .notte-ta-bott:focus { border-color: #00FFD1; }
   </style>
 </head>
 <body>
@@ -348,7 +272,6 @@
   <button class="tab-btn" data-tab="forziere">🏴‍☠️ Forziere</button>
   <button class="tab-btn" data-tab="bottiglia">🍾 Bottiglia</button>
   <button class="tab-btn" data-tab="dicono">💬 Vedono</button>
-  <button class="tab-btn" id="tab-btn-notte" data-tab="notte">🌙 Notte</button>
   <button class="tab-btn" id="tab-btn-carta" data-tab="carta" style="display:none;">🪪 Carta</button>
 </div>
 
@@ -630,66 +553,6 @@
     </div>
     <!-- Feed -->
     <div id="dicono-feed" style="display:flex;flex-direction:column;gap:10px;"></div>
-  </div>
-</div>
-
-<!-- TAB I: Notte prima dello sbarco -->
-<div class="tab-panel" id="tab-notte">
-  <div class="notte-wrap">
-    <div class="notte-header">
-      <div class="notte-stelle" aria-hidden="true"></div>
-      <div class="notte-title">🌙 La notte prima dello sbarco</div>
-      <p class="notte-intro">Il mare è ancora davanti a te. Domani, dopo un lungo viaggio, approderai sulla Robinson Republic insieme ad altri naufraghi. Nessuno sa cosa troverà sull'isola. Ognuno porta con sé qualcosa: sogni, paure, speranze, ricordi, talenti e ferite. Prima dello sbarco fermati qualche minuto. Questa pagina serve a te. Alla fine del campo la rileggerai e forse scoprirai che qualcosa dentro di te è cambiato.</p>
-      <div id="notte-saved-msg" class="notte-saved-msg" style="display:none;">Salvato ✓</div>
-    </div>
-
-    <div id="notte-status-msg" style="display:none;margin:0 0 16px;padding:10px 14px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);border-radius:10px;color:#FFD700;font-size:0.88rem;text-align:center;"></div>
-
-    <div class="notte-grid">
-      <div class="notte-card" data-color="orange">
-        <div class="notte-card-header"><span class="notte-icon">🌊</span><div><div class="notte-q-title">Con quale stato d'animo sto per approdare sull'isola?</div><div class="notte-q-sub">Quali emozioni sento più forti questa sera?</div></div></div>
-        <textarea class="notte-ta" id="n-r1" placeholder="Scrivi qui…" rows="4"></textarea>
-      </div>
-      <div class="notte-card" data-color="pink">
-        <div class="notte-card-header"><span class="notte-icon">🎒</span><div><div class="notte-q-title">Cosa porto con me?</div><div class="notte-q-sub">Non nello zaino, ma dentro di me. Quali sono le qualità che mi accompagneranno durante questa avventura?</div></div></div>
-        <textarea class="notte-ta" id="n-r2" placeholder="Scrivi qui…" rows="4"></textarea>
-      </div>
-      <div class="notte-card" data-color="orange">
-        <div class="notte-card-header"><span class="notte-icon">🌱</span><div><div class="notte-q-title">Cosa spero di trovare sull'isola?</div><div class="notte-q-sub">Che cosa mi piacerebbe vivere?</div></div></div>
-        <textarea class="notte-ta" id="n-r3" placeholder="Scrivi qui…" rows="4"></textarea>
-      </div>
-      <div class="notte-card" data-color="pink">
-        <div class="notte-card-header"><span class="notte-icon">🧭</span><div><div class="notte-q-title">Quale parte di me vorrei conoscere meglio?</div><div class="notte-q-sub">C'è qualcosa che vorrei capire di me stesso?</div></div></div>
-        <textarea class="notte-ta" id="n-r4" placeholder="Scrivi qui…" rows="4"></textarea>
-      </div>
-      <div class="notte-card" data-color="orange">
-        <div class="notte-card-header"><span class="notte-icon">⛰️</span><div><div class="notte-q-title">Quali sono gli scogli che temo di incontrare?</div><div class="notte-q-sub">Quali difficoltà penso di dover affrontare?</div></div></div>
-        <textarea class="notte-ta" id="n-r5" placeholder="Scrivi qui…" rows="4"></textarea>
-      </div>
-      <div class="notte-card" data-color="pink">
-        <div class="notte-card-header"><span class="notte-icon">🌊</span><div><div class="notte-q-title">Quali onde fanno ancora paura?</div><div class="notte-q-sub">Quali sono le paure che vorrei imparare ad affrontare?</div></div></div>
-        <textarea class="notte-ta" id="n-r6" placeholder="Scrivi qui…" rows="4"></textarea>
-      </div>
-      <div class="notte-card" data-color="orange">
-        <div class="notte-card-header"><span class="notte-icon">🔥</span><div><div class="notte-q-title">Quale fuoco posso accendere per gli altri?</div><div class="notte-q-sub">Quali qualità, capacità o gesti posso mettere a disposizione della mia ciurma?</div></div></div>
-        <textarea class="notte-ta" id="n-r7" placeholder="Scrivi qui…" rows="4"></textarea>
-      </div>
-      <div class="notte-card" data-color="pink">
-        <div class="notte-card-header"><span class="notte-icon">🤝</span><div><div class="notte-q-title">Che tipo di compagno di viaggio voglio essere?</div><div class="notte-q-sub">Come vorrei che gli altri mi ricordassero al termine dell'avventura?</div></div></div>
-        <textarea class="notte-ta" id="n-r8" placeholder="Scrivi qui…" rows="4"></textarea>
-      </div>
-      <div class="notte-card" data-color="orange">
-        <div class="notte-card-header"><span class="notte-icon">⭐</span><div><div class="notte-q-title">Se questa isola potesse regalarmi una sola cosa...</div><div class="notte-q-sub">Che cosa vorrei portare con me quando tornerò a casa?</div></div></div>
-        <textarea class="notte-ta" id="n-r9" placeholder="Scrivi qui…" rows="4"></textarea>
-      </div>
-    </div>
-
-    <div class="notte-bottiglia">
-      <div class="notte-bott-title">🍾 Una bottiglia affidata al mare</div>
-      <p class="notte-bott-intro">Scrivi un messaggio al te stesso che lascerà l'isola.</p>
-      <p class="notte-bott-prompt"><em>Se un giorno leggerai queste righe…</em></p>
-      <textarea class="notte-ta notte-ta-bott" id="n-bottiglia" placeholder="Caro me futuro…" rows="7"></textarea>
-    </div>
   </div>
 </div>
 
@@ -1010,13 +873,6 @@ requireAuth(async user => {
   loadForziere();
   setupBottiglia();
   setupEmozioniStars();
-  // ── Notte prima dello sbarco ─────────────────────────────────────────
-  const notteInizio  = new Date('2026-07-01T22:00:00+02:00').getTime();
-  const notteFine    = new Date('2026-07-02T02:00:00+02:00').getTime();
-  const adesso       = Date.now();
-  const inFinestra   = adesso >= notteInizio && adesso < notteFine;
-  const dopoFinestra = adesso >= notteFine;
-  await loadNotteSbarco(isAdmin, inFinestra, dopoFinestra);
 
   if (isOwner || isAdmin) {
     document.getElementById('tab-btn-carta').style.display = '';
@@ -2155,63 +2011,7 @@ async function loadBottiglieinviati() {
   }
 }
 
-// ── Notte prima dello sbarco ──────────────────────────────────────────────
 
-let _notteDebounce = null;
-
-async function loadNotteSbarco(isAdmin, inFinestra, dopoFinestra) {
-  try {
-    const snap = await getDoc(doc(db, 'notte_sbarco', pageUid));
-    if (snap.exists()) {
-      const d = snap.data();
-      for (let i = 1; i <= 9; i++) {
-        const el = document.getElementById('n-r' + i);
-        if (el && d['risposta' + i]) el.value = d['risposta' + i];
-      }
-      const bott = document.getElementById('n-bottiglia');
-      if (bott && d.bottiglia) bott.value = d.bottiglia;
-    }
-  } catch(e) { console.warn('loadNotteSbarco errore:', e); }
-
-  const canWrite = isAdmin || inFinestra;
-  const statusEl = document.getElementById('notte-status-msg');
-  if (!canWrite) {
-    document.querySelectorAll('.notte-ta').forEach(ta => ta.disabled = true);
-    if (statusEl) {
-      statusEl.textContent = dopoFinestra
-        ? 'Questa pagina è ora in sola lettura. Il tuo viaggio è iniziato.'
-        : 'La scrittura sarà disponibile la sera del 1 luglio dalle 22:00.';
-      statusEl.style.display = 'block';
-    }
-  } else {
-    document.querySelectorAll('.notte-ta').forEach(ta => {
-      ta.addEventListener('input', () => {
-        clearTimeout(_notteDebounce);
-        _notteDebounce = setTimeout(saveNotteSbarco, 2000);
-      });
-    });
-  }
-}
-
-async function saveNotteSbarco() {
-  try {
-    const dati = { ultimoSalvataggio: serverTimestamp() };
-    for (let i = 1; i <= 9; i++) {
-      const el = document.getElementById('n-r' + i);
-      dati['risposta' + i] = el ? el.value : '';
-    }
-    const bott = document.getElementById('n-bottiglia');
-    dati.bottiglia = bott ? bott.value : '';
-    await setDoc(doc(db, 'notte_sbarco', pageUid), dati, { merge: true });
-    const msg = document.getElementById('notte-saved-msg');
-    if (msg) {
-      msg.style.display = 'inline-block';
-      msg.style.opacity = '1';
-      clearTimeout(msg._hideTimer);
-      msg._hideTimer = setTimeout(() => { msg.style.opacity = '0'; setTimeout(() => { msg.style.display = 'none'; }, 400); }, 2500);
-    }
-  } catch(e) { console.warn('saveNotteSbarco errore:', e); }
-}
 
 // ── Carta d'Identità ──────────────────────────────────────────────────────
 
