@@ -60,8 +60,8 @@ export async function risolviNome(uid) {
 
 // ── Upload Cloudinary ──────────────────────────────────────────────────────────
 export async function uploadOne(file, tipo) {
-  if (file.size > 50 * 1024 * 1024) {
-    alert('Il file è troppo grande (max 50MB).\nPuoi comprimerlo con app come HandBrake (PC) o Compress Video (smartphone) prima di caricarlo.');
+  if (file.size > 15 * 1024 * 1024) {
+    alert('Il file è troppo grande (max 15MB).\nPuoi comprimerlo con app come HandBrake (PC) o Compress Video (smartphone) prima di caricarlo.');
     return null;
   }
   const fd = new FormData();

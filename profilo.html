@@ -2099,8 +2099,8 @@
     }
     async function uploadToCloudinary(file, resourceType) {
       if (!file||file.size===0) throw new Error('File vuoto');
-      if (file.size > 50 * 1024 * 1024) {
-        alert('Il file è troppo grande (max 50MB).\nPuoi comprimerlo con app come HandBrake (PC) o Compress Video (smartphone) prima di caricarlo.');
+      if (file.size > 15 * 1024 * 1024) {
+        alert('Il file è troppo grande (max 15MB).\nPuoi comprimerlo con app come HandBrake (PC) o Compress Video (smartphone) prima di caricarlo.');
         throw new Error('File troppo grande');
       }
       showProgress('Caricamento in corso…');

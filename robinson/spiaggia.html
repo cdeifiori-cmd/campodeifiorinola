@@ -321,6 +321,7 @@ onAuthStateChanged(auth, async user => {
   if (user) {
     isAdmin = user.uid === ADMIN_UID;
     const _apertura = new Date('2026-07-02T10:00:00');
+    console.log('[guard spiaggia] uid:', user.uid, '| isAdmin:', isAdmin, '| ora < apertura:', new Date() < _apertura);
     if (!isAdmin && new Date() < _apertura) { window.location.href = 'attesa.html'; return; }
     try {
       let snap = await getDoc(doc(db, 'utenti', user.uid));
@@ -356,8 +357,8 @@ async function risolviNome(uid) {
 
 // ── Cloudinary ──────────────────────────────────────────────────────────────
 async function uploadOne(file, type) {
-  if (file.size > 50 * 1024 * 1024) {
-    alert('Il file è troppo grande (max 50MB).\nPuoi comprimerlo con app come HandBrake (PC) o Compress Video (smartphone) prima di caricarlo.');
+  if (file.size > 15 * 1024 * 1024) {
+    alert('Il file è troppo grande (max 15MB).\nPuoi comprimerlo con app come HandBrake (PC) o Compress Video (smartphone) prima di caricarlo.');
     return null;
   }
   const fd = new FormData();
@@ -425,15 +426,15 @@ function refreshPostPreview() {
 }
 async function postAddFile(f, type) {
   console.log('ROBINSON FILE SIZE:', f.size, 'tipo:', type, 'mime:', f.type);
-  if (f.size > 50 * 1024 * 1024) {
-    alert('Il file è troppo grande (max 50MB).\nPuoi comprimerlo con app come HandBrake (PC) o Compress Video (smartphone) prima di caricarlo.');
+  if (f.size > 15 * 1024 * 1024) {
+    alert('Il file è troppo grande (max 15MB).\nPuoi comprimerlo con app come HandBrake (PC) o Compress Video (smartphone) prima di caricarlo.');
     return;
   }
   if (type === 'video') {
     const dur = await getVideoDuration(f);
     console.log('VIDEO DURATION:', dur);
-    if (dur > 60) {
-      alert('Il video è troppo lungo (max 60 secondi).\nRegistra un video più breve o usane uno già compresso.');
+    if (dur > 30) {
+      alert('Il video è troppo lungo (max 30 secondi).\nRegistra un video più breve o usane uno già compresso.');
       return;
     }
   }

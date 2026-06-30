@@ -414,8 +414,8 @@
 
     // ── Cloudinary ────────────────────────────────────────────────────────
     async function uploadOne(file, type) {
-      if (file.size > 50 * 1024 * 1024) {
-        alert('Il file è troppo grande (max 50MB).\nPuoi comprimerlo con app come HandBrake (PC) o Compress Video (smartphone) prima di caricarlo.');
+      if (file.size > 15 * 1024 * 1024) {
+        alert('Il file è troppo grande (max 15MB).\nPuoi comprimerlo con app come HandBrake (PC) o Compress Video (smartphone) prima di caricarlo.');
         return null;
       }
       const fd = new FormData();
@@ -571,15 +571,15 @@
 
     async function postAddFile(file, type) {
       console.log('FILE SIZE:', file.size, 'tipo:', type, 'mime:', file.type);
-      if (file.size > 50 * 1024 * 1024) {
-        alert('Il file è troppo grande (max 50MB).\nPuoi comprimerlo con app come HandBrake (PC) o Compress Video (smartphone) prima di caricarlo.');
+      if (file.size > 15 * 1024 * 1024) {
+        alert('Il file è troppo grande (max 15MB).\nPuoi comprimerlo con app come HandBrake (PC) o Compress Video (smartphone) prima di caricarlo.');
         return;
       }
       if (type === 'video') {
         const dur = await getVideoDuration(file);
         console.log('VIDEO DURATION:', dur);
-        if (dur > 60) {
-          alert('Il video è troppo lungo (max 60 secondi).\nRegistra un video più breve o usane uno già compresso.');
+        if (dur > 30) {
+          alert('Il video è troppo lungo (max 30 secondi).\nRegistra un video più breve o usane uno già compresso.');
           return;
         }
       }
