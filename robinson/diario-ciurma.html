@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>La Spiaggia – Robinson</title>
+  <title>Diario della Ciurma – Robinson</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lora:ital,wght@0,400;0,600;1,400&family=Dancing+Script:wght@600&display=swap" rel="stylesheet">
@@ -13,7 +13,7 @@
     :root { --navy:#1a3a5c; --oro:#c8860a; --carta:#f5f0e8; --muted:#6b5c45; --rosso:#c0392b; }
 
     body {
-      background-image: url('spiaggia_cell2.png');
+      background-image: url('la_ciurma_cell_ok.png');
       background-size: cover;
       background-position: top center;
       background-attachment: fixed;
@@ -21,9 +21,6 @@
       font-family: 'Lora', serif;
       color: var(--navy);
       padding-bottom: 90px;
-    }
-    @media (min-width: 769px) {
-      body { background-image: url('spiaggia_pc.png'); }
     }
 
     /* ── Auth slot ── */
@@ -34,36 +31,22 @@
       #nav-auth-slot img { width: 28px !important; height: 28px !important; }
     }
 
-    /* Nasconde l'header img inline — usiamo solo il CSS background */
-    .spiaggia-header { display: none; }
-
     /* ── Header fisso ── */
-    .spiaggia-header-fixed {
+    .diario-header-fixed {
       position: fixed;
       top: 0; left: 0; right: 0;
       height: 32vw;
       max-height: 200px;
-      background-image: url('spiaggia_cell2.png');
+      background-image: url('la_ciurma_cell_ok.png');
       background-size: cover;
       background-position: top center;
       z-index: 100;
     }
-    @media (min-width: 769px) {
-      .spiaggia-header-fixed {
-        background-image: url('spiaggia_pc.png');
-        height: 18vw;
-        max-height: 220px;
-      }
-    }
 
     /* ── Contenuto sotto header ── */
-    .spiaggia-content {
+    .diario-content {
       padding-top: calc(min(32vw, 200px) + 8px);
     }
-    @media (min-width: 769px) {
-      .spiaggia-content { padding-top: 225px; }
-    }
-
 
     /* ── FAB nuovo post ── */
     .btn-nuovo-post {
@@ -86,12 +69,15 @@
       line-height: 1;
     }
 
-    /* ── Feed ── (compose area rimossa) */
-
     /* ── Feed ── */
-    .feed { padding: 8px 16px 20px; display: flex; flex-direction: column; align-items: center; gap: 28px; }
+    .feed { padding: 8px 16px 20px; display: flex; flex-direction: column; align-items: center; gap: 20px; }
 
-    /* ── Polaroid ── */
+    /* ── Separatore di giorno ── */
+    .day-sep { width: 100%; max-width: 360px; display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+    .day-sep::before, .day-sep::after { content: ''; flex: 1; height: 1px; background: rgba(26,58,92,0.3); }
+    .day-sep span { font-family: 'Playfair Display', serif; font-size: 0.82rem; font-weight: 700; color: var(--navy); background: rgba(255,255,255,0.85); padding: 4px 12px; border-radius: 20px; white-space: nowrap; }
+
+    /* ── Polaroid (identico a Spiaggia) ── */
     .post-polaroid {
       background: #fff;
       padding: 12px 12px 44px 12px;
@@ -239,25 +225,25 @@
 </div>
 
 <!-- Header fisso con immagine -->
-<div class="spiaggia-header-fixed"></div>
+<div class="diario-header-fixed"></div>
 
 <!-- Contenuto scrollabile sotto header -->
-<div class="spiaggia-content">
+<div class="diario-content">
   <!-- Feed post -->
   <div id="feed" class="feed"><div class="spinner"></div></div>
 </div>
 
-<!-- FAB nuovo post -->
+<!-- FAB nuovo post (solo ciurma/admin) -->
 <button class="btn-nuovo-post" id="fab-new-post">+</button>
 
 <!-- Modal nuovo post -->
 <div class="modal-backdrop" id="modal-backdrop">
   <div class="modal-sheet">
     <div class="modal-header">
-      <span class="modal-title">🏖️ Sulla spiaggia…</span>
+      <span class="modal-title">📔 Il diario di oggi…</span>
       <button class="modal-close" id="modal-close">✕</button>
     </div>
-    <textarea class="form-textarea" id="post-text" placeholder="Cosa vuoi condividere?" rows="4"></textarea>
+    <textarea class="form-textarea" id="post-text" placeholder="Raccontaci com'è andata la giornata…" rows="4"></textarea>
     <div class="media-btns">
       <label class="media-btn">🖼️ Foto<input type="file" accept="image/*" id="input-foto" multiple style="display:none"></label>
       <label class="media-btn btn-camera">📷 Scatta<input type="file" accept="image/*" id="input-foto-cam" capture="environment" style="display:none"></label>
@@ -268,7 +254,7 @@
     </div>
     <div id="post-preview"></div>
     <div class="upload-progress" id="upload-progress"><div class="upload-progress-bar" id="upload-bar" style="width:0%"></div></div>
-    <button class="btn-pubblica" id="btn-pubblica">🌊 Pubblica</button>
+    <button class="btn-pubblica" id="btn-pubblica">📔 Pubblica nel diario</button>
   </div>
 </div>
 
@@ -282,9 +268,9 @@
 <nav class="bottom-nav">
   <a href="index.html" class="nav-item"><span class="nav-icon">🏠</span><span>Home</span></a>
   <a href="villaggio.html" class="nav-item"><span class="nav-icon">🏡</span><span>Villaggio</span></a>
-  <a href="spiaggia.html" class="nav-item active"><span class="nav-icon">🏖️</span><span>Spiaggia</span></a>
+  <a href="spiaggia.html" class="nav-item"><span class="nav-icon">🏖️</span><span>Spiaggia</span></a>
   <a href="diari.html" class="nav-item"><span class="nav-icon">📖</span><span>Diari</span></a>
-  <a href="diario-ciurma.html" class="nav-item"><span class="nav-icon">📔</span><span>Diario ciurma</span></a>
+  <a href="diario-ciurma.html" class="nav-item active"><span class="nav-icon">📔</span><span>Diario ciurma</span></a>
   <a href="isola.html" class="nav-item"><span class="nav-icon">🏝️</span><span>Isola</span></a>
   <a href="naufraghi.html" class="nav-item"><span class="nav-icon">🧍</span><span>Naufraghi</span></a>
 </nav>
@@ -308,27 +294,32 @@ document.getElementById('lightbox-close').addEventListener('click', () => lightb
 lightbox.addEventListener('click', e => { if (e.target === lightbox) lightbox.classList.remove('open'); });
 function openLightbox(src) { lbImg.src = src; lightbox.classList.add('open'); }
 
-const COLL = 'robinson_spiaggia';
+const COLL = 'robinson_diario_ciurma';
 const MAX_FILES = 10;
 const myPostReactions = new Map();
 const myCommentReactions = new Map();
 const _nomiCache = {};
 
-let currentUser = null, currentUserData = null, isAdmin = false;
+let currentUser = null, currentUserData = null, isAdmin = false, isCiurma = false;
 
 onAuthStateChanged(auth, async user => {
   currentUser = user;
   if (user) {
     isAdmin = user.uid === ADMIN_UID;
     const _apertura = new Date('2026-07-02T10:00:00');
-    console.log('[guard spiaggia] uid:', user.uid, '| isAdmin:', isAdmin, '| ora < apertura:', new Date() < _apertura);
+    console.log('[guard diario-ciurma] uid:', user.uid, '| isAdmin:', isAdmin, '| ora < apertura:', new Date() < _apertura);
     if (!isAdmin && new Date() < _apertura) { window.location.href = 'attesa.html'; return; }
     try {
       let snap = await getDoc(doc(db, 'utenti', user.uid));
       if (!snap.exists()) snap = await getDoc(doc(db, 'staff', user.uid));
       if (snap.exists()) currentUserData = snap.data();
     } catch(_) {}
-    document.getElementById('fab-new-post').style.display = 'flex';
+    // Solo la ciurma (o l'admin) può scrivere il diario: verifica appartenenza a robinson_ciurma
+    try {
+      const ciurmaSnap = await getDoc(doc(db, 'robinson_ciurma', user.uid));
+      isCiurma = ciurmaSnap.exists();
+    } catch(_) {}
+    if (isAdmin || isCiurma) document.getElementById('fab-new-post').style.display = 'flex';
   }
   loadFeed();
 });
@@ -343,7 +334,7 @@ async function getDatiAutore() {
       if (snap.exists()) { const d = snap.data(); currentUserData = d; nome = d.nome || ''; foto = d.fotoProfilo || ''; }
     } catch(_) {}
   }
-  return { nome: nome || 'Naufrago', foto: foto || '' };
+  return { nome: nome || 'Ciurma', foto: foto || '' };
 }
 
 async function risolviNome(uid) {
@@ -425,14 +416,12 @@ function refreshPostPreview() {
   });
 }
 async function postAddFile(f, type) {
-  console.log('ROBINSON FILE SIZE:', f.size, 'tipo:', type, 'mime:', f.type);
   if (f.size > 15 * 1024 * 1024) {
     alert('Il file è troppo grande (max 15MB).\nPuoi comprimerlo con app come HandBrake (PC) o Compress Video (smartphone) prima di caricarlo.');
     return;
   }
   if (type === 'video') {
     const dur = await getVideoDuration(f);
-    console.log('VIDEO DURATION:', dur);
     if (dur > 30) {
       alert('Il video è troppo lungo (max 30 secondi).\nRegistra un video più breve o usane uno già compresso.');
       return;
@@ -490,7 +479,7 @@ function stopPostRec() {
 }
 
 document.getElementById('btn-pubblica').addEventListener('click', async () => {
-  if (!currentUser) return;
+  if (!currentUser || !(isAdmin || isCiurma)) return;
   const text = document.getElementById('post-text').value.trim();
   if (!text && postItems.length === 0) { alert('Scrivi qualcosa o aggiungi un allegato!'); return; }
   const btn = document.getElementById('btn-pubblica');
@@ -499,35 +488,52 @@ document.getElementById('btn-pubblica').addEventListener('click', async () => {
     const itemsToUpload = [...postItems];
     const media = itemsToUpload.length ? await uploadAll(itemsToUpload, document.getElementById('upload-bar'), document.getElementById('upload-progress')) : [];
     const { nome, foto } = await getDatiAutore();
-    await addDoc(collection(db, COLL), { authorId: currentUser.uid, authorName: nome, authorPhoto: foto, text, media, timestamp: serverTimestamp(), reactions: {}, commentsCount: 0 });
-    await aggiungiPunteggio(currentUser.uid, 'post');
+    const oggi = new Date();
+    const giorno = oggi.toISOString().slice(0, 10);
+    await addDoc(collection(db, COLL), { authorId: currentUser.uid, authorName: nome, authorPhoto: foto, text, media, giorno, timestamp: serverTimestamp(), reactions: {}, commentsCount: 0 });
     closeModal();
   } catch(err) { alert('Errore: ' + err.message); }
-  finally { btn.disabled = false; btn.textContent = '🌊 Pubblica'; }
+  finally { btn.disabled = false; btn.textContent = '📔 Pubblica nel diario'; }
 });
-
-// ── Punteggio ───────────────────────────────────────────────────────────────
-async function aggiungiPunteggio(uid, tipo) {
-  try {
-    const punti = { post: 3, commento: 1, reazione: 0 };
-    if (!punti[tipo]) return;
-    await updateDoc(doc(db, 'robinson_naufraghi', uid), { punteggio: increment(punti[tipo]) });
-  } catch(_) {}
-}
 
 // ── Feed ────────────────────────────────────────────────────────────────────
 function loadFeed() {
   const feedEl = document.getElementById('feed');
   feedEl.innerHTML = '<div class="spinner"></div>';
-  const q = query(collection(db, COLL), orderBy('timestamp', 'desc'), limit(40));
+  const q = query(collection(db, COLL), orderBy('timestamp', 'desc'), limit(60));
   onSnapshot(q, snap => {
     feedEl.innerHTML = '';
-    if (snap.empty) { feedEl.innerHTML = '<p class="empty-msg">La spiaggia è silenziosa… sii il primo a scrivere! 🌊</p>'; return; }
+    if (snap.empty) { feedEl.innerHTML = '<p class="empty-msg">Il diario della ciurma è ancora vuoto… presto arriveranno i primi racconti! 📔</p>'; return; }
+    let ultimoGiorno = null;
     snap.forEach(d => {
-      const wrapper = buildPostWrapper(d.id, d.data());
+      const data = d.data();
+      const giornoKey = data.giorno || fmtGiornoKey(data.timestamp);
+      if (giornoKey !== ultimoGiorno) {
+        feedEl.appendChild(buildDaySeparator(giornoKey));
+        ultimoGiorno = giornoKey;
+      }
+      const wrapper = buildPostWrapper(d.id, data);
       feedEl.appendChild(wrapper);
     });
   }, err => { feedEl.innerHTML = '<p class="empty-msg">Errore caricamento.</p>'; console.error(err); });
+}
+
+function fmtGiornoKey(ts) {
+  if (!ts?.toDate) return '';
+  return ts.toDate().toISOString().slice(0, 10);
+}
+
+function buildDaySeparator(giornoKey) {
+  const sep = document.createElement('div');
+  sep.className = 'day-sep';
+  let label = giornoKey;
+  if (giornoKey) {
+    const d = new Date(giornoKey + 'T12:00:00');
+    label = d.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' });
+    label = label.charAt(0).toUpperCase() + label.slice(1);
+  }
+  sep.innerHTML = `<span>🗓️ ${esc(label)}</span>`;
+  return sep;
 }
 
 function fmtDate(ts) {
@@ -651,7 +657,6 @@ window.toggleReaction = async (postId, emoji, btn) => {
       const uSnap = await getDoc(uRef);
       const { nome } = await getDatiAutore();
       uSnap.exists() ? await updateDoc(uRef, { emojis: arrayUnion(emoji), nome }) : await setDoc(uRef, { emojis: [emoji], nome });
-      await aggiungiPunteggio(data?.authorId || '', 'reazione');
     }
   } catch(err) {
     btn.classList.toggle('active');
@@ -670,7 +675,7 @@ function adjCount(btn, delta) {
 
 // ── Delete ───────────────────────────────────────────────────────────────────
 window.deletePost = async (postId, btn) => {
-  if (!confirm('Eliminare questo post?')) return;
+  if (!confirm('Eliminare questa pagina di diario?')) return;
   try {
     await deleteDoc(doc(db, COLL, postId));
     btn.closest('[data-post-id]')?.remove();
@@ -723,7 +728,7 @@ function buildCommentEl(postId, commentId, data) {
     return `<button class="comment-reaction-btn${active}" data-emoji="${emoji}" data-cnt="${cnt}" onclick="toggleCR('${postId}','${commentId}','${emoji}',this)">${emoji}${cnt > 0 ? ' '+cnt : ''}</button>`;
   }).join('');
   const canDel = isAdmin || (currentUser && currentUser.uid === data.authorId);
-  el.innerHTML = `${avatar}<div class="comment-bubble"><div class="comment-autore">${esc(data.authorName||'Naufrago')}</div>${data.text?`<div class="comment-text">${data.tono?`<span style="margin-right:3px">${data.tono}</span>`:''}${esc(data.text)}</div>`:''}<div class="comment-reactions">${reactHtml}</div><div class="comment-data">${fmtDate(data.timestamp)}${canDel?` <button onclick="deleteComment('${postId}','${commentId}',this)" style="margin-left:8px;background:none;border:none;cursor:pointer;font-size:0.72rem;color:#ccc;">✕</button>`:''}</div></div>`;
+  el.innerHTML = `${avatar}<div class="comment-bubble"><div class="comment-autore">${esc(data.authorName||'Ciurma')}</div>${data.text?`<div class="comment-text">${data.tono?`<span style="margin-right:3px">${data.tono}</span>`:''}${esc(data.text)}</div>`:''}<div class="comment-reactions">${reactHtml}</div><div class="comment-data">${fmtDate(data.timestamp)}${canDel?` <button onclick="deleteComment('${postId}','${commentId}',this)" style="margin-left:8px;background:none;border:none;cursor:pointer;font-size:0.72rem;color:#ccc;">✕</button>`:''}</div></div>`;
   return el;
 }
 
@@ -852,7 +857,6 @@ function buildCommentInput(postId) {
       const { nome, foto } = await getDatiAutore();
       await addDoc(collection(db, COLL, postId, 'comments'), { authorId:currentUser.uid, authorName:nome, authorPhoto:foto, text, tono, media, timestamp:serverTimestamp(), reactions:{} });
       await updateDoc(doc(db, COLL, postId), { commentsCount: increment(1) });
-      await aggiungiPunteggio(currentUser.uid, 'commento');
       textarea.value=''; textarea.style.height='auto';
       cItems.forEach(i=>URL.revokeObjectURL(i.previewUrl)); cItems.length=0;
       renderPreview([],previewId,()=>{});
