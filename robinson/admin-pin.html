@@ -553,35 +553,35 @@ document.getElementById('new-aggiungi').addEventListener('click', async () => {
     // Filtra match esatto (la query range può restituire prefissi)
     const existingDoc = existingSnap.docs.find(d => d.data().nome === nome && !d.data().ruolo?.includes('admin'));
 
+    // NOTA: si crea SEMPRE un nuovo account Firebase Auth con un uid fresco.
+    // In passato, se esisteva già un profilo 'utenti' con lo stesso nome (es. proveniente
+    // dalla Comunità/Villaggio), il codice riusava quel uid senza verificare che avesse
+    // davvero un account Firebase Auth associato: se il profilo era stato creato solo su
+    // Firestore (senza mai passare da un signUp), il naufrago restava con PIN "valido" su
+    // Firestore ma senza nessun utente Auth corrispondente → login impossibile
+    // (auth/user-not-found). Vedi Mohamed / Ala Eddine, corretti con diag-*.cjs.
     let uid, email, isExisting;
-    if (existingDoc) {
-      // USA UID ESISTENTE — non creare nuovo account
-      uid = existingDoc.id;
-      email = existingDoc.data().email || nomeToEmail(nome);
-      isExisting = true;
-      // Aggiorna ruolo a naufrago se non già impostato
-      await setDoc(doc(db, 'utenti', uid), { ruolo: 'naufrago' }, { merge: true });
-    } else {
-      // CREA NUOVO ACCOUNT Firebase Auth via REST
-      email = nomeToEmail(nome);
-      const res = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${API_KEY}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, returnSecureToken: true })
-      });
-      const data = await res.json();
-      if (data.error) throw new Error(data.error.message);
-      uid = data.localId;
-      isExisting = false;
-      // Crea profilo utenti solo per account nuovi
-      await setDoc(doc(db, 'utenti', uid), {
-        uid, nome, ruolo: 'naufrago', email
-      });
-    }
+    email = nomeToEmail(nome);
+    const res = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${API_KEY}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password, returnSecureToken: true })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+    uid = data.localId;
+    isExisting = !!existingDoc;
+
+    const fotoEsistente = existingDoc?.data()?.fotoRobinson || existingDoc?.data()?.fotoProfilo || '';
+    await setDoc(doc(db, 'utenti', uid), {
+      uid, nome, ruolo: 'naufrago', email,
+      fotoProfilo: fotoEsistente,
+      ...(existingDoc ? { originalUid: existingDoc.id } : {})
+    });
 
     // robinson_naufraghi (merge per non sovrascrivere foto esistente)
     await setDoc(doc(db, 'robinson_naufraghi', uid), {
-      uid, nome, ruolo: 'naufrago', attivo: true
+      uid, nome, ruolo: 'naufrago', attivo: true, fotoRobinson: fotoEsistente
     }, { merge: true });
     // robinson_pin
     await setDoc(doc(db, 'robinson_pin', uid), {
@@ -594,14 +594,14 @@ document.getElementById('new-aggiungi').addEventListener('click', async () => {
     // Aggiorna stato locale e ricarica tabella
     pinLookup[pin] = uid;
     pinMap[uid] = { uid, _docId: uid, nome, pin, email, lastLogin: null, createdAt: null };
-    naufraghi.push({ uid, nome, foto: '' });
+    naufraghi.push({ uid, nome, foto: fotoEsistente });
     naufraghi.sort((a, b) => a.nome.localeCompare(b.nome, 'it'));
 
     document.getElementById('new-nome').value = '';
     document.getElementById('new-pin').value = '';
     errEl.style.color = 'var(--verde)';
     errEl.textContent = isExisting
-      ? `✅ ${nome} collegato con PIN ${pin} (account esistente)`
+      ? `✅ ${nome} aggiunto con PIN ${pin} (profilo collegato a quello esistente)`
       : `✅ ${nome} aggiunto con PIN ${pin}`;
     setTimeout(() => { errEl.textContent = ''; errEl.style.color = 'var(--rosso)'; }, 4000);
 
