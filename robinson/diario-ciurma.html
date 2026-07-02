@@ -13,7 +13,7 @@
     :root { --navy:#1a3a5c; --oro:#c8860a; --carta:#f5f0e8; --muted:#6b5c45; --rosso:#c0392b; }
 
     body {
-      background-image: url('la_ciurma_cell_ok.png');
+      background-image: url('diario_della_ciurma.png');
       background-size: cover;
       background-position: top center;
       background-attachment: fixed;
@@ -31,21 +31,10 @@
       #nav-auth-slot img { width: 28px !important; height: 28px !important; }
     }
 
-    /* ── Header fisso ── */
-    .diario-header-fixed {
-      position: fixed;
-      top: 0; left: 0; right: 0;
-      height: 32vw;
-      max-height: 200px;
-      background-image: url('la_ciurma_cell_ok.png');
-      background-size: cover;
-      background-position: top center;
-      z-index: 100;
-    }
-
-    /* ── Contenuto sotto header ── */
+    /* ── Contenuto: parte sotto la targa "Diario della Ciurma" disegnata
+       nello sfondo (nessun titolo testuale in pagina, è già nell'immagine) ── */
     .diario-content {
-      padding-top: calc(min(32vw, 200px) + 8px);
+      padding-top: clamp(200px, calc(35vw + 12px), 640px);
     }
 
     /* ── FAB nuovo post ── */
@@ -224,10 +213,7 @@
   <div id="nav-auth-slot"></div>
 </div>
 
-<!-- Header fisso con immagine -->
-<div class="diario-header-fixed"></div>
-
-<!-- Contenuto scrollabile sotto header -->
+<!-- Contenuto scrollabile: lo sfondo con la targa "Diario della Ciurma" resta visibile in alto -->
 <div class="diario-content">
   <!-- Feed post -->
   <div id="feed" class="feed"><div class="spinner"></div></div>
