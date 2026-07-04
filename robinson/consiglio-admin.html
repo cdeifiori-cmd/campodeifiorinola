@@ -71,6 +71,9 @@
     .bersaglio-nodo, .bersaglio-arco { transition: opacity 0.15s; }
     .bersaglio-dim { opacity: 0.12; }
     #bersaglio-info-body .item { font-size:0.84rem; padding:3px 0; }
+    #bersaglio-info-body .item-titolo { font-weight:600; margin-top:8px; font-size:0.8rem; color:var(--navy); }
+    .chip { display:inline-block; background:var(--carta-scura); border-radius:12px; padding:2px 9px; font-size:0.76rem; margin:2px 4px 2px 0; }
+    .chip.non-rispondente { border:1px dashed #c8860a; opacity:0.8; }
   </style>
 </head>
 <body>
@@ -110,6 +113,12 @@
       <button class="filtro-btn" data-vista="bersaglio">🎯 Bersaglio</button>
     </div>
 
+    <div class="filtro-bar" id="tema-bersaglio-bar" style="display:none;">
+      <button class="filtro-btn active" data-tema="preferenze">❤️ Preferenze</button>
+      <button class="filtro-btn" data-tema="difficolta">🌊 Difficoltà</button>
+      <button class="filtro-btn" data-tema="avvicinamenti">🌉 Avvicinamenti</button>
+    </div>
+
     <div class="filtro-bar" id="filtro-bar">
       <button class="filtro-btn active" data-filtro="tutte">🌐 Tutte</button>
       <button class="filtro-btn" data-filtro="ciurma">🔥 Solo Ciurma</button>
@@ -127,18 +136,7 @@
       <span>⬜ contorno tratteggiato/sbiadito = nominato/a ma non ha ancora risposto</span>
     </div>
 
-    <div class="legenda" id="legenda-bersaglio" style="display:none;">
-      <span>🎯 Il numero su ogni anello = scelte ricevute (positive+negative) — il centro è chi ne ha ricevute di più, il bordo chi non ne ha ricevuta nessuna</span>
-      <span><span class="dot-round" style="background:#2ecc71;"></span> Molto scelto/a in positivo</span>
-      <span><span class="dot-round" style="background:#f39c12;"></span> Polarizza il gruppo</span>
-      <span><span class="dot-round" style="background:#e57373;"></span> Da sostenere</span>
-      <span><span class="dot-round" style="background:#b0b0b0;"></span> Ai margini / da coinvolgere</span>
-      <span><span class="dot-round" style="background:#5dade2;"></span> Nella media</span>
-      <span><span class="dot" style="background:var(--verde);"></span> Scelta positiva</span>
-      <span><span class="dot" style="background:var(--arancione);"></span> Scelta difficile</span>
-      <span>— linea spessa = reciproca</span>
-      <span>⬜ contorno tratteggiato/sbiadito = nominato/a ma non ha ancora risposto</span>
-    </div>
+    <div class="legenda" id="legenda-bersaglio" style="display:none;"></div>
 
     <div class="stat-cards" id="stat-cards"></div>
 
@@ -211,6 +209,43 @@ const PROFILO_LABEL = {
 };
 const MARKER_COLORI = ['3498db', '2ecc71', 'f1c40f', 'e67e22', 'e74c3c'];
 
+// ── Tre bersagli tematici ────────────────────────────────────────────────────
+const TEMI_BERSAGLIO = {
+  preferenze:     { label: 'Preferenze',     campiPositivi: ['ciurma'], campiNegativi: [] },
+  difficolta:     { label: 'Difficoltà',     campiPositivi: [], campiNegativi: ['correnti', 'scogli'] },
+  avvicinamenti:  { label: 'Avvicinamenti',  campiPositivi: ['ponti'], campiNegativi: [] },
+};
+const PREFERENZE_INCLUDE_PONTI = false; // true per includere anche i Ponti tra le "Preferenze" del bersaglio 1
+const CONVERGENZA_MIN_FRECCE = 2;       // soglia minima di frecce convergenti per evidenziare "molti contro uno"
+const PALETTE_CLUSTER = ['#8e44ad', '#16a085', '#2980b9', '#d35400', '#c0392b', '#27ae60', '#7f8c8d'];
+let bersaglioTema = 'preferenze'; // 'preferenze' | 'difficolta' | 'avvicinamenti'
+
+function categorieTema(tema) {
+  const cfg = TEMI_BERSAGLIO[tema];
+  const positivi = tema === 'preferenze' && PREFERENZE_INCLUDE_PONTI ? ['ciurma', 'ponti'] : cfg.campiPositivi;
+  return { positivi, negativi: cfg.campiNegativi, tutti: [...positivi, ...cfg.campiNegativi] };
+}
+
+// Numero di scelte ricevute nel tema selezionato (base per anelli, etichette e numero sul nodo)
+function calcolaRicevutePerTema(risposte, uids, tema) {
+  const { tutti } = categorieTema(tema);
+  const ricevute = {};
+  uids.forEach(u => { ricevute[u] = 0; });
+  risposte.forEach(r => {
+    tutti.forEach(campo => (r[campo] || []).forEach(v => { if (ricevute[v] !== undefined) ricevute[v]++; }));
+  });
+  return ricevute;
+}
+
+// Chip HTML per un elenco di uid (usato nel pannello "Dettaglio naufrago")
+function chipsNomi(listaUid, rispondentiSet) {
+  if (!listaUid || !listaUid.length) return '<span class="vuoto">—</span>';
+  return listaUid.map(u => {
+    const nonRisp = rispondentiSet && !rispondentiSet.has(u);
+    return `<span class="chip${nonRisp ? ' non-rispondente' : ''}">${esc(nomeVisualizzato(u))}${nonRisp ? ' ✏️' : ''}</span>`;
+  }).join('');
+}
+
 async function caricaNaufraghi() {
   const snap = await getDocs(collection(db, 'robinson_naufraghi'));
   snap.forEach(d => {
@@ -265,7 +300,10 @@ function nomeVisualizzato(uid) {
 // uidsCompleti (rispondenti + nominati non-rispondenti) determina l'universo delle
 // coppie considerate: un non-rispondente non ha nomine in uscita (map vuota) ma può
 // comunque essere destinazione di una freccia.
-function buildEdges(risposte, filtro, uidsCompleti) {
+// categorieConsentite (opzionale, Set): se presente, limita le categorie disegnabili
+// (usato dai 3 bersagli tematici); se assente, tutte le 4 categorie restano valide
+// come nella vista Rete originale.
+function buildEdges(risposte, filtro, uidsCompleti, categorieConsentite) {
   const uids = uidsCompleti || risposte.map(r => r.userId);
   const map = {};
   uids.forEach(u => { map[u] = { ciurma: new Set(), ponti: new Set(), correnti: new Set(), scogli: new Set() }; });
@@ -275,6 +313,7 @@ function buildEdges(risposte, filtro, uidsCompleti) {
       correnti: new Set(r.correnti || []), scogli: new Set(r.scogli || []),
     };
   });
+  const consentito = cat => !categorieConsentite || categorieConsentite.has(cat);
   const edges = [];
 
   for (let i = 0; i < uids.length; i++) {
@@ -286,11 +325,11 @@ function buildEdges(risposte, filtro, uidsCompleti) {
       const aCorrB = ma.correnti.has(b), bCorrA = mb.correnti.has(a);
       const aScogB = ma.scogli.has(b), bScogA = mb.scogli.has(a);
 
-      if (filtro === 'ciurma' || filtro === 'tutte') {
+      if (consentito('ciurma') && (filtro === 'ciurma' || filtro === 'tutte')) {
         if (aCiurmaB && bCiurmaA) edges.push({ from: a, to: b, color: { color: '#3498db' }, width: 4, arrows: '' });
         else if (aCiurmaB || bCiurmaA) edges.push({ from: aCiurmaB ? a : b, to: aCiurmaB ? b : a, color: { color: '#2ecc71' }, width: 2, arrows: 'to' });
       }
-      if (filtro === 'ponti' || filtro === 'tutte') {
+      if (consentito('ponti') && (filtro === 'ponti' || filtro === 'tutte')) {
         const recipPos = (aCiurmaB && bCiurmaA) || (aPontiB && bPontiA) || (aCiurmaB && bPontiA) || (aPontiB && bCiurmaA);
         if (!recipPos) {
           if (aPontiB) edges.push({ from: a, to: b, color: { color: '#f1c40f' }, width: 2, arrows: 'to' });
@@ -299,10 +338,10 @@ function buildEdges(risposte, filtro, uidsCompleti) {
           edges.push({ from: a, to: b, color: { color: '#3498db' }, width: 3, arrows: '' });
         }
       }
-      if (filtro === 'correnti' || filtro === 'tutte') {
+      if (consentito('correnti') && (filtro === 'correnti' || filtro === 'tutte')) {
         if (aCorrB || bCorrA) edges.push({ from: aCorrB ? a : b, to: aCorrB ? b : a, color: { color: '#e67e22' }, width: aCorrB && bCorrA ? 3 : 1.5, dashes: true, arrows: 'to' });
       }
-      if (filtro === 'scogli' || filtro === 'tutte') {
+      if (consentito('scogli') && (filtro === 'scogli' || filtro === 'tutte')) {
         if (aScogB && bScogA) edges.push({ from: a, to: b, color: { color: '#e74c3c' }, width: 3, dashes: true, arrows: '' });
         else if (aScogB || bScogA) edges.push({ from: aScogB ? a : b, to: aScogB ? b : a, color: { color: '#e74c3c' }, width: 1.5, dashes: true, arrows: 'to' });
       }
@@ -351,7 +390,10 @@ function disegnaGrafo(containerId, risposte, filtro, aggregati) {
 // ── Vista Bersaglio: calcolo impatto/preferenza/anello/profilo ─────────────
 // uidsCompleti = rispondenti + chiunque sia stato nominato (anche se non ha risposto):
 // un non-rispondente ha comunque un impatto (nomine ricevute) e va collocato nel suo anello.
-function calcolaBersaglio(risposte, aggregati, uidsCompleti) {
+// tema seleziona quale bersaglio tematico calcolare (preferenze/difficolta/avvicinamenti):
+// determina SOLO la base per anelli/etichette/numero-nodo. Il profilo (colore nodo) resta
+// sempre calcolato sull'insieme completo delle 4 categorie, indipendente dal tema.
+function calcolaBersaglio(risposte, aggregati, uidsCompleti, tema) {
   const uids = uidsCompleti || risposte.map(r => r.userId);
   const posIn = {}, negIn = {};
   uids.forEach(u => { posIn[u] = 0; negIn[u] = 0; });
@@ -362,9 +404,9 @@ function calcolaBersaglio(risposte, aggregati, uidsCompleti) {
     (r.scogli || []).forEach(v => { if (negIn[v] !== undefined) negIn[v]++; });
   });
 
-  const impatto = {}, preferenza = {};
+  const impattoGenerale = {}, preferenza = {};
   uids.forEach(u => {
-    impatto[u] = RAGGIO_MODE === 'solo_positive' ? posIn[u] : posIn[u] + negIn[u];
+    impattoGenerale[u] = RAGGIO_MODE === 'solo_positive' ? posIn[u] : posIn[u] + negIn[u];
     preferenza[u] = posIn[u] - negIn[u];
   });
 
@@ -375,12 +417,13 @@ function calcolaBersaglio(risposte, aggregati, uidsCompleti) {
   const medianaPos = mediana(uids.map(u => posIn[u]));
   const medianaNeg = mediana(uids.map(u => negIn[u]));
 
-  // Anello per fasce ASSOLUTE sull'impatto (non quantili): si divide [0, max] in 4 fasce
-  // che crescono verso il centro. Regola fissa: impatto 0 → sempre anello più esterno.
-  const maxImpatto = uids.length ? Math.max(0, ...uids.map(u => impatto[u])) : 0;
-  const fasce = calcolaFasceAnelli(maxImpatto); // [ring0(centro), ring1, ring2, ring3(bordo)] → [min,max]
+  // Anello per fasce ASSOLUTE (non quantili) sul conteggio del TEMA selezionato: si divide
+  // [0, max] in 4 fasce che crescono verso il centro. Regola fissa: 0 → sempre anello esterno.
+  const ricevuteTema = calcolaRicevutePerTema(risposte, uids, tema);
+  const maxRicevute = uids.length ? Math.max(0, ...uids.map(u => ricevuteTema[u])) : 0;
+  const fasce = calcolaFasceAnelli(maxRicevute); // [ring0(centro), ring1, ring2, ring3(bordo)] → [min,max]
   const anello = {};
-  uids.forEach(u => { anello[u] = trovaAnelloPerValore(impatto[u], fasce); });
+  uids.forEach(u => { anello[u] = trovaAnelloPerValore(ricevuteTema[u], fasce); });
 
   const uidToCluster = {};
   (aggregati.cluster || []).forEach((gruppo, idx) => gruppo.forEach(u => { uidToCluster[u] = idx; }));
@@ -392,11 +435,11 @@ function calcolaBersaglio(risposte, aggregati, uidsCompleti) {
     if (posAlto && negAlto) profilo[u] = 'ambra';
     else if (posAlto) profilo[u] = 'verde';
     else if (negAlto) profilo[u] = 'rossoTenue';
-    else if (impatto[u] <= MARGINE_IMPATTO_GRIGIO) profilo[u] = 'grigio';
+    else if (impattoGenerale[u] <= MARGINE_IMPATTO_GRIGIO) profilo[u] = 'grigio';
     else profilo[u] = 'neutro';
   });
 
-  return { posIn, negIn, impatto, preferenza, anello, profilo, uidToCluster, fasce };
+  return { posIn, negIn, impattoGenerale, preferenza, ricevuteTema, anello, profilo, uidToCluster, fasce };
 }
 
 // Divide [0, maxImpatto] in 4 fasce crescenti verso il centro (ring0=centro..ring3=bordo).
@@ -465,12 +508,21 @@ function posizioniBersaglio(uids, anello, uidToCluster) {
   return { pos, CX, CY };
 }
 
-function disegnaBersaglio(risposte, filtro, aggregati) {
+function disegnaBersaglio(risposte, filtro, aggregati, tema) {
   const uids = calcolaUidCoinvolti(risposte);
   const rispondentiSet = new Set(risposte.map(r => r.userId));
-  const bersaglio = calcolaBersaglio(risposte, aggregati, uids);
+  const bersaglio = calcolaBersaglio(risposte, aggregati, uids, tema);
   const { pos, CX, CY } = posizioniBersaglio(uids, bersaglio.anello, bersaglio.uidToCluster);
-  const edges = buildEdges(risposte, filtro, uids);
+  const categorieConsentite = new Set(categorieTema(tema).tutti);
+  const edges = buildEdges(risposte, filtro, uids, categorieConsentite);
+
+  // Convergenza: quanti "vettori" (frecce unilaterali + reciproche) toccano ogni nodo,
+  // usato per evidenziare il "molti contro uno" nei bersagli Difficoltà/Avvicinamenti.
+  const inDegree = {};
+  edges.forEach(e => {
+    if (e.arrows === 'to') inDegree[e.to] = (inDegree[e.to] || 0) + 1;
+    else { inDegree[e.from] = (inDegree[e.from] || 0) + 1; inDegree[e.to] = (inDegree[e.to] || 0) + 1; }
+  });
 
   const defsMarkers = MARKER_COLORI.map(c => `
     <marker id="arrow-${c}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
@@ -505,12 +557,25 @@ function disegnaBersaglio(risposte, filtro, aggregati) {
     const nonRispondente = !rispondentiSet.has(u);
     const nome = nomeVisualizzato(u);
     const colore = PROFILO_COLORI[bersaglio.profilo[u]];
-    const iniziali = naufraghiInfo[u]?.nome ? nome.split(' ').map(s => s[0]).slice(0, 2).join('').toUpperCase() : '?';
+    const numero = bersaglio.ricevuteTema[u];
     const dash = nonRispondente ? ' stroke-dasharray="3,2"' : '';
     const opacity = nonRispondente ? ' opacity="0.6"' : '';
+
+    // Alone sottogruppo (solo bersaglio Preferenze): colore coerente per membri dello stesso cluster
+    const clusterIdx = bersaglio.uidToCluster[u];
+    const haloCluster = (tema === 'preferenze' && clusterIdx !== undefined)
+      ? `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="21" fill="none" stroke="${PALETTE_CLUSTER[clusterIdx % PALETTE_CLUSTER.length]}" stroke-width="2" stroke-dasharray="3,2"></circle>`
+      : '';
+    // Alone convergenza (Difficoltà/Avvicinamenti): più frecce dello stesso tipo puntano qui
+    const convergenza = (tema === 'difficolta' || tema === 'avvicinamenti') && (inDegree[u] || 0) >= CONVERGENZA_MIN_FRECCE;
+    const haloConvergenza = convergenza
+      ? `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="23" fill="none" stroke="${tema === 'difficolta' ? '#e74c3c' : '#f39c12'}" stroke-width="3" stroke-dasharray="2,3"></circle>`
+      : '';
+
     return `<g class="bersaglio-nodo${nonRispondente ? ' non-rispondente' : ''}" data-uid="${esc(u)}">
+      ${haloCluster}${haloConvergenza}
       <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="16" fill="${colore}" stroke="#1a3a5c" stroke-width="1.5"${dash}${opacity}></circle>
-      <text x="${p.x.toFixed(1)}" y="${(p.y + 3).toFixed(1)}" text-anchor="middle" font-weight="700" fill="#fff" font-size="9"${opacity}>${esc(iniziali)}</text>
+      <text x="${p.x.toFixed(1)}" y="${(p.y + 3).toFixed(1)}" text-anchor="middle" font-weight="700" fill="#fff" font-size="10"${opacity}>${numero}</text>
       <text x="${p.x.toFixed(1)}" y="${(p.y + 27).toFixed(1)}" text-anchor="middle" font-size="9"${opacity}>${esc(nome.split(' ')[0])}</text>
     </g>`;
   }).join('');
@@ -531,6 +596,15 @@ function disegnaBersaglio(risposte, filtro, aggregati) {
     const avviso = !rispondentiSet.has(uid)
       ? `<div class="item" style="color:var(--oro);font-style:italic;">✏️ Non ha ancora risposto — nomine ricevute mostrate, nessuna scelta in uscita.</div>`
       : '';
+
+    // Parte 1 — le scelte fatte DA questo naufrago (risolte dall'anagrafe completa)
+    const propriaRisposta = risposte.find(r => r.userId === uid);
+    const rigaCategoria = (emoji, label, lista) => `
+      <div class="item-titolo">${emoji} ${label}</div>
+      <div class="item">${chipsNomi(lista, rispondentiSet)}</div>`;
+    const clusterIdx = bersaglio.uidToCluster[uid];
+    const membriCluster = clusterIdx !== undefined ? (aggregati.cluster[clusterIdx] || []).filter(u => u !== uid) : [];
+
     infoBody.innerHTML = `
       <div style="font-weight:700;color:var(--navy);margin-bottom:6px;">${esc(nome)}</div>
       ${avviso}
@@ -538,6 +612,12 @@ function disegnaBersaglio(risposte, filtro, aggregati) {
       <div class="item">🌊 Nomine difficili ricevute: <strong>${bersaglio.negIn[uid]}</strong></div>
       <div class="item">🔵 Legami reciproci: <strong>${reciproche}</strong></div>
       <div class="item">Profilo: <strong>${esc(PROFILO_LABEL[bersaglio.profilo[uid]])}</strong></div>
+      ${rigaCategoria('🔥', 'Porterebbe con sé', propriaRisposta?.ciurma)}
+      ${rigaCategoria('🌉', 'Vorrebbe avvicinare', propriaRisposta?.ponti)}
+      ${rigaCategoria('🌊', 'Fa più fatica a stare', propriaRisposta?.correnti)}
+      ${rigaCategoria('🪨', 'Difficile costruire un rapporto', propriaRisposta?.scogli)}
+      <div class="item-titolo">👥 Fa parte del sottogruppo con</div>
+      <div class="item">${membriCluster.length ? chipsNomi(membriCluster, rispondentiSet) : '<span class="vuoto">Nessun sottogruppo</span>'}</div>
     `;
   }
   function evidenzia(uid) {
@@ -560,6 +640,61 @@ function disegnaBersaglio(risposte, filtro, aggregati) {
 // ── Render principale ──────────────────────────────────────────────────────
 let networkMain = null, networkCompare = null;
 
+// Mostra nel filtro-bar solo le categorie pertinenti al tema attivo (in vista Bersaglio);
+// in vista Rete tutte e 5 restano disponibili come sempre.
+function aggiornaFiltriVisibili() {
+  const bottoni = document.querySelectorAll('#filtro-bar .filtro-btn');
+  if (vistaAttiva === 'rete') {
+    bottoni.forEach(b => { b.style.display = ''; });
+    return;
+  }
+  const { tutti } = categorieTema(bersaglioTema);
+  const consentiti = new Set(['tutte', ...tutti]);
+  let filtroValido = false;
+  bottoni.forEach(b => {
+    const visibile = consentiti.has(b.dataset.filtro);
+    b.style.display = visibile ? '' : 'none';
+    if (b.dataset.filtro === filtroAttivo && visibile) filtroValido = true;
+  });
+  if (!filtroValido) {
+    filtroAttivo = 'tutte';
+    bottoni.forEach(b => b.classList.toggle('active', b.dataset.filtro === 'tutte'));
+  }
+}
+
+function renderLegendaBersaglio(tema) {
+  const comune = `
+    <span><span class="dot-round" style="background:#2ecc71;"></span> Molto scelto/a in positivo</span>
+    <span><span class="dot-round" style="background:#f39c12;"></span> Polarizza il gruppo</span>
+    <span><span class="dot-round" style="background:#e57373;"></span> Da sostenere</span>
+    <span><span class="dot-round" style="background:#b0b0b0;"></span> Ai margini / da coinvolgere</span>
+    <span><span class="dot-round" style="background:#5dade2;"></span> Nella media</span>
+    <span>⬜ contorno tratteggiato/sbiadito = nominato/a ma non ha ancora risposto</span>
+  `;
+  let specifica = '';
+  if (tema === 'preferenze') {
+    specifica = `
+      <span>❤️ Il numero sul nodo = preferenze ricevute in Ciurma — il centro è il/la più scelto/a, il bordo chi non è scelto/a da nessuno</span>
+      <span><span class="dot" style="background:var(--verde);"></span> Scelta positiva (reciproca = più spessa)</span>
+      <span>◌ alone colorato tratteggiato = sottogruppo/fuoco della ciurma</span>
+    `;
+  } else if (tema === 'difficolta') {
+    specifica = `
+      <span>🌊 Il numero sul nodo = nomine difficili ricevute (Correnti + Scogli) — il centro è chi il gruppo fatica di più ad accogliere</span>
+      <span><span class="dot" style="background:var(--arancione);"></span> Corrente contraria</span>
+      <span><span class="dot" style="background:var(--rosso-edge);"></span> Scoglio (reciproco = più spesso)</span>
+      <span>◌ alone rosso tratteggiato = convergenza di più nomine difficili sullo stesso naufrago</span>
+    `;
+  } else {
+    specifica = `
+      <span>🌉 Il numero sul nodo = volte indicato/a "da avvicinare" (Ponti) — il centro è chi più naufraghi vorrebbero conoscere meglio</span>
+      <span><span class="dot" style="background:var(--giallo);"></span> Ponte possibile</span>
+      <span>◌ alone ambra tratteggiato = più naufraghi vorrebbero avvicinarsi allo stesso naufrago</span>
+    `;
+  }
+  document.getElementById('legenda-bersaglio').innerHTML = specifica + comune;
+}
+
 async function renderTutto() {
   const rilId = document.getElementById('sel-rilevazione').value;
   const ril = rilevazioni.find(r => r.id === rilId);
@@ -569,7 +704,9 @@ async function renderTutto() {
   const mediatori = trovaMediatori(risposte, cluster);
 
   document.getElementById('titolo-graph-main').textContent = `Rilevazione #${ril.numero}`;
-  document.getElementById('titolo-bersaglio').textContent = `🎯 Bersaglio — Rilevazione #${ril.numero}`;
+
+  document.getElementById('tema-bersaglio-bar').style.display = vistaAttiva === 'bersaglio' ? 'flex' : 'none';
+  aggiornaFiltriVisibili();
 
   if (vistaAttiva === 'rete') {
     document.getElementById('graph-row').style.display = 'flex';
@@ -580,12 +717,14 @@ async function renderTutto() {
     if (networkMain) networkMain.destroy();
     networkMain = disegnaGrafo('graph-main', risposte, filtroAttivo, aggregati);
   } else {
+    document.getElementById('titolo-bersaglio').textContent = `🎯 Bersaglio — ${TEMI_BERSAGLIO[bersaglioTema].label} — Rilevazione #${ril.numero}`;
     document.getElementById('graph-row').style.display = 'none';
     document.getElementById('bersaglio-row').style.display = 'flex';
     document.getElementById('legenda-rete').style.display = 'none';
     document.getElementById('legenda-bersaglio').style.display = 'flex';
     document.getElementById('blocco-confronto').style.display = 'none';
-    disegnaBersaglio(risposte, filtroAttivo, aggregati);
+    renderLegendaBersaglio(bersaglioTema);
+    disegnaBersaglio(risposte, filtroAttivo, aggregati, bersaglioTema);
   }
 
   // Stat cards
@@ -733,6 +872,14 @@ document.querySelectorAll('#vista-toggle-bar .filtro-btn').forEach(btn => {
     document.querySelectorAll('#vista-toggle-bar .filtro-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     vistaAttiva = btn.dataset.vista;
+    renderTutto();
+  });
+});
+document.querySelectorAll('#tema-bersaglio-bar .filtro-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#tema-bersaglio-bar .filtro-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    bersaglioTema = btn.dataset.tema;
     renderTutto();
   });
 });
