@@ -4,6 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Isola – Robinson</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
+  <meta name="theme-color" content="#1a3a5c">
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/robinson.css">
   <style>
@@ -126,6 +131,7 @@
   <div style="display:flex;gap:14px;">
     <a href="admin-pin.html">🔑 PIN</a>
     <a href="admin-classifica.html">📊 Classifica</a>
+    <a href="consiglio-admin.html">🏝 Consiglio dell'Isola</a>
   </div>
 </header>
 
@@ -171,7 +177,7 @@ import {
   collection, getDocs, getDoc, doc,
   query, orderBy, limit
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-import { esc } from './js/robinson-utils.js';
+import { esc, cloudinaryVideoUrl } from './js/robinson-utils.js';
 
 // ── Luoghi isola ──────────────────────────────────────────────────────────────
 const LUOGHI = [
@@ -667,7 +673,7 @@ window.apriDrawer = function(uid) {
       <div class="ti-body">
         <div class="ti-luogo">${LUOGO_MAP[n.luogoId]?.emoji||''} ${esc(n.luogoNome)} ${n.meteo}</div>
         ${n.pensiero ? `<div class="ti-pensiero">"${esc(n.pensiero)}"</div>` : ''}
-        ${n.fotoUrl||n.videoUrl ? `<div class="miniature">${n.fotoUrl?`<img class="miniatura" src="${esc(n.fotoUrl)}" onclick="window.open('${esc(n.fotoUrl)}')">`:''} ${n.videoUrl?`<video class="miniatura" src="${esc(n.videoUrl)}" controls></video>`:''}</div>` : ''}
+        ${n.fotoUrl||n.videoUrl ? `<div class="miniature">${n.fotoUrl?`<img class="miniatura" src="${esc(n.fotoUrl)}" onclick="window.open('${esc(n.fotoUrl)}')">`:''} ${n.videoUrl?`<video class="miniatura" controls playsinline preload="metadata"><source src="${esc(cloudinaryVideoUrl(n.videoUrl))}" type="video/mp4"></video>`:''}</div>` : ''}
       </div>`;
     sec1.appendChild(div);
   });

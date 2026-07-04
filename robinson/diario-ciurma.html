@@ -4,6 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Diario della Ciurma – Robinson</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
+  <meta name="theme-color" content="#1a3a5c">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lora:ital,wght@0,400;0,600;1,400&family=Dancing+Script:wght@600&display=swap" rel="stylesheet">
@@ -104,15 +109,14 @@
     .reaction-btn.active { background: #f5ead5; border-color: var(--oro); color: var(--oro); }
     .reaction-btn:hover { background: #f5ead5; }
 
-    /* Commenta */
-    .btn-comments {
-      background: #1a3a5c; border: none; border-radius: 20px;
+    /* Commenti: etichetta non cliccabile, lista sempre visibile */
+    .comments-label {
+      display: inline-block;
+      background: #1a3a5c; border-radius: 20px;
       font-size: 0.75rem; font-weight: 500;
-      color: #c8860a; cursor: pointer; padding: 5px 14px; transition: background 0.15s; font-family: 'Lora', serif;
+      color: #c8860a; padding: 5px 14px; font-family: 'Lora', serif;
     }
-    .btn-comments:hover { background: #0f2540; }
-    .comments-section { display: none; max-width: 340px; width: 100%; }
-    .comments-section.open { display: block; }
+    .comments-section { max-width: 340px; width: 100%; }
     .comment-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px; }
     .comment-item { display: flex; gap: 8px; align-items: flex-start; }
     .comment-avatar { width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0; background: #e8e0d0; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; overflow: hidden; }
@@ -258,13 +262,14 @@
   <a href="diari.html" class="nav-item"><span class="nav-icon">📖</span><span>Diari</span></a>
   <a href="diario-ciurma.html" class="nav-item active"><span class="nav-icon">📔</span><span>Diario ciurma</span></a>
   <a href="isola.html" class="nav-item"><span class="nav-icon">🏝️</span><span>Isola</span></a>
+  <a href="attivita.html" class="nav-item"><span class="nav-icon">🧭</span><span>Attività</span></a>
   <a href="naufraghi.html" class="nav-item"><span class="nav-icon">🧍</span><span>Naufraghi</span></a>
 </nav>
 
 <script type="module">
 import { db, auth, ADMIN_UID, CLOUD_NAME, CLOUD_PRESET, EMOJIS } from './js/robinson-firebase.js';
 import { setupNavAuth } from './js/robinson-nav.js';
-import { esc } from './js/robinson-utils.js';
+import { esc, cloudinaryVideoUrl, attachReactionTooltip } from './js/robinson-utils.js';
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import {
   collection, addDoc, getDoc, getDocs, doc, updateDoc, query, orderBy,
@@ -551,7 +556,7 @@ function buildPostWrapper(postId, data) {
     mediaHtml += `<div class="polaroid-img-wrap">`;
     visual.forEach(m => {
       if (m.type === 'image') mediaHtml += `<img src="${esc(m.url)}" loading="lazy" alt="foto" data-lightbox="${esc(m.url)}">`;
-      else mediaHtml += `<video src="${esc(m.url)}" controls playsinline></video>`;
+      else mediaHtml += `<video controls playsinline preload="metadata"><source src="${esc(cloudinaryVideoUrl(m.url))}" type="video/mp4"></video>`;
     });
     mediaHtml += `</div>`;
   }
@@ -588,12 +593,13 @@ function buildPostWrapper(postId, data) {
     return `<button class="reaction-btn" data-emoji="${emoji}" onclick="toggleReaction('${postId}','${emoji}',this)">${emoji}${cnt > 0 ? ' <span>' + cnt + '</span>' : ''}</button>`;
   }).join('');
 
-  // Commenta link
-  const commLink = document.createElement('div');
+  // Etichetta commenti (non cliccabile — la lista è sempre visibile sotto)
+  const commLabel = document.createElement('div');
   const commCnt = data.commentsCount || 0;
-  commLink.innerHTML = `<button class="btn-comments" onclick="toggleComments('${postId}')">💬 ${commCnt > 0 ? commCnt + ' commenti' : 'Commenta'}</button>`;
+  commLabel.className = 'comments-label';
+  commLabel.textContent = commCnt > 0 ? `💬 ${commCnt} commenti` : '💬 Commenti';
 
-  // Commenti section
+  // Commenti section — sempre visibile, caricata subito (nessun toggle/lazy load)
   const commSec = document.createElement('div');
   commSec.className = 'comments-section';
   commSec.id = `cs-${postId}`;
@@ -601,12 +607,36 @@ function buildPostWrapper(postId, data) {
 
   wrap.appendChild(card);
   wrap.appendChild(reactWrap);
-  wrap.appendChild(commLink);
+  wrap.appendChild(commLabel);
   wrap.appendChild(commSec);
+  loadComments(postId, commSec);
 
   if (currentUser) applyMyPostReactions(postId, reactWrap);
+  attachReactionTooltip(reactWrap, reactionAuthorsFetcher(postId));
 
   return wrap;
+}
+
+// Legge una sola volta (per post) tutti gli user_reactions e risolve i nomi,
+// con fallback su risolviNome() per reazioni vecchie senza campo "nome".
+function reactionAuthorsFetcher(postId) {
+  let tuttiPromise = null;
+  function tutti() {
+    if (!tuttiPromise) {
+      tuttiPromise = getDocs(collection(db, COLL, postId, 'user_reactions')).then(snap => {
+        const arr = [];
+        snap.forEach(d => arr.push({ uid: d.id, ...d.data() }));
+        return arr;
+      }).catch(() => []);
+    }
+    return tuttiPromise;
+  }
+  return async function(emoji) {
+    const reazioni = await tutti();
+    const match = reazioni.filter(u => (u.emojis || []).includes(emoji));
+    const nomi = await Promise.all(match.map(u => u.nome || risolviNome(u.uid)));
+    return nomi.filter(Boolean);
+  };
 }
 
 async function applyMyPostReactions(postId, reactWrap) {
@@ -680,14 +710,9 @@ window.closePostMenu = postId => { document.getElementById(`pmenu-${postId}`)?.c
 document.addEventListener('click', () => document.querySelectorAll('.post-options-menu.open').forEach(m => m.classList.remove('open')));
 
 // ── Comments ─────────────────────────────────────────────────────────────────
-const loadedCs = new Set();
-window.toggleComments = async postId => {
-  const sec = document.getElementById(`cs-${postId}`);
-  if (!sec) return;
-  const open = sec.classList.toggle('open');
-  if (open && !loadedCs.has(postId)) { loadedCs.add(postId); loadComments(postId, sec); }
-};
-
+// Caricata subito al render del post (vedi buildPostWrapper): sempre visibile,
+// nessun toggle. onSnapshot mostra tutti i commenti, dal più vecchio al più
+// recente, e si aggiorna da solo quando ne arriva uno nuovo.
 function loadComments(postId, sec) {
   sec.innerHTML = '<div style="color:#aaa;font-size:0.8rem;padding:4px 0">Caricamento…</div>';
   const q = query(collection(db, COLL, postId, 'comments'), orderBy('timestamp', 'asc'));
@@ -846,8 +871,8 @@ function buildCommentInput(postId) {
       textarea.value=''; textarea.style.height='auto';
       cItems.forEach(i=>URL.revokeObjectURL(i.previewUrl)); cItems.length=0;
       renderPreview([],previewId,()=>{});
-      const footerBtn = wrap.closest('[data-post-id]')?.querySelector('.btn-comments');
-      if (footerBtn) { const cur=parseInt(footerBtn.textContent.match(/\d+/)?.[0]||'0'); footerBtn.textContent=`💬 ${cur+1} commenti`; }
+      const footerLbl = wrap.closest('[data-post-id]')?.querySelector('.comments-label');
+      if (footerLbl) { const cur=parseInt(footerLbl.textContent.match(/\d+/)?.[0]||'0'); footerLbl.textContent=`💬 ${cur+1} commenti`; }
     } catch(err) { alert('Errore: '+err.message); }
     finally { sendBtn.disabled=false; sendBtn.textContent='Invia'; }
   });

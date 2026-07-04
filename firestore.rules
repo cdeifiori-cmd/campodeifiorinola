@@ -299,6 +299,12 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // ── Villaggio: valutazioni giornaliere pulizia/organizzazione (admin-only) ──
+    match /robinson_villaggio_valutazioni/{valutazioneId} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
+    }
+
     // ── Punteggi Robinson ────────────────────────────────────
     match /robinson_punteggi/{uid} {
       allow read: if request.auth != null;
@@ -368,6 +374,31 @@ service cloud.firestore {
       match /reazioni/{userId} {
         allow read: if true;  // leggibili anche da non loggati
         allow write: if isLoggedIn() && request.auth.uid == userId;
+      }
+    }
+
+    // ── Attività (hub ATTIVITÀ + Il Consiglio dell'Isola) ────────────────
+    function isEducatore() {
+      return isAdmin(); // estendibile: aggiungere altri uid in questa funzione
+    }
+    function rilevazioneAperta(attId, rilId) {
+      return get(/databases/$(database)/documents/attivita/$(attId)/rilevazioni/$(rilId)).data.stato == 'aperta';
+    }
+
+    match /attivita/{attId} {
+      allow read: if isLoggedIn();
+      allow write: if isEducatore();
+
+      match /rilevazioni/{rilId} {
+        allow read: if isLoggedIn();              // meta + sintesiPubblica (no PII)
+        allow write: if isEducatore();
+
+        match /risposte/{userId} {
+          allow read: if isEducatore() || (isLoggedIn() && request.auth.uid == userId);
+          allow create, update: if isLoggedIn() && request.auth.uid == userId
+            && rilevazioneAperta(attId, rilId);
+          allow delete: if isEducatore();
+        }
       }
     }
   }

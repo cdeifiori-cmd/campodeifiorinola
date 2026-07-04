@@ -4,6 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>🏝️ L'Isola Stanotte – Robinson</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
+  <meta name="theme-color" content="#1a3a5c">
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lora:ital,wght@0,400;0,600;1,400&family=Dancing+Script:wght@600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/robinson.css">
   <style>
@@ -158,6 +163,7 @@
   <a href="diari.html" class="nav-item"><span class="nav-icon">📖</span><span>Diari</span></a>
   <a href="diario-ciurma.html" class="nav-item"><span class="nav-icon">📔</span><span>Diario ciurma</span></a>
   <a href="isola.html" class="nav-item active"><span class="nav-icon">🏝️</span><span>Isola</span></a>
+  <a href="attivita.html" class="nav-item"><span class="nav-icon">🧭</span><span>Attività</span></a>
   <a href="naufraghi.html" class="nav-item"><span class="nav-icon">🧍</span><span>Naufraghi</span></a>
 </nav>
 
@@ -210,6 +216,7 @@ onAuthStateChanged(auth, user => {
   buildHotspot();
   if (user) {
     const _apertura = new Date('2026-07-02T10:00:00');
+    console.log('[guard isola] uid:', user.uid, '| isAdmin:', user.uid === 'mCSgNMVEphVIIf4HX0bkcKq2ZKv2', '| ora < apertura:', new Date() < _apertura);
     if (user.uid !== 'mCSgNMVEphVIIf4HX0bkcKq2ZKv2' && new Date() < _apertura) { window.location.href = 'attesa.html'; return; }
     startPresenzeListener();
   }

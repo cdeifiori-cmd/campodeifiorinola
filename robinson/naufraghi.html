@@ -4,6 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>I Naufraghi – Robinson</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
+  <meta name="theme-color" content="#1a3a5c">
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lora:ital,wght@0,400;0,600;1,400&family=Dancing+Script:wght@600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/robinson.css">
   <style>
@@ -84,7 +89,6 @@
 <div class="naufraghi-header-fixed"></div>
 
 <div class="naufraghi-content">
-  <a href="ciurma.html" style="display:block;margin:10px 12px 6px;padding:12px 16px;background:var(--navy);border:2px solid var(--oro);border-radius:10px;color:var(--oro);text-decoration:none;font-weight:700;font-size:0.95rem;text-align:center;">⚓ Vai alla tua Ciurma</a>
   <div class="search-bar">
     <span>🔍</span>
     <input type="text" id="search-inp" placeholder="Cerca per nome...">
@@ -93,6 +97,8 @@
   <div id="grid" class="grid-naufraghi">
     <div class="spinner" style="grid-column:span 3;"></div>
   </div>
+
+  <a href="ciurma.html" style="display:block;margin:16px 12px 8px;padding:12px 16px;background:var(--navy);border:2px solid var(--oro);border-radius:10px;color:var(--oro);text-decoration:none;font-weight:700;font-size:0.95rem;text-align:center;">⚓ Vai alla tua Ciurma</a>
 </div>
 
 <nav class="bottom-nav">
@@ -102,6 +108,7 @@
   <a href="diari.html" class="nav-item"><span class="nav-icon">📖</span><span>Diari</span></a>
   <a href="diario-ciurma.html" class="nav-item"><span class="nav-icon">📔</span><span>Diario ciurma</span></a>
   <a href="isola.html" class="nav-item"><span class="nav-icon">🏝️</span><span>Isola</span></a>
+  <a href="attivita.html" class="nav-item"><span class="nav-icon">🧭</span><span>Attività</span></a>
   <a href="naufraghi.html" class="nav-item active"><span class="nav-icon">🧍</span><span>Naufraghi</span></a>
 </nav>
 
@@ -119,6 +126,7 @@ let allNaufraghi = [];
 
 requireAuth(async user => {
   const _apertura = new Date('2026-07-02T10:00:00');
+  console.log('[guard naufraghi] uid:', user.uid, '| isAdmin:', user.uid === 'mCSgNMVEphVIIf4HX0bkcKq2ZKv2', '| ora < apertura:', new Date() < _apertura);
   if (user.uid !== 'mCSgNMVEphVIIf4HX0bkcKq2ZKv2' && new Date() < _apertura) { window.location.href = 'attesa.html'; return; }
   modalInit(user);
   await loadNaufraghi();

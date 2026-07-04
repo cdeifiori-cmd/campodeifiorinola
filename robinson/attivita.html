@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Attività – Robinson</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
+  <meta name="theme-color" content="#1a3a5c">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/robinson.css">
+  <style>
+    body { padding-bottom: 90px; }
+
+    .attivita-header {
+      background: linear-gradient(135deg, var(--navy) 0%, #0d1b2a 100%);
+      color: #fff;
+      padding: 22px 18px 18px;
+      text-align: center;
+    }
+    .attivita-header h1 { font-family: 'Playfair Display', serif; font-size: 1.5rem; color: var(--oro-light); }
+    .attivita-header p { font-size: 0.85rem; opacity: 0.85; margin-top: 6px; font-style: italic; }
+
+    #nav-auth-slot-wrap { position: fixed; top: 10px; right: 10px; z-index: 300; }
+
+    .attivita-content { max-width: 720px; margin: 0 auto; padding: 16px 12px 20px; }
+
+    .stato-blocco { margin-bottom: 26px; }
+    .stato-titolo { font-family: 'Playfair Display', serif; color: var(--navy); font-size: 1.05rem; border-bottom: 2px solid var(--oro); padding-bottom: 6px; margin-bottom: 12px; display:flex; align-items:center; justify-content:space-between; }
+
+    .card-attivita {
+      background: var(--post-bg);
+      border-left: 4px solid var(--oro);
+      border-radius: 4px 12px 12px 4px;
+      padding: 14px 16px;
+      box-shadow: 2px 2px 10px rgba(26,58,92,0.1);
+      margin-bottom: 12px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+    .card-attivita .ca-icona { font-size: 2rem; line-height:1; }
+    .ca-body { flex: 1; min-width: 0; }
+    .ca-titolo { font-family: 'Playfair Display', serif; font-weight: 700; color: var(--navy); font-size: 1.02rem; }
+    .ca-sottotitolo { font-size: 0.8rem; color: var(--oro); font-style: italic; margin-top: 2px; }
+    .ca-descrizione { font-size: 0.85rem; color: var(--inchiostro); margin-top: 6px; line-height: 1.45; }
+    .ca-date { font-size: 0.72rem; color: var(--muted); margin-top: 6px; }
+    .ca-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; gap: 8px; flex-wrap: wrap; }
+    .ca-badge { font-size: 0.68rem; font-weight: 700; padding: 3px 10px; border-radius: 20px; white-space: nowrap; }
+    .ca-badge.proposta { background:#f2f3f4; color:#6c757d; border:1px solid #bdc3c7; }
+    .ca-badge.attiva { background:#fef9e7; color:#b7770d; border:1px solid #f39c12; }
+    .ca-badge.svolta { background:#d5f5e3; color:#1e8449; border:1px solid #2ecc71; }
+    .ca-btn { background: var(--navy); color: var(--oro-light); border: none; border-radius: 20px; padding: 7px 16px; font-family:'Lora',serif; font-size: 0.8rem; cursor: pointer; text-decoration: none; white-space: nowrap; }
+    .ca-btn:hover { background: var(--oro); color: #fff; }
+
+    .empty-msg { text-align:center; color: var(--muted); padding: 18px; font-style: italic; font-size: 0.85rem; }
+
+    /* Admin */
+    .admin-mini-btn { background: rgba(255,255,255,0.12); color: var(--oro-light); border: 1px solid var(--oro); border-radius: 16px; padding: 4px 12px; font-size: 0.72rem; cursor: pointer; font-family:'Lora',serif; }
+    .admin-select-stato { font-family:'Lora',serif; font-size: 0.72rem; border: 1px solid #c8b89a; border-radius: 6px; padding: 3px 6px; background: var(--carta); }
+
+    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:400; align-items:center; justify-content:center; }
+    .modal-overlay.open { display:flex; }
+    .modal-box { background: var(--carta); border: 2px dashed var(--oro); border-radius: 12px; padding: 18px; max-width: 480px; width: 92%; max-height: 88vh; overflow-y:auto; }
+    .modal-box h3 { font-family:'Playfair Display',serif; color: var(--navy); margin-bottom: 12px; }
+  </style>
+</head>
+<body>
+
+<div id="nav-auth-slot-wrap"><div id="nav-auth-slot"></div></div>
+
+<div class="attivita-header">
+  <h1>🧭 Attività</h1>
+  <p>Le imprese che la ciurma sta scrivendo insieme, giorno dopo giorno.</p>
+</div>
+
+<div class="attivita-content">
+  <div id="admin-bar" style="display:none; text-align:right; margin-bottom:10px;">
+    <button class="admin-mini-btn" id="btn-nuova-attivita">➕ Nuova attività</button>
+  </div>
+
+  <div class="stato-blocco">
+    <div class="stato-titolo">🔥 In corso</div>
+    <div id="lista-attiva"><div class="spinner"></div></div>
+  </div>
+
+  <div class="stato-blocco">
+    <div class="stato-titolo">⏳ Proposte</div>
+    <div id="lista-proposta"></div>
+  </div>
+
+  <div class="stato-blocco">
+    <div class="stato-titolo">✅ Svolte</div>
+    <div id="lista-svolta"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-nuova">
+  <div class="modal-box">
+    <h3>➕ Nuova attività</h3>
+    <div class="form-group"><label>Icona (emoji)</label><input id="f-icona" value="🧭"></div>
+    <div class="form-group"><label>Titolo</label><input id="f-titolo" placeholder="Titolo dell'attività"></div>
+    <div class="form-group"><label>Sottotitolo</label><input id="f-sottotitolo" placeholder="Sottotitolo"></div>
+    <div class="form-group"><label>Descrizione</label><textarea id="f-descrizione" placeholder="Breve descrizione"></textarea></div>
+    <div class="form-group"><label>Stato</label>
+      <select id="f-stato">
+        <option value="proposta">Proposta</option>
+        <option value="attiva">In corso</option>
+        <option value="svolta">Svolta</option>
+      </select>
+    </div>
+    <div style="display:flex; gap:10px; margin-top:10px;">
+      <button class="btn btn-primary" id="btn-salva-attivita">Salva</button>
+      <button class="btn" id="btn-annulla-attivita" style="background:var(--carta-scura);">Annulla</button>
+    </div>
+  </div>
+</div>
+
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item"><span class="nav-icon">🏠</span><span>Home</span></a>
+  <a href="villaggio.html" class="nav-item"><span class="nav-icon">🏡</span><span>Villaggio</span></a>
+  <a href="spiaggia.html" class="nav-item"><span class="nav-icon">🏖️</span><span>Spiaggia</span></a>
+  <a href="diari.html" class="nav-item"><span class="nav-icon">📖</span><span>Diari</span></a>
+  <a href="isola.html" class="nav-item"><span class="nav-icon">🏝️</span><span>Isola</span></a>
+  <a href="attivita.html" class="nav-item active"><span class="nav-icon">🧭</span><span>Attività</span></a>
+  <a href="naufraghi.html" class="nav-item"><span class="nav-icon">🧍</span><span>Naufraghi</span></a>
+</nav>
+
+<script type="module">
+import { db, ADMIN_UID } from './js/robinson-firebase.js';
+import { requireAuth } from './js/robinson-auth.js';
+import { setupNavAuth } from './js/robinson-nav.js';
+import { esc, fmtDateShort } from './js/robinson-utils.js';
+import {
+  collection, getDocs, query, orderBy, doc, addDoc, updateDoc, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+setupNavAuth('nav-auth-slot');
+
+let isAdmin = false;
+let currentUser = null;
+
+requireAuth(async user => {
+  currentUser = user;
+  isAdmin = user.uid === ADMIN_UID;
+  if (isAdmin) document.getElementById('admin-bar').style.display = 'block';
+  await caricaAttivita();
+});
+
+function badgeLabel(stato) {
+  return stato === 'attiva' ? 'In corso' : stato === 'svolta' ? 'Svolta' : stato === 'archiviata' ? 'Archiviata' : 'Proposta';
+}
+
+function azioneCard(att) {
+  if (att.stato === 'attiva') {
+    if (att.tipo === 'sociogramma') return `<a class="ca-btn" href="consiglio.html?attId=${esc(att.id)}">Partecipa</a>`;
+    return `<button class="ca-btn" data-toggle="${esc(att.id)}">Partecipa</button>`;
+  }
+  if (att.stato === 'svolta') {
+    if (att.tipo === 'sociogramma') return `<a class="ca-btn" href="consiglio.html?attId=${esc(att.id)}">Vedi resoconto</a>`;
+    return `<button class="ca-btn" data-toggle="${esc(att.id)}">Vedi resoconto</button>`;
+  }
+  return `<button class="ca-btn" data-toggle="${esc(att.id)}">Scopri di più</button>`;
+}
+
+function renderCard(att) {
+  const dataInfo = att.dataInizio ? fmtDateShort(att.dataInizio) : '';
+  return `
+  <div class="card-attivita" data-id="${esc(att.id)}">
+    <div class="ca-icona">${esc(att.icona || '🧭')}</div>
+    <div class="ca-body">
+      <div class="ca-titolo">${esc(att.titolo || '')}</div>
+      ${att.sottotitolo ? `<div class="ca-sottotitolo">${esc(att.sottotitolo)}</div>` : ''}
+      <div class="ca-descrizione" id="desc-${esc(att.id)}" style="display:none;">${esc(att.descrizione || '')}</div>
+      ${dataInfo ? `<div class="ca-date">📅 ${esc(dataInfo)}</div>` : ''}
+      <div class="ca-footer">
+        <span class="ca-badge ${esc(att.stato)}">${badgeLabel(att.stato)}</span>
+        <div style="display:flex; gap:8px; align-items:center;">
+          ${isAdmin ? `<select class="admin-select-stato" data-id="${esc(att.id)}">
+            <option value="proposta" ${att.stato==='proposta'?'selected':''}>Proposta</option>
+            <option value="attiva" ${att.stato==='attiva'?'selected':''}>In corso</option>
+            <option value="svolta" ${att.stato==='svolta'?'selected':''}>Svolta</option>
+            <option value="archiviata" ${att.stato==='archiviata'?'selected':''}>Archiviata</option>
+          </select>` : ''}
+          ${azioneCard(att)}
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+async function caricaAttivita() {
+  const gruppi = { proposta: [], attiva: [], svolta: [] };
+  try {
+    const snap = await getDocs(query(collection(db, 'attivita'), orderBy('ordine')));
+    snap.forEach(d => {
+      const att = { id: d.id, ...d.data() };
+      if (att.stato === 'archiviata') return;
+      if (gruppi[att.stato]) gruppi[att.stato].push(att);
+    });
+  } catch (e) {
+    console.warn('Errore caricamento attività', e);
+  }
+
+  for (const stato of ['attiva', 'proposta', 'svolta']) {
+    const el = document.getElementById('lista-' + stato);
+    el.innerHTML = gruppi[stato].length
+      ? gruppi[stato].map(renderCard).join('')
+      : `<div class="empty-msg">Nessuna attività ${stato === 'attiva' ? 'in corso' : stato === 'proposta' ? 'proposta' : 'ancora svolta'} al momento.</div>`;
+  }
+
+  document.querySelectorAll('[data-toggle]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const d = document.getElementById('desc-' + btn.dataset.toggle);
+      if (d) d.style.display = d.style.display === 'none' ? 'block' : 'none';
+    });
+  });
+
+  document.querySelectorAll('.admin-select-stato').forEach(sel => {
+    sel.addEventListener('change', async () => {
+      try {
+        await updateDoc(doc(db, 'attivita', sel.dataset.id), { stato: sel.value });
+        await caricaAttivita();
+      } catch (e) { alert('Errore: ' + e.message); }
+    });
+  });
+}
+
+// ── Admin: crea nuova attività ───────────────────────────────────────────
+document.getElementById('btn-nuova-attivita').addEventListener('click', () => {
+  document.getElementById('modal-nuova').classList.add('open');
+});
+document.getElementById('btn-annulla-attivita').addEventListener('click', () => {
+  document.getElementById('modal-nuova').classList.remove('open');
+});
+document.getElementById('btn-salva-attivita').addEventListener('click', async () => {
+  const titolo = document.getElementById('f-titolo').value.trim();
+  if (!titolo) { alert('Inserisci un titolo'); return; }
+  try {
+    await addDoc(collection(db, 'attivita'), {
+      tipo: 'generica',
+      titolo,
+      sottotitolo: document.getElementById('f-sottotitolo').value.trim(),
+      descrizione: document.getElementById('f-descrizione').value.trim(),
+      icona: document.getElementById('f-icona').value.trim() || '🧭',
+      stato: document.getElementById('f-stato').value,
+      ordine: Date.now(),
+      dataCreazione: serverTimestamp(),
+      dataInizio: null,
+      dataFine: null,
+      creatoDa: currentUser.uid,
+      config: {},
+    });
+    document.getElementById('modal-nuova').classList.remove('open');
+    ['f-titolo','f-sottotitolo','f-descrizione'].forEach(id => document.getElementById(id).value = '');
+    await caricaAttivita();
+  } catch (e) { alert('Errore: ' + e.message); }
+});
+</script>
+</body>
+</html>

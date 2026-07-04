@@ -4,6 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Robinson – L'isola dei naufraghi</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
+  <meta name="theme-color" content="#1a3a5c">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
@@ -122,6 +127,7 @@
   <a id="nav-diario" href="diari.html"><span class="nav-icon">📖</span><span>Diari</span></a>
   <a href="diario-ciurma.html"><span class="nav-icon">📔</span><span>Diario ciurma</span></a>
   <a href="isola.html"><span class="nav-icon">🏝️</span><span>Isola</span></a>
+  <a href="attivita.html"><span class="nav-icon">🧭</span><span>Attività</span></a>
   <a href="naufraghi.html"><span class="nav-icon">🧍</span><span>Naufraghi</span></a>
 </nav>
 
@@ -147,6 +153,7 @@ if (!user) {
   document.getElementById('btn-login-wrap').style.display = 'flex';
 } else {
   const _apertura = new Date('2026-07-02T10:00:00');
+  console.log('[guard index] uid:', user.uid, '| isAdmin:', user.uid === 'mCSgNMVEphVIIf4HX0bkcKq2ZKv2', '| ora < apertura:', new Date() < _apertura);
   if (user.uid !== 'mCSgNMVEphVIIf4HX0bkcKq2ZKv2' && new Date() < _apertura) { window.location.href = 'attesa.html'; }
 
   const diarioLink = document.getElementById('nav-diario');
@@ -162,6 +169,7 @@ if (!user) {
       <a href="admin-classifica.html" style="background:rgba(26,58,92,0.88);color:#c8860a;border:1px solid #c8860a66;border-radius:20px;padding:5px 12px;font-size:0.75rem;text-decoration:none;font-family:Lora,serif;white-space:nowrap;">📊 Classifica admin</a>
       <a href="admin-isola.html" style="background:rgba(26,58,92,0.88);color:#c8860a;border:1px solid #c8860a66;border-radius:20px;padding:5px 12px;font-size:0.75rem;text-decoration:none;font-family:Lora,serif;white-space:nowrap;">🏝️ Admin Isola</a>
       <a href="admin-pin.html" style="background:rgba(26,58,92,0.88);color:#c8860a;border:1px solid #c8860a66;border-radius:20px;padding:5px 12px;font-size:0.75rem;text-decoration:none;font-family:Lora,serif;white-space:nowrap;">🔑 Gestione PIN</a>
+      <a href="consiglio-admin.html" style="background:rgba(26,58,92,0.88);color:#c8860a;border:1px solid #c8860a66;border-radius:20px;padding:5px 12px;font-size:0.75rem;text-decoration:none;font-family:Lora,serif;white-space:nowrap;">🏝 Consiglio dell'Isola</a>
     `;
     document.body.appendChild(adminWrap);
   }

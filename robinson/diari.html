@@ -4,6 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>📖 Diari – Robinson</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
+  <meta name="theme-color" content="#1a3a5c">
   <link rel="stylesheet" href="css/robinson.css">
   <style>
     body { background: var(--sfondo); color: var(--inchiostro); font-family: 'Lora', serif; margin: 0; padding: 0; }
@@ -64,6 +69,15 @@
     .diario-nome { font-weight: 700; font-size: 0.92rem; color: var(--inchiostro); }
     .diario-data { font-size: 0.75rem; color: #8a9ab0; margin-top: 2px; }
     .diario-arrow { margin-left: auto; font-size: 1.4rem; color: var(--oro); font-weight: 300; flex-shrink: 0; }
+    .diario-del-btn { background: none; border: none; color: var(--rosso); font-size: 1rem; cursor: pointer; padding: 4px 6px; border-radius: 6px; flex-shrink: 0; }
+    .diario-del-btn:hover { background: rgba(192,57,43,0.12); }
+    .diario-del-btn-full {
+      display: block; width: 100%; margin-top: 10px; padding: 9px 12px;
+      background: none; border: 1.5px solid var(--rosso); color: var(--rosso);
+      border-radius: 8px; font-family: 'Lora', serif; font-size: 0.82rem; font-weight: 700;
+      cursor: pointer; transition: background 0.15s;
+    }
+    .diario-del-btn-full:hover { background: rgba(192,57,43,0.08); }
 
     /* Titolo giornata */
     .diario-titolo {
@@ -133,20 +147,23 @@
   <a href="diari.html" class="nav-item active"><span class="nav-icon">📖</span><span>Diari</span></a>
   <a href="diario-ciurma.html" class="nav-item"><span class="nav-icon">📔</span><span>Diario ciurma</span></a>
   <a href="isola.html" class="nav-item"><span class="nav-icon">🏝️</span><span>Isola</span></a>
+  <a href="attivita.html" class="nav-item"><span class="nav-icon">🧭</span><span>Attività</span></a>
   <a href="naufraghi.html" class="nav-item"><span class="nav-icon">🧍</span><span>Naufraghi</span></a>
 </nav>
 
 <script type="module">
-import { db, auth } from './js/robinson-firebase.js';
+import { db, auth, ADMIN_UID } from './js/robinson-firebase.js';
 import { requireAuth } from './js/robinson-auth.js';
 import { esc, risolviNome } from './js/robinson-utils.js';
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import {
-  collection, getDocs, query, orderBy
+  collection, getDocs, query, orderBy, doc, deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { setupNavAuth } from './js/robinson-nav.js';
 
 setupNavAuth(null);
+
+let isAdmin = false;
 
 const meteoInterpretazioni = {
   '🌞': 'Giornata piena di luce',
@@ -161,10 +178,29 @@ const meteoInterpretazioni = {
 
 onAuthStateChanged(auth, async user => {
   if (!user) { requireAuth(); return; }
+  isAdmin = user.uid === ADMIN_UID;
   const _apertura = new Date('2026-07-02T10:00:00');
-  if (user.uid !== 'mCSgNMVEphVIIf4HX0bkcKq2ZKv2' && new Date() < _apertura) { window.location.href = 'attesa.html'; return; }
+  console.log('[guard diari] uid:', user.uid, '| isAdmin:', isAdmin, '| ora < apertura:', new Date() < _apertura);
+  if (!isAdmin && new Date() < _apertura) { window.location.href = 'attesa.html'; return; }
   await caricaDiari();
 });
+
+async function eliminaScheda(uid, dataKey, cardEl) {
+  if (!confirm('Eliminare definitivamente questa scheda?')) return;
+  try {
+    await deleteDoc(doc(db, 'robinson_diari', uid, 'posts', dataKey));
+    const section = cardEl.closest('.giorno-section');
+    cardEl.remove();
+    if (section && !section.querySelector('.diario-card')) section.remove();
+    if (!document.querySelector('.diario-card')) {
+      document.getElementById('diari-container').innerHTML =
+        `<div class="empty-state"><div class="big-icon">📖</div>Nessun diario salvato ancora.</div>`;
+    }
+  } catch(err) {
+    console.error('Errore eliminazione scheda diario:', err);
+    alert('Errore durante l\'eliminazione: ' + err.message);
+  }
+}
 
 function fmtGiornoIt(key) {
   const [y, m, d] = key.split('-').map(Number);
@@ -301,6 +337,7 @@ async function caricaDiari() {
             <div class="diario-nome">${esc(nome)}</div>
             <div class="diario-data">${esc(fmtGiornoIt(dataKey))}</div>
           </div>
+          ${isAdmin ? `<button class="diario-del-btn" title="Elimina scheda (admin)">🗑️</button>` : ''}
           <span class="diario-arrow">›</span>
         </div>
         ${titolo ? `<div class="diario-titolo">"${esc(titolo)}"</div>` : ''}
@@ -312,7 +349,17 @@ async function caricaDiari() {
         ${sezione('🦈 Lo scoglio incontrato', scoglio)}
         ${sezione('🐚 Il tesoro che mi porto', tesoro)}
         ${sezioneFalo(falo)}
+        ${isAdmin ? `<button class="diario-del-btn-full">🗑️ Elimina scheda</button>` : ''}
       `;
+
+      if (isAdmin) {
+        card.querySelectorAll('.diario-del-btn, .diario-del-btn-full').forEach(btn => {
+          btn.addEventListener('click', e => {
+            e.stopPropagation();
+            eliminaScheda(uid, dataKey, card);
+          });
+        });
+      }
 
       section.appendChild(card);
     });

@@ -4,6 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Il Naufrago – Robinson</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
+  <meta name="theme-color" content="#1a3a5c">
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lora:ital,wght@0,400;0,600;1,400&family=Dancing+Script:wght@600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/robinson.css">
   <style>
@@ -825,6 +830,7 @@
   <a href="diari.html" class="nav-item active"><span class="nav-icon">📖</span><span>Diari</span></a>
   <a href="diario-ciurma.html" class="nav-item"><span class="nav-icon">📔</span><span>Diario ciurma</span></a>
   <a href="isola.html" class="nav-item"><span class="nav-icon">🏝️</span><span>Isola</span></a>
+  <a href="attivita.html" class="nav-item"><span class="nav-icon">🧭</span><span>Attività</span></a>
   <a href="naufraghi.html" class="nav-item"><span class="nav-icon">🧍</span><span>Naufraghi</span></a>
   <a href="ciurma.html" class="nav-item"><span class="nav-icon">⚓</span><span>Ciurma</span></a>
 </nav>
@@ -858,7 +864,7 @@ function toggleLucchetto(btn) {
 import { db, auth, ADMIN_UID, CLOUD_NAME, CLOUD_PRESET } from './js/robinson-firebase.js';
 import { requireAuth } from './js/robinson-auth.js';
 import { aggiungiPunteggio } from './js/robinson-punteggio.js';
-import { esc, fmtDate, fmtDateShort, risolviNome, uploadOne, renderMediaGrid, renderPreview } from './js/robinson-utils.js';
+import { esc, fmtDate, fmtDateShort, risolviNome, uploadOne, renderMediaGrid, renderPreview, cloudinaryVideoUrl } from './js/robinson-utils.js';
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import {
   doc, getDoc, setDoc, addDoc, deleteDoc, updateDoc,
@@ -939,6 +945,44 @@ const luoghiIsola = [
     descrizione:"Ringrazio per ciò che ho vissuto.",
     domanda:"Per che cosa vuoi dire grazie questa sera?" }
 ];
+
+// ── Gate orario 22:00 ────────────────────────────────────────────────────
+function getOraRoma() {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Europe/Rome', hour: 'numeric', hour12: false
+  }).formatToParts(new Date());
+  return parseInt((parts.find(p => p.type === 'hour') || {}).value || '0', 10) % 24;
+}
+
+function isOrarioDiario() {
+  if (isAdmin) return true;
+  const ora = getOraRoma();
+  return ora >= 22 || ora < 4; // 22:00–03:59
+}
+
+function applicaGateOrario() {
+  // Rendi tutti i campi delle schede diario read-only (non tesori)
+  ['#tab-diario','#tab-emozioni','#tab-riflessioni'].forEach(sel => {
+    document.querySelectorAll(`${sel} input, ${sel} textarea, ${sel} select`).forEach(el => {
+      el.readOnly = true; el.disabled = true; el.style.cursor = 'default';
+    });
+  });
+  document.querySelectorAll('.meteo-opt,.meteo-opt-umore,.stella-star,.falo-check label,.lucchetto-btn').forEach(el => {
+    el.style.pointerEvents = 'none'; el.style.opacity = '0.7';
+  });
+  // Disabilita pulsanti salva (non tesori — sempre liberi)
+  ['btn-salva-diario','btn-salva-emozioni','btn-salva-riflessioni','t-audio-rec'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.disabled = true; el.style.display = 'none'; }
+  });
+  const banner = document.createElement('div');
+  banner.id = 'gate-orario-banner';
+  banner.className = 'salvato-banner';
+  banner.style.cssText = 'background:rgba(26,58,92,0.9);color:#7ECFFF;border-color:#7ECFFF;';
+  banner.innerHTML = '🌙 Il diario è aperto dalle <strong>22:00</strong> alle <strong>04:00</strong> — torna questa sera!';
+  const tabsNav = document.getElementById('tabs-nav');
+  if (tabsNav && !document.getElementById('gate-orario-banner')) tabsNav.parentNode.insertBefore(banner, tabsNav);
+}
 
 // ── Auth ────────────────────────────────────────────────────────────────
 requireAuth(async user => {
@@ -1070,13 +1114,20 @@ async function loadDiario() {
       if (d.media?.length) renderGalleriaTesori(d.media);
 
       if (!isOwner && !isAdmin) lockAllForms();
-      if (d.salvato === true && (isOwner || isAdmin)) bloccaTutti();
+      if (d.bloccata === true) {
+        bloccaTutti();
+      } else if (isOwner && !isAdmin && !isOrarioDiario()) {
+        applicaGateOrario();
+      }
+    } else if (isOwner && !isAdmin && !isOrarioDiario()) {
+      // Nessun documento ancora — applica gate anche al primo accesso
+      applicaGateOrario();
     }
   } catch(_) {}
 }
 
 function bloccaTutti() {
-  const tabPrivate = ['#tab-diario','#tab-emozioni','#tab-riflessioni','#tab-tesori'];
+  const tabPrivate = ['#tab-diario','#tab-emozioni','#tab-riflessioni'];
   tabPrivate.forEach(sel => {
     document.querySelectorAll(`${sel} input, ${sel} textarea, ${sel} select`).forEach(el => {
       el.readOnly = true; el.disabled = true; el.style.cursor = 'default';
@@ -1085,7 +1136,7 @@ function bloccaTutti() {
   document.querySelectorAll('.meteo-opt,.meteo-opt-umore,.stella-star,.falo-check label,.lucchetto-btn').forEach(el => {
     el.style.pointerEvents = 'none'; el.style.opacity = '0.7';
   });
-  ['btn-salva-diario','btn-salva-emozioni','btn-salva-riflessioni','btn-carica-tesori','t-audio-rec','btn-salva-carta','btn-sblocca-diario'].forEach(id => {
+  ['btn-salva-diario','btn-salva-emozioni','btn-salva-riflessioni','t-audio-rec','btn-salva-carta','btn-sblocca-diario'].forEach(id => {
     const el = document.getElementById(id); if (el) el.style.display = 'none';
   });
 
@@ -1100,7 +1151,7 @@ function bloccaTutti() {
     btnSblocca.textContent = '🔓 Sblocca per modifica (Admin)';
     btnSblocca.className = 'sblocca-admin-btn';
     btnSblocca.onclick = async () => {
-      await updateDoc(doc(db, 'robinson_diari', pageUid, 'posts', oggiKey), { salvato: false });
+      await updateDoc(doc(db, 'robinson_diari', pageUid, 'posts', oggiKey), { bloccata: false, salvato: false });
       location.reload();
     };
     tabsNav.parentNode.insertBefore(btnSblocca, tabsNav);
@@ -1162,6 +1213,7 @@ document.querySelectorAll('input[name=bussola]').forEach(r => {
 
 document.getElementById('btn-salva-diario').addEventListener('click', async () => {
   if (!isOwner && !isAdmin) return;
+  if (!isOrarioDiario()) { alert('Il diario è aperto solo dalle 22:00 alle 04:00.'); return; }
   const dRef = doc(db, 'robinson_diari', pageUid, 'posts', oggiKey);
   const data = {
     approdo: document.getElementById('d-approdo').value.trim(),
@@ -1170,7 +1222,8 @@ document.getElementById('btn-salva-diario').addEventListener('click', async () =
     sensazione: document.getElementById('d-sensazione').value.trim(),
     timestamp: serverTimestamp(),
     salvato: true,
-    salvatoAt: serverTimestamp()
+    salvatoAt: serverTimestamp(),
+    bloccata: true
   };
   try {
     await setDoc(dRef, data, { merge: true });
@@ -1238,6 +1291,7 @@ function prefillEmozioni(em) {
 
 document.getElementById('btn-salva-emozioni').addEventListener('click', async () => {
   if (!isOwner && !isAdmin) return;
+  if (!isOrarioDiario()) { alert('Il diario è aperto solo dalle 22:00 alle 04:00.'); return; }
   const stelle = {};
   document.querySelectorAll('.stella-item').forEach(item => {
     stelle[item.dataset.cat] = parseInt(item.dataset.val || 0);
@@ -1254,7 +1308,7 @@ document.getElementById('btn-salva-emozioni').addEventListener('click', async ()
     altro: document.getElementById('e-altro').value.trim()
   };
   try {
-    await setDoc(doc(db, 'robinson_diari', pageUid, 'posts', oggiKey), { emozioni, timestamp: serverTimestamp() }, { merge: true });
+    await setDoc(doc(db, 'robinson_diari', pageUid, 'posts', oggiKey), { emozioni, timestamp: serverTimestamp(), salvato: true, salvatoAt: serverTimestamp(), bloccata: true }, { merge: true });
     const msg = document.getElementById('emozioni-msg');
     msg.style.color = 'var(--oro)';
     msg.textContent = '✅ Salvato!';
@@ -1297,6 +1351,7 @@ function prefillRiflessioni(r) {
 
 document.getElementById('btn-salva-riflessioni').addEventListener('click', async () => {
   if (!isOwner && !isAdmin) return;
+  if (!isOrarioDiario()) { alert('Il diario è aperto solo dalle 22:00 alle 04:00.'); return; }
   const getPrivato = campo => document.getElementById('r-' + campo + '_privato')?.value === 'true';
   const faloVoci = Array.from(document.querySelectorAll('#r-falo input[type=checkbox]:checked')).map(c => c.value);
   const riflessioni = {
@@ -1308,7 +1363,7 @@ document.getElementById('btn-salva-riflessioni').addEventListener('click', async
   };
   try {
     await setDoc(doc(db, 'robinson_diari', pageUid, 'posts', oggiKey),
-      { riflessioni, timestamp: serverTimestamp(), salvato: true, salvatoAt: serverTimestamp() },
+      { riflessioni, timestamp: serverTimestamp(), salvato: true, salvatoAt: serverTimestamp(), bloccata: true },
       { merge: true });
     const msg = document.getElementById('riflessioni-msg');
     msg.style.color = 'var(--oro)';
@@ -1446,17 +1501,32 @@ function getDataNotte() {
   return now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
 }
 
-// TODO: ripristinare controllo orario prima del lancio
-function isOraIsola() { return true; } // temporaneamente sempre accessibile per test
+function isOraIsola() {
+  if (isAdmin) return true;
+  const ora = getOraRoma();
+  return ora >= 22 || ora < 4; // 22:00–03:59
+}
 
 async function loadIsola() {
   initIsolaMappa();
   loadForziereIsola();
 
-  // Fuori orario: messaggio disabilitato per test
-  // if (!isOraIsola()) {
-  //   document.getElementById('n-isola-orario-msg').style.display = '';
-  // }
+  if (!isOraIsola()) {
+    // Blocca tutta l'interazione con l'isola fuori fascia oraria
+    const msgEl = document.getElementById('n-isola-orario-msg');
+    if (msgEl) {
+      msgEl.style.display = '';
+      msgEl.textContent = '🌅 L\'isola si apre dalle 22:00 alle 04:00 — torna questa sera!';
+      msgEl.style.cssText = 'display:block;padding:14px 16px;background:rgba(26,58,92,0.9);color:#7ECFFF;border:1px solid #7ECFFF55;border-radius:8px;margin-bottom:12px;font-size:0.9rem;text-align:center;';
+    }
+    // Disabilita hotspot e mappa
+    const mappa = document.getElementById('n-mappaImg');
+    if (mappa) { mappa.style.pointerEvents = 'none'; mappa.style.opacity = '0.4'; }
+    document.querySelectorAll('.n-hotspot').forEach(h => {
+      h.style.pointerEvents = 'none'; h.style.opacity = '0.3';
+    });
+    return; // non caricare presenze né ascoltare snapshot
+  }
 
   // Controlla se già salvato stanotte
   const dataNotte = getDataNotte();
@@ -1824,10 +1894,24 @@ async function loadForziere() {
       return `<div class="ricordo-item" data-id="${esc(d.id)}">
         <span class="ricordo-data">🔒 ${esc(d.id)}</span>
         <span class="ricordo-titolo">${data.meteo ? esc(data.meteo) + ' ' : ''}${esc(data.titolo || data.approdo || '…')}</span>
+        ${isAdmin ? `<button class="ricordo-del-btn" data-del="${esc(d.id)}" title="Elimina post (admin)">🗑️</button>` : ''}
       </div>`;
     }).join('');
     list.querySelectorAll('.ricordo-item').forEach(item => {
       item.addEventListener('click', () => apriForziere(item.dataset.id, docs.find(d => d.id === item.dataset.id)?.data()));
+    });
+    list.querySelectorAll('.ricordo-del-btn').forEach(btn => {
+      btn.addEventListener('click', async e => {
+        e.stopPropagation();
+        if (!confirm('Eliminare definitivamente questo post?')) return;
+        try {
+          await deleteDoc(doc(db, 'robinson_diari', pageUid, 'posts', btn.dataset.del));
+          btn.closest('.ricordo-item')?.remove();
+        } catch(err) {
+          console.error('Errore eliminazione post diario:', err);
+          alert('Errore durante l\'eliminazione: ' + err.message);
+        }
+      });
     });
   } catch(e) {
     list.innerHTML = `<div style="color:var(--rosso);padding:12px;">Errore: ${esc(e.message)}</div>`;
@@ -2051,7 +2135,7 @@ async function loadBottigliericevuti() {
         </div>
         ${m.testo ? `<div class="msg-testo">${esc(m.testo)}</div>` : ''}
         ${m.fotoUrl ? `<img class="msg-media" src="${esc(m.fotoUrl)}">` : ''}
-        ${m.videoUrl ? `<video class="msg-media" controls src="${esc(m.videoUrl)}" style="max-width:100%;border-radius:8px;"></video>` : ''}
+        ${m.videoUrl ? `<video class="msg-media" controls playsinline preload="metadata" style="max-width:100%;border-radius:8px;"><source src="${esc(cloudinaryVideoUrl(m.videoUrl))}" type="video/mp4"></video>` : ''}
         ${m.audioUrl ? `<audio controls src="${esc(m.audioUrl)}" style="width:100%;margin-top:8px;"></audio>` : ''}
         ${(isOwner || isAdmin) ? `<button data-del="${esc(d.id)}" style="background:none;border:none;color:var(--rosso);cursor:pointer;font-size:0.72rem;margin-top:6px;">🗑️ Elimina</button>` : ''}
       </div>`;
@@ -2088,7 +2172,7 @@ async function loadBottiglieinviati() {
         </div>
         ${m.testo ? `<div class="msg-testo">${esc(m.testo)}</div>` : ''}
         ${m.fotoUrl ? `<img class="msg-media" src="${esc(m.fotoUrl)}">` : ''}
-        ${m.videoUrl ? `<video class="msg-media" controls src="${esc(m.videoUrl)}" style="max-width:100%;border-radius:8px;"></video>` : ''}
+        ${m.videoUrl ? `<video class="msg-media" controls playsinline preload="metadata" style="max-width:100%;border-radius:8px;"><source src="${esc(cloudinaryVideoUrl(m.videoUrl))}" type="video/mp4"></video>` : ''}
         ${m.audioUrl ? `<audio controls src="${esc(m.audioUrl)}" style="width:100%;margin-top:8px;"></audio>` : ''}
       </div>`;
     }).join('');
@@ -2099,7 +2183,7 @@ async function loadBottiglieinviati() {
 
 
 
-// ── Notte prima di partire ────────────────────────────────────────────────
+// ── Notte prima di approdare ────────────────────────────────────────────────
 
 let _cnDebounce = null;
 
@@ -2202,7 +2286,7 @@ async function setupNotteSbarco(isAdminUser) {
     <div id="ci-notte-body">
       <div style="background:linear-gradient(160deg,#0d1b2a 0%,#1a1a4e 100%);border-radius:12px;padding:16px 14px;margin-bottom:14px;position:relative;overflow:hidden;">
         <div style="position:absolute;inset:0;pointer-events:none;background-image:radial-gradient(1px 1px at 10% 15%,#fff 0%,transparent 100%),radial-gradient(1.5px 1.5px at 40% 10%,#fff 0%,transparent 100%),radial-gradient(1px 1px at 70% 8%,#fff 0%,transparent 100%),radial-gradient(1px 1px at 88% 80%,#fff 0%,transparent 100%),radial-gradient(1.5px 1.5px at 47% 88%,#fff 0%,transparent 100%);"></div>
-        <div style="position:relative;font-size:1.1rem;font-weight:700;color:#FFD700;margin-bottom:10px;">🌙 Notte prima di partire</div>
+        <div style="position:relative;font-size:1.1rem;font-weight:700;color:#FFD700;margin-bottom:10px;">🌙 Notte prima di approdare</div>
         <p style="position:relative;color:#c8e6ff;font-size:0.84rem;line-height:1.6;margin:0 0 10px;">Il mare è ancora davanti a te. Domani, dopo un lungo viaggio, approderai sulla Robinson Republic insieme ad altri naufraghi. Nessuno sa cosa troverà sull'isola. Ognuno porta con sé qualcosa: sogni, paure, speranze, ricordi, talenti e ferite. Prima dello sbarco fermati qualche minuto. Questa pagina serve a te. Alla fine del campo la rileggerai e forse scoprirai che qualcosa dentro di te è cambiato.</p>
         <div id="cn-saved-msg" style="display:none;text-align:center;background:#00FFD133;color:#00FFD1;border:1px solid #00FFD1;border-radius:20px;padding:2px 14px;font-size:0.78rem;transition:opacity 0.4s;">Salvato ✓</div>
       </div>
@@ -2306,6 +2390,8 @@ async function loadCartaIdentita() {
     const snapCI = await getDoc(doc(db, 'robinson_naufraghi', pageUid, 'carta_identita', 'dati'));
     const ci = snapCI.exists() ? snapCI.data() : {};
 
+    if (ci.bloccata === true) bloccaCarta();
+
     // Prefill nome
     document.getElementById('ci-nome').value = ci.nome || nomeBase || '';
     document.getElementById('ci-cognome').value = ci.cognome || '';
@@ -2358,6 +2444,30 @@ async function loadCartaIdentita() {
     document.getElementById('id-altro').value = id.altro || '';
     document.getElementById('ci-firma').value = ci.firma || '';
   } catch(e) { console.error('Errore loadCartaIdentita', e); }
+}
+
+function bloccaCarta() {
+  const tab = document.getElementById('tab-carta');
+  if (tab) {
+    tab.querySelectorAll('input, textarea, select').forEach(el => {
+      el.readOnly = true; el.disabled = true; el.style.cursor = 'default';
+    });
+  }
+  const btn = document.getElementById('btn-salva-carta');
+  if (btn) btn.style.display = 'none';
+  const msg = document.getElementById('carta-msg');
+  if (msg) { msg.style.color = 'var(--oro)'; msg.textContent = '✅ Carta d\'Identità salvata — non modificabile'; }
+  if (isAdmin) {
+    const btnSblocca = document.createElement('button');
+    btnSblocca.textContent = '🔓 Sblocca Carta (Admin)';
+    btnSblocca.className = 'sblocca-admin-btn';
+    btnSblocca.style.margin = '8px 0';
+    btnSblocca.onclick = async () => {
+      await updateDoc(doc(db, 'robinson_naufraghi', pageUid, 'carta_identita', 'dati'), { bloccata: false });
+      location.reload();
+    };
+    if (msg) msg.parentNode.insertBefore(btnSblocca, msg.nextSibling);
+  }
 }
 
 function setupCartaIdentita() {
@@ -2453,6 +2563,8 @@ function setupCartaIdentita() {
     };
 
     try {
+      dati.bloccata = true;
+      dati.salvatoAt = serverTimestamp();
       await setDoc(doc(db, 'robinson_naufraghi', pageUid, 'carta_identita', 'dati'), dati, { merge: true });
       // Aggiorna nome e pronomi nel root
       if (nome) await setDoc(doc(db, 'robinson_naufraghi', pageUid), { nome, pronomi: dati.pronomi, genere: dati.identificazione }, { merge: true });
@@ -2646,7 +2758,7 @@ function renderDiconoPost(postId, data, currentUser) {
   let mediaHtml = '';
   if (data.mediaUrl) {
     if (data.mediaKind === 'image') mediaHtml = `<img src="${esc(data.mediaUrl)}" style="max-width:100%;border-radius:6px;margin-top:6px;">`;
-    else if (data.mediaKind === 'video') mediaHtml = `<video src="${esc(data.mediaUrl)}" controls style="max-width:100%;border-radius:6px;margin-top:6px;"></video>`;
+    else if (data.mediaKind === 'video') mediaHtml = `<video controls playsinline preload="metadata" style="max-width:100%;border-radius:6px;margin-top:6px;"><source src="${esc(cloudinaryVideoUrl(data.mediaUrl))}" type="video/mp4"></video>`;
     else mediaHtml = `<audio src="${esc(data.mediaUrl)}" controls style="width:100%;margin-top:6px;"></audio>`;
   }
   // Support legacy field names (autoreNome/autoreFoto/autorId)

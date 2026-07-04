@@ -4,6 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Villaggio – Robinson</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
+  <meta name="theme-color" content="#1a3a5c">
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/robinson.css">
   <style>
@@ -182,6 +187,34 @@
 
     /* Bottom nav — compatta per 7 voci */
     .bottom-nav .nav-item span:last-child { font-size: 0.6rem; }
+
+    /* ── Valutazione giornaliera (admin-only) ── */
+    .btn-valutazione-fab {
+      position: fixed; bottom: 80px; right: 16px; z-index: 150;
+      display: none; align-items: center; gap: 6px;
+      background: #1a3a5c; color: #c8860a; border: 2px solid #c8860a;
+      border-radius: 24px; padding: 10px 16px;
+      font-family: 'Lora', serif; font-size: 0.82rem; font-weight: 700;
+      cursor: pointer; box-shadow: 2px 4px 12px rgba(0,0,0,0.4);
+    }
+    .btn-valutazione-fab:hover { background: #0f2540; }
+    .valutazione-data { font-size: 0.8rem; color: #888; font-style: italic; margin-bottom: 12px; }
+    .val-casa-block { margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px dashed #c8860a40; }
+    .val-casa-block:last-of-type { border-bottom: none; }
+    .val-casa-nome { font-family: 'Playfair Display', serif; font-size: 15px; color: #1a3a5c; font-weight: 700; margin-bottom: 6px; }
+    .val-label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.05em; margin: 8px 0 4px; }
+    .val-pill-row { display: flex; gap: 6px; flex-wrap: wrap; }
+    .val-pill {
+      flex: 1; min-width: 44px; padding: 8px 6px; text-align: center;
+      background: #fff; border: 1.5px solid #c8b89a; border-radius: 20px;
+      font-family: 'Lora', serif; font-size: 0.85rem; font-weight: 600; color: #1a3a5c;
+      cursor: pointer; transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+    .val-pill:hover { background: #f5ead5; border-color: #c8860a; }
+    .val-pill.selected { background: #1a3a5c; border-color: #1a3a5c; color: #c8860a; }
+    .val-pill-penalita.selected { background: #c0392b; border-color: #c0392b; color: #fff; }
+    .val-casa-totale { margin-top: 8px; font-size: 0.85rem; font-weight: 700; color: #1a3a5c; text-align: right; }
+    .val-casa-totale span { color: #c8860a; font-size: 1rem; }
   </style>
 </head>
 <body>
@@ -207,6 +240,19 @@
   <div id="popup-body"></div>
 </div>
 
+<!-- 📋 Valutazione giornaliera (solo admin) -->
+<button class="btn-valutazione-fab" id="btn-valutazione-fab">📋 Valutazione di oggi</button>
+<div class="popup-overlay" id="valutazione-overlay"></div>
+<div class="casa-popup" id="valutazione-popup">
+  <div class="casa-popup-header">
+    <span class="casa-nome">📋 Valutazione di oggi</span>
+    <button class="popup-close" id="valutazione-close">✕</button>
+  </div>
+  <div class="valutazione-data" id="valutazione-data"></div>
+  <div id="valutazione-body"></div>
+  <div id="valutazione-msg" style="margin-top:8px;font-size:0.82rem;text-align:center;"></div>
+</div>
+
 <nav class="bottom-nav">
   <a href="index.html" class="nav-item"><span class="nav-icon">🏠</span><span>Home</span></a>
   <a href="villaggio.html" class="nav-item active"><span class="nav-icon">🏡</span><span>Villaggio</span></a>
@@ -214,6 +260,7 @@
   <a href="diari.html" class="nav-item"><span class="nav-icon">📖</span><span>Diari</span></a>
   <a href="diario-ciurma.html" class="nav-item"><span class="nav-icon">📔</span><span>Diario ciurma</span></a>
   <a href="isola.html" class="nav-item"><span class="nav-icon">🏝️</span><span>Isola</span></a>
+  <a href="attivita.html" class="nav-item"><span class="nav-icon">🧭</span><span>Attività</span></a>
   <a href="naufraghi.html" class="nav-item"><span class="nav-icon">🧍</span><span>Naufraghi</span></a>
 </nav>
 
@@ -254,6 +301,7 @@ requireAuth(async user => {
   _isAdmin = user.uid === ADMIN_UID;
 
   const _apertura = new Date('2026-07-02T10:00:00');
+  console.log('[guard villaggio] uid:', user.uid, '| isAdmin:', _isAdmin, '| ora < apertura:', new Date() < _apertura);
   if (!_isAdmin && new Date() < _apertura) { window.location.href = 'attesa.html'; return; }
 
   ['perla_centrale','atlantide','nautilus'].forEach(id => {
@@ -262,6 +310,14 @@ requireAuth(async user => {
 
   document.getElementById('popup-close').addEventListener('click', chiudiPopup);
   document.getElementById('popup-overlay').addEventListener('click', chiudiPopup);
+
+  if (_isAdmin) {
+    const fab = document.getElementById('btn-valutazione-fab');
+    fab.style.display = 'flex';
+    fab.addEventListener('click', apriValutazione);
+    document.getElementById('valutazione-close').addEventListener('click', chiudiValutazione);
+    document.getElementById('valutazione-overlay').addEventListener('click', chiudiValutazione);
+  }
 });
 
 async function apriCasa(casaId) {
@@ -411,6 +467,144 @@ async function salvaCasa(casaId) {
     const errEl = document.getElementById('mod-error');
     if (errEl) errEl.textContent = 'Errore: ' + e.message;
     btn.disabled = false; btn.textContent = '💾 Salva';
+  }
+}
+
+// ── 📋 Valutazione giornaliera Villaggio (admin-only) ────────────────────────
+const CASE_VALUTAZIONE = [
+  { id: 'nautilus',  nome: 'Nautilus' },
+  { id: 'atlantide', nome: 'Atlantide' },
+  { id: 'perla',     nome: 'Perla Centrale' },
+];
+const PULIZIA_OPZIONI = [1, 2, 3, 4, 5];
+const PENALITA_OPZIONI = [0, -1, -2, -3, -4, -5];
+
+let _valutazioneOggi = {}; // casaId -> { pulizia, penalita }
+
+function oggiKeyLocale() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function oggiMezzanotteLocale() {
+  const d = new Date();
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
+
+function fmtDataOggiIt() {
+  const giorni = ['Domenica','Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato'];
+  const mesi = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
+  const d = new Date();
+  return `${giorni[d.getDay()]} ${d.getDate()} ${mesi[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+async function apriValutazione() {
+  document.getElementById('valutazione-overlay').classList.add('open');
+  document.getElementById('valutazione-popup').classList.add('open');
+  document.getElementById('valutazione-data').textContent = fmtDataOggiIt();
+  document.getElementById('valutazione-body').innerHTML = '<div class="popup-loading">⏳ Caricamento...</div>';
+  document.getElementById('valutazione-msg').textContent = '';
+
+  const oggiKey = oggiKeyLocale();
+  _valutazioneOggi = {};
+  await Promise.all(CASE_VALUTAZIONE.map(async c => {
+    try {
+      const snap = await getDoc(doc(db, 'robinson_villaggio_valutazioni', `${oggiKey}_${c.id}`));
+      if (snap.exists()) {
+        const d = snap.data();
+        _valutazioneOggi[c.id] = { pulizia: d.pulizia ?? null, penalita: d.penalitaOrganizzazione ?? 0 };
+      } else {
+        _valutazioneOggi[c.id] = { pulizia: null, penalita: 0 };
+      }
+    } catch(_) { _valutazioneOggi[c.id] = { pulizia: null, penalita: 0 }; }
+  }));
+
+  renderValutazioneForm();
+}
+
+function chiudiValutazione() {
+  document.getElementById('valutazione-overlay').classList.remove('open');
+  document.getElementById('valutazione-popup').classList.remove('open');
+}
+
+function renderValutazioneForm() {
+  const html = CASE_VALUTAZIONE.map(c => {
+    const stato = _valutazioneOggi[c.id] || { pulizia: null, penalita: 0 };
+    const puliziaBtns = PULIZIA_OPZIONI.map(v =>
+      `<button type="button" class="val-pill${stato.pulizia===v?' selected':''}" data-casa="${c.id}" data-campo="pulizia" data-val="${v}">${v}</button>`
+    ).join('');
+    const penalitaBtns = PENALITA_OPZIONI.map(v =>
+      `<button type="button" class="val-pill val-pill-penalita${stato.penalita===v?' selected':''}" data-casa="${c.id}" data-campo="penalita" data-val="${v}">${v === 0 ? 'Nessuna' : v}</button>`
+    ).join('');
+    const totale = (stato.pulizia||0) + (stato.penalita||0);
+    return `<div class="val-casa-block">
+      <div class="val-casa-nome">🏠 ${esc(c.nome)}</div>
+      <div class="val-label">Pulizia</div>
+      <div class="val-pill-row">${puliziaBtns}</div>
+      <div class="val-label">Penalità organizzazione</div>
+      <div class="val-pill-row">${penalitaBtns}</div>
+      <div class="val-casa-totale">Totale: <span id="val-tot-${c.id}">${totale}</span> pt</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('valutazione-body').innerHTML = html +
+    `<button class="btn-salva-casa" id="btn-salva-valutazione" style="width:100%;margin-top:6px;">💾 Salva valutazione di oggi</button>`;
+
+  document.querySelectorAll('.val-pill').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const casaId = btn.dataset.casa;
+      const campo = btn.dataset.campo;
+      const val = Number(btn.dataset.val);
+      _valutazioneOggi[casaId] = _valutazioneOggi[casaId] || { pulizia: null, penalita: 0 };
+      _valutazioneOggi[casaId][campo] = val;
+      document.querySelectorAll(`.val-pill[data-casa="${casaId}"][data-campo="${campo}"]`)
+        .forEach(b => b.classList.toggle('selected', b === btn));
+      const tot = (_valutazioneOggi[casaId].pulizia||0) + (_valutazioneOggi[casaId].penalita||0);
+      const totEl = document.getElementById('val-tot-' + casaId);
+      if (totEl) totEl.textContent = tot;
+    });
+  });
+
+  document.getElementById('btn-salva-valutazione').addEventListener('click', salvaValutazioneOggi);
+}
+
+async function salvaValutazioneOggi() {
+  const msgEl = document.getElementById('valutazione-msg');
+  const mancanti = CASE_VALUTAZIONE.filter(c => !_valutazioneOggi[c.id] || _valutazioneOggi[c.id].pulizia == null);
+  if (mancanti.length) {
+    msgEl.style.color = '#c0392b';
+    msgEl.textContent = 'Seleziona la pulizia per: ' + mancanti.map(c => c.nome).join(', ');
+    return;
+  }
+
+  const btn = document.getElementById('btn-salva-valutazione');
+  btn.disabled = true; btn.textContent = '⏳ Salvataggio...';
+  const oggiKey = oggiKeyLocale();
+  const mezzanotte = oggiMezzanotteLocale();
+
+  try {
+    await Promise.all(CASE_VALUTAZIONE.map(c => {
+      const stato = _valutazioneOggi[c.id];
+      const totale = (stato.pulizia||0) + (stato.penalita||0);
+      return setDoc(doc(db, 'robinson_villaggio_valutazioni', `${oggiKey}_${c.id}`), {
+        data: mezzanotte,
+        dataGiorno: oggiKey,
+        casa: c.id,
+        pulizia: stato.pulizia,
+        penalitaOrganizzazione: stato.penalita,
+        totale,
+        autore: _currentUser.uid,
+        aggiornatoIl: serverTimestamp()
+      });
+    }));
+    msgEl.style.color = '#1a3a5c';
+    msgEl.textContent = '✅ Valutazione salvata!';
+    setTimeout(() => { if (msgEl) msgEl.textContent = ''; }, 2500);
+  } catch(e) {
+    msgEl.style.color = '#c0392b';
+    msgEl.textContent = 'Errore: ' + e.message;
+  } finally {
+    btn.disabled = false; btn.textContent = '💾 Salva valutazione di oggi';
   }
 }
 </script>

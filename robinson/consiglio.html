@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Il Consiglio dell'Isola – Robinson</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
+  <meta name="theme-color" content="#1a3a5c">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/robinson.css">
+  <style>
+    body { padding-bottom: 90px; }
+
+    .cons-header {
+      background: linear-gradient(135deg, var(--navy) 0%, #0d1b2a 100%);
+      color: #fff;
+      padding: 22px 18px 18px;
+      text-align: center;
+    }
+    .cons-header h1 { font-family: 'Playfair Display', serif; font-size: 1.4rem; color: var(--oro-light); }
+    .cons-header .sub { font-size: 0.8rem; opacity: 0.8; margin-top: 4px; font-style: italic; }
+
+    #nav-auth-slot-wrap { position: fixed; top: 10px; right: 10px; z-index: 300; }
+
+    .cons-content { max-width: 620px; margin: 0 auto; padding: 18px 14px 24px; }
+
+    .intro-box { background: var(--post-bg); border-left: 4px solid var(--oro); border-radius: 4px 12px 12px 4px; padding: 16px 18px; font-size: 0.92rem; line-height: 1.6; }
+    .intro-box .firma { text-align:right; font-style: italic; color: var(--muted); margin-top:10px; font-size: 0.82rem; }
+    .btn-inizia { display:block; margin: 18px auto 0; }
+
+    .step-progress { display:flex; gap:6px; justify-content:center; margin-bottom:16px; }
+    .step-dot { width:9px; height:9px; border-radius:50%; background: var(--carta-scura); }
+    .step-dot.done { background: var(--oro); }
+    .step-dot.current { background: var(--navy); }
+
+    .domanda-box { text-align:center; margin-bottom: 14px; }
+    .domanda-categoria { font-size: 0.78rem; color: var(--oro); font-weight: 700; letter-spacing: 0.4px; }
+    .domanda-testo { font-family:'Playfair Display', serif; font-size: 1.08rem; color: var(--navy); margin-top: 6px; line-height: 1.4; }
+    .domanda-hint { font-size: 0.76rem; color: var(--muted); margin-top: 6px; }
+
+    .search-mini { margin: 10px 0; }
+    .search-mini input { width:100%; padding:8px 12px; border:1.5px solid #c8b89a; border-radius:8px; font-family:'Lora',serif; font-size:0.85rem; background:#fff; }
+
+    .grid-selezione { display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; margin-top:10px; max-height: 46vh; overflow-y:auto; padding: 4px 2px; }
+    @media (min-width: 500px) { .grid-selezione { grid-template-columns: repeat(4, 1fr); } }
+    .sel-card { text-align:center; cursor:pointer; border-radius: 10px; padding: 6px 4px; border: 2px solid transparent; transition: all 0.15s; }
+    .sel-card.selected { border-color: var(--oro); background: var(--oro-light); }
+    .sel-card .sc-foto { width: 100%; aspect-ratio:1/1; border-radius: 50%; overflow:hidden; background: var(--carta-scura); display:flex; align-items:center; justify-content:center; font-size:1.6rem; }
+    .sel-card .sc-foto img { width:100%; height:100%; object-fit:cover; }
+    .sel-card .sc-nome { font-size: 0.68rem; margin-top: 4px; color: var(--inchiostro); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .sel-card.disabled { opacity: 0.35; cursor: not-allowed; }
+
+    .step-nav { display:flex; gap:10px; justify-content:space-between; margin-top:18px; }
+    .step-nav button { flex:1; }
+    .contatore-sel { text-align:center; font-size: 0.78rem; color: var(--muted); margin-top: 6px; }
+
+    /* Dashboard narrativa */
+    .dash-indice { text-align:center; padding: 20px 10px; }
+    .dash-indice .val { font-family:'Playfair Display', serif; font-size: 2.6rem; color: var(--oro); font-weight:700; }
+    .dash-indice .delta { font-size: 0.9rem; margin-top:4px; }
+    .dash-indice .delta.up { color: #1e8449; }
+    .dash-indice .delta.down { color: var(--rosso); }
+    .dash-label { font-size:0.8rem; color: var(--muted); }
+    .dash-conteggi { display:flex; flex-direction:column; gap:8px; margin: 14px 0; }
+    .dc-row { display:flex; align-items:center; justify-content:space-between; background: var(--post-bg); border-radius:8px; padding:10px 14px; }
+    .dc-label { font-size:0.88rem; }
+    .dc-val { font-family:'Playfair Display', serif; font-weight:700; color: var(--navy); font-size:1.1rem; }
+    .dash-frase { text-align:center; font-style: italic; color: var(--navy); background: var(--oro-light); border-radius: 10px; padding: 14px; margin-top: 14px; font-size: 0.92rem; }
+    .dash-safeguard { text-align:center; padding: 30px 16px; color: var(--muted); font-style: italic; line-height:1.6; }
+
+    .msg-attesa { text-align:center; padding: 30px 16px; color: var(--muted); font-style: italic; line-height: 1.6; }
+  </style>
+</head>
+<body>
+
+<div id="nav-auth-slot-wrap"><div id="nav-auth-slot"></div></div>
+
+<div class="cons-header">
+  <h1>🏝 Il Consiglio dell'Isola</h1>
+  <div class="sub">Non dobbiamo cambiare le persone. Dobbiamo costruire nuovi ponti tra le persone.</div>
+</div>
+
+<div class="cons-content" id="main-content">
+  <div class="spinner"></div>
+</div>
+
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item"><span class="nav-icon">🏠</span><span>Home</span></a>
+  <a href="villaggio.html" class="nav-item"><span class="nav-icon">🏡</span><span>Villaggio</span></a>
+  <a href="spiaggia.html" class="nav-item"><span class="nav-icon">🏖️</span><span>Spiaggia</span></a>
+  <a href="isola.html" class="nav-item"><span class="nav-icon">🏝️</span><span>Isola</span></a>
+  <a href="attivita.html" class="nav-item active"><span class="nav-icon">🧭</span><span>Attività</span></a>
+  <a href="naufraghi.html" class="nav-item"><span class="nav-icon">🧍</span><span>Naufraghi</span></a>
+</nav>
+
+<script type="module">
+import { db, ADMIN_UID } from './js/robinson-firebase.js';
+import { requireAuth } from './js/robinson-auth.js';
+import { setupNavAuth } from './js/robinson-nav.js';
+import { esc, getFotoRobinson } from './js/robinson-utils.js';
+import {
+  collection, getDocs, query, orderBy, limit, doc, getDoc, setDoc, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+setupNavAuth('nav-auth-slot');
+
+const params = new URLSearchParams(location.search);
+const ATT_ID = params.get('attId') || 'consiglio-isola';
+
+const DOMANDE = [
+  { chiave: 'ciurma', emoji: '🔥', categoria: 'La tua Ciurma',
+    testo: 'Se dovessi affrontare una lunga navigazione, quali naufraghi porteresti sicuramente con te perché fanno già parte della tua ciurma?' },
+  { chiave: 'ponti', emoji: '🌉', categoria: 'I Ponti da Costruire',
+    testo: 'Quali naufraghi conosci ancora poco ma vorresti avvicinare durante questa avventura?' },
+  { chiave: 'correnti', emoji: '🌊', categoria: 'Le Correnti Contrarie',
+    testo: 'Con quali naufraghi senti che oggi il mare è ancora agitato e fai più fatica a stare?' },
+  { chiave: 'scogli', emoji: '🪨', categoria: 'Gli Scogli',
+    testo: 'Con quali naufraghi, almeno per ora, ti sembra molto difficile costruire un rapporto?' },
+];
+
+let allNaufraghi = [];
+let currentUser = null;
+let step = 0; // 0 = intro, 1..4 = domande, 5 = riepilogo
+let selezioni = { ciurma: [], ponti: [], correnti: [], scogli: [] };
+
+requireAuth(async user => {
+  currentUser = user;
+  await avviaPagina();
+});
+
+async function avviaPagina() {
+  const main = document.getElementById('main-content');
+
+  const rilSnap = await getDocs(query(
+    collection(db, 'attivita', ATT_ID, 'rilevazioni'),
+    orderBy('numero', 'desc'),
+    limit(1)
+  ));
+
+  if (rilSnap.empty) {
+    main.innerHTML = `<div class="msg-attesa">🌅 Il Consiglio dell'Isola si sta ancora radunando.<br>Torna presto per costruire i tuoi ponti.</div>`;
+    return;
+  }
+
+  const rilDoc = rilSnap.docs[0];
+  const ril = { id: rilDoc.id, ...rilDoc.data() };
+
+  if (ril.stato === 'chiusa') {
+    renderDashboard(ril);
+    return;
+  }
+
+  // rilevazione aperta: carica naufraghi + eventuale risposta esistente
+  await caricaNaufraghi();
+  const rispostaSnap = await getDoc(doc(db, 'attivita', ATT_ID, 'rilevazioni', ril.id, 'risposte', currentUser.uid));
+  if (rispostaSnap.exists()) {
+    const d = rispostaSnap.data();
+    selezioni = {
+      ciurma: d.ciurma || [], ponti: d.ponti || [],
+      correnti: d.correnti || [], scogli: d.scogli || [],
+    };
+  }
+  renderIntro(ril);
+}
+
+async function caricaNaufraghi() {
+  const snap = await getDocs(collection(db, 'robinson_naufraghi'));
+  const entries = await Promise.all(snap.docs.map(async d => {
+    if (d.id === currentUser.uid) return null;
+    const data = d.data();
+    if (!data.nome) return null;
+    const foto = data.fotoRobinson || data.fotoProfilo || await getFotoRobinson(d.id);
+    return { uid: d.id, nome: data.nome, foto: foto || '' };
+  }));
+  allNaufraghi = entries.filter(Boolean).sort((a, b) => a.nome.localeCompare(b.nome, 'it'));
+}
+
+// ── Intro ────────────────────────────────────────────────────────────────
+function renderIntro(ril) {
+  const giaCompilato = DOMANDE.some(d => selezioni[d.chiave].length > 0);
+  document.getElementById('main-content').innerHTML = `
+    <div class="intro-box">
+      "Su Robinson Republic nessuno si salva da solo. Ogni naufrago costruisce l'isola attraverso le relazioni che sceglie di creare.
+      Le tue risposte aiuteranno il Consiglio dell'Isola a capire come sta crescendo la nostra ciurma. Non esistono risposte giuste o sbagliate."
+      <div class="firma">— Il Consiglio dell'Isola</div>
+    </div>
+    <button class="btn btn-primary" style="display:block;margin:18px auto 0;" id="btn-inizia">
+      ${giaCompilato ? '✏️ Modifica le tue scelte' : '⚓ Inizia'}
+    </button>
+    ${giaCompilato ? '<div style="text-align:center;margin-top:8px;font-size:0.78rem;color:var(--muted);">Hai già partecipato: puoi ancora modificare le tue scelte finché il Consiglio non chiude la rilevazione.</div>' : ''}
+  `;
+  document.getElementById('btn-inizia').addEventListener('click', () => { step = 1; renderDomanda(ril); });
+}
+
+// ── Step domanda ─────────────────────────────────────────────────────────
+function renderProgress() {
+  let html = '<div class="step-progress">';
+  for (let i = 1; i <= 4; i++) {
+    html += `<div class="step-dot ${i < step ? 'done' : i === step ? 'current' : ''}"></div>`;
+  }
+  html += '</div>';
+  return html;
+}
+
+function renderDomanda(ril) {
+  const d = DOMANDE[step - 1];
+  const selezionati = new Set(selezioni[d.chiave]);
+
+  const main = document.getElementById('main-content');
+  main.innerHTML = `
+    ${renderProgress()}
+    <div class="domanda-box">
+      <div class="domanda-categoria">${d.emoji} ${esc(d.categoria)}</div>
+      <div class="domanda-testo">${esc(d.testo)}</div>
+      <div class="domanda-hint">Scegli fino a 3 naufraghi — puoi anche non sceglierne nessuno.</div>
+    </div>
+    <div class="search-mini"><input type="text" id="search-inp" placeholder="🔍 Cerca per nome..."></div>
+    <div class="grid-selezione" id="grid-sel"></div>
+    <div class="contatore-sel" id="contatore-sel"></div>
+    <div class="step-nav">
+      <button class="btn" style="background:var(--carta-scura);" id="btn-indietro">← Indietro</button>
+      <button class="btn btn-primary" id="btn-avanti">${step < 4 ? 'Avanti →' : 'Rivedi le tue scelte →'}</button>
+    </div>
+  `;
+
+  function renderGrid(filtro = '') {
+    const grid = document.getElementById('grid-sel');
+    const lista = allNaufraghi.filter(n => n.nome.toLowerCase().includes(filtro.toLowerCase()));
+    grid.innerHTML = lista.map(n => {
+      const isSel = selezionati.has(n.uid);
+      const disabled = !isSel && selezionati.size >= 3;
+      return `<div class="sel-card ${isSel ? 'selected' : ''} ${disabled ? 'disabled' : ''}" data-uid="${esc(n.uid)}">
+        <div class="sc-foto">${n.foto ? `<img src="${esc(n.foto)}" alt="${esc(n.nome)}" loading="lazy">` : '⚓'}</div>
+        <div class="sc-nome">${esc(n.nome)}</div>
+      </div>`;
+    }).join('') || '<div class="empty-msg" style="grid-column:1/-1;">Nessun naufrago trovato.</div>';
+
+    grid.querySelectorAll('.sel-card').forEach(card => {
+      card.addEventListener('click', () => {
+        const uid = card.dataset.uid;
+        if (selezionati.has(uid)) {
+          selezionati.delete(uid);
+        } else {
+          if (selezionati.size >= 3) return;
+          selezionati.add(uid);
+        }
+        selezioni[d.chiave] = [...selezionati];
+        renderGrid(document.getElementById('search-inp').value);
+      });
+    });
+    document.getElementById('contatore-sel').textContent = `${selezionati.size} / 3 selezionati`;
+  }
+
+  renderGrid();
+  document.getElementById('search-inp').addEventListener('input', e => renderGrid(e.target.value));
+
+  document.getElementById('btn-indietro').addEventListener('click', () => {
+    step--;
+    if (step === 0) renderIntro(ril); else renderDomanda(ril);
+  });
+  document.getElementById('btn-avanti').addEventListener('click', () => {
+    step++;
+    if (step > 4) renderRiepilogo(ril); else renderDomanda(ril);
+  });
+}
+
+// ── Riepilogo + conferma ───────────────────────────────────────────────────
+function nomeDi(uid) { return allNaufraghi.find(n => n.uid === uid)?.nome || uid; }
+
+function renderRiepilogo(ril) {
+  const main = document.getElementById('main-content');
+  main.innerHTML = `
+    <div class="domanda-box">
+      <div class="domanda-testo">Le tue scelte</div>
+      <div class="domanda-hint">Controlla e conferma, oppure torna indietro per modificare.</div>
+    </div>
+    ${DOMANDE.map(d => `
+      <div class="dc-row" style="margin-bottom:8px;">
+        <div class="dc-label">${d.emoji} ${esc(d.categoria)}</div>
+        <div style="font-size:0.82rem;color:var(--muted);text-align:right;">
+          ${selezioni[d.chiave].length ? selezioni[d.chiave].map(uid => esc(nomeDi(uid))).join(', ') : '— nessuno —'}
+        </div>
+      </div>
+    `).join('')}
+    <div class="step-nav">
+      <button class="btn" style="background:var(--carta-scura);" id="btn-indietro">← Modifica</button>
+      <button class="btn btn-primary" id="btn-conferma">⚓ Affida le tue scelte al mare</button>
+    </div>
+  `;
+  document.getElementById('btn-indietro').addEventListener('click', () => { step = 4; renderDomanda(ril); });
+  document.getElementById('btn-conferma').addEventListener('click', async () => {
+    const btn = document.getElementById('btn-conferma');
+    btn.disabled = true; btn.textContent = 'Salvataggio...';
+    try {
+      await setDoc(doc(db, 'attivita', ATT_ID, 'rilevazioni', ril.id, 'risposte', currentUser.uid), {
+        userId: currentUser.uid,
+        ciurma: selezioni.ciurma,
+        ponti: selezioni.ponti,
+        correnti: selezioni.correnti,
+        scogli: selezioni.scogli,
+        completatoIl: serverTimestamp(),
+      });
+      main.innerHTML = `<div class="msg-attesa">⚓ Le tue scelte sono state affidate al Consiglio dell'Isola.<br>Grazie per aver contribuito a costruire la nostra ciurma.<br><br>
+        <button class="btn btn-primary" id="btn-torna-attivita">Torna alle Attività</button></div>`;
+      document.getElementById('btn-torna-attivita').addEventListener('click', () => location.href = 'attivita.html');
+    } catch (e) {
+      alert('Errore nel salvataggio: ' + e.message);
+      btn.disabled = false; btn.textContent = '⚓ Affida le tue scelte al mare';
+    }
+  });
+}
+
+// ── Dashboard narrativa (rilevazione chiusa) ──────────────────────────────
+function renderDashboard(ril) {
+  const s = ril.sintesiPubblica;
+  const main = document.getElementById('main-content');
+  if (!s || (s.risposteCount || 0) < 4) {
+    main.innerHTML = `<div class="dash-safeguard">🌅 La ciurma sta ancora salpando: presto vedrete crescere l'isola.</div>`;
+    return;
+  }
+  const deltaSign = s.deltaIndice > 0 ? '▲' : s.deltaIndice < 0 ? '▼' : '—';
+  const deltaClass = s.deltaIndice > 0 ? 'up' : s.deltaIndice < 0 ? 'down' : '';
+  main.innerHTML = `
+    <div class="dash-indice">
+      <div class="dash-label">Indice di Coesione dell'Isola</div>
+      <div class="val">${esc(s.indiceCoesione)}%</div>
+      ${typeof s.deltaIndice === 'number' && s.deltaIndice !== 0 ? `<div class="delta ${deltaClass}">${deltaSign} ${Math.abs(s.deltaIndice)} rispetto alla scorsa rilevazione</div>` : ''}
+    </div>
+    <div class="dash-conteggi">
+      <div class="dc-row"><span class="dc-label">❤️ Ponti costruiti</span><span class="dc-val">${esc(s.pontiCostruiti)}</span></div>
+      <div class="dc-row"><span class="dc-label">🌱 Nuovi ponti possibili</span><span class="dc-val">${esc(s.nuoviPontiPossibili)}</span></div>
+      <div class="dc-row"><span class="dc-label">🌊 Correnti ancora forti</span><span class="dc-val">${esc(s.correntiForti)}</span></div>
+      <div class="dc-row"><span class="dc-label">🪨 Scogli da superare</span><span class="dc-val">${esc(s.scogliDaSuperare)}</span></div>
+      <div class="dc-row"><span class="dc-label">🔥 Fuochi della Ciurma</span><span class="dc-val">${esc(s.fuochiCiurma)}</span></div>
+    </div>
+    ${s.frase ? `<div class="dash-frase">« ${esc(s.frase)} »</div>` : ''}
+  `;
+}
+</script>
+</body>
+</html>

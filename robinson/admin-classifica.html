@@ -4,6 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Classifica – Robinson</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
+  <meta name="theme-color" content="#1a3a5c">
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/robinson.css">
   <style>
@@ -30,6 +35,11 @@
     .podio-pilastro { background:rgba(255,255,255,0.1); border-top:3px solid var(--oro); display:flex; align-items:center; justify-content:center; flex-direction:column; border-radius:6px 6px 0 0; }
     .podio-pilastro.p1 { height:90px; }
     .podio-pilastro.p2 { height:65px; }
+    .podio-empty-msg {
+      text-align:center; padding:18px 14px; color:#fff; font-family:'Lora',serif;
+      font-size:0.85rem; line-height:1.6; background:rgba(255,255,255,0.06);
+      border:1.5px dashed var(--oro); border-radius:10px;
+    }
     .podio-pilastro.p3 { height:45px; }
     .podio-rank { font-size:1.5rem; }
     .podio-nome { font-size:0.68rem; color:#fff; margin-top:4px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100px; }
@@ -87,6 +97,18 @@
     /* ── Spinner / empty ── */
     .section-loader { text-align:center; padding:30px; color:var(--muted); font-style:italic; font-family:'Lora',serif; }
     .card-h2 { font-family:'Playfair Display',serif; font-size:1.05rem; color:var(--navy); padding:14px 14px 6px; font-weight:700; }
+
+    /* ── Attività ── */
+    .riep-cards { display:flex; gap:10px; flex-wrap:wrap; padding: 12px 14px 4px; }
+    .riep-card { flex:1; min-width:100px; background:#fff; border:1.5px solid var(--carta-scura); border-radius:10px; padding:12px; text-align:center; }
+    .riep-card .rc-val { font-size:1.5rem; font-weight:700; color:var(--oro); font-family:'Playfair Display',serif; }
+    .riep-card .rc-lbl { font-size:0.7rem; color:var(--muted); margin-top:3px; }
+    .att-row { background:#fff; border:1.5px solid var(--carta-scura); border-radius:10px; padding:12px 14px; margin:0 12px 10px; }
+    .att-row .ar-titolo { font-family:'Playfair Display',serif; font-weight:700; color:var(--navy); font-size:0.92rem; }
+    .att-row .ar-meta { font-size:0.76rem; color:var(--muted); margin-top:4px; }
+    .att-row .ar-bar-bg { background:var(--carta-scura); border-radius:4px; height:6px; overflow:hidden; margin-top:6px; }
+    .att-row .ar-bar { height:100%; background:var(--oro); border-radius:4px; }
+    #canvas-indice-trend { display:block; width:100%; height:140px; }
   </style>
 </head>
 <body>
@@ -99,6 +121,7 @@
   <div style="display:flex;gap:12px;align-items:center;">
     <a href="admin-isola.html" style="color:var(--oro);font-size:0.82rem;text-decoration:none;">🏝️ Isola</a>
     <a href="admin-pin.html" style="color:var(--oro);font-size:0.82rem;text-decoration:none;">🔑 PIN</a>
+    <a href="consiglio-admin.html" style="color:var(--oro);font-size:0.82rem;text-decoration:none;">🏝 Consiglio</a>
     <a href="index.html" style="color:#fff;font-size:0.8rem;text-decoration:none;">← Home</a>
   </div>
 </header>
@@ -109,6 +132,8 @@
   <button class="section-tab" data-tab="presenza">🗓️ Presenza</button>
   <button class="section-tab" data-tab="emozioni">🧭 Emozioni</button>
   <button class="section-tab" data-tab="dicono">💬 Dicono di me</button>
+  <button class="section-tab" data-tab="villaggio">🏠 Villaggio</button>
+  <button class="section-tab" data-tab="attivita">🧭 Attività</button>
 </div>
 
 <!-- Periodo toggle (shared) -->
@@ -158,6 +183,22 @@
   <button class="export-btn" onclick="exportPdf('dicono')">📄 Esporta PDF</button>
 </div>
 
+<!-- ══ SEZIONE 5: VILLAGGIO ═══════════════════════════════════════════════ -->
+<div class="section-panel" id="panel-villaggio">
+  <div class="podio-wrap" id="podio-villaggio"></div>
+  <div class="list-wrap" id="lista-villaggio"><div class="section-loader">⏳ Caricamento…</div></div>
+  <button class="export-btn" onclick="exportPdf('villaggio')">📄 Esporta PDF</button>
+</div>
+
+<!-- ══ SEZIONE 6: ATTIVITÀ ════════════════════════════════════════════════ -->
+<div class="section-panel" id="panel-attivita">
+  <div class="riep-cards" id="riep-attivita"><div class="section-loader">⏳ Caricamento…</div></div>
+  <div class="card-h2">Le attività</div>
+  <div id="lista-attivita-admin"></div>
+  <div class="card-h2" id="titolo-timeline-indice" style="display:none;">📈 Andamento Indice di Coesione — Il Consiglio dell'Isola</div>
+  <div style="padding:0 12px 10px;"><canvas id="canvas-indice-trend" style="display:none;"></canvas></div>
+</div>
+
 <nav class="bottom-nav">
   <a href="index.html" class="nav-item"><span class="nav-icon">🏠</span><span>Home</span></a>
   <a href="villaggio.html" class="nav-item"><span class="nav-icon">🏡</span><span>Villaggio</span></a>
@@ -173,7 +214,7 @@
 import { db, auth, ADMIN_UID } from './js/robinson-firebase.js';
 import { requireAuth } from './js/robinson-auth.js';
 import { esc } from './js/robinson-utils.js';
-import { SETTIMANA_KEY, MESE_KEY } from './js/robinson-utils.js';
+import { PUNTI as PUNTI_CONTRIB, CAMPO_DETTAGLIO as CAMPO_DETTAGLIO_CONTRIB } from './js/robinson-punteggio.js';
 import {
   collection, getDocs, query, orderBy, limit, where, doc, getDoc
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
@@ -213,11 +254,12 @@ const EMO_NEGATIVE = new Set(['🌧️','⛈️','🌪️','💔','🌫️']);
 
 // ── Stato globale ─────────────────────────────────────────────────────────
 let periodo = 'settimana';
+const DEBUG_CONTRIBUTI = true; // TODO: mettere a false (o rimuovere) dopo verifica classifica contributi
 let activeTab = 'contributi';
 let sortPresenza = 'streak';
 let uidList = [];
 let naufraghiInfo = {}; // uid → {nome, foto}
-let loaded = { contributi:false, presenza:false, emozioni:false, dicono:false };
+let loaded = { contributi:false, presenza:false, emozioni:false, dicono:false, villaggio:false, attivita:false };
 // alert flags
 let allertaNaufraghi = new Set(); // uid con emozioni negative 3gg consecutivi
 
@@ -264,6 +306,7 @@ document.querySelectorAll('.periodo-btn').forEach(btn => {
     // Re-render sezioni già caricate che dipendono dal periodo
     if (loaded.contributi) renderContributi();
     if (loaded.presenza) renderPresenza();
+    if (loaded.villaggio) renderVillaggio();
   });
 });
 
@@ -280,24 +323,146 @@ document.querySelectorAll('.sort-btn').forEach(btn => {
 // ════════════════════════════════════════════════════════════════════════════
 // SEZIONE 1 — CONTRIBUTI
 // ════════════════════════════════════════════════════════════════════════════
-let punteggiDocs = [];
+// 1° luglio 2026, ora locale: nessun contributo antecedente conta, in NESSUN filtro (nemmeno "Tutto")
+const CUTOFF_CONTRIBUTI = new Date(2026, 6, 1, 0, 0, 0);
 
+let contributiEventi = [];   // { uid, tipo, count, ts } — eventi reali, già filtrati per cutoff
+let contributiEsclusi = [];  // eventi trovati ma antecedenti al cutoff (solo per log di verifica)
+
+function parseDataKey(key) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(key || '');
+  if (!m) return null;
+  return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+}
+
+function registraEvento(uid, tipo, count, ts) {
+  if (!uid || !uidList.includes(uid) || !count) return;
+  if (!ts || isNaN(ts.getTime())) return;
+  if (ts < CUTOFF_CONTRIBUTI) { contributiEsclusi.push({ uid, tipo, count, ts }); return; }
+  contributiEventi.push({ uid, tipo, count, ts });
+}
+
+// Stessa logica/collezioni già usate e verificate dalla tab Presenza: si itera uidList
+// (robinson_naufraghi) e si leggono i contenuti REALI per uid, invece di fidarsi di un
+// contatore pre-aggregato (robinson_punteggi) che può disallinearsi dagli eventi reali.
 async function loadContributi() {
-  const snap = await getDocs(collection(db, 'robinson_punteggi'));
-  punteggiDocs = snap.docs.map(d => ({ uid: d.id, ...d.data() }));
+  contributiEventi = [];
+  contributiEsclusi = [];
+
+  // Post + reazioni ricevute su "La Spiaggia" (stessa query di Presenza: authorId==uid)
+  await Promise.all(uidList.map(async uid => {
+    try {
+      const snap = await getDocs(query(collection(db, 'robinson_spiaggia'), where('authorId','==',uid)));
+      snap.forEach(d => {
+        const p = d.data();
+        const ts = p.timestamp?.toDate ? p.timestamp.toDate() : null;
+        registraEvento(uid, 'post', 1, ts);
+        const reaz = Object.values(p.reactions || {}).reduce((a,b) => a + (Number(b)||0), 0);
+        if (reaz > 0) registraEvento(uid, 'reazione', reaz, ts);
+      });
+    } catch(e) { console.warn('[Contributi] errore lettura robinson_spiaggia per', uid, e); }
+  }));
+
+  // Commenti su "La Spiaggia" — attribuiti a chi commenta (non all'autore del post)
+  try {
+    const postsSnap = await getDocs(collection(db, 'robinson_spiaggia'));
+    await Promise.all(postsSnap.docs.map(async postDoc => {
+      try {
+        const cSnap = await getDocs(collection(db, 'robinson_spiaggia', postDoc.id, 'comments'));
+        cSnap.forEach(c => {
+          const cd = c.data();
+          const ts = cd.timestamp?.toDate ? cd.timestamp.toDate() : null;
+          registraEvento(cd.authorId, 'commento', 1, ts);
+        });
+      } catch(e) {}
+    }));
+  } catch(e) { console.warn('[Contributi] errore lettura commenti spiaggia', e); }
+
+  // Tesori (foto/video/audio) nel diario personale — stessa sotto-collezione di Presenza
+  await Promise.all(uidList.map(async uid => {
+    try {
+      const snap = await getDocs(collection(db, 'robinson_diari', uid, 'posts'));
+      snap.forEach(d => {
+        const p = d.data();
+        const ts = (p.timestamp?.toDate ? p.timestamp.toDate() : null) || parseDataKey(d.id);
+        (p.media || []).forEach(m => {
+          const tipo = m.type === 'image' ? 'foto' : (m.type === 'video' ? 'video' : (m.type === 'audio' ? 'audio' : null));
+          if (tipo) registraEvento(uid, tipo, 1, ts);
+        });
+      });
+    } catch(e) { console.warn('[Contributi] errore lettura diario per', uid, e); }
+  }));
+
+  // Bottiglie inviate — copia già nella propria sotto-collezione "inviati", nessun cross-query
+  await Promise.all(uidList.map(async uid => {
+    try {
+      const snap = await getDocs(collection(db, 'robinson_inviati', uid, 'messaggi'));
+      snap.forEach(d => {
+        const p = d.data();
+        const ts = p.timestamp?.toDate ? p.timestamp.toDate() : null;
+        registraEvento(uid, 'bottiglia', 1, ts);
+      });
+    } catch(e) { console.warn('[Contributi] errore lettura bottiglie inviate per', uid, e); }
+  }));
+
   loaded.contributi = true;
   renderContributi();
 }
 
-function getPunti(d) {
-  if (periodo === 'settimana') return (d.settimana || {})[SETTIMANA_KEY] || 0;
-  if (periodo === 'mese')      return (d.mese || {})[MESE_KEY] || 0;
-  return d.totale || 0;
+function computePeriodoStart(minDate) {
+  const now = new Date();
+  let start;
+  if (periodo === 'settimana') {
+    const day = now.getDay() || 7; // 1=lun...7=dom
+    start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - day + 1);
+  } else if (periodo === 'mese') {
+    start = new Date(now.getFullYear(), now.getMonth(), 1);
+  } else {
+    start = new Date(0);
+  }
+  return minDate && start < minDate ? minDate : start;
 }
 
+function periodoLowerBound() { return computePeriodoStart(CUTOFF_CONTRIBUTI); }
+
+function aggregaContributi() {
+  const lower = periodoLowerBound();
+  const perUid = {};
+  contributiEventi.forEach(ev => {
+    if (ev.ts < lower) return;
+    if (!perUid[ev.uid]) perUid[ev.uid] = { uid: ev.uid, totale: 0, dettaglio: {} };
+    const campo = CAMPO_DETTAGLIO_CONTRIB[ev.tipo] || ev.tipo;
+    perUid[ev.uid].dettaglio[campo] = (perUid[ev.uid].dettaglio[campo] || 0) + ev.count;
+    perUid[ev.uid].totale += ev.count * (PUNTI_CONTRIB[ev.tipo] || 0);
+  });
+  return Object.values(perUid);
+}
+
+function getPunti(d) { return d.totale || 0; }
+
 function renderContributi() {
-  const sorted = [...punteggiDocs].sort((a,b) => getPunti(b) - getPunti(a));
+  const sorted = aggregaContributi().sort((a,b) => getPunti(b) - getPunti(a));
   const max = sorted.length ? (getPunti(sorted[0]) || 1) : 1;
+
+  if (DEBUG_CONTRIBUTI) {
+    console.log(`[Contributi] periodo=${periodo} — cutoff=${CUTOFF_CONTRIBUTI.toLocaleString('it-IT')} — dal=${periodoLowerBound().toLocaleString('it-IT')} — ${sorted.length} autori con almeno un contributo nel periodo`);
+    console.table(sorted.map(u => ({
+      uid: u.uid,
+      nome: (naufraghiInfo[u.uid] || {}).nome || u.uid,
+      punti: getPunti(u),
+      dettaglio: JSON.stringify(u.dettaglio || {})
+    })));
+    console.log(`[Contributi] eventi esclusi dal cutoff (antecedenti al 1° luglio 2026): ${contributiEsclusi.length}`);
+    if (contributiEsclusi.length) {
+      console.table(contributiEsclusi.slice(0, 80).map(e => ({
+        uid: e.uid,
+        nome: (naufraghiInfo[e.uid] || {}).nome || e.uid,
+        tipo: e.tipo,
+        count: e.count,
+        data: e.ts.toLocaleString('it-IT')
+      })));
+    }
+  }
 
   // Podio
   const podio = document.getElementById('podio-contributi');
@@ -628,12 +793,219 @@ async function loadDicono() {
   loaded.dicono = true;
 }
 
+// ════════════════════════════════════════════════════════════════════════════
+// SEZIONE 5 — VILLAGGIO
+// ════════════════════════════════════════════════════════════════════════════
+const CASE_VILLAGGIO = [
+  { id: 'nautilus',  nome: 'Nautilus',       emoji: '🏠' },
+  { id: 'atlantide', nome: 'Atlantide',      emoji: '🏠' },
+  { id: 'perla',     nome: 'Perla Centrale', emoji: '🏠' },
+];
+
+let villaggioValutazioni = []; // { casa, pulizia, penalita, totale, ts }
+
+async function loadVillaggio() {
+  villaggioValutazioni = [];
+  try {
+    const snap = await getDocs(collection(db, 'robinson_villaggio_valutazioni'));
+    villaggioValutazioni = snap.docs.map(d => {
+      const v = d.data();
+      const ts = (v.data?.toDate ? v.data.toDate() : null) || parseDataKey(v.dataGiorno);
+      const pulizia = Number(v.pulizia) || 0;
+      const penalita = Number(v.penalitaOrganizzazione) || 0;
+      return {
+        casa: v.casa,
+        pulizia,
+        penalita,
+        totale: typeof v.totale === 'number' ? v.totale : (pulizia + penalita),
+        ts
+      };
+    });
+  } catch(e) { console.warn('[Villaggio] errore lettura robinson_villaggio_valutazioni', e); }
+  loaded.villaggio = true;
+  renderVillaggio();
+}
+
+function aggregaVillaggio() {
+  const lower = computePeriodoStart(null);
+  const perCasa = {};
+  CASE_VILLAGGIO.forEach(c => { perCasa[c.id] = { id: c.id, nome: c.nome, emoji: c.emoji, totale: 0, pulizia: 0, penalita: 0 }; });
+  villaggioValutazioni.forEach(v => {
+    if (!v.ts || isNaN(v.ts.getTime()) || v.ts < lower) return;
+    if (!perCasa[v.casa]) return;
+    perCasa[v.casa].totale += v.totale;
+    perCasa[v.casa].pulizia += v.pulizia;
+    perCasa[v.casa].penalita += v.penalita;
+  });
+  return Object.values(perCasa);
+}
+
+function renderVillaggio() {
+  // Ordinamento primario per punteggio; a parità, ordine alfabetico solo estetico/stabile
+  // (non implica una posizione migliore — la posizione viene calcolata a parte).
+  const sorted = aggregaVillaggio().sort((a,b) => b.totale - a.totale || a.nome.localeCompare(b.nome, 'it'));
+
+  const podio = document.getElementById('podio-villaggio');
+  const lista = document.getElementById('lista-villaggio');
+
+  // Nessun dato nel periodo: nessuna casa ha ricevuto valutazioni (pulizia e penalità entrambe a 0 per tutte).
+  const haDati = sorted.some(c => c.pulizia !== 0 || c.penalita !== 0);
+
+  if (!haDati) {
+    podio.innerHTML = `<div class="podio-empty-msg">🏠 Ancora nessuna valutazione per questo periodo.<br>Le case appariranno in classifica dopo la prima valutazione nel Villaggio.</div>`;
+    lista.innerHTML = sorted.map(c => `<div class="classifica-row">
+      <div style="flex:1;">
+        <div style="font-size:0.88rem;font-weight:600;color:var(--inchiostro);">${c.emoji} ${esc(c.nome)}</div>
+        <div style="margin-top:3px;">
+          <span class="mini-badge">🧹 pulizia 0pt</span>
+          <span class="mini-badge">⚠️ penalità 0pt</span>
+        </div>
+        <div class="classifica-bar-bg" style="margin-top:5px;">
+          <div class="classifica-bar" style="width:0%;"></div>
+        </div>
+      </div>
+      <div style="font-size:0.95rem;font-weight:700;color:var(--oro);min-width:40px;text-align:right;">0</div>
+    </div>`).join('');
+    return;
+  }
+
+  // Ranking standard (1224): a pari punteggio, stessa posizione; il rango successivo salta.
+  const ranks = sorted.map(c => 1 + sorted.filter(x => x.totale > c.totale).length);
+  const medagliaFor = r => r === 1 ? '🥇' : r === 2 ? '🥈' : '🥉';
+  const classeFor   = r => r === 1 ? 'p1' : r === 2 ? 'p2' : 'p3';
+
+  podio.innerHTML = `<div class="podio">` + sorted.map((c,i) => {
+    const r = ranks[i];
+    return `<div class="podio-slot">
+      <div class="podio-avatar-ph">${c.emoji}</div>
+      <div class="podio-pilastro ${classeFor(r)}"><span class="podio-rank">${medagliaFor(r)}</span></div>
+      <div class="podio-nome">${esc(c.nome)}</div>
+      <div class="podio-punti">${c.totale} pt</div>
+    </div>`;
+  }).join('') + `</div>`;
+
+  const max = Math.max(1, sorted[0].totale);
+  lista.innerHTML = sorted.map((c,i) => {
+    const pct = Math.max(0, Math.round(c.totale/max*100));
+    return `<div class="classifica-row">
+      <div style="font-size:0.85rem;font-weight:700;color:var(--navy);min-width:24px;">#${ranks[i]}</div>
+      <div style="flex:1;">
+        <div style="font-size:0.88rem;font-weight:600;color:var(--inchiostro);">${c.emoji} ${esc(c.nome)}</div>
+        <div style="margin-top:3px;">
+          <span class="mini-badge">🧹 pulizia ${c.pulizia}pt</span>
+          <span class="mini-badge">⚠️ penalità ${c.penalita}pt</span>
+        </div>
+        <div class="classifica-bar-bg" style="margin-top:5px;">
+          <div class="classifica-bar" style="width:${pct}%;"></div>
+        </div>
+      </div>
+      <div style="font-size:0.95rem;font-weight:700;color:var(--oro);min-width:40px;text-align:right;">${c.totale}</div>
+    </div>`;
+  }).join('');
+}
+
 // ── Tab loader dispatcher ────────────────────────────────────────────────
 async function loadTab(tab) {
   if (tab === 'contributi' && !loaded.contributi) await loadContributi();
   if (tab === 'presenza'   && !loaded.presenza)   await loadPresenza();
   if (tab === 'emozioni'   && !loaded.emozioni)   await loadEmozioni();
   if (tab === 'dicono'     && !loaded.dicono)      await loadDicono();
+  if (tab === 'villaggio'  && !loaded.villaggio)  await loadVillaggio();
+  if (tab === 'attivita'   && !loaded.attivita)   await loadAttivita();
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// SEZIONE 6 — ATTIVITÀ (resoconto §3 del brief Consiglio dell'Isola)
+// ════════════════════════════════════════════════════════════════════════════
+async function loadAttivita() {
+  const snap = await getDocs(query(collection(db, 'attivita'), orderBy('ordine')));
+  const attivitaList = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+  const conteggi = { proposta: 0, attiva: 0, svolta: 0 };
+  attivitaList.forEach(a => { if (conteggi[a.stato] !== undefined) conteggi[a.stato]++; });
+
+  document.getElementById('riep-attivita').innerHTML = `
+    <div class="riep-card"><div class="rc-val">${conteggi.proposta}</div><div class="rc-lbl">⏳ Proposte</div></div>
+    <div class="riep-card"><div class="rc-val">${conteggi.attiva}</div><div class="rc-lbl">🔥 In corso</div></div>
+    <div class="riep-card"><div class="rc-val">${conteggi.svolta}</div><div class="rc-lbl">✅ Svolte</div></div>
+  `;
+
+  const totaleNaufraghi = uidList.length || 1;
+  let sociogrammaTrend = null;
+
+  const righeHtml = await Promise.all(attivitaList.map(async att => {
+    let partecipazione = '';
+    if (att.tipo === 'sociogramma') {
+      const rilSnap = await getDocs(query(collection(db, 'attivita', att.id, 'rilevazioni'), orderBy('numero', 'desc')));
+      const rilevazioni = rilSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const ultima = rilevazioni[0];
+      const count = ultima?.sintesiPubblica?.risposteCount ?? 0;
+      const pct = Math.min(100, Math.round((count / totaleNaufraghi) * 100));
+      partecipazione = `
+        <div class="ar-meta">Rilevazione #${ultima?.numero ?? '—'} (${ultima?.stato ?? '—'}): ${count}/${totaleNaufraghi} naufraghi hanno partecipato</div>
+        <div class="ar-bar-bg"><div class="ar-bar" style="width:${pct}%;"></div></div>
+      `;
+      sociogrammaTrend = rilevazioni.filter(r => r.sintesiPubblica).sort((a, b) => a.numero - b.numero);
+    }
+    const dataInfo = att.dataInizio?.toDate ? att.dataInizio.toDate().toLocaleDateString('it-IT') : '';
+    return `<div class="att-row">
+      <div class="ar-titolo">${esc(att.icona || '🧭')} ${esc(att.titolo || '')}</div>
+      <div class="ar-meta">Stato: <strong>${esc(att.stato)}</strong>${dataInfo ? ' — dal ' + esc(dataInfo) : ''}</div>
+      ${partecipazione}
+    </div>`;
+  }));
+
+  document.getElementById('lista-attivita-admin').innerHTML = righeHtml.join('') || '<div class="section-loader">Nessuna attività creata.</div>';
+
+  if (sociogrammaTrend && sociogrammaTrend.length) {
+    document.getElementById('titolo-timeline-indice').style.display = 'block';
+    const canvas = document.getElementById('canvas-indice-trend');
+    canvas.style.display = 'block';
+    drawIndiceTrend(canvas, sociogrammaTrend);
+  }
+
+  loaded.attivita = true;
+}
+
+function drawIndiceTrend(canvas, rilevazioni) {
+  const ctx = canvas.getContext('2d');
+  const W = canvas.offsetWidth || 320;
+  const H = 140;
+  canvas.width = W; canvas.height = H;
+  ctx.clearRect(0, 0, W, H);
+
+  const pad = { t: 10, b: 24, l: 28, r: 10 };
+  const gW = W - pad.l - pad.r;
+  const gH = H - pad.t - pad.b;
+
+  ctx.strokeStyle = '#e9e3d9'; ctx.lineWidth = 1;
+  for (let y = 0; y <= 4; y++) {
+    const gy = pad.t + gH - (y / 4) * gH;
+    ctx.beginPath(); ctx.moveTo(pad.l, gy); ctx.lineTo(pad.l + gW, gy); ctx.stroke();
+    ctx.fillStyle = '#9e8f7a'; ctx.font = '9px Lora,serif'; ctx.textAlign = 'right';
+    ctx.fillText(String(y * 25), pad.l - 4, gy + 3);
+  }
+
+  ctx.fillStyle = '#9e8f7a'; ctx.font = '9px Lora,serif'; ctx.textAlign = 'center';
+  rilevazioni.forEach((r, i) => {
+    const x = pad.l + (rilevazioni.length > 1 ? (i / (rilevazioni.length - 1)) * gW : gW / 2);
+    ctx.fillText('#' + r.numero, x, H - 6);
+  });
+
+  ctx.strokeStyle = '#c8860a'; ctx.lineWidth = 2; ctx.beginPath();
+  rilevazioni.forEach((r, i) => {
+    const x = pad.l + (rilevazioni.length > 1 ? (i / (rilevazioni.length - 1)) * gW : gW / 2);
+    const y = pad.t + gH - (Math.min(100, r.sintesiPubblica.indiceCoesione) / 100) * gH;
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+
+  ctx.fillStyle = '#c8860a';
+  rilevazioni.forEach((r, i) => {
+    const x = pad.l + (rilevazioni.length > 1 ? (i / (rilevazioni.length - 1)) * gW : gW / 2);
+    const y = pad.t + gH - (Math.min(100, r.sintesiPubblica.indiceCoesione) / 100) * gH;
+    ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI * 2); ctx.fill();
+  });
 }
 
 // ── Export PDF (window.print) ────────────────────────────────────────────

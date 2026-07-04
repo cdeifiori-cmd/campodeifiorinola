@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🏝 Il Consiglio dell'Isola — Vista Educatore</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
+  <meta name="theme-color" content="#1a3a5c">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/robinson.css">
+  <script src="https://unpkg.com/vis-network@9.1.9/standalone/umd/vis-network.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <style>
+    :root { --verde:#2ecc71; --giallo:#f1c40f; --arancione:#e67e22; --rosso-edge:#e74c3c; --blu:#3498db; }
+    body { padding-bottom: 40px; }
+
+    .admin-header { background:var(--navy); color:#fff; padding:14px 16px 10px; position:sticky; top:0; z-index:200; display:flex; align-items:center; justify-content:space-between; flex-wrap: wrap; gap: 8px; }
+    .admin-header h1 { font-family:'Playfair Display',serif; font-size:1.15rem; margin:0; }
+    .admin-header a { color:var(--oro); font-size:0.8rem; text-decoration:none; }
+
+    .content { max-width: 1100px; margin: 0 auto; padding: 14px 12px 60px; }
+
+    .toolbar { display:flex; gap:14px; flex-wrap:wrap; align-items:center; background:#fff; border:1.5px solid var(--carta-scura); border-radius:10px; padding:12px 14px; margin-bottom:14px; }
+    .toolbar label { font-size:0.78rem; color:var(--muted); }
+    .toolbar select { font-family:'Lora',serif; font-size:0.85rem; border:1.5px solid var(--carta-scura); border-radius:6px; padding:5px 8px; background:var(--carta); }
+
+    .filtro-bar { display:flex; gap:6px; flex-wrap:wrap; margin-bottom: 14px; }
+    .filtro-btn { padding:6px 14px; border-radius:20px; border:1.5px solid var(--navy); background:#fff; color:var(--navy); font-size:0.78rem; cursor:pointer; font-family:'Lora',serif; }
+    .filtro-btn.active { background:var(--navy); color:var(--oro); }
+
+    .legenda { display:flex; gap:14px; flex-wrap:wrap; font-size:0.72rem; color:var(--muted); margin-bottom:14px; }
+    .legenda span { display:inline-flex; align-items:center; gap:5px; }
+    .legenda .dot { width:14px; height:4px; border-radius:2px; display:inline-block; }
+
+    .stat-cards { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:14px; }
+    .stat-card { background:#fff; border:1.5px solid var(--carta-scura); border-radius:10px; padding:12px 16px; flex:1; min-width:130px; text-align:center; }
+    .stat-card .sc-val { font-size:1.6rem; font-weight:700; color:var(--oro); font-family:'Playfair Display',serif; }
+    .stat-card .sc-lbl { font-size:0.72rem; color:var(--muted); margin-top:3px; }
+    .stat-card.delta-up .sc-val { color:#1e8449; }
+    .stat-card.delta-down .sc-val { color:var(--rosso); }
+
+    .graph-row { display:flex; gap:14px; flex-wrap:wrap; margin-bottom: 16px; }
+    .graph-col { flex:1; min-width: 300px; background:#fff; border:1.5px solid var(--carta-scura); border-radius:10px; padding:10px; }
+    .graph-col h3 { font-family:'Playfair Display',serif; font-size:0.9rem; color:var(--navy); margin-bottom:8px; text-align:center; }
+    .graph-canvas { width:100%; height: 420px; border-radius:8px; background:#fbfaf7; }
+
+    .liste-row { display:flex; gap:14px; flex-wrap:wrap; margin-bottom:16px; }
+    .lista-box { flex:1; min-width:220px; background:#fff; border:1.5px solid var(--carta-scura); border-radius:10px; padding:12px 14px; }
+    .lista-box h4 { font-family:'Playfair Display',serif; font-size:0.88rem; color:var(--navy); border-bottom:1px solid var(--carta-scura); padding-bottom:6px; margin-bottom:8px; }
+    .lista-box .item { font-size:0.82rem; padding:3px 0; }
+    .lista-box .vuoto { font-size:0.78rem; color:var(--muted); font-style:italic; }
+
+    .chart-wrap { background:#fff; border:1.5px solid var(--carta-scura); border-radius:10px; padding:14px; margin-bottom:16px; }
+    .chart-wrap h3 { font-family:'Playfair Display',serif; font-size:0.95rem; color:var(--navy); margin:0 0 12px; }
+
+    .azioni { display:flex; gap:10px; flex-wrap:wrap; margin-bottom: 16px; }
+
+    .compare-toggle { display:flex; align-items:center; gap:6px; font-size:0.8rem; color:var(--muted); }
+
+    .loading-msg { text-align:center; color:var(--muted); padding:40px 0; font-style:italic; }
+  </style>
+</head>
+<body>
+
+<div class="admin-header">
+  <h1>🏝 Il Consiglio dell'Isola — Vista Educatore</h1>
+  <div style="display:flex;gap:14px;align-items:center;">
+    <a href="admin-classifica.html">📊 Statistiche</a>
+    <a href="admin-isola.html">🏝️ Admin Isola</a>
+    <a href="index.html">← Home</a>
+  </div>
+</div>
+
+<div class="content">
+  <div id="loading" class="loading-msg">⏳ Caricamento del Consiglio…</div>
+
+  <div id="main" style="display:none;">
+    <div class="toolbar">
+      <div>
+        <label>Rilevazione</label><br>
+        <select id="sel-rilevazione"></select>
+      </div>
+      <div class="compare-toggle">
+        <input type="checkbox" id="chk-confronta">
+        <label for="chk-confronta">Confronta con un'altra rilevazione</label>
+      </div>
+      <div id="wrap-sel-confronto" style="display:none;">
+        <label>Confronta con</label><br>
+        <select id="sel-confronto"></select>
+      </div>
+    </div>
+
+    <div class="filtro-bar" id="filtro-bar">
+      <button class="filtro-btn active" data-filtro="tutte">🌐 Tutte</button>
+      <button class="filtro-btn" data-filtro="ciurma">🔥 Solo Ciurma</button>
+      <button class="filtro-btn" data-filtro="ponti">🌉 Solo Ponti</button>
+      <button class="filtro-btn" data-filtro="correnti">🌊 Solo Correnti</button>
+      <button class="filtro-btn" data-filtro="scogli">🪨 Solo Scogli</button>
+    </div>
+
+    <div class="legenda">
+      <span><span class="dot" style="background:var(--verde);"></span> Amicizia unilaterale</span>
+      <span><span class="dot" style="background:var(--blu);"></span> Amicizia reciproca</span>
+      <span><span class="dot" style="background:var(--giallo);"></span> Ponte possibile</span>
+      <span><span class="dot" style="background:var(--arancione);"></span> Corrente contraria</span>
+      <span><span class="dot" style="background:var(--rosso-edge);"></span> Scoglio reciproco</span>
+    </div>
+
+    <div class="stat-cards" id="stat-cards"></div>
+
+    <div class="graph-row" id="graph-row">
+      <div class="graph-col" id="col-main">
+        <h3 id="titolo-graph-main">Rilevazione</h3>
+        <div class="graph-canvas" id="graph-main"></div>
+      </div>
+      <div class="graph-col" id="col-compare" style="display:none;">
+        <h3 id="titolo-graph-compare">Confronto</h3>
+        <div class="graph-canvas" id="graph-compare"></div>
+      </div>
+    </div>
+
+    <div class="liste-row">
+      <div class="lista-box"><h4>🏝️ Isolati</h4><div id="lista-isolati"></div></div>
+      <div class="lista-box"><h4>🌉 Mediatori</h4><div id="lista-mediatori"></div></div>
+      <div class="lista-box"><h4>⭐ Leader positivi</h4><div id="lista-leader"></div></div>
+      <div class="lista-box"><h4>🔥 Sottogruppi</h4><div id="lista-cluster"></div></div>
+    </div>
+
+    <div class="chart-wrap">
+      <h3>📈 Andamento dell'Indice di Coesione</h3>
+      <canvas id="canvas-timeline" style="max-height:220px;"></canvas>
+    </div>
+
+    <div class="azioni">
+      <button class="btn btn-primary" id="btn-chiudi">🔒 Chiudi rilevazione e calcola</button>
+      <button class="btn btn-oro" id="btn-nuova-ril">🆕 Apri nuova rilevazione</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { db, auth, ADMIN_UID } from './js/robinson-firebase.js';
+import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import {
+  collection, getDocs, query, orderBy, doc, getDoc, setDoc, addDoc, updateDoc, serverTimestamp
+} from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { esc, fmtDateShort } from './js/robinson-utils.js';
+import { calcolaAggregati, trovaMediatori, calcolaDelta, generaFrase } from './js/robinson-sociogramma.js';
+
+const ATT_ID = new URLSearchParams(location.search).get('attId') || 'consiglio-isola';
+
+let naufraghiInfo = {}; // uid -> {nome, foto}
+let rilevazioni = [];   // [{id, numero, stato, data, sintesiPubblica}]
+let risposteCache = {}; // rilId -> [risposte]
+let filtroAttivo = 'tutte';
+
+async function caricaNaufraghi() {
+  const snap = await getDocs(collection(db, 'robinson_naufraghi'));
+  snap.forEach(d => {
+    if (d.id === ADMIN_UID) return;
+    const data = d.data();
+    if (!data.nome) return;
+    naufraghiInfo[d.id] = { nome: data.nome, foto: data.fotoRobinson || data.fotoProfilo || '' };
+  });
+}
+
+async function caricaRilevazioni() {
+  const snap = await getDocs(query(collection(db, 'attivita', ATT_ID, 'rilevazioni'), orderBy('numero', 'asc')));
+  rilevazioni = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+async function caricaRisposte(rilId) {
+  if (risposteCache[rilId]) return risposteCache[rilId];
+  const snap = await getDocs(collection(db, 'attivita', ATT_ID, 'rilevazioni', rilId, 'risposte'));
+  const risposte = snap.docs.map(d => ({ userId: d.id, ...d.data() }));
+  risposteCache[rilId] = risposte;
+  return risposte;
+}
+
+function popolaSelectRilevazioni() {
+  const opt = r => `<option value="${esc(r.id)}">#${r.numero} — ${r.stato === 'aperta' ? 'aperta' : 'chiusa'}${r.data ? ' — ' + fmtDateShort(r.data) : ''}</option>`;
+  const selR = document.getElementById('sel-rilevazione');
+  const selC = document.getElementById('sel-confronto');
+  const ordinateDesc = [...rilevazioni].sort((a, b) => b.numero - a.numero);
+  selR.innerHTML = ordinateDesc.map(opt).join('');
+  selC.innerHTML = ordinateDesc.map(opt).join('');
+  if (ordinateDesc.length > 1) selC.value = ordinateDesc[1].id;
+}
+
+// ── Costruzione edges per il grafo ──────────────────────────────────────────
+function buildEdges(risposte, filtro) {
+  const map = {};
+  risposte.forEach(r => {
+    map[r.userId] = {
+      ciurma: new Set(r.ciurma || []), ponti: new Set(r.ponti || []),
+      correnti: new Set(r.correnti || []), scogli: new Set(r.scogli || []),
+    };
+  });
+  const uids = risposte.map(r => r.userId);
+  const edges = [];
+
+  for (let i = 0; i < uids.length; i++) {
+    for (let j = i + 1; j < uids.length; j++) {
+      const a = uids[i], b = uids[j];
+      const ma = map[a], mb = map[b];
+      const aCiurmaB = ma.ciurma.has(b), bCiurmaA = mb.ciurma.has(a);
+      const aPontiB = ma.ponti.has(b), bPontiA = mb.ponti.has(a);
+      const aCorrB = ma.correnti.has(b), bCorrA = mb.correnti.has(a);
+      const aScogB = ma.scogli.has(b), bScogA = mb.scogli.has(a);
+
+      if (filtro === 'ciurma' || filtro === 'tutte') {
+        if (aCiurmaB && bCiurmaA) edges.push({ from: a, to: b, color: { color: '#3498db' }, width: 4, arrows: '' });
+        else if (aCiurmaB || bCiurmaA) edges.push({ from: aCiurmaB ? a : b, to: aCiurmaB ? b : a, color: { color: '#2ecc71' }, width: 2, arrows: 'to' });
+      }
+      if (filtro === 'ponti' || filtro === 'tutte') {
+        const recipPos = (aCiurmaB && bCiurmaA) || (aPontiB && bPontiA) || (aCiurmaB && bPontiA) || (aPontiB && bCiurmaA);
+        if (!recipPos) {
+          if (aPontiB) edges.push({ from: a, to: b, color: { color: '#f1c40f' }, width: 2, arrows: 'to' });
+          if (bPontiA) edges.push({ from: b, to: a, color: { color: '#f1c40f' }, width: 2, arrows: 'to' });
+        } else if (filtro === 'ponti' && (aPontiB || bPontiA)) {
+          edges.push({ from: a, to: b, color: { color: '#3498db' }, width: 3, arrows: '' });
+        }
+      }
+      if (filtro === 'correnti' || filtro === 'tutte') {
+        if (aCorrB || bCorrA) edges.push({ from: aCorrB ? a : b, to: aCorrB ? b : a, color: { color: '#e67e22' }, width: aCorrB && bCorrA ? 3 : 1.5, dashes: true, arrows: 'to' });
+      }
+      if (filtro === 'scogli' || filtro === 'tutte') {
+        if (aScogB && bScogA) edges.push({ from: a, to: b, color: { color: '#e74c3c' }, width: 3, dashes: true, arrows: '' });
+        else if (aScogB || bScogA) edges.push({ from: aScogB ? a : b, to: aScogB ? b : a, color: { color: '#e74c3c' }, width: 1.5, dashes: true, arrows: 'to' });
+      }
+    }
+  }
+  return edges;
+}
+
+function disegnaGrafo(containerId, risposte, filtro, aggregati) {
+  const uids = risposte.map(r => r.userId);
+  const isolatiSet = new Set(aggregati?.isolati || []);
+  const leaderSet = new Set((aggregati?.leader || []).slice(0, 3).map(l => l.uid));
+
+  const nodes = uids.map(uid => ({
+    id: uid,
+    label: naufraghiInfo[uid]?.nome || uid,
+    shape: 'dot',
+    size: leaderSet.has(uid) ? 20 : 14,
+    color: isolatiSet.has(uid)
+      ? { background: '#e0e0e0', border: '#95a5a6' }
+      : leaderSet.has(uid)
+        ? { background: '#f5e6c8', border: '#c8860a' }
+        : { background: '#1a3a5c', border: '#0d1b2a' },
+    font: { color: '#2c1e0f', size: 12 },
+  }));
+  const edges = buildEdges(risposte, filtro);
+
+  const container = document.getElementById(containerId);
+  const network = new vis.Network(container, { nodes: new vis.DataSet(nodes), edges: new vis.DataSet(edges) }, {
+    physics: { stabilization: true, barnesHut: { gravitationalConstant: -3000, springLength: 110 } },
+    interaction: { hover: true },
+  });
+  return network;
+}
+
+// ── Render principale ──────────────────────────────────────────────────────
+let networkMain = null, networkCompare = null;
+
+async function renderTutto() {
+  const rilId = document.getElementById('sel-rilevazione').value;
+  const ril = rilevazioni.find(r => r.id === rilId);
+  const risposte = await caricaRisposte(rilId);
+  const aggregati = calcolaAggregati(risposte);
+  const cluster = aggregati.cluster;
+  const mediatori = trovaMediatori(risposte, cluster);
+
+  document.getElementById('titolo-graph-main').textContent = `Rilevazione #${ril.numero}`;
+  if (networkMain) networkMain.destroy();
+  networkMain = disegnaGrafo('graph-main', risposte, filtroAttivo, aggregati);
+
+  // Stat cards
+  const rilPrecedente = rilevazioni.filter(r => r.numero < ril.numero && r.sintesiPubblica).sort((a,b)=>b.numero-a.numero)[0];
+  let deltaHtml = '';
+  if (rilPrecedente) {
+    const d = aggregati.indice - rilPrecedente.sintesiPubblica.indiceCoesione;
+    deltaHtml = `<div class="stat-card ${d > 0 ? 'delta-up' : d < 0 ? 'delta-down' : ''}"><div class="sc-val">${d > 0 ? '▲' : d < 0 ? '▼' : '—'} ${Math.abs(d)}</div><div class="sc-lbl">Delta indice</div></div>`;
+  }
+  document.getElementById('stat-cards').innerHTML = `
+    <div class="stat-card"><div class="sc-val">${aggregati.indice}%</div><div class="sc-lbl">Indice di Coesione</div></div>
+    <div class="stat-card"><div class="sc-val">${aggregati.R}</div><div class="sc-lbl">Rispondenti</div></div>
+    <div class="stat-card"><div class="sc-val">${aggregati.isolati.length}</div><div class="sc-lbl">Isolati</div></div>
+    <div class="stat-card"><div class="sc-val">${aggregati.fuochiCiurma}</div><div class="sc-lbl">Fuochi della Ciurma</div></div>
+    ${deltaHtml}
+  `;
+
+  // Liste
+  document.getElementById('lista-isolati').innerHTML = aggregati.isolati.length
+    ? aggregati.isolati.map(u => `<div class="item">⚓ ${esc(naufraghiInfo[u]?.nome || u)}</div>`).join('')
+    : '<div class="vuoto">Nessun isolato in questa rilevazione.</div>';
+
+  document.getElementById('lista-mediatori').innerHTML = mediatori.length
+    ? mediatori.map(u => `<div class="item">🌉 ${esc(naufraghiInfo[u]?.nome || u)}</div>`).join('')
+    : '<div class="vuoto">Nessun mediatore individuato.</div>';
+
+  document.getElementById('lista-leader').innerHTML = aggregati.leader.length
+    ? aggregati.leader.slice(0, 6).map(l => `<div class="item">⭐ ${esc(naufraghiInfo[l.uid]?.nome || l.uid)} <span style="color:var(--muted);font-size:0.72rem;">(${l.reciproci} legami reciproci)</span></div>`).join('')
+    : '<div class="vuoto">Nessun leader emerso.</div>';
+
+  document.getElementById('lista-cluster').innerHTML = cluster.filter(c => c.length >= 2).length
+    ? cluster.filter(c => c.length >= 2).map((c, i) => `<div class="item">🔥 Gruppo ${i + 1}: ${c.map(u => esc(naufraghiInfo[u]?.nome || u)).join(', ')}</div>`).join('')
+    : '<div class="vuoto">Nessun sottogruppo denso individuato.</div>';
+
+  // Confronto
+  const confronta = document.getElementById('chk-confronta').checked;
+  document.getElementById('col-compare').style.display = confronta ? 'block' : 'none';
+  if (confronta) {
+    const rilIdC = document.getElementById('sel-confronto').value;
+    const rilC = rilevazioni.find(r => r.id === rilIdC);
+    const risposteC = await caricaRisposte(rilIdC);
+    const aggregatiC = calcolaAggregati(risposteC);
+    document.getElementById('titolo-graph-compare').textContent = `Rilevazione #${rilC.numero}`;
+    if (networkCompare) networkCompare.destroy();
+    networkCompare = disegnaGrafo('graph-compare', risposteC, filtroAttivo, aggregatiC);
+  }
+
+  // Pulsanti azione
+  document.getElementById('btn-chiudi').disabled = ril.stato !== 'aperta';
+  document.getElementById('btn-chiudi').style.opacity = ril.stato !== 'aperta' ? '0.5' : '1';
+  const ultimaRil = rilevazioni[rilevazioni.length - 1];
+  document.getElementById('btn-nuova-ril').disabled = ultimaRil.stato === 'aperta';
+  document.getElementById('btn-nuova-ril').style.opacity = ultimaRil.stato === 'aperta' ? '0.5' : '1';
+}
+
+// ── Timeline ────────────────────────────────────────────────────────────────
+let chartTimeline = null;
+function renderTimeline() {
+  const chiuse = rilevazioni.filter(r => r.sintesiPubblica).sort((a, b) => a.numero - b.numero);
+  const ctx = document.getElementById('canvas-timeline');
+  if (chartTimeline) chartTimeline.destroy();
+  chartTimeline = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: chiuse.map(r => `#${r.numero}`),
+      datasets: [{
+        label: 'Indice di Coesione',
+        data: chiuse.map(r => r.sintesiPubblica.indiceCoesione),
+        borderColor: '#c8860a', backgroundColor: 'rgba(200,134,10,0.15)', fill: true, tension: 0.3,
+      }],
+    },
+    options: { scales: { y: { min: 0, max: 100 } }, plugins: { legend: { display: false } } },
+  });
+}
+
+// ── Azioni: chiudi rilevazione / apri nuova ──────────────────────────────
+document.getElementById('btn-chiudi').addEventListener('click', async () => {
+  const rilId = document.getElementById('sel-rilevazione').value;
+  const ril = rilevazioni.find(r => r.id === rilId);
+  if (ril.stato !== 'aperta') return;
+  if (!confirm(`Chiudere la rilevazione #${ril.numero}? Le risposte verranno bloccate e i naufraghi vedranno la dashboard aggiornata.`)) return;
+
+  const risposte = await caricaRisposte(rilId);
+  const aggregati = calcolaAggregati(risposte);
+  const precedente = rilevazioni.filter(r => r.numero < ril.numero && r.sintesiPubblica).sort((a,b)=>b.numero-a.numero)[0];
+  const deltaIndice = precedente ? aggregati.indice - precedente.sintesiPubblica.indiceCoesione : 0;
+  const frase = generaFrase(deltaIndice, aggregati, precedente?.sintesiPubblica ? {
+    pontiCostruiti: precedente.sintesiPubblica.pontiCostruiti,
+    nuoviPontiPossibili: precedente.sintesiPubblica.nuoviPontiPossibili,
+    correntiForti: precedente.sintesiPubblica.correntiForti,
+    scogliDaSuperare: precedente.sintesiPubblica.scogliDaSuperare,
+    isolati: [],
+  } : null);
+
+  await updateDoc(doc(db, 'attivita', ATT_ID, 'rilevazioni', rilId), {
+    stato: 'chiusa',
+    sintesiPubblica: {
+      indiceCoesione: aggregati.indice,
+      deltaIndice,
+      pontiCostruiti: aggregati.pontiCostruiti,
+      nuoviPontiPossibili: aggregati.nuoviPontiPossibili,
+      correntiForti: aggregati.correntiForti,
+      scogliDaSuperare: aggregati.scogliDaSuperare,
+      fuochiCiurma: aggregati.fuochiCiurma,
+      frase,
+      risposteCount: aggregati.R,
+      aggiornatoIl: serverTimestamp(),
+    },
+  });
+
+  await ricaricaTutto();
+  alert('Rilevazione chiusa e dashboard aggiornata per i naufraghi.');
+});
+
+document.getElementById('btn-nuova-ril').addEventListener('click', async () => {
+  const ultimaRil = rilevazioni[rilevazioni.length - 1];
+  if (ultimaRil.stato === 'aperta') return;
+  if (!confirm(`Aprire la rilevazione #${ultimaRil.numero + 1}?`)) return;
+  await addDoc(collection(db, 'attivita', ATT_ID, 'rilevazioni'), {
+    numero: ultimaRil.numero + 1,
+    data: serverTimestamp(),
+    stato: 'aperta',
+    sintesiPubblica: null,
+  });
+  await ricaricaTutto();
+});
+
+// ── Eventi UI ──────────────────────────────────────────────────────────────
+document.getElementById('sel-rilevazione').addEventListener('change', renderTutto);
+document.getElementById('sel-confronto').addEventListener('change', renderTutto);
+document.getElementById('chk-confronta').addEventListener('change', e => {
+  document.getElementById('wrap-sel-confronto').style.display = e.target.checked ? 'block' : 'none';
+  renderTutto();
+});
+document.querySelectorAll('.filtro-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    filtroAttivo = btn.dataset.filtro;
+    renderTutto();
+  });
+});
+
+async function ricaricaTutto() {
+  await caricaRilevazioni();
+  risposteCache = {};
+  popolaSelectRilevazioni();
+  await renderTutto();
+  renderTimeline();
+}
+
+// ── Guardia admin + avvio ───────────────────────────────────────────────
+let resolved = false;
+onAuthStateChanged(auth, async user => {
+  if (resolved) return;
+  resolved = true;
+  if (!user || user.uid !== ADMIN_UID) { window.location.replace('index.html'); return; }
+
+  await caricaNaufraghi();
+  await caricaRilevazioni();
+  if (!rilevazioni.length) {
+    document.getElementById('loading').textContent = '🌅 Nessuna rilevazione ancora creata per questa attività.';
+    return;
+  }
+  popolaSelectRilevazioni();
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('main').style.display = 'block';
+  await renderTutto();
+  renderTimeline();
+});
+</script>
+</body>
+</html>
