@@ -171,7 +171,7 @@ function renderCard(att) {
   <div class="card-attivita" data-id="${esc(att.id)}">
     <div class="ca-icona">${esc(att.icona || '🧭')}</div>
     <div class="ca-body">
-      <div class="ca-titolo">${esc(att.titolo || '')}</div>
+      <div class="ca-titolo">${esc(att.titoloNarrativo || att.titolo || '')}</div>
       ${att.sottotitolo ? `<div class="ca-sottotitolo">${esc(att.sottotitolo)}</div>` : ''}
       <div class="ca-descrizione" id="desc-${esc(att.id)}" style="display:none;">${esc(att.descrizione || '')}</div>
       ${dataInfo ? `<div class="ca-date">📅 ${esc(dataInfo)}</div>` : ''}

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>🏝 Il Consiglio dell'Isola — Vista Educatore</title>
+  <title>🧩 Dinamiche di gruppo — Vista Educatore</title>
   <link rel="manifest" href="/manifest.json">
   <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
@@ -61,12 +61,22 @@
     .compare-toggle { display:flex; align-items:center; gap:6px; font-size:0.8rem; color:var(--muted); }
 
     .loading-msg { text-align:center; color:var(--muted); padding:40px 0; font-style:italic; }
+
+    /* ── Bersaglio ── */
+    .dot-round { width:12px; height:12px; border-radius:50%; display:inline-block; }
+    .bersaglio-row { display:flex; gap:14px; flex-wrap:wrap; margin-bottom:16px; }
+    #bersaglio-svg-wrap svg { width:100%; height:auto; max-height:600px; display:block; }
+    .bersaglio-nodo circle { cursor:pointer; }
+    .bersaglio-nodo text { font-family:'Lora',serif; fill:#2c1e0f; pointer-events:none; user-select:none; }
+    .bersaglio-nodo, .bersaglio-arco { transition: opacity 0.15s; }
+    .bersaglio-dim { opacity: 0.12; }
+    #bersaglio-info-body .item { font-size:0.84rem; padding:3px 0; }
   </style>
 </head>
 <body>
 
 <div class="admin-header">
-  <h1>🏝 Il Consiglio dell'Isola — Vista Educatore</h1>
+  <h1>🧩 Dinamiche di gruppo — Vista Educatore</h1>
   <div style="display:flex;gap:14px;align-items:center;">
     <a href="admin-classifica.html">📊 Statistiche</a>
     <a href="admin-isola.html">🏝️ Admin Isola</a>
@@ -83,14 +93,21 @@
         <label>Rilevazione</label><br>
         <select id="sel-rilevazione"></select>
       </div>
-      <div class="compare-toggle">
-        <input type="checkbox" id="chk-confronta">
-        <label for="chk-confronta">Confronta con un'altra rilevazione</label>
+      <div id="blocco-confronto" style="display:flex;gap:14px;flex-wrap:wrap;align-items:center;">
+        <div class="compare-toggle">
+          <input type="checkbox" id="chk-confronta">
+          <label for="chk-confronta">Confronta con un'altra rilevazione</label>
+        </div>
+        <div id="wrap-sel-confronto" style="display:none;">
+          <label>Confronta con</label><br>
+          <select id="sel-confronto"></select>
+        </div>
       </div>
-      <div id="wrap-sel-confronto" style="display:none;">
-        <label>Confronta con</label><br>
-        <select id="sel-confronto"></select>
-      </div>
+    </div>
+
+    <div class="filtro-bar" id="vista-toggle-bar">
+      <button class="filtro-btn active" data-vista="rete">🕸️ Rete</button>
+      <button class="filtro-btn" data-vista="bersaglio">🎯 Bersaglio</button>
     </div>
 
     <div class="filtro-bar" id="filtro-bar">
@@ -101,12 +118,24 @@
       <button class="filtro-btn" data-filtro="scogli">🪨 Solo Scogli</button>
     </div>
 
-    <div class="legenda">
+    <div class="legenda" id="legenda-rete">
       <span><span class="dot" style="background:var(--verde);"></span> Amicizia unilaterale</span>
       <span><span class="dot" style="background:var(--blu);"></span> Amicizia reciproca</span>
       <span><span class="dot" style="background:var(--giallo);"></span> Ponte possibile</span>
       <span><span class="dot" style="background:var(--arancione);"></span> Corrente contraria</span>
       <span><span class="dot" style="background:var(--rosso-edge);"></span> Scoglio reciproco</span>
+    </div>
+
+    <div class="legenda" id="legenda-bersaglio" style="display:none;">
+      <span>🎯 Centro = più scelto/a — Bordo = ai margini</span>
+      <span><span class="dot-round" style="background:#2ecc71;"></span> Molto scelto/a in positivo</span>
+      <span><span class="dot-round" style="background:#f39c12;"></span> Polarizza il gruppo</span>
+      <span><span class="dot-round" style="background:#e57373;"></span> Da sostenere</span>
+      <span><span class="dot-round" style="background:#b0b0b0;"></span> Ai margini / da coinvolgere</span>
+      <span><span class="dot-round" style="background:#5dade2;"></span> Nella media</span>
+      <span><span class="dot" style="background:var(--verde);"></span> Scelta positiva</span>
+      <span><span class="dot" style="background:var(--arancione);"></span> Scelta difficile</span>
+      <span>— linea spessa = reciproca</span>
     </div>
 
     <div class="stat-cards" id="stat-cards"></div>
@@ -119,6 +148,17 @@
       <div class="graph-col" id="col-compare" style="display:none;">
         <h3 id="titolo-graph-compare">Confronto</h3>
         <div class="graph-canvas" id="graph-compare"></div>
+      </div>
+    </div>
+
+    <div class="bersaglio-row" id="bersaglio-row" style="display:none;">
+      <div class="graph-col" style="flex:2; min-width:340px;">
+        <h3 id="titolo-bersaglio">🎯 Bersaglio</h3>
+        <div id="bersaglio-svg-wrap"></div>
+      </div>
+      <div class="graph-col" style="flex:1; min-width:220px;">
+        <h3>ℹ️ Dettaglio naufrago</h3>
+        <div id="bersaglio-info-body" class="vuoto">Passa il mouse o tocca un nodo per vedere i dettagli.</div>
       </div>
     </div>
 
@@ -156,6 +196,18 @@ let naufraghiInfo = {}; // uid -> {nome, foto}
 let rilevazioni = [];   // [{id, numero, stato, data, sintesiPubblica}]
 let risposteCache = {}; // rilId -> [risposte]
 let filtroAttivo = 'tutte';
+let vistaAttiva = 'rete'; // 'rete' | 'bersaglio'
+
+// ── Vista Bersaglio — costanti tunable ──────────────────────────────────────
+const RAGGIO_MODE = 'impatto'; // 'impatto' (posIn+negIn) | 'solo_positive' (solo posIn) — bersaglio classico
+const MARGINE_IMPATTO_GRIGIO = 1; // impatto <= questa soglia e senza nomine "alte" => profilo grigio
+const RING_RADII = [70, 145, 220, 295]; // raggio px per anello: 0=centro (più scelto/a) .. 3=bordo (margini)
+const PROFILO_COLORI = { verde: '#2ecc71', ambra: '#f39c12', rossoTenue: '#e57373', grigio: '#b0b0b0', neutro: '#5dade2' };
+const PROFILO_LABEL = {
+  verde: 'Molto scelto/a in positivo', ambra: 'Polarizza il gruppo', rossoTenue: 'Da sostenere',
+  grigio: 'Ai margini / da coinvolgere', neutro: 'Nella media',
+};
+const MARKER_COLORI = ['3498db', '2ecc71', 'f1c40f', 'e67e22', 'e74c3c'];
 
 async function caricaNaufraghi() {
   const snap = await getDocs(collection(db, 'robinson_naufraghi'));
@@ -263,6 +315,155 @@ function disegnaGrafo(containerId, risposte, filtro, aggregati) {
   return network;
 }
 
+// ── Vista Bersaglio: calcolo impatto/preferenza/anello/profilo ─────────────
+function calcolaBersaglio(risposte, aggregati) {
+  const uids = risposte.map(r => r.userId);
+  const posIn = {}, negIn = {};
+  uids.forEach(u => { posIn[u] = 0; negIn[u] = 0; });
+  risposte.forEach(r => {
+    (r.ciurma || []).forEach(v => { if (posIn[v] !== undefined) posIn[v]++; });
+    (r.ponti || []).forEach(v => { if (posIn[v] !== undefined) posIn[v]++; });
+    (r.correnti || []).forEach(v => { if (negIn[v] !== undefined) negIn[v]++; });
+    (r.scogli || []).forEach(v => { if (negIn[v] !== undefined) negIn[v]++; });
+  });
+
+  const impatto = {}, preferenza = {};
+  uids.forEach(u => {
+    impatto[u] = RAGGIO_MODE === 'solo_positive' ? posIn[u] : posIn[u] + negIn[u];
+    preferenza[u] = posIn[u] - negIn[u];
+  });
+
+  const mediana = arr => {
+    const s = [...arr].sort((a, b) => a - b);
+    return s.length ? s[Math.floor((s.length - 1) / 2)] : 0;
+  };
+  const medianaPos = mediana(uids.map(u => posIn[u]));
+  const medianaNeg = mediana(uids.map(u => negIn[u]));
+
+  // Anello per fasce/quantili sull'impatto (regola fissa: impatto 0 → anello più esterno)
+  const ordinatiPerImpatto = [...uids].sort((a, b) => impatto[a] - impatto[b]);
+  const n = ordinatiPerImpatto.length;
+  const anello = {};
+  ordinatiPerImpatto.forEach((u, i) => {
+    const percentile = n > 1 ? i / (n - 1) : 0;
+    let ring = 3 - Math.min(3, Math.floor(percentile * 4));
+    if (impatto[u] === 0) ring = 3;
+    anello[u] = ring;
+  });
+
+  const uidToCluster = {};
+  (aggregati.cluster || []).forEach((gruppo, idx) => gruppo.forEach(u => { uidToCluster[u] = idx; }));
+
+  const profilo = {};
+  uids.forEach(u => {
+    const posAlto = posIn[u] > medianaPos;
+    const negAlto = negIn[u] > medianaNeg;
+    if (posAlto && negAlto) profilo[u] = 'ambra';
+    else if (posAlto) profilo[u] = 'verde';
+    else if (negAlto) profilo[u] = 'rossoTenue';
+    else if (impatto[u] <= MARGINE_IMPATTO_GRIGIO) profilo[u] = 'grigio';
+    else profilo[u] = 'neutro';
+  });
+
+  return { posIn, negIn, impatto, preferenza, anello, profilo, uidToCluster };
+}
+
+function posizioniBersaglio(uids, anello, uidToCluster) {
+  const CX = 320, CY = 320;
+  const perAnello = [[], [], [], []];
+  uids.forEach(u => perAnello[anello[u]].push(u));
+  perAnello.forEach(lista => lista.sort((a, b) => {
+    const ca = uidToCluster[a] ?? 999, cb = uidToCluster[b] ?? 999;
+    if (ca !== cb) return ca - cb;
+    return (naufraghiInfo[a]?.nome || a).localeCompare(naufraghiInfo[b]?.nome || b, 'it');
+  }));
+  const pos = {};
+  perAnello.forEach((lista, ringIdx) => {
+    const raggio = RING_RADII[ringIdx];
+    const n = lista.length;
+    lista.forEach((u, i) => {
+      const angolo = -90 + (n > 0 ? (i / n) * 360 : 0);
+      const rad = angolo * Math.PI / 180;
+      pos[u] = { x: CX + raggio * Math.cos(rad), y: CY + raggio * Math.sin(rad) };
+    });
+  });
+  return { pos, CX, CY };
+}
+
+function disegnaBersaglio(risposte, filtro, aggregati) {
+  const uids = risposte.map(r => r.userId);
+  const bersaglio = calcolaBersaglio(risposte, aggregati);
+  const { pos, CX, CY } = posizioniBersaglio(uids, bersaglio.anello, bersaglio.uidToCluster);
+  const edges = buildEdges(risposte, filtro);
+
+  const defsMarkers = MARKER_COLORI.map(c => `
+    <marker id="arrow-${c}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#${c}"></path>
+    </marker>`).join('');
+
+  const ringsSvg = RING_RADII.map(r =>
+    `<circle cx="${CX}" cy="${CY}" r="${r}" fill="none" stroke="#e0d8c8" stroke-width="1" stroke-dasharray="4,4"></circle>`
+  ).join('');
+
+  const edgesSvg = edges.map(e => {
+    const p1 = pos[e.from], p2 = pos[e.to];
+    if (!p1 || !p2) return '';
+    const colHex = (e.color?.color || '#999999').replace('#', '');
+    const dash = e.dashes ? ' stroke-dasharray="5,4"' : '';
+    const marker = e.arrows === 'to' ? ` marker-end="url(#arrow-${colHex})"` : '';
+    return `<line class="bersaglio-arco" data-from="${esc(e.from)}" data-to="${esc(e.to)}" x1="${p1.x.toFixed(1)}" y1="${p1.y.toFixed(1)}" x2="${p2.x.toFixed(1)}" y2="${p2.y.toFixed(1)}" stroke="#${colHex}" stroke-width="${e.width}"${dash}${marker}></line>`;
+  }).join('');
+
+  const nodesSvg = uids.map(u => {
+    const p = pos[u];
+    if (!p) return '';
+    const nome = naufraghiInfo[u]?.nome || u;
+    const colore = PROFILO_COLORI[bersaglio.profilo[u]];
+    const iniziali = nome.split(' ').map(s => s[0]).slice(0, 2).join('').toUpperCase();
+    return `<g class="bersaglio-nodo" data-uid="${esc(u)}">
+      <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="16" fill="${colore}" stroke="#1a3a5c" stroke-width="1.5"></circle>
+      <text x="${p.x.toFixed(1)}" y="${(p.y + 3).toFixed(1)}" text-anchor="middle" font-weight="700" fill="#fff" font-size="9">${esc(iniziali)}</text>
+      <text x="${p.x.toFixed(1)}" y="${(p.y + 27).toFixed(1)}" text-anchor="middle" font-size="9">${esc(nome.split(' ')[0])}</text>
+    </g>`;
+  }).join('');
+
+  const wrap = document.getElementById('bersaglio-svg-wrap');
+  wrap.innerHTML = `<svg viewBox="0 0 640 640" xmlns="http://www.w3.org/2000/svg">
+    <defs>${defsMarkers}</defs>
+    ${ringsSvg}
+    <g id="bersaglio-edges">${edgesSvg}</g>
+    <g id="bersaglio-nodi">${nodesSvg}</g>
+  </svg>`;
+
+  const infoBody = document.getElementById('bersaglio-info-body');
+  function mostraInfo(uid) {
+    const nome = naufraghiInfo[uid]?.nome || uid;
+    const reciproche = edges.filter(e => e.arrows === '' && (e.from === uid || e.to === uid)).length;
+    infoBody.innerHTML = `
+      <div style="font-weight:700;color:var(--navy);margin-bottom:6px;">${esc(nome)}</div>
+      <div class="item">❤️ Nomine positive ricevute: <strong>${bersaglio.posIn[uid]}</strong></div>
+      <div class="item">🌊 Nomine difficili ricevute: <strong>${bersaglio.negIn[uid]}</strong></div>
+      <div class="item">🔵 Legami reciproci: <strong>${reciproche}</strong></div>
+      <div class="item">Profilo: <strong>${esc(PROFILO_LABEL[bersaglio.profilo[uid]])}</strong></div>
+    `;
+  }
+  function evidenzia(uid) {
+    wrap.querySelectorAll('.bersaglio-nodo').forEach(g => {
+      g.classList.toggle('bersaglio-dim', !!uid && g.dataset.uid !== uid);
+    });
+    wrap.querySelectorAll('.bersaglio-arco').forEach(l => {
+      const collegata = l.dataset.from === uid || l.dataset.to === uid;
+      l.classList.toggle('bersaglio-dim', !!uid && !collegata);
+    });
+  }
+  wrap.querySelectorAll('.bersaglio-nodo').forEach(g => {
+    const uid = g.dataset.uid;
+    g.addEventListener('mouseenter', () => { evidenzia(uid); mostraInfo(uid); });
+    g.addEventListener('click', () => { evidenzia(uid); mostraInfo(uid); });
+  });
+  wrap.addEventListener('mouseleave', () => evidenzia(null));
+}
+
 // ── Render principale ──────────────────────────────────────────────────────
 let networkMain = null, networkCompare = null;
 
@@ -275,8 +476,24 @@ async function renderTutto() {
   const mediatori = trovaMediatori(risposte, cluster);
 
   document.getElementById('titolo-graph-main').textContent = `Rilevazione #${ril.numero}`;
-  if (networkMain) networkMain.destroy();
-  networkMain = disegnaGrafo('graph-main', risposte, filtroAttivo, aggregati);
+  document.getElementById('titolo-bersaglio').textContent = `🎯 Bersaglio — Rilevazione #${ril.numero}`;
+
+  if (vistaAttiva === 'rete') {
+    document.getElementById('graph-row').style.display = 'flex';
+    document.getElementById('bersaglio-row').style.display = 'none';
+    document.getElementById('legenda-rete').style.display = 'flex';
+    document.getElementById('legenda-bersaglio').style.display = 'none';
+    document.getElementById('blocco-confronto').style.display = 'flex';
+    if (networkMain) networkMain.destroy();
+    networkMain = disegnaGrafo('graph-main', risposte, filtroAttivo, aggregati);
+  } else {
+    document.getElementById('graph-row').style.display = 'none';
+    document.getElementById('bersaglio-row').style.display = 'flex';
+    document.getElementById('legenda-rete').style.display = 'none';
+    document.getElementById('legenda-bersaglio').style.display = 'flex';
+    document.getElementById('blocco-confronto').style.display = 'none';
+    disegnaBersaglio(risposte, filtroAttivo, aggregati);
+  }
 
   // Stat cards
   const rilPrecedente = rilevazioni.filter(r => r.numero < ril.numero && r.sintesiPubblica).sort((a,b)=>b.numero-a.numero)[0];
@@ -310,8 +527,8 @@ async function renderTutto() {
     ? cluster.filter(c => c.length >= 2).map((c, i) => `<div class="item">🔥 Gruppo ${i + 1}: ${c.map(u => esc(naufraghiInfo[u]?.nome || u)).join(', ')}</div>`).join('')
     : '<div class="vuoto">Nessun sottogruppo denso individuato.</div>';
 
-  // Confronto
-  const confronta = document.getElementById('chk-confronta').checked;
+  // Confronto — disponibile solo per la vista Rete (il Bersaglio si riferisce sempre alla rilevazione selezionata)
+  const confronta = vistaAttiva === 'rete' && document.getElementById('chk-confronta').checked;
   document.getElementById('col-compare').style.display = confronta ? 'block' : 'none';
   if (confronta) {
     const rilIdC = document.getElementById('sel-confronto').value;
@@ -410,11 +627,19 @@ document.getElementById('chk-confronta').addEventListener('change', e => {
   document.getElementById('wrap-sel-confronto').style.display = e.target.checked ? 'block' : 'none';
   renderTutto();
 });
-document.querySelectorAll('.filtro-btn').forEach(btn => {
+document.querySelectorAll('#filtro-bar .filtro-btn').forEach(btn => {
   btn.addEventListener('click', () => {
-    document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('#filtro-bar .filtro-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     filtroAttivo = btn.dataset.filtro;
+    renderTutto();
+  });
+});
+document.querySelectorAll('#vista-toggle-bar .filtro-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#vista-toggle-bar .filtro-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    vistaAttiva = btn.dataset.vista;
     renderTutto();
   });
 });
