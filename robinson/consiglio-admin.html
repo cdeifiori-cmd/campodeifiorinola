@@ -127,7 +127,7 @@
     </div>
 
     <div class="legenda" id="legenda-bersaglio" style="display:none;">
-      <span>🎯 Centro = più scelto/a — Bordo = ai margini</span>
+      <span>🎯 Il numero su ogni anello = scelte ricevute (positive+negative) — il centro è chi ne ha ricevute di più, il bordo chi non ne ha ricevuta nessuna</span>
       <span><span class="dot-round" style="background:#2ecc71;"></span> Molto scelto/a in positivo</span>
       <span><span class="dot-round" style="background:#f39c12;"></span> Polarizza il gruppo</span>
       <span><span class="dot-round" style="background:#e57373;"></span> Da sostenere</span>
@@ -340,16 +340,12 @@ function calcolaBersaglio(risposte, aggregati) {
   const medianaPos = mediana(uids.map(u => posIn[u]));
   const medianaNeg = mediana(uids.map(u => negIn[u]));
 
-  // Anello per fasce/quantili sull'impatto (regola fissa: impatto 0 → anello più esterno)
-  const ordinatiPerImpatto = [...uids].sort((a, b) => impatto[a] - impatto[b]);
-  const n = ordinatiPerImpatto.length;
+  // Anello per fasce ASSOLUTE sull'impatto (non quantili): si divide [0, max] in 4 fasce
+  // che crescono verso il centro. Regola fissa: impatto 0 → sempre anello più esterno.
+  const maxImpatto = uids.length ? Math.max(0, ...uids.map(u => impatto[u])) : 0;
+  const fasce = calcolaFasceAnelli(maxImpatto); // [ring0(centro), ring1, ring2, ring3(bordo)] → [min,max]
   const anello = {};
-  ordinatiPerImpatto.forEach((u, i) => {
-    const percentile = n > 1 ? i / (n - 1) : 0;
-    let ring = 3 - Math.min(3, Math.floor(percentile * 4));
-    if (impatto[u] === 0) ring = 3;
-    anello[u] = ring;
-  });
+  uids.forEach(u => { anello[u] = trovaAnelloPerValore(impatto[u], fasce); });
 
   const uidToCluster = {};
   (aggregati.cluster || []).forEach((gruppo, idx) => gruppo.forEach(u => { uidToCluster[u] = idx; }));
@@ -365,7 +361,49 @@ function calcolaBersaglio(risposte, aggregati) {
     else profilo[u] = 'neutro';
   });
 
-  return { posIn, negIn, impatto, preferenza, anello, profilo, uidToCluster };
+  return { posIn, negIn, impatto, preferenza, anello, profilo, uidToCluster, fasce };
+}
+
+// Divide [0, maxImpatto] in 4 fasce crescenti verso il centro (ring0=centro..ring3=bordo).
+// Regola fissa: impatto 0 → sempre ring3. Con poca varietà di valori (max<=2) le fasce
+// intermedie si accorpano nel centro invece di restare vuote/senza senso.
+function calcolaFasceAnelli(maxImpatto) {
+  if (maxImpatto <= 0) return [[0, -1], [0, -1], [0, -1], [0, 0]];
+  if (maxImpatto <= 2) return [[1, maxImpatto], [0, -1], [0, -1], [0, 0]];
+  const s1 = Math.ceil(maxImpatto / 3);
+  const s2 = Math.ceil(maxImpatto * 2 / 3);
+  return [
+    [s2 + 1, maxImpatto], // ring0 — centro
+    [s1 + 1, s2],         // ring1
+    [1, s1],              // ring2
+    [0, 0],                // ring3 — bordo
+  ];
+}
+
+// Stesso criterio delle etichette: un valore finisce nell'anello la cui fascia lo contiene.
+function trovaAnelloPerValore(v, fasce) {
+  for (let i = 0; i < fasce.length; i++) {
+    const [mn, mx] = fasce[i];
+    if (mn <= mx && v >= mn && v <= mx) return i;
+  }
+  return 3;
+}
+
+function etichettaFascia(fascia) {
+  const [mn, mx] = fascia;
+  if (mn > mx) return '—';
+  return mn === mx ? String(mn) : `${mn}–${mx}`;
+}
+
+// Pill con il numero di scelte ricevute, posizionata sull'asse verticale superiore
+// dell'anello (lo stesso punto lasciato libero dallo sfasamento dei nodi).
+function etichettaAnelloSvg(cx, y, testo) {
+  const w = Math.max(24, testo.length * 6.4 + 14);
+  const h = 16;
+  return `<g class="bersaglio-anello-label">
+    <rect x="${(cx - w / 2).toFixed(1)}" y="${(y - h / 2).toFixed(1)}" width="${w.toFixed(1)}" height="${h}" rx="8" fill="#fdfaf3" stroke="#8ba3c2" stroke-width="1"></rect>
+    <text x="${cx.toFixed(1)}" y="${(y + 3.5).toFixed(1)}" text-anchor="middle" font-family="Lora, serif" font-size="10" font-weight="700" fill="#1a3a5c">${esc(testo)}</text>
+  </g>`;
 }
 
 function posizioniBersaglio(uids, anello, uidToCluster) {
@@ -382,7 +420,9 @@ function posizioniBersaglio(uids, anello, uidToCluster) {
     const raggio = RING_RADII[ringIdx];
     const n = lista.length;
     lista.forEach((u, i) => {
-      const angolo = -90 + (n > 0 ? (i / n) * 360 : 0);
+      // Parte con uno sfasamento di mezzo passo così il punto più in alto (-90°) resta
+      // libero per l'etichetta della fascia, qualunque sia il numero di nodi nell'anello.
+      const angolo = n > 0 ? -90 + (360 / n) / 2 + (i / n) * 360 : -90;
       const rad = angolo * Math.PI / 180;
       pos[u] = { x: CX + raggio * Math.cos(rad), y: CY + raggio * Math.sin(rad) };
     });
@@ -401,8 +441,17 @@ function disegnaBersaglio(risposte, filtro, aggregati) {
       <path d="M0,0 L10,5 L0,10 z" fill="#${c}"></path>
     </marker>`).join('');
 
-  const ringsSvg = RING_RADII.map(r =>
-    `<circle cx="${CX}" cy="${CY}" r="${r}" fill="none" stroke="#e0d8c8" stroke-width="1" stroke-dasharray="4,4"></circle>`
+  // Anelli riempiti a fasce: si disegna dal raggio più grande al più piccolo con la
+  // STESSA tinta a bassa opacità — sovrapponendosi, il centro accumula più strati e
+  // risulta automaticamente più marcato, senza bisogno di calcolare gradienti.
+  const raggioMinimo = Math.min(...RING_RADII);
+  const ringsSvg = [...RING_RADII].sort((a, b) => b - a).map(r => {
+    const isCentro = r === raggioMinimo;
+    return `<circle cx="${CX}" cy="${CY}" r="${r}" fill="#3a6ea5" fill-opacity="0.09" stroke="#5b8fc4" stroke-width="${isCentro ? 2.5 : 1.4}"></circle>`;
+  }).join('');
+
+  const etichetteSvg = RING_RADII.map((r, ringIdx) =>
+    etichettaAnelloSvg(CX, CY - r, etichettaFascia(bersaglio.fasce[ringIdx]))
   ).join('');
 
   const edgesSvg = edges.map(e => {
@@ -433,6 +482,7 @@ function disegnaBersaglio(risposte, filtro, aggregati) {
     ${ringsSvg}
     <g id="bersaglio-edges">${edgesSvg}</g>
     <g id="bersaglio-nodi">${nodesSvg}</g>
+    <g id="bersaglio-etichette">${etichetteSvg}</g>
   </svg>`;
 
   const infoBody = document.getElementById('bersaglio-info-body');
