@@ -124,6 +124,7 @@
       <span><span class="dot" style="background:var(--giallo);"></span> Ponte possibile</span>
       <span><span class="dot" style="background:var(--arancione);"></span> Corrente contraria</span>
       <span><span class="dot" style="background:var(--rosso-edge);"></span> Scoglio reciproco</span>
+      <span>⬜ contorno tratteggiato/sbiadito = nominato/a ma non ha ancora risposto</span>
     </div>
 
     <div class="legenda" id="legenda-bersaglio" style="display:none;">
@@ -136,6 +137,7 @@
       <span><span class="dot" style="background:var(--verde);"></span> Scelta positiva</span>
       <span><span class="dot" style="background:var(--arancione);"></span> Scelta difficile</span>
       <span>— linea spessa = reciproca</span>
+      <span>⬜ contorno tratteggiato/sbiadito = nominato/a ma non ha ancora risposto</span>
     </div>
 
     <div class="stat-cards" id="stat-cards"></div>
@@ -242,16 +244,37 @@ function popolaSelectRilevazioni() {
   if (ordinateDesc.length > 1) selC.value = ordinateDesc[1].id;
 }
 
+// Tutti gli uid coinvolti nella rilevazione: chi ha risposto + chiunque sia stato
+// nominato in una qualsiasi delle 4 categorie, anche se non ha ancora compilato.
+function calcolaUidCoinvolti(risposte) {
+  const set = new Set(risposte.map(r => r.userId));
+  risposte.forEach(r => {
+    (r.ciurma || []).forEach(v => set.add(v));
+    (r.ponti || []).forEach(v => set.add(v));
+    (r.correnti || []).forEach(v => set.add(v));
+    (r.scogli || []).forEach(v => set.add(v));
+  });
+  return [...set];
+}
+
+function nomeVisualizzato(uid) {
+  return naufraghiInfo[uid]?.nome || '⚠ Sconosciuto';
+}
+
 // ── Costruzione edges per il grafo ──────────────────────────────────────────
-function buildEdges(risposte, filtro) {
+// uidsCompleti (rispondenti + nominati non-rispondenti) determina l'universo delle
+// coppie considerate: un non-rispondente non ha nomine in uscita (map vuota) ma può
+// comunque essere destinazione di una freccia.
+function buildEdges(risposte, filtro, uidsCompleti) {
+  const uids = uidsCompleti || risposte.map(r => r.userId);
   const map = {};
+  uids.forEach(u => { map[u] = { ciurma: new Set(), ponti: new Set(), correnti: new Set(), scogli: new Set() }; });
   risposte.forEach(r => {
     map[r.userId] = {
       ciurma: new Set(r.ciurma || []), ponti: new Set(r.ponti || []),
       correnti: new Set(r.correnti || []), scogli: new Set(r.scogli || []),
     };
   });
-  const uids = risposte.map(r => r.userId);
   const edges = [];
 
   for (let i = 0; i < uids.length; i++) {
@@ -289,23 +312,33 @@ function buildEdges(risposte, filtro) {
 }
 
 function disegnaGrafo(containerId, risposte, filtro, aggregati) {
-  const uids = risposte.map(r => r.userId);
+  const uidsCompleti = calcolaUidCoinvolti(risposte);
+  const rispondentiSet = new Set(risposte.map(r => r.userId));
   const isolatiSet = new Set(aggregati?.isolati || []);
   const leaderSet = new Set((aggregati?.leader || []).slice(0, 3).map(l => l.uid));
 
-  const nodes = uids.map(uid => ({
-    id: uid,
-    label: naufraghiInfo[uid]?.nome || uid,
-    shape: 'dot',
-    size: leaderSet.has(uid) ? 20 : 14,
-    color: isolatiSet.has(uid)
-      ? { background: '#e0e0e0', border: '#95a5a6' }
-      : leaderSet.has(uid)
-        ? { background: '#f5e6c8', border: '#c8860a' }
-        : { background: '#1a3a5c', border: '#0d1b2a' },
-    font: { color: '#2c1e0f', size: 12 },
-  }));
-  const edges = buildEdges(risposte, filtro);
+  const nodes = uidsCompleti.map(uid => {
+    const nonRispondente = !rispondentiSet.has(uid);
+    const nome = nomeVisualizzato(uid);
+    return {
+      id: uid,
+      label: nome,
+      shape: 'dot',
+      size: leaderSet.has(uid) ? 20 : 14,
+      opacity: nonRispondente ? 0.55 : 1,
+      shapeProperties: nonRispondente ? { borderDashes: [4, 3] } : undefined,
+      color: isolatiSet.has(uid)
+        ? { background: '#e0e0e0', border: '#95a5a6' }
+        : leaderSet.has(uid)
+          ? { background: '#f5e6c8', border: '#c8860a' }
+          : nonRispondente
+            ? { background: '#fdf3d9', border: '#c8860a' }
+            : { background: '#1a3a5c', border: '#0d1b2a' },
+      font: { color: '#2c1e0f', size: 12 },
+      title: nonRispondente ? `${nome} — non ha ancora risposto` : nome,
+    };
+  });
+  const edges = buildEdges(risposte, filtro, uidsCompleti);
 
   const container = document.getElementById(containerId);
   const network = new vis.Network(container, { nodes: new vis.DataSet(nodes), edges: new vis.DataSet(edges) }, {
@@ -316,8 +349,10 @@ function disegnaGrafo(containerId, risposte, filtro, aggregati) {
 }
 
 // ── Vista Bersaglio: calcolo impatto/preferenza/anello/profilo ─────────────
-function calcolaBersaglio(risposte, aggregati) {
-  const uids = risposte.map(r => r.userId);
+// uidsCompleti = rispondenti + chiunque sia stato nominato (anche se non ha risposto):
+// un non-rispondente ha comunque un impatto (nomine ricevute) e va collocato nel suo anello.
+function calcolaBersaglio(risposte, aggregati, uidsCompleti) {
+  const uids = uidsCompleti || risposte.map(r => r.userId);
   const posIn = {}, negIn = {};
   uids.forEach(u => { posIn[u] = 0; negIn[u] = 0; });
   risposte.forEach(r => {
@@ -431,10 +466,11 @@ function posizioniBersaglio(uids, anello, uidToCluster) {
 }
 
 function disegnaBersaglio(risposte, filtro, aggregati) {
-  const uids = risposte.map(r => r.userId);
-  const bersaglio = calcolaBersaglio(risposte, aggregati);
+  const uids = calcolaUidCoinvolti(risposte);
+  const rispondentiSet = new Set(risposte.map(r => r.userId));
+  const bersaglio = calcolaBersaglio(risposte, aggregati, uids);
   const { pos, CX, CY } = posizioniBersaglio(uids, bersaglio.anello, bersaglio.uidToCluster);
-  const edges = buildEdges(risposte, filtro);
+  const edges = buildEdges(risposte, filtro, uids);
 
   const defsMarkers = MARKER_COLORI.map(c => `
     <marker id="arrow-${c}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
@@ -466,13 +502,16 @@ function disegnaBersaglio(risposte, filtro, aggregati) {
   const nodesSvg = uids.map(u => {
     const p = pos[u];
     if (!p) return '';
-    const nome = naufraghiInfo[u]?.nome || u;
+    const nonRispondente = !rispondentiSet.has(u);
+    const nome = nomeVisualizzato(u);
     const colore = PROFILO_COLORI[bersaglio.profilo[u]];
-    const iniziali = nome.split(' ').map(s => s[0]).slice(0, 2).join('').toUpperCase();
-    return `<g class="bersaglio-nodo" data-uid="${esc(u)}">
-      <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="16" fill="${colore}" stroke="#1a3a5c" stroke-width="1.5"></circle>
-      <text x="${p.x.toFixed(1)}" y="${(p.y + 3).toFixed(1)}" text-anchor="middle" font-weight="700" fill="#fff" font-size="9">${esc(iniziali)}</text>
-      <text x="${p.x.toFixed(1)}" y="${(p.y + 27).toFixed(1)}" text-anchor="middle" font-size="9">${esc(nome.split(' ')[0])}</text>
+    const iniziali = naufraghiInfo[u]?.nome ? nome.split(' ').map(s => s[0]).slice(0, 2).join('').toUpperCase() : '?';
+    const dash = nonRispondente ? ' stroke-dasharray="3,2"' : '';
+    const opacity = nonRispondente ? ' opacity="0.6"' : '';
+    return `<g class="bersaglio-nodo${nonRispondente ? ' non-rispondente' : ''}" data-uid="${esc(u)}">
+      <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="16" fill="${colore}" stroke="#1a3a5c" stroke-width="1.5"${dash}${opacity}></circle>
+      <text x="${p.x.toFixed(1)}" y="${(p.y + 3).toFixed(1)}" text-anchor="middle" font-weight="700" fill="#fff" font-size="9"${opacity}>${esc(iniziali)}</text>
+      <text x="${p.x.toFixed(1)}" y="${(p.y + 27).toFixed(1)}" text-anchor="middle" font-size="9"${opacity}>${esc(nome.split(' ')[0])}</text>
     </g>`;
   }).join('');
 
@@ -487,10 +526,14 @@ function disegnaBersaglio(risposte, filtro, aggregati) {
 
   const infoBody = document.getElementById('bersaglio-info-body');
   function mostraInfo(uid) {
-    const nome = naufraghiInfo[uid]?.nome || uid;
+    const nome = nomeVisualizzato(uid);
     const reciproche = edges.filter(e => e.arrows === '' && (e.from === uid || e.to === uid)).length;
+    const avviso = !rispondentiSet.has(uid)
+      ? `<div class="item" style="color:var(--oro);font-style:italic;">✏️ Non ha ancora risposto — nomine ricevute mostrate, nessuna scelta in uscita.</div>`
+      : '';
     infoBody.innerHTML = `
       <div style="font-weight:700;color:var(--navy);margin-bottom:6px;">${esc(nome)}</div>
+      ${avviso}
       <div class="item">❤️ Nomine positive ricevute: <strong>${bersaglio.posIn[uid]}</strong></div>
       <div class="item">🌊 Nomine difficili ricevute: <strong>${bersaglio.negIn[uid]}</strong></div>
       <div class="item">🔵 Legami reciproci: <strong>${reciproche}</strong></div>
