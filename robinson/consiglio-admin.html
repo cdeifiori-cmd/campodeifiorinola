@@ -74,7 +74,6 @@
     .bersaglio-etichetta-evidenziata { font-weight:700; paint-order:stroke; stroke:#fff; stroke-width:3px; stroke-linejoin:round; }
     .bersaglio-etichetta-evidenziata.positiva { fill:#1e8449; }
     .bersaglio-etichetta-evidenziata.negativa { fill:#c0392b; }
-    .bersaglio-arco-foco { stroke-width:4; }
     #bersaglio-info-body .item { font-size:0.84rem; padding:3px 0; }
     #bersaglio-info-body .item-titolo { font-weight:600; margin-top:8px; font-size:0.8rem; color:var(--navy); }
     .chip { display:inline-block; background:var(--carta-scura); border-radius:12px; padding:2px 9px; font-size:0.76rem; margin:2px 4px 2px 0; }
@@ -734,26 +733,40 @@ function costruisciArcoFocoSvg(e, pN, pAltro, versoN) {
   return `<line class="bersaglio-arco-foco-linea" x1="${p1.x.toFixed(1)}" y1="${p1.y.toFixed(1)}" x2="${p2.x.toFixed(1)}" y2="${p2.y.toFixed(1)}" stroke="#${colHex}" stroke-width="${(e.width || 2) + 1.5}"${dash}${marker}></line>`;
 }
 
-// Confronto in console tra il numero di frecce entranti (positive/difficili) nei due nuovi
-// grafici e il valore mostrato nel pannello Dettaglio naufrago — stesso spirito di
-// verificaCoerenzaBarChart, esteso anche al lato "difficili". Nessuna correzione qui.
+// Confronto in console fra QUATTRO fonti indipendenti per il lato "positive": l'insieme
+// entrante grezzo (formula letterale: r.userId per ogni r con N.uid ∈ r.ciurma, r.userId≠N.uid),
+// il numero di frecce che l'overlay disegnerebbe al clic (pos.rilevanti.length — per il set
+// ciurma-only non c'è rischio di archi duplicati sulla stessa coppia, quindi coincide con le
+// persone distinte), il valore del pannello Dettaglio naufrago (bersaglio.posIn) e il numero
+// mostrato sul nodo nel bersaglio tematico "Preferenze". Lato "difficili": stesso spirito,
+// solo conteggio (nessuna correzione qui, solo diagnostica).
 function verificaCoerenzaGraficiEntrata(risposte, uids, edgesCiurma, edgesFoco, bersaglio) {
+  const ricevuteTemaPreferenze = calcolaRicevutePerTema(risposte, uids, 'preferenze');
   const righe = uids.map(u => {
+    const entranteGrezzoCiurma = risposte.filter(r => r.userId !== u && (r.ciurma || []).includes(u)).map(r => r.userId);
     const pos = calcolaRilevantiFoco(edgesCiurma, u, 'ricevute_positive');
     const neg = calcolaRilevantiFoco(edgesFoco, u, 'ricevute_difficili');
-    const entrantiPositiveGrafico = new Set(pos.rilevanti.map(pos.altroEstremo)).size;
+    const frecceDisegnatePositive = pos.rilevanti.length;
     const entrantiDifficiliGrafico = new Set(neg.rilevanti.map(neg.altroEstremo)).size;
     return {
       nome: nomeVisualizzato(u),
-      entrantiPositiveGrafico, valorePannelloPositive: bersaglio.posIn[u],
+      entranteGrezzoCiurma: entranteGrezzoCiurma.map(nomeVisualizzato).join(', ') || '—',
+      frecceDisegnatePositive,
+      valorePannelloPositive: bersaglio.posIn[u],
+      valoreNodoBersaglioPositive: ricevuteTemaPreferenze[u],
       entrantiDifficiliGrafico, valorePannelloDifficili: bersaglio.negIn[u],
-      divergenza: (entrantiPositiveGrafico !== bersaglio.posIn[u] || entrantiDifficiliGrafico !== bersaglio.negIn[u]) ? '⚠️' : '',
+      divergenza: (
+        frecceDisegnatePositive !== entranteGrezzoCiurma.length ||
+        frecceDisegnatePositive !== bersaglio.posIn[u] ||
+        frecceDisegnatePositive !== ricevuteTemaPreferenze[u] ||
+        entrantiDifficiliGrafico !== bersaglio.negIn[u]
+      ) ? '⚠️' : '',
     };
   });
   const divergenti = righe.filter(r => r.divergenza);
   console.log(`[Grafici in entrata] Controllo coerenza — ${divergenti.length} divergenze su ${righe.length} naufraghi/e`);
   if (console.table) console.table(righe); else console.log(righe);
-  if (divergenti.length) console.warn('[Grafici in entrata] Naufraghi/e con valore pannello diverso dal grafico:', divergenti);
+  if (divergenti.length) console.warn('[Grafici in entrata] Naufraghi/e con valori discordanti tra grezzo/frecce/pannello/nodo:', divergenti);
 }
 
 function disegnaBersaglio(risposte, filtro, aggregati, tema) {
@@ -930,7 +943,7 @@ function disegnaBersaglio(risposte, filtro, aggregati, tema) {
         g.classList.remove('bersaglio-dim', 'bersaglio-foco-sorgente');
         g.querySelector('.bersaglio-etichetta-nome')?.classList.remove('bersaglio-etichetta-evidenziata', 'positiva', 'negativa');
       });
-      archiBase.forEach(l => l.classList.remove('bersaglio-dim'));
+      archiBase.forEach(l => { l.style.display = ''; });
       if (gruppoFocoArchi) gruppoFocoArchi.innerHTML = '';
       return;
     }
@@ -963,9 +976,12 @@ function disegnaBersaglio(risposte, filtro, aggregati, tema) {
       if ((isCentro || isCoinvolto) && gruppoNodi) gruppoNodi.appendChild(g);
     });
 
-    // Gli archi base restano attenuati per intero: le frecce autorevoli del focus sono
-    // quelle ridisegnate qui sotto da edgesFoco (set completo, indipendente da tema/filtro).
-    archiBase.forEach(l => l.classList.add('bersaglio-dim'));
+    // Gli archi base vengono NASCOSTI del tutto (non solo attenuati): l'overlay ridisegnato
+    // qui sotto (dal set corretto per la modalità attiva) è l'UNICA fonte di frecce visibili
+    // durante il focus — altrimenti un arco base "in uscita" da N (es. Veronica in Ricevute
+    // positive, insieme entrante vuoto) resterebbe visibile seppur sbiadito, dando l'impressione
+    // di una freccia che non dovrebbe esserci.
+    archiBase.forEach(l => { l.style.display = 'none'; });
     if (gruppoFocoArchi) {
       const pN = pos[uid];
       gruppoFocoArchi.innerHTML = rilevanti.map(e => {
