@@ -82,11 +82,14 @@
     /* ── Coesistenza Bersaglio + Bar chart (additivo) ── */
     .bersaglio-barchart-split { display:flex; gap:14px; flex-wrap:wrap; }
     .bersaglio-col { flex:1.7; min-width:300px; }
-    .barchart-col { flex:1; min-width:220px; }
+    .barchart-col { flex:1; min-width:260px; }
     .bersaglio-col-head { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px; }
     .bersaglio-col-head h3 { margin:0; }
     #btn-deseleziona-foco { padding:4px 10px; font-size:0.72rem; }
-    #barchart-svg-wrap svg { width:100%; height:auto; display:block; }
+    .barchart-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap:10px; }
+    .barchart-item { background:#fbfaf7; border:1px solid var(--carta-scura); border-radius:8px; padding:8px; }
+    .barchart-item h4 { font-family:'Playfair Display',serif; font-size:0.74rem; color:var(--navy); margin:0 0 6px; text-align:center; }
+    .barchart-svg-wrap svg { width:100%; height:auto; display:block; }
     .barchart-riga text { font-family:'Lora',serif; }
 
     /* ── Modalità focus del Bersaglio (uscita/ricevute positive/ricevute difficili) ── */
@@ -203,8 +206,25 @@
             <div id="bersaglio-svg-wrap"></div>
           </div>
           <div class="barchart-col">
-            <h3>📊 Nomine positive ricevute</h3>
-            <div id="barchart-svg-wrap"></div>
+            <h3>📊 Nomine ricevute per domanda</h3>
+            <div class="barchart-grid">
+              <div class="barchart-item">
+                <h4>❤️ Nomine positive ricevute</h4>
+                <div id="barchart-svg-wrap" class="barchart-svg-wrap"></div>
+              </div>
+              <div class="barchart-item">
+                <h4>📖 Avvicinamenti ricevuti (vorrebbero avvicinarti)</h4>
+                <div id="barchart-ponti-wrap" class="barchart-svg-wrap"></div>
+              </div>
+              <div class="barchart-item">
+                <h4>🌊 Fanno più fatica a stare con te (correnti)</h4>
+                <div id="barchart-correnti-wrap" class="barchart-svg-wrap"></div>
+              </div>
+              <div class="barchart-item">
+                <h4>🪨 Difficile costruire un rapporto (scogli)</h4>
+                <div id="barchart-scogli-wrap" class="barchart-svg-wrap"></div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -705,49 +725,64 @@ function posizioniBersaglio(uids, anello, uidToCluster) {
   return { pos, CX, CY };
 }
 
-// ── Bar chart "Nomine positive ricevute" — additivo, sola lettura ───────────────
+// ── Bar chart "Nomine ricevute per domanda" — additivo, sola lettura ───────────────
 // Calcolo INDIPENDENTE dagli edges (che sono filtrati per tema/filtro) e dal pannello
-// Dettaglio naufrago: legge direttamente le risposte grezze, per servire anche da
-// riferimento di controllo per eventuali divergenze nel pannello (vedi verificaCoerenzaBarChart).
-// "Positiva ricevuta" = SOLO Domanda 1 (campo ciurma): per ogni naufrago/a X conta le PERSONE
-// DISTINTE che l'hanno messo/a nella propria ciurma, escludendo l'autonomina. I Ponti (Domanda 2)
-// restano visibili altrove (scelte in uscita) ma non contano qui.
-function calcolaPositiveGrezze(risposte, uids) {
-  const positive = {};
-  uids.forEach(u => { positive[u] = []; });
+// Dettaglio naufrago: legge direttamente le risposte grezze, per servire anche da riferimento
+// di controllo per eventuali divergenze nel pannello (vedi verificaCoerenzaBarChart). Per ogni
+// naufrago/a X conta le PERSONE DISTINTE che l'hanno nominato/a nel campo indicato (un solo
+// campo per chiamata: ciurma/ponti/correnti/scogli — le 4 domande NON si sommano qui, ognuna
+// resta il proprio bar chart), escludendo l'autonomina.
+function calcolaRicevuteGrezze(risposte, uids, campo) {
+  const ricevute = {};
+  uids.forEach(u => { ricevute[u] = []; });
   risposte.forEach(r => {
     const nominante = r.userId;
-    const targets = new Set(r.ciurma || []);
+    const targets = new Set(r[campo] || []);
     targets.forEach(u => {
       if (u === nominante) return; // niente autonomina
-      if (positive[u] !== undefined) positive[u].push(nominante);
+      if (ricevute[u] !== undefined) ricevute[u].push(nominante);
     });
   });
-  return positive;
+  return ricevute;
 }
 
-// Confronto in console fra tre fonti indipendenti che DEVONO coincidere ora che "positiva
-// ricevuta" è ristretta a ciurma ovunque: il calcolo grezzo (bar chart), il pannello Dettaglio
-// naufrago (bersaglio.posIn) e il numero mostrato sul nodo nel bersaglio tematico "Preferenze"
-// (già ciurma-only anche prima di questa correzione, vedi TEMI_BERSAGLIO.preferenze).
+// I 4 bar chart: un solo campo grezzo per grafico, colore coerente con la legenda esistente.
+const BARCHART_CONFIG = [
+  { campo: 'ciurma', containerId: 'barchart-svg-wrap', colore: '#2ecc71' },
+  { campo: 'ponti', containerId: 'barchart-ponti-wrap', colore: '#f1c40f' },
+  { campo: 'correnti', containerId: 'barchart-correnti-wrap', colore: '#e67e22' },
+  { campo: 'scogli', containerId: 'barchart-scogli-wrap', colore: '#e74c3c' },
+];
+
+// Confronto in console: per ogni naufrago/a i 4 conteggi grezzi (persone distinte per campo) e,
+// per la sola ciurma, anche il pannello Dettaglio naufrago (bersaglio.posIn) e il numero sul
+// nodo nel bersaglio tematico "Preferenze" (già ciurma-only) — le altre 3 domande non hanno un
+// equivalente nel pannello attuale, quindi qui servono a verificare che ciascun bar chart legga
+// esattamente il proprio campo (nessuna confusione fra ciurma/ponti/correnti/scogli).
 function verificaCoerenzaBarChart(risposte, uids, bersaglio) {
-  const grezze = calcolaPositiveGrezze(risposte, uids);
+  const grezzeCiurma = calcolaRicevuteGrezze(risposte, uids, 'ciurma');
+  const grezzePonti = calcolaRicevuteGrezze(risposte, uids, 'ponti');
+  const grezzeCorrenti = calcolaRicevuteGrezze(risposte, uids, 'correnti');
+  const grezzeScogli = calcolaRicevuteGrezze(risposte, uids, 'scogli');
   const ricevuteTemaPreferenze = calcolaRicevutePerTema(risposte, uids, 'preferenze');
   const righe = uids.map(u => ({
     nome: nomeVisualizzato(u),
-    ciurmaEntranteGrezza: grezze[u].length,
-    valorePannello: bersaglio.posIn[u],
+    ciurma: grezzeCiurma[u].length,
+    ponti: grezzePonti[u].length,
+    correnti: grezzeCorrenti[u].length,
+    scogli: grezzeScogli[u].length,
+    valorePannelloPositive: bersaglio.posIn[u],
     valoreNodoBersaglio: ricevuteTemaPreferenze[u],
-    divergenza: (grezze[u].length !== bersaglio.posIn[u] || grezze[u].length !== ricevuteTemaPreferenze[u]) ? '⚠️' : '',
+    divergenza: (grezzeCiurma[u].length !== bersaglio.posIn[u] || grezzeCiurma[u].length !== ricevuteTemaPreferenze[u]) ? '⚠️' : '',
   }));
   const divergenti = righe.filter(r => r.divergenza);
-  console.log(`[Bar chart] Controllo coerenza "Nomine positive ricevute" (solo ciurma) — ${divergenti.length} divergenze su ${righe.length} naufraghi/e`);
+  console.log(`[Bar chart] Controllo coerenza per domanda (ciurma/ponti/correnti/scogli) — ${divergenti.length} divergenze su ${righe.length} naufraghi/e`);
   if (console.table) console.table(righe); else console.log(righe);
-  if (divergenti.length) console.warn('[Bar chart] Naufraghi/e con valori discordanti tra grezzo/pannello/nodo bersaglio:', divergenti);
+  if (divergenti.length) console.warn('[Bar chart] Naufraghi/e con valori discordanti fra ciurma grezza/pannello/nodo bersaglio:', divergenti);
 }
 
-function disegnaBarChart(risposte, uids, labelPerUid) {
-  const grezze = calcolaPositiveGrezze(risposte, uids);
+function disegnaBarChart(containerId, risposte, uids, labelPerUid, campo, colore) {
+  const grezze = calcolaRicevuteGrezze(risposte, uids, campo);
   const dati = uids.map(u => ({ uid: u, label: labelPerUid[u], valore: grezze[u].length }))
     .sort((a, b) => b.valore - a.valore || a.label.localeCompare(b.label, 'it'));
 
@@ -761,12 +796,12 @@ function disegnaBarChart(risposte, uids, labelPerUid) {
     const w = (d.valore / maxValore) * chartW;
     return `<g class="barchart-riga" data-uid="${esc(d.uid)}">
       <text x="${leftPad - 8}" y="${(y + barH / 2 + 4).toFixed(1)}" text-anchor="end" font-size="11" fill="#2c1e0f">${esc(d.label)}</text>
-      <rect x="${leftPad}" y="${y}" width="${Math.max(2, w).toFixed(1)}" height="${barH}" rx="4" fill="#2ecc71"></rect>
+      <rect x="${leftPad}" y="${y}" width="${Math.max(2, w).toFixed(1)}" height="${barH}" rx="4" fill="${colore}"></rect>
       <text x="${(leftPad + Math.max(2, w) + 6).toFixed(1)}" y="${(y + barH / 2 + 4).toFixed(1)}" font-size="11" font-weight="700" fill="#1a3a5c">${d.valore}</text>
     </g>`;
   }).join('');
 
-  const wrap = document.getElementById('barchart-svg-wrap');
+  const wrap = document.getElementById(containerId);
   wrap.innerHTML = dati.length
     ? `<svg viewBox="0 0 ${svgW} ${svgH}" xmlns="http://www.w3.org/2000/svg">${righeSvg}</svg>`
     : '<div class="vuoto">Nessun dato per questa rilevazione.</div>';
@@ -978,8 +1013,8 @@ function disegnaBersaglio(risposte, filtro, aggregati, tema) {
   </svg>`;
 
   // Bar chart additivo (Parte 2) — stessa risoluzione nome (sigla in modalità anonima), calcolo
-  // indipendente da fonte grezza
-  disegnaBarChart(risposte, uids, etichettePerUid);
+  // indipendente da fonte grezza. Un grafico per ciascuna delle 4 domande, stessa meccanica.
+  BARCHART_CONFIG.forEach(cfg => disegnaBarChart(cfg.containerId, risposte, uids, etichettePerUid, cfg.campo, cfg.colore));
   verificaCoerenzaBarChart(risposte, uids, bersaglio);
   verificaCoerenzaGraficiEntrata(risposte, uids, edgesCiurma, edgesFoco, bersaglio);
 
