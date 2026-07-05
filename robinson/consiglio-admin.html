@@ -89,6 +89,10 @@
     #btn-deseleziona-foco { padding:4px 10px; font-size:0.72rem; }
     #barchart-svg-wrap svg { width:100%; height:auto; display:block; }
     .barchart-riga text { font-family:'Lora',serif; }
+
+    /* ── Modalità focus del Bersaglio (uscita/ricevute positive/ricevute difficili) ── */
+    #modo-foco-bar { margin-bottom:4px; }
+    .modo-foco-hint { font-size:0.72rem; color:var(--muted); font-style:italic; margin:0 0 10px; }
   </style>
 </head>
 <body>
@@ -133,6 +137,13 @@
       <button class="filtro-btn" data-tema="difficolta">🌊 Difficoltà</button>
       <button class="filtro-btn" data-tema="avvicinamenti">🌉 Avvicinamenti</button>
     </div>
+
+    <div class="filtro-bar" id="modo-foco-bar" style="display:none;">
+      <button class="filtro-btn active" data-modo="uscita">🎯 Scelte in uscita</button>
+      <button class="filtro-btn" data-modo="ricevute_positive">❤️ Ricevute positive</button>
+      <button class="filtro-btn" data-modo="ricevute_difficili">🌊 Ricevute difficili</button>
+    </div>
+    <div class="modo-foco-hint" id="modo-foco-hint" style="display:none;"></div>
 
     <div class="filtro-bar" id="filtro-bar">
       <button class="filtro-btn active" data-filtro="tutte">🌐 Tutte</button>
@@ -245,7 +256,18 @@ const PREFERENZE_INCLUDE_PONTI = false; // true per includere anche i Ponti tra 
 const CONVERGENZA_MIN_FRECCE = 2;       // soglia minima di frecce convergenti per evidenziare "molti contro uno"
 const PALETTE_CLUSTER = ['#8e44ad', '#16a085', '#2980b9', '#d35400', '#c0392b', '#27ae60', '#7f8c8d'];
 const COLORI_POSITIVI = new Set(['#3498db', '#2ecc71', '#f1c40f']); // amicizia reciproca/unilaterale, ponte
+const COLORI_NEGATIVI = new Set(['#e67e22', '#e74c3c']); // corrente contraria, scoglio
 let bersaglioTema = 'preferenze'; // 'preferenze' | 'difficolta' | 'avvicinamenti'
+
+// ── Modalità focus del Bersaglio (Parte 2/3): cosa succede al clic su un nodo N ─────
+// 'uscita' = le scelte fatte DA N; 'ricevute_positive'/'ricevute_difficili' = chi ha
+// scelto N. Asse indipendente dal tema (che resta solo per anelli/etichette/numero).
+const MODI_FOCO = {
+  uscita:             { label: 'Scelte in uscita',    hint: 'Clicca un nodo per vedere le SUE scelte in uscita (frecce N → nominati/e).' },
+  ricevute_positive:  { label: 'Ricevute positive',   hint: 'Clicca un nodo per vedere CHI lo ha scelto in positivo (frecce nominante → N).' },
+  ricevute_difficili: { label: 'Ricevute difficili',  hint: 'Clicca un nodo per vedere CHI lo ha messo tra le nomine difficili (frecce nominante → N).' },
+};
+let modoFoco = 'uscita'; // 'uscita' | 'ricevute_positive' | 'ricevute_difficili'
 
 function categorieTema(tema) {
   const cfg = TEMI_BERSAGLIO[tema];
@@ -637,6 +659,101 @@ function disegnaBarChart(risposte, uids, labelPerUid) {
     : '<div class="vuoto">Nessun dato per questa rilevazione.</div>';
 }
 
+// buildEdges() con filtro='tutte' non marca reciproco:true in due casi mutui: ponti-mutuo
+// senza ciurma-mutuo (marcato solo sotto filtro='ponti'), e correnti-mutuo (mai marcato, per
+// design della vista Rete/Bersaglio-uscita che tiene le Correnti sempre a punta singola anche
+// se reciproche). Per i grafici "Ricevute" (Parte 2), che devono riflettere il conteggio reale
+// indipendentemente da queste scelte stilistiche, integriamo qui i legami mutui mancanti come
+// archi reciproco:true dedicati — SENZA toccare buildEdges() né la vista Rete/Bersaglio-uscita.
+function integraLegamiMutuiMancanti(risposte, uids, edgesBase) {
+  const map = {};
+  uids.forEach(u => { map[u] = { ciurma: new Set(), ponti: new Set(), correnti: new Set(), scogli: new Set() }; });
+  risposte.forEach(r => {
+    map[r.userId] = {
+      ciurma: new Set(r.ciurma || []), ponti: new Set(r.ponti || []),
+      correnti: new Set(r.correnti || []), scogli: new Set(r.scogli || []),
+    };
+  });
+  const chiave = (a, b) => [a, b].sort().join('|');
+  const giaPositivo = new Set(edgesBase.filter(e => e.reciproco && COLORI_POSITIVI.has(e.color?.color)).map(e => chiave(e.from, e.to)));
+  const giaNegativo = new Set(edgesBase.filter(e => e.reciproco && COLORI_NEGATIVI.has(e.color?.color)).map(e => chiave(e.from, e.to)));
+  const extra = [];
+  const correntiSostituite = new Set();
+  for (let i = 0; i < uids.length; i++) {
+    for (let j = i + 1; j < uids.length; j++) {
+      const a = uids[i], b = uids[j];
+      const aPontiB = map[a].ponti.has(b), bPontiA = map[b].ponti.has(a);
+      const aCorrB = map[a].correnti.has(b), bCorrA = map[b].correnti.has(a);
+      if (aPontiB && bPontiA && !giaPositivo.has(chiave(a, b))) {
+        extra.push({ from: a, to: b, color: { color: '#3498db' }, width: 3, reciproco: true });
+      }
+      if (aCorrB && bCorrA && !giaNegativo.has(chiave(a, b))) {
+        extra.push({ from: a, to: b, color: { color: '#e67e22' }, width: 3, dashes: true, reciproco: true });
+        correntiSostituite.add(chiave(a, b));
+      }
+    }
+  }
+  // Il ramo "correnti" di buildEdges() produce SEMPRE un arco (anche mutuo, ma a punta
+  // singola): quando lo sostituiamo con la versione reciproco:true, rimuoviamo il duplicato.
+  const base = edgesBase.filter(e => !(e.color?.color === '#e67e22' && correntiSostituite.has(chiave(e.from, e.to))));
+  return [...base, ...extra];
+}
+
+// ── Focus del Bersaglio (Parti 1-2): determina gli archi rilevanti per il nodo N e la
+// direzione dell'evidenziazione, a seconda della modalità attiva. Pura, testabile, condivisa
+// tra "Scelte in uscita" (Parte 1, fix reciproci) e i due nuovi assi "Ricevute" (Parte 2).
+// IMPORTANTE: per gli archi RECIPROCI, buildEdges() assegna from/to in base al semplice
+// ordine di iterazione degli uid — non c'è un "chi ha scelto per primo" significativo —
+// quindi in ciascuna modalità vanno considerate ENTRAMBE le direzioni quando e.reciproco.
+function calcolaRilevantiFoco(edgesFoco, uid, modo) {
+  if (modo === 'ricevute_positive') {
+    const rilevanti = edgesFoco.filter(e => COLORI_POSITIVI.has(e.color?.color) && (e.to === uid || (e.reciproco && e.from === uid)));
+    return { rilevanti, altroEstremo: e => (e.to === uid ? e.from : e.to), versoN: true };
+  }
+  if (modo === 'ricevute_difficili') {
+    const rilevanti = edgesFoco.filter(e => COLORI_NEGATIVI.has(e.color?.color) && (e.to === uid || (e.reciproco && e.from === uid)));
+    return { rilevanti, altroEstremo: e => (e.to === uid ? e.from : e.to), versoN: true };
+  }
+  // 'uscita' (default): le scelte fatte DA N
+  const rilevanti = edgesFoco.filter(e => e.from === uid || (e.reciproco && e.to === uid));
+  return { rilevanti, altroEstremo: e => (e.from === uid ? e.to : e.from), versoN: false };
+}
+
+// Linea SVG "overlay" per un arco rilevante del focus, con marker riusati da defsMarkers.
+// versoN=true → freccia nominante→N (p1=altro, p2=N); versoN=false → freccia N→scelto (p1=N, p2=altro).
+function costruisciArcoFocoSvg(e, pN, pAltro, versoN) {
+  const p1 = versoN ? pAltro : pN;
+  const p2 = versoN ? pN : pAltro;
+  const colHex = (e.color?.color || '#999999').replace('#', '');
+  const dash = e.dashes ? ' stroke-dasharray="5,4"' : '';
+  const marker = e.reciproco
+    ? ` marker-start="url(#arrow-${colHex})" marker-end="url(#arrow-${colHex})"`
+    : ` marker-end="url(#arrow-${colHex})"`;
+  return `<line class="bersaglio-arco-foco-linea" x1="${p1.x.toFixed(1)}" y1="${p1.y.toFixed(1)}" x2="${p2.x.toFixed(1)}" y2="${p2.y.toFixed(1)}" stroke="#${colHex}" stroke-width="${(e.width || 2) + 1.5}"${dash}${marker}></line>`;
+}
+
+// Confronto in console tra il numero di frecce entranti (positive/difficili) nei due nuovi
+// grafici e il valore mostrato nel pannello Dettaglio naufrago — stesso spirito di
+// verificaCoerenzaBarChart, esteso anche al lato "difficili". Nessuna correzione qui.
+function verificaCoerenzaGraficiEntrata(risposte, uids, edgesFoco, bersaglio) {
+  const righe = uids.map(u => {
+    const pos = calcolaRilevantiFoco(edgesFoco, u, 'ricevute_positive');
+    const neg = calcolaRilevantiFoco(edgesFoco, u, 'ricevute_difficili');
+    const entrantiPositiveGrafico = new Set(pos.rilevanti.map(pos.altroEstremo)).size;
+    const entrantiDifficiliGrafico = new Set(neg.rilevanti.map(neg.altroEstremo)).size;
+    return {
+      nome: nomeVisualizzato(u),
+      entrantiPositiveGrafico, valorePannelloPositive: bersaglio.posIn[u],
+      entrantiDifficiliGrafico, valorePannelloDifficili: bersaglio.negIn[u],
+      divergenza: (entrantiPositiveGrafico !== bersaglio.posIn[u] || entrantiDifficiliGrafico !== bersaglio.negIn[u]) ? '⚠️' : '',
+    };
+  });
+  const divergenti = righe.filter(r => r.divergenza);
+  console.log(`[Grafici in entrata] Controllo coerenza — ${divergenti.length} divergenze su ${righe.length} naufraghi/e`);
+  if (console.table) console.table(righe); else console.log(righe);
+  if (divergenti.length) console.warn('[Grafici in entrata] Naufraghi/e con valore pannello diverso dal grafico:', divergenti);
+}
+
 function disegnaBersaglio(risposte, filtro, aggregati, tema) {
   const uids = calcolaUidCoinvolti(risposte);
   const rispondentiSet = new Set(risposte.map(r => r.userId));
@@ -644,6 +761,13 @@ function disegnaBersaglio(risposte, filtro, aggregati, tema) {
   const { pos, CX, CY } = posizioniBersaglio(uids, bersaglio.anello, bersaglio.uidToCluster);
   const categorieConsentite = new Set(categorieTema(tema).tutti);
   const edges = buildEdges(risposte, filtro, uids, categorieConsentite);
+  // Set SEMPRE completo (tutte le 4 categorie, nessun filtro), indipendente da tema/filtro
+  // attivi: usato per le modalità focus "Ricevute positive/difficili" (Parte 2) e per il
+  // controllo di coerenza in console, così combaciano sempre coi conteggi reali (posIn/negIn)
+  // qualunque scheda tema/filtro sia selezionata per gli anelli. La modalità "Scelte in
+  // uscita" (Parte 1) resta invece scoped su `edges` (tema/filtro attivi), come già in
+  // precedenza — solo col fix di direzione per i reciproci.
+  const edgesFoco = integraLegamiMutuiMancanti(risposte, uids, buildEdges(risposte, 'tutte', uids));
   // Risoluzione nome condivisa con il bar chart (stessa regola cognome: Emanuele/duplicati)
   const labelPerUid = calcolaLabelDisambiguate(uids);
 
@@ -719,6 +843,7 @@ function disegnaBersaglio(risposte, filtro, aggregati, tema) {
     <defs>${defsMarkers}</defs>
     ${ringsSvg}
     <g id="bersaglio-edges">${edgesSvg}</g>
+    <g id="bersaglio-foco-archi"></g>
     <g id="bersaglio-nodi">${nodesSvg}</g>
     <g id="bersaglio-etichette">${etichetteSvg}</g>
   </svg>`;
@@ -726,6 +851,7 @@ function disegnaBersaglio(risposte, filtro, aggregati, tema) {
   // Bar chart additivo (Parte 2) — stessa risoluzione nome, calcolo indipendente da fonte grezza
   disegnaBarChart(risposte, uids, labelPerUid);
   verificaCoerenzaBarChart(risposte, uids, bersaglio);
+  verificaCoerenzaGraficiEntrata(risposte, uids, edgesFoco, bersaglio);
 
   const infoBody = document.getElementById('bersaglio-info-body');
   function mostraInfo(uid) {
@@ -775,65 +901,74 @@ function disegnaBersaglio(risposte, filtro, aggregati, tema) {
     });
   }
 
-  // ── Focus al clic (Parte 3): sticky, indipendente dall'hover ────────────────
-  // Mostra solo le scelte IN USCITA di N (from===N.uid): nodo sorgente pienamente visibile,
-  // nominati/e evidenziati con etichetta grassetto/colorata (verde=positiva, rosso=difficile),
-  // tutto il resto attenuato. Le frecce sono già disegnate (unilaterali/reciproche) da edgesSvg;
-  // qui basta portarle in primo piano e assicurarsi che non restino coperte.
+  // ── Focus al clic (Parti 1-2-3): sticky, indipendente dall'hover ────────────
+  // Modalità 'uscita' = scelte fatte DA N; 'ricevute_positive'/'ricevute_difficili' = chi
+  // ha scelto N. In ogni modalità: nodo N pienamente visibile, altro capo evidenziato con
+  // etichetta grassetto/colorata (verde=positiva, rosso=difficile), resto attenuato.
+  // Le frecce vengono ridisegnate ad-hoc in #bersaglio-foco-archi (set scelto più sotto in
+  // base alla modalità): gli archi "base" (#bersaglio-edges) vengono quindi attenuati per
+  // intero mentre il focus è attivo, per evitare doppie informazioni discordanti.
   let focoUid = null;
   const btnDeseleziona = document.getElementById('btn-deseleziona-foco');
   const gruppoNodi = wrap.querySelector('#bersaglio-nodi');
-  const gruppoEdges = wrap.querySelector('#bersaglio-edges');
+  const gruppoFocoArchi = wrap.querySelector('#bersaglio-foco-archi');
 
   function applicaFoco(uid) {
     focoUid = uid;
     if (btnDeseleziona) btnDeseleziona.style.display = uid ? '' : 'none';
 
     const nodi = wrap.querySelectorAll('.bersaglio-nodo');
-    const archi = wrap.querySelectorAll('.bersaglio-arco');
+    const archiBase = wrap.querySelectorAll('.bersaglio-arco');
 
     if (!uid) {
       nodi.forEach(g => {
         g.classList.remove('bersaglio-dim', 'bersaglio-foco-sorgente');
         g.querySelector('.bersaglio-etichetta-nome')?.classList.remove('bersaglio-etichetta-evidenziata', 'positiva', 'negativa');
       });
-      archi.forEach(l => l.classList.remove('bersaglio-dim', 'bersaglio-arco-foco'));
+      archiBase.forEach(l => l.classList.remove('bersaglio-dim'));
+      if (gruppoFocoArchi) gruppoFocoArchi.innerHTML = '';
       return;
     }
 
-    // Per gli archi RECIPROCI, buildEdges() assegna from/to in base al semplice ordine di
-    // iterazione degli uid (non c'è un "chi ha scelto per primo" significativo quando la
-    // nomina è reciproca): filtrare solo e.from===uid perderebbe le scelte di N quando N
-    // capita di trovarsi nello slot `to`. Per i reciproci contano entrambe le direzioni.
-    const usciti = edges.filter(e => e.from === uid || (e.reciproco && e.to === uid));
-    const altroEstremo = e => (e.from === uid ? e.to : e.from);
-    const targetPositivi = new Set(usciti.filter(e => COLORI_POSITIVI.has(e.color?.color)).map(altroEstremo));
-    const targetTutti = new Set(usciti.map(altroEstremo));
+    // 'uscita' resta scoped su tema/filtro attivi (stesso set già disegnato in baseline,
+    // solo col fix di direzione per i reciproci): coerente con ciò che il Bersaglio mostra
+    // già in quella scheda. Le due modalità "ricevute" usano invece il set SEMPRE completo
+    // (edgesFoco), perché devono riflettere il conteggio reale (posIn/negIn), indipendente
+    // da quale tema/filtro sia selezionato per gli anelli.
+    const edgesPerModo = modoFoco === 'uscita' ? edges : edgesFoco;
+    const { rilevanti, altroEstremo, versoN } = calcolaRilevantiFoco(edgesPerModo, uid, modoFoco);
+    const targetPositivi = new Set(rilevanti.filter(e => COLORI_POSITIVI.has(e.color?.color)).map(altroEstremo));
+    const targetTutti = new Set(rilevanti.map(altroEstremo));
 
     nodi.forEach(g => {
       const u = g.dataset.uid;
-      const isSorgente = u === uid;
-      const isScelto = targetTutti.has(u);
-      g.classList.toggle('bersaglio-dim', !isSorgente && !isScelto);
-      g.classList.toggle('bersaglio-foco-sorgente', isSorgente);
+      const isCentro = u === uid;
+      const isCoinvolto = targetTutti.has(u);
+      g.classList.toggle('bersaglio-dim', !isCentro && !isCoinvolto);
+      g.classList.toggle('bersaglio-foco-sorgente', isCentro);
       const etichetta = g.querySelector('.bersaglio-etichetta-nome');
-      if (isScelto) {
+      if (isCoinvolto) {
         etichetta?.classList.add('bersaglio-etichetta-evidenziata');
         etichetta?.classList.toggle('positiva', targetPositivi.has(u));
         etichetta?.classList.toggle('negativa', !targetPositivi.has(u));
       } else {
         etichetta?.classList.remove('bersaglio-etichetta-evidenziata', 'positiva', 'negativa');
       }
-      // Anti-sovrapposizione: sorgente e scelti/e in primo piano (z-order) sopra gli attenuati
-      if ((isSorgente || isScelto) && gruppoNodi) gruppoNodi.appendChild(g);
+      // Anti-sovrapposizione: centro e coinvolti in primo piano (z-order) sopra gli attenuati
+      if ((isCentro || isCoinvolto) && gruppoNodi) gruppoNodi.appendChild(g);
     });
 
-    archi.forEach(l => {
-      const daFoco = l.dataset.from === uid;
-      l.classList.toggle('bersaglio-dim', !daFoco);
-      l.classList.toggle('bersaglio-arco-foco', daFoco);
-      if (daFoco && gruppoEdges) gruppoEdges.appendChild(l);
-    });
+    // Gli archi base restano attenuati per intero: le frecce autorevoli del focus sono
+    // quelle ridisegnate qui sotto da edgesFoco (set completo, indipendente da tema/filtro).
+    archiBase.forEach(l => l.classList.add('bersaglio-dim'));
+    if (gruppoFocoArchi) {
+      const pN = pos[uid];
+      gruppoFocoArchi.innerHTML = rilevanti.map(e => {
+        const pAltro = pos[altroEstremo(e)];
+        if (!pN || !pAltro) return '';
+        return costruisciArcoFocoSvg(e, pN, pAltro, versoN);
+      }).join('');
+    }
   }
   if (btnDeseleziona) btnDeseleziona.onclick = () => applicaFoco(null);
 
@@ -922,6 +1057,9 @@ async function renderTutto() {
   document.getElementById('titolo-graph-main').textContent = `Rilevazione #${ril.numero}`;
 
   document.getElementById('tema-bersaglio-bar').style.display = vistaAttiva === 'bersaglio' ? 'flex' : 'none';
+  document.getElementById('modo-foco-bar').style.display = vistaAttiva === 'bersaglio' ? 'flex' : 'none';
+  document.getElementById('modo-foco-hint').style.display = vistaAttiva === 'bersaglio' ? 'block' : 'none';
+  document.getElementById('modo-foco-hint').textContent = MODI_FOCO[modoFoco].hint;
   aggiornaFiltriVisibili();
 
   if (vistaAttiva === 'rete') {
@@ -933,7 +1071,7 @@ async function renderTutto() {
     if (networkMain) networkMain.destroy();
     networkMain = disegnaGrafo('graph-main', risposte, filtroAttivo, aggregati);
   } else {
-    document.getElementById('titolo-bersaglio').textContent = `🎯 Bersaglio — ${TEMI_BERSAGLIO[bersaglioTema].label} — Rilevazione #${ril.numero}`;
+    document.getElementById('titolo-bersaglio').textContent = `🎯 Bersaglio — ${TEMI_BERSAGLIO[bersaglioTema].label} — ${MODI_FOCO[modoFoco].label} — Rilevazione #${ril.numero}`;
     document.getElementById('graph-row').style.display = 'none';
     document.getElementById('bersaglio-row').style.display = 'flex';
     document.getElementById('legenda-rete').style.display = 'none';
@@ -1096,6 +1234,14 @@ document.querySelectorAll('#tema-bersaglio-bar .filtro-btn').forEach(btn => {
     document.querySelectorAll('#tema-bersaglio-bar .filtro-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     bersaglioTema = btn.dataset.tema;
+    renderTutto();
+  });
+});
+document.querySelectorAll('#modo-foco-bar .filtro-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#modo-foco-bar .filtro-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    modoFoco = btn.dataset.modo;
     renderTutto();
   });
 });
