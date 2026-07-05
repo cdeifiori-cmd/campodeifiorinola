@@ -96,6 +96,18 @@
     #modo-foco-bar { margin-bottom:4px; }
     .modo-foco-hint { font-size:0.72rem; color:var(--muted); font-style:italic; margin:0 0 10px; }
 
+    /* ── Ricerca per nome nel Bersaglio ── */
+    .bersaglio-ricerca-wrap { position:relative; margin-bottom:10px; }
+    .bersaglio-ricerca-input { width:100%; box-sizing:border-box; padding:7px 30px 7px 10px; border:1.5px solid var(--carta-scura); border-radius:8px; font-family:'Lora',serif; font-size:0.85rem; background:#fff; }
+    .bersaglio-ricerca-x { position:absolute; right:6px; top:6px; border:none; background:none; color:var(--muted); font-size:0.9rem; cursor:pointer; padding:2px 6px; }
+    .bersaglio-ricerca-risultati { position:absolute; z-index:50; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--carta-scura); border-radius:8px; margin-top:3px; max-height:220px; overflow-y:auto; box-shadow:0 4px 14px rgba(0,0,0,0.12); }
+    .bri-item { padding:8px 12px; font-size:0.84rem; cursor:pointer; border-bottom:1px solid var(--carta-scura); }
+    .bri-item:last-child { border-bottom:none; }
+    .bri-item:hover { background:var(--oro-light, #f5e6c8); }
+    .bri-vuoto { padding:8px 12px; font-size:0.8rem; color:var(--muted); font-style:italic; }
+    .bersaglio-pulse-anello { fill:none; stroke:#c8860a; stroke-width:3; opacity:0.9; animation:bersaglioPulse 1.1s ease-out 2; }
+    @keyframes bersaglioPulse { 0% { r:16; opacity:0.9; } 100% { r:38; opacity:0; } }
+
     /* ── Vista Rete: filtro categorie (checkbox indipendenti) + hint focus al clic ── */
     .rete-cat-toggle { display:inline-flex; align-items:center; gap:5px; font-size:0.78rem; color:var(--navy); cursor:pointer; padding:5px 12px; border:1.5px solid var(--navy); border-radius:20px; background:#fff; font-family:'Lora',serif; }
     .rete-cat-toggle input { cursor:pointer; }
@@ -202,6 +214,11 @@
                 <button class="filtro-btn" id="btn-modalita-anonima" title="Nasconde i nomi dei/delle naufraghi/e, per condividere o presentare la struttura del gruppo in sicurezza">👁 Nomi visibili</button>
                 <button class="filtro-btn" id="btn-deseleziona-foco" style="display:none;">✖️ Deseleziona</button>
               </div>
+            </div>
+            <div class="bersaglio-ricerca-wrap">
+              <input type="text" id="bersaglio-ricerca" class="bersaglio-ricerca-input" placeholder="🔍 Cerca un naufrago/a per nome..." autocomplete="off">
+              <button id="bersaglio-ricerca-pulisci" class="bersaglio-ricerca-x" title="Pulisci ricerca" style="display:none;">✕</button>
+              <div id="bersaglio-ricerca-risultati" class="bersaglio-ricerca-risultati" style="display:none;"></div>
             </div>
             <div id="bersaglio-svg-wrap"></div>
           </div>
@@ -508,15 +525,18 @@ function disegnaGrafo(containerId, risposte, aggregati) {
   const rispondentiSet = new Set(risposte.map(r => r.userId));
   const isolatiSet = new Set(aggregati?.isolati || []);
   const leaderSet = new Set((aggregati?.leader || []).slice(0, 3).map(l => l.uid));
+  // Risoluzione nome condivisa col Bersaglio: in modalità anonima usa la sigla (N1, N2, ...)
+  // al posto del nome disambiguato, sia in label sia in tooltip.
   const labelPerUid = calcolaLabelDisambiguate(uidsCompleti);
+  const etichettePerUid = modalitaAnonima ? calcolaSigle(uidsCompleti) : labelPerUid;
 
   const nodes = uidsCompleti.map(uid => {
     const nonRispondente = !rispondentiSet.has(uid);
-    const nome = nomeVisualizzato(uid);
+    const nomeMostrato = etichettePerUid[uid];
     const opacityBase = nonRispondente ? 0.55 : 1;
     return {
       id: uid,
-      label: labelPerUid[uid],
+      label: nomeMostrato,
       shape: 'dot',
       size: leaderSet.has(uid) ? 20 : 14,
       opacity: opacityBase,
@@ -530,7 +550,7 @@ function disegnaGrafo(containerId, risposte, aggregati) {
             ? { background: '#fdf3d9', border: '#c8860a' }
             : { background: '#1a3a5c', border: '#0d1b2a' },
       font: { color: '#2c1e0f', size: 12, strokeWidth: 3, strokeColor: '#ffffff' },
-      title: nonRispondente ? `${nome} — non ha ancora risposto` : nome,
+      title: nonRispondente ? `${nomeMostrato} — non ha ancora risposto` : nomeMostrato,
     };
   });
 
@@ -1047,6 +1067,7 @@ function disegnaBersaglio(risposte, filtro, aggregati, tema) {
     <g id="bersaglio-foco-archi"></g>
     <g id="bersaglio-nodi">${nodesSvg}</g>
     <g id="bersaglio-etichette">${etichetteSvg}</g>
+    <g id="bersaglio-pulse"></g>
   </svg>`;
 
   // Bar chart additivo (Parte 2) — stessa risoluzione nome (sigla in modalità anonima), calcolo
@@ -1202,6 +1223,80 @@ function disegnaBersaglio(risposte, filtro, aggregati, tema) {
   wrap.addEventListener('click', (ev) => {
     if (!ev.target.closest('.bersaglio-nodo')) applicaFoco(null);
   });
+
+  // ── Ricerca per nome (Parte A) ───────────────────────────────────────────────
+  // Si cerca sempre per nome REALE (anche in modalità anonima, è uno strumento interno
+  // dell'educatore/trice), ma l'elenco disambiguato mostra risolviNome (sigla se anonima).
+  const inputRicerca = document.getElementById('bersaglio-ricerca');
+  const btnPulisciRicerca = document.getElementById('bersaglio-ricerca-pulisci');
+  const risultatiRicerca = document.getElementById('bersaglio-ricerca-risultati');
+
+  function normalizza(s) {
+    return (s || '').toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  }
+
+  function pulisciTendina() {
+    if (risultatiRicerca) { risultatiRicerca.innerHTML = ''; risultatiRicerca.style.display = 'none'; }
+  }
+
+  function pulisciRicerca() {
+    if (inputRicerca) inputRicerca.value = '';
+    if (btnPulisciRicerca) btnPulisciRicerca.style.display = 'none';
+    pulisciTendina();
+    applicaFoco(null);
+  }
+
+  // Breve pulsazione dorata attorno al nodo trovato, per localizzarlo subito nella corona.
+  function pulsaNodo(uid) {
+    const gruppoPulse = wrap.querySelector('#bersaglio-pulse');
+    const p = pos[uid];
+    if (!gruppoPulse || !p) return;
+    gruppoPulse.innerHTML = `<circle class="bersaglio-pulse-anello" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="16"></circle>`;
+    setTimeout(() => { gruppoPulse.innerHTML = ''; }, 2300);
+  }
+
+  function selezionaRisultato(uid) {
+    if (inputRicerca) inputRicerca.value = risolviNome(uid);
+    if (btnPulisciRicerca) btnPulisciRicerca.style.display = '';
+    pulisciTendina();
+    applicaFoco(uid);
+    mostraInfo(uid);
+    pulsaNodo(uid);
+  }
+
+  function eseguiRicerca(testo) {
+    const q = normalizza(testo).trim();
+    if (btnPulisciRicerca) btnPulisciRicerca.style.display = testo ? '' : 'none';
+    if (!q) { pulisciTendina(); return; }
+    const match = uids.filter(u => normalizza(nomeVisualizzato(u)).includes(q));
+    if (!risultatiRicerca) return;
+    if (!match.length) {
+      risultatiRicerca.innerHTML = '<div class="bri-vuoto">Nessun naufrago/a trovato/a</div>';
+      risultatiRicerca.style.display = 'block';
+      return;
+    }
+    risultatiRicerca.innerHTML = match
+      .sort((a, b) => risolviNome(a).localeCompare(risolviNome(b), 'it'))
+      .map(u => `<div class="bri-item" data-uid="${esc(u)}">${esc(risolviNome(u))}</div>`).join('');
+    risultatiRicerca.style.display = 'block';
+    risultatiRicerca.querySelectorAll('.bri-item').forEach(el => {
+      el.addEventListener('click', () => selezionaRisultato(el.dataset.uid));
+    });
+  }
+
+  if (inputRicerca) {
+    inputRicerca.oninput = () => eseguiRicerca(inputRicerca.value);
+    inputRicerca.onkeydown = (ev) => {
+      if (ev.key === 'Enter') {
+        const primo = risultatiRicerca?.querySelector('.bri-item');
+        if (primo) selezionaRisultato(primo.dataset.uid);
+      } else if (ev.key === 'Escape') {
+        pulisciRicerca();
+      }
+    };
+    inputRicerca.onfocus = () => { if (inputRicerca.value) eseguiRicerca(inputRicerca.value); };
+  }
+  if (btnPulisciRicerca) btnPulisciRicerca.onclick = pulisciRicerca;
 }
 
 // ── Render principale ──────────────────────────────────────────────────────
