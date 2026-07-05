@@ -109,6 +109,32 @@
     .bersaglio-pulse-anello { fill:none; stroke:#c8860a; stroke-width:3; opacity:0.9; animation:bersaglioPulse 1.1s ease-out 2; }
     @keyframes bersaglioPulse { 0% { r:16; opacity:0.9; } 100% { r:38; opacity:0; } }
 
+    /* ── Bersaglio "Percorso a step" (modalità aggiuntiva) ── */
+    #bersaglio-modalita-bar { margin-bottom:var(--rc-sp-2); }
+    .percorso-stepper { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:var(--rc-sp-2); }
+    .percorso-step-btn { padding:6px 12px; border-radius:20px; border:1.5px solid var(--navy); background:#fff; color:var(--navy); font-size:0.74rem; cursor:pointer; font-family:'Lora',serif; }
+    .percorso-step-btn.percorso-step-attivo { background:var(--navy); color:var(--oro); font-weight:700; }
+    .percorso-step-btn.percorso-step-fatto { border-color:#1e8449; color:#1e8449; }
+    .percorso-didascalia { background:var(--post-bg); border-left:4px solid var(--oro); border-radius:4px 10px 10px 4px; padding:10px 14px; font-size:0.85rem; line-height:1.5; color:var(--inchiostro); margin-bottom:var(--rc-sp-2); }
+    .percorso-didascalia .percorso-nota { display:block; font-size:0.74rem; color:var(--muted); font-style:italic; margin-top:4px; }
+    .percorso-controlli { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:var(--rc-sp-2); }
+    #percorso-svg-wrap svg { width:100%; height:auto; max-height:600px; display:block; }
+
+    .percorso-nodo-entra { animation:percorsoEntra 0.5s cubic-bezier(.34,1.4,.64,1) both; transform-box:fill-box; transform-origin:center; }
+    @keyframes percorsoEntra { from { opacity:0; transform:scale(0.25); } to { opacity:1; transform:scale(1); } }
+    .percorso-nodo circle { transition: opacity 0.2s, stroke-width 0.2s; }
+    .percorso-nodo text { font-family:'Lora',serif; fill:#2c1e0f; pointer-events:none; user-select:none; }
+
+    /* Battuta C — enfasi sul DARE: piccolo pallino pieno all'origine di ogni freccia */
+    .percorso-origine-dot { transition: r 0.2s; }
+    .percorso-nodo-dona circle.percorso-nodo-cerchio { stroke-width:3.5; }
+
+    /* Battuta D — enfasi sul RICEVERE: freccia "in movimento" verso la punta + alone convergenza */
+    .percorso-arco-flusso { stroke-dasharray:6 5; animation:percorsoFlusso 0.9s linear infinite; }
+    @keyframes percorsoFlusso { to { stroke-dashoffset:-22; } }
+    .percorso-alone-convergenza { fill:none; stroke-dasharray:2,3; animation:percorsoRuota 6s linear infinite; transform-box:fill-box; transform-origin:center; }
+    @keyframes percorsoRuota { to { transform:rotate(360deg); } }
+
     /* ── Sezione 4: griglia 2x2 dei 4 bar chart (nomine ricevute per domanda) ── */
     .barchart-sezione { flex:1 1 100%; border-top:1px solid var(--carta-scura); margin-top:var(--rc-sp-2); padding-top:var(--rc-sp-3); }
     .barchart-grid { display:grid; grid-template-columns: repeat(2, 1fr); gap:var(--rc-sp-2); }
@@ -259,36 +285,60 @@
 
       <div class="bersaglio-row" id="bersaglio-row" style="display:none;">
         <div class="bersaglio-mappa-col">
-          <div class="bersaglio-col-head">
-            <h3 id="titolo-bersaglio">🎯 Bersaglio</h3>
-            <button class="filtro-btn" id="btn-deseleziona-foco" style="display:none;">✖️ Deseleziona</button>
+          <div class="filtro-bar" id="bersaglio-modalita-bar">
+            <button class="filtro-btn active" data-modalitab="classico">🎯 Bersaglio classico (temi)</button>
+            <button class="filtro-btn" data-modalitab="percorso">🧭 Percorso a step</button>
           </div>
-          <div id="bersaglio-svg-wrap"></div>
 
-          <!-- Sezione 4 — griglia 2x2 dei bar chart, sotto la mappa (stesso show/hide della vista Bersaglio) -->
-          <div class="barchart-sezione">
-            <h3 class="rc-sezione-titolo" style="font-size:0.92rem;">📊 Nomine ricevute per domanda</h3>
-            <div class="barchart-grid">
-              <div class="barchart-item">
-                <h4>❤️ Nomine positive ricevute</h4>
-                <div id="barchart-svg-wrap" class="barchart-svg-wrap"></div>
-              </div>
-              <div class="barchart-item">
-                <h4>📖 Avvicinamenti ricevuti (vorrebbero avvicinarti)</h4>
-                <div id="barchart-ponti-wrap" class="barchart-svg-wrap"></div>
-              </div>
-              <div class="barchart-item">
-                <h4>🌊 Fanno più fatica a stare con te (correnti)</h4>
-                <div id="barchart-correnti-wrap" class="barchart-svg-wrap"></div>
-              </div>
-              <div class="barchart-item">
-                <h4>🪨 Difficile costruire un rapporto (scogli)</h4>
-                <div id="barchart-scogli-wrap" class="barchart-svg-wrap"></div>
+          <div id="bersaglio-classico-wrap">
+            <div class="bersaglio-col-head">
+              <h3 id="titolo-bersaglio">🎯 Bersaglio</h3>
+              <button class="filtro-btn" id="btn-deseleziona-foco" style="display:none;">✖️ Deseleziona</button>
+            </div>
+            <div id="bersaglio-svg-wrap"></div>
+
+            <!-- Sezione 4 — griglia 2x2 dei bar chart, sotto la mappa (stesso show/hide della vista Bersaglio) -->
+            <div class="barchart-sezione">
+              <h3 class="rc-sezione-titolo" style="font-size:0.92rem;">📊 Nomine ricevute per domanda</h3>
+              <div class="barchart-grid">
+                <div class="barchart-item">
+                  <h4>❤️ Nomine positive ricevute</h4>
+                  <div id="barchart-svg-wrap" class="barchart-svg-wrap"></div>
+                </div>
+                <div class="barchart-item">
+                  <h4>📖 Avvicinamenti ricevuti (vorrebbero avvicinarti)</h4>
+                  <div id="barchart-ponti-wrap" class="barchart-svg-wrap"></div>
+                </div>
+                <div class="barchart-item">
+                  <h4>🌊 Fanno più fatica a stare con te (correnti)</h4>
+                  <div id="barchart-correnti-wrap" class="barchart-svg-wrap"></div>
+                </div>
+                <div class="barchart-item">
+                  <h4>🪨 Difficile costruire un rapporto (scogli)</h4>
+                  <div id="barchart-scogli-wrap" class="barchart-svg-wrap"></div>
+                </div>
               </div>
             </div>
           </div>
+
+          <div id="bersaglio-percorso-wrap" style="display:none;">
+            <div class="percorso-stepper" id="percorso-stepper">
+              <button class="percorso-step-btn" data-step="0">1 · 🔥 Chi porto con me</button>
+              <button class="percorso-step-btn" data-step="1">2 · 🌉 Chi potrebbe essermi amico/a</button>
+              <button class="percorso-step-btn" data-step="2">3 · 🌊 Con chi faccio più fatica</button>
+              <button class="percorso-step-btn" data-step="3">4 · 🪨 Difficile costruire un rapporto</button>
+            </div>
+            <div class="percorso-didascalia" id="percorso-didascalia"></div>
+            <div class="percorso-controlli">
+              <button class="filtro-btn" id="percorso-btn-step-prec">◀ Step precedente</button>
+              <button class="filtro-btn" id="percorso-btn-battuta-indietro" style="display:none;">↩ Indietro</button>
+              <button class="filtro-btn active" id="percorso-btn-battuta-avanti"></button>
+              <button class="filtro-btn" id="percorso-btn-step-succ">Step successivo ▶</button>
+            </div>
+            <div id="percorso-svg-wrap"></div>
+          </div>
         </div>
-        <div class="bersaglio-dettaglio-col">
+        <div class="bersaglio-dettaglio-col" id="bersaglio-dettaglio-col">
           <h3>ℹ️ Dettaglio naufrago</h3>
           <div id="bersaglio-info-body" class="vuoto">Seleziona un/una naufrago/a: passa il mouse o tocca un nodo per vedere i dettagli.</div>
         </div>
@@ -389,6 +439,42 @@ function calcolaSigle(uids) {
   const sigle = {};
   ordinati.forEach((u, i) => { sigle[u] = `N${i + 1}`; });
   return sigle;
+}
+
+// ── Bersaglio "Percorso a step" (Parte aggiuntiva, non sostitutiva del Bersaglio classico) ──
+// 4 step = le 4 domande del questionario; in ogni step il posizionamento è SEMPRE sulle scelte
+// RICEVUTE su quel campo (più ricevute → più centrale, 0 → fuori dal bersaglio). Colori coerenti
+// con la legenda esistente (verde/giallo/arancio/rosso).
+const STEP_PERCORSO = [
+  { campo: 'ciurma', numero: 1, titolo: 'Chi porto con me', domanda: 'Chi porteresti con te in una lunga navigazione?', colore: '#2ecc71', emoji: '🔥' },
+  { campo: 'ponti', numero: 2, titolo: 'Chi potrebbe essermi amico/a', domanda: 'Chi vorrebbe avvicinare o conoscere meglio?', colore: '#f1c40f', emoji: '🌉' },
+  { campo: 'correnti', numero: 3, titolo: 'Con chi faccio più fatica', domanda: 'Con chi fa più fatica a stare?', colore: '#e67e22', emoji: '🌊' },
+  { campo: 'scogli', numero: 4, titolo: 'Difficile costruire un rapporto', domanda: 'Con chi è difficile costruire un rapporto?', colore: '#e74c3c', emoji: '🪨' },
+];
+const BATTUTE_PERCORSO = ['A', 'B', 'C', 'D']; // A=vuoto, B=nodi, C=frecce (chi dà), D=frecce (chi riceve)
+let modalitaBersaglio = 'classico'; // 'classico' | 'percorso'
+let stepPercorso = 0;               // indice 0..3 in STEP_PERCORSO
+let battutaPercorso = 'A';          // 'A' | 'B' | 'C' | 'D'
+
+// Rete di frecce di UN SOLO campo, SEMPRE dalla fonte grezza (mai da buildEdges/edges
+// collassati): garantisce che nessuna coppia reciproca sparisca per i gap già documentati in
+// buildEdges() sotto filtro='tutte'. Un solo arco per coppia reciproca (doppia punta), altrimenti
+// un arco singolo nel verso reale nominante -> nominato/a.
+function costruisciFrecceStep(risposte, uids, campo) {
+  const mappa = {};
+  uids.forEach(u => { mappa[u] = new Set(); });
+  risposte.forEach(r => { mappa[r.userId] = new Set(r[campo] || []); });
+  const archi = [];
+  for (let i = 0; i < uids.length; i++) {
+    for (let j = i + 1; j < uids.length; j++) {
+      const a = uids[i], b = uids[j];
+      const aVersoB = mappa[a].has(b), bVersoA = mappa[b].has(a);
+      if (aVersoB && bVersoA) archi.push({ from: a, to: b, reciproco: true });
+      else if (aVersoB) archi.push({ from: a, to: b, reciproco: false });
+      else if (bVersoA) archi.push({ from: b, to: a, reciproco: false });
+    }
+  }
+  return archi;
 }
 
 function categorieTema(tema) {
@@ -1379,6 +1465,157 @@ function disegnaBersaglio(risposte, filtro, aggregati, tema) {
   if (btnPulisciRicerca) btnPulisciRicerca.onclick = pulisciRicerca;
 }
 
+// ── Bersaglio "Percorso a step" (modalità aggiuntiva, il Bersaglio classico resta invariato) ──
+// Posizionamento SEMPRE sulle scelte RICEVUTE nel campo dello step attivo (riusa calcolaRicevuteGrezze,
+// calcolaFasceAnelli/trovaAnelloPerValore/posizioniBersaglio già in uso nel Bersaglio classico).
+// Le frecce (Battute C/D) vengono SEMPRE da costruisciFrecceStep() sulla fonte grezza, mai da
+// buildEdges()/edges collassati. Nessun conteggio esistente viene toccato: questa è una lettura
+// aggiuntiva degli stessi dati.
+function disegnaPercorso(risposte, uids) {
+  const step = STEP_PERCORSO[stepPercorso];
+  const rispondentiSet = new Set(risposte.map(r => r.userId));
+  const labelPerUid = calcolaLabelDisambiguate(uids);
+  const etichettePerUid = modalitaAnonima ? calcolaSigle(uids) : labelPerUid;
+
+  const entranti = calcolaRicevuteGrezze(risposte, uids, step.campo);
+  const ricevute = {};
+  uids.forEach(u => { ricevute[u] = entranti[u].length; });
+  const maxRicevute = uids.length ? Math.max(0, ...uids.map(u => ricevute[u])) : 0;
+  const fasce = calcolaFasceAnelli(maxRicevute);
+  const anello = {};
+  uids.forEach(u => { anello[u] = trovaAnelloPerValore(ricevute[u], fasce); });
+  const { pos, CX, CY } = posizioniBersaglio(uids, anello, {});
+
+  // ── Didascalia di step (Battuta A sempre spiegata, aggiornata anche nelle battute successive) ──
+  const NOTE_BATTUTA = {
+    A: 'Clicca "Mostra naufraghi/e" per vedere come si dispone il gruppo su questa domanda.',
+    B: 'I nodi sono posizionati in base a quante scelte hanno RICEVUTO su questa domanda: più al centro = più ATTENZIONE del gruppo su questa dimensione (positiva o negativa a seconda dello step), non "il/la migliore/peggiore". Zero ricevute = fuori dal bersaglio.',
+    C: 'Le frecce mostrano CHI DÀ ogni scelta: guarda da dove PARTONO (il pallino pieno segna l\'origine).',
+    D: 'Le STESSE frecce di prima: ora guarda dove CONVERGONO, per vedere chi RICEVE più scelte (le punte più marcate, in movimento).',
+  };
+  const didascalia = document.getElementById('percorso-didascalia');
+  if (didascalia) {
+    didascalia.innerHTML = `<strong>${step.emoji} Step ${step.numero} — ${esc(step.titolo)}</strong><br>${esc(step.domanda)}<span class="percorso-nota">${esc(NOTE_BATTUTA[battutaPercorso])}</span>`;
+    didascalia.style.setProperty('border-left-color', step.colore);
+  }
+
+  // ── Anelli (sempre presenti, anche in Battuta A) ────────────────────────────────────
+  const raggioMinimo = Math.min(...RING_RADII);
+  const ringsSvg = [...RING_RADII].sort((a, b) => b - a).map(r => {
+    const isCentro = r === raggioMinimo;
+    return `<circle cx="${CX}" cy="${CY}" r="${r}" fill="${step.colore}" fill-opacity="0.07" stroke="${step.colore}" stroke-opacity="0.5" stroke-width="${isCentro ? 2.5 : 1.4}"></circle>`;
+  }).join('');
+  const etichetteSvg = RING_RADII.map((r, i) => etichettaAnelloSvg(CX, CY - r, etichettaFascia(fasce[i]))).join('');
+
+  // ── Battute C/D: rete di frecce SEMPRE dalla fonte grezza per questo campo ──────────
+  let archi = [];
+  let donatori = new Set(), convergenza = {};
+  if (battutaPercorso === 'C' || battutaPercorso === 'D') {
+    archi = costruisciFrecceStep(risposte, uids, step.campo);
+    archi.forEach(e => {
+      donatori.add(e.from);
+      convergenza[e.to] = (convergenza[e.to] || 0) + 1;
+      if (e.reciproco) { donatori.add(e.to); convergenza[e.from] = (convergenza[e.from] || 0) + 1; }
+    });
+  }
+
+  // ── Nodi (Battute B/C/D — assenti in A) ─────────────────────────────────────────────
+  let nodesSvg = '';
+  if (battutaPercorso !== 'A') {
+    nodesSvg = uids.map(u => {
+      const p = pos[u];
+      if (!p) return '';
+      const nonRispondente = !rispondentiSet.has(u);
+      const dash = nonRispondente ? ' stroke-dasharray="3,2"' : '';
+      const opacity = nonRispondente ? ' opacity="0.6"' : '';
+      const classeExtra = battutaPercorso === 'C' && donatori.has(u) ? ' percorso-nodo-dona' : '';
+      const haloConvergenza = battutaPercorso === 'D' && (convergenza[u] || 0) >= CONVERGENZA_MIN_FRECCE
+        ? `<circle class="percorso-alone-convergenza" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="23" stroke="${step.colore}" stroke-width="3"></circle>`
+        : '';
+      return `<g class="bersaglio-nodo percorso-nodo percorso-nodo-entra${classeExtra}" data-uid="${esc(u)}">
+        ${haloConvergenza}
+        <circle class="percorso-nodo-cerchio" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="16" fill="${step.colore}" stroke="#1a3a5c" stroke-width="1.5"${dash}${opacity}></circle>
+        <text x="${p.x.toFixed(1)}" y="${(p.y + 3).toFixed(1)}" text-anchor="middle" font-weight="700" fill="#fff" font-size="10"${opacity}>${ricevute[u]}</text>
+        <text class="bersaglio-etichetta-nome" x="${p.x.toFixed(1)}" y="${(p.y + 27).toFixed(1)}" text-anchor="middle" font-size="9"${opacity}>${esc(etichettePerUid[u])}</text>
+      </g>`;
+    }).join('');
+  }
+
+  // ── Frecce (Battute C/D — stessi archi, cambia solo l'enfasi coda/punta) ───────────
+  let edgesSvg = '', defsExtra = '';
+  if (battutaPercorso === 'C' || battutaPercorso === 'D') {
+    const colHex = step.colore.replace('#', '');
+    const puntaDim = battutaPercorso === 'D' ? 11 : 8;
+    defsExtra = `
+      <marker id="percorso-punta-${colHex}" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="${puntaDim}" markerHeight="${puntaDim}" orient="auto-start-reverse">
+        <path d="M0.5,0.5 L9.5,5 L0.5,9.5 z" fill="${step.colore}" stroke="#ffffff" stroke-width="0.8" stroke-linejoin="round"></path>
+      </marker>
+      <marker id="percorso-origine-${colHex}" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+        <circle class="percorso-origine-dot" cx="5" cy="5" r="4" fill="${step.colore}" stroke="#ffffff" stroke-width="0.8"></circle>
+      </marker>`;
+    edgesSvg = archi.map(e => {
+      const p1n = pos[e.from], p2n = pos[e.to];
+      if (!p1n || !p2n) return '';
+      const { p1, p2 } = accorciaSegmento(p1n, p2n);
+      const markerEnd = ` marker-end="url(#percorso-punta-${colHex})"`;
+      const markerStart = e.reciproco
+        ? ` marker-start="url(#percorso-punta-${colHex})"`
+        : (battutaPercorso === 'C' ? ` marker-start="url(#percorso-origine-${colHex})"` : '');
+      const classeFlusso = battutaPercorso === 'D' ? ' percorso-arco-flusso' : '';
+      const spessore = battutaPercorso === 'D' ? 3.5 : 2.5;
+      return `<line class="percorso-arco${classeFlusso}" x1="${p1.x.toFixed(1)}" y1="${p1.y.toFixed(1)}" x2="${p2.x.toFixed(1)}" y2="${p2.y.toFixed(1)}" stroke="${step.colore}" stroke-width="${spessore}"${markerEnd}${markerStart}></line>`;
+    }).join('');
+  }
+
+  const wrap = document.getElementById('percorso-svg-wrap');
+  wrap.innerHTML = `<svg viewBox="0 0 640 640" xmlns="http://www.w3.org/2000/svg">
+    <defs>${defsExtra}</defs>
+    ${ringsSvg}
+    <g id="percorso-archi">${edgesSvg}</g>
+    <g id="percorso-nodi">${nodesSvg}</g>
+    <g id="percorso-etichette">${etichetteSvg}</g>
+  </svg>`;
+
+  // ── Controllo di coerenza in console (richiesto): posizione coerente con size(insiemeEntrante),
+  // e stessi archi in Battuta C e D (cambia solo l'evidenziazione, mai il dato) ───────────────
+  if (battutaPercorso === 'B' || battutaPercorso === 'C' || battutaPercorso === 'D') {
+    const righe = uids.map(u => ({
+      nome: nomeVisualizzato(u),
+      campo: step.campo,
+      ricevuteGrezze: ricevute[u],
+      anello: anello[u],
+      fasciaAnello: etichettaFascia(fasce[anello[u]]),
+    }));
+    console.log(`[Percorso a step] Step ${step.numero} "${step.titolo}" (campo=${step.campo}), battuta ${battutaPercorso} — posizione vs size(insiemeEntrante):`);
+    if (console.table) console.table(righe); else console.log(righe);
+  }
+  if (battutaPercorso === 'C' || battutaPercorso === 'D') {
+    console.log(`[Percorso a step] Battuta ${battutaPercorso}: ${archi.length} archi (identici in C e D, cambia solo l'enfasi coda/punta) — campo ${step.campo}.`);
+  }
+}
+
+// Aggiorna stepper/bottoni della modalità Percorso in base a stepPercorso/battutaPercorso.
+function aggiornaControlliPercorso() {
+  document.querySelectorAll('#percorso-stepper .percorso-step-btn').forEach(b => {
+    const i = Number(b.dataset.step);
+    b.classList.toggle('percorso-step-attivo', i === stepPercorso);
+  });
+  const btnStepPrec = document.getElementById('percorso-btn-step-prec');
+  const btnStepSucc = document.getElementById('percorso-btn-step-succ');
+  if (btnStepPrec) { btnStepPrec.disabled = stepPercorso === 0; btnStepPrec.style.opacity = stepPercorso === 0 ? '0.5' : '1'; }
+  if (btnStepSucc) { btnStepSucc.disabled = stepPercorso === STEP_PERCORSO.length - 1; btnStepSucc.style.opacity = stepPercorso === STEP_PERCORSO.length - 1 ? '0.5' : '1'; }
+
+  const btnIndietro = document.getElementById('percorso-btn-battuta-indietro');
+  if (btnIndietro) btnIndietro.style.display = battutaPercorso === 'A' ? 'none' : '';
+
+  const ETICHETTA_AVANTI = { A: '▶ Mostra naufraghi/e', B: '➡ Chi dà', C: '➡ Chi riceve', D: '' };
+  const btnAvanti = document.getElementById('percorso-btn-battuta-avanti');
+  if (btnAvanti) {
+    btnAvanti.textContent = ETICHETTA_AVANTI[battutaPercorso];
+    btnAvanti.style.display = battutaPercorso === 'D' ? 'none' : '';
+  }
+}
+
 // ── Render principale ──────────────────────────────────────────────────────
 let networkMain = null, networkCompare = null;
 
@@ -1386,10 +1623,11 @@ let networkMain = null, networkCompare = null;
 // in vista Rete tutte e 5 restano disponibili come sempre.
 function aggiornaFiltriVisibili() {
   // La vista Rete usa il filtro per categoria dedicato (checkbox indipendenti, Obiettivo 2a),
-  // non il filtro a scelta singola condiviso con il Bersaglio.
-  document.getElementById('filtro-bar').style.display = vistaAttiva === 'rete' ? 'none' : 'flex';
+  // non il filtro a scelta singola condiviso col Bersaglio classico. Il Percorso a step ha i
+  // suoi controlli autonomi (stepper/battute): nessuno dei due filtri gli serve.
+  document.getElementById('filtro-bar').style.display = (vistaAttiva === 'rete' || modalitaBersaglio === 'percorso') ? 'none' : 'flex';
   document.getElementById('rete-categorie-bar').style.display = vistaAttiva === 'rete' ? 'flex' : 'none';
-  if (vistaAttiva === 'rete') return;
+  if (vistaAttiva === 'rete' || modalitaBersaglio === 'percorso') return;
 
   const bottoni = document.querySelectorAll('#filtro-bar .filtro-btn');
   const { tutti } = categorieTema(bersaglioTema);
@@ -1449,14 +1687,18 @@ async function renderTutto() {
 
   document.getElementById('titolo-graph-main').textContent = `Rilevazione #${ril.numero}`;
 
-  document.getElementById('tema-bersaglio-bar').style.display = vistaAttiva === 'bersaglio' ? 'flex' : 'none';
-  document.getElementById('modo-foco-bar').style.display = vistaAttiva === 'bersaglio' ? 'flex' : 'none';
-  document.getElementById('modo-foco-hint').style.display = vistaAttiva === 'bersaglio' ? 'block' : 'none';
+  const bersaglioClassico = vistaAttiva === 'bersaglio' && modalitaBersaglio === 'classico';
+  const bersaglioPercorso = vistaAttiva === 'bersaglio' && modalitaBersaglio === 'percorso';
+
+  document.getElementById('bersaglio-modalita-bar').style.display = vistaAttiva === 'bersaglio' ? 'flex' : 'none';
+  document.getElementById('tema-bersaglio-bar').style.display = bersaglioClassico ? 'flex' : 'none';
+  document.getElementById('modo-foco-bar').style.display = bersaglioClassico ? 'flex' : 'none';
+  document.getElementById('modo-foco-hint').style.display = bersaglioClassico ? 'block' : 'none';
   document.getElementById('modo-foco-hint').textContent = MODI_FOCO[modoFoco].hint;
   document.getElementById('rete-foco-hint').style.display = vistaAttiva === 'rete' ? 'block' : 'none';
-  // La ricerca per nome agisce solo sul Bersaglio: nella barra controlli condivisa (Sezione 2)
-  // resta visibile solo quando quella vista è attiva.
-  document.getElementById('bersaglio-ricerca-wrap').style.display = vistaAttiva === 'bersaglio' ? 'block' : 'none';
+  // La ricerca per nome agisce solo sul Bersaglio classico: nella barra controlli condivisa
+  // (Sezione 2) resta visibile solo quando quella modalità è attiva.
+  document.getElementById('bersaglio-ricerca-wrap').style.display = bersaglioClassico ? 'block' : 'none';
   aggiornaFiltriVisibili();
 
   if (vistaAttiva === 'rete') {
@@ -1468,14 +1710,26 @@ async function renderTutto() {
     if (networkMain) networkMain.network.destroy();
     networkMain = disegnaGrafo('graph-main', risposte, aggregati);
   } else {
-    document.getElementById('titolo-bersaglio').textContent = `🎯 Bersaglio — ${TEMI_BERSAGLIO[bersaglioTema].label} — ${MODI_FOCO[modoFoco].label} — Rilevazione #${ril.numero}`;
     document.getElementById('graph-row').style.display = 'none';
     document.getElementById('bersaglio-row').style.display = 'flex';
     document.getElementById('legenda-rete').style.display = 'none';
-    document.getElementById('legenda-bersaglio').style.display = 'flex';
     document.getElementById('blocco-confronto').style.display = 'none';
-    renderLegendaBersaglio(bersaglioTema);
-    disegnaBersaglio(risposte, filtroAttivo, aggregati, bersaglioTema);
+    document.getElementById('bersaglio-classico-wrap').style.display = bersaglioClassico ? 'block' : 'none';
+    document.getElementById('bersaglio-percorso-wrap').style.display = bersaglioPercorso ? 'block' : 'none';
+    // Il pannello Dettaglio naufrago è una funzione del Bersaglio classico (si popola al clic
+    // sul nodo); il Percorso a step non lo usa, gli lascia lo spazio libero per la coreografia.
+    document.getElementById('bersaglio-dettaglio-col').style.display = bersaglioClassico ? 'block' : 'none';
+    if (bersaglioClassico) {
+      document.getElementById('titolo-bersaglio').textContent = `🎯 Bersaglio — ${TEMI_BERSAGLIO[bersaglioTema].label} — ${MODI_FOCO[modoFoco].label} — Rilevazione #${ril.numero}`;
+      document.getElementById('legenda-bersaglio').style.display = 'flex';
+      renderLegendaBersaglio(bersaglioTema);
+      disegnaBersaglio(risposte, filtroAttivo, aggregati, bersaglioTema);
+    } else {
+      document.getElementById('legenda-bersaglio').style.display = 'none';
+      const uidsPercorso = calcolaUidCoinvolti(risposte);
+      disegnaPercorso(risposte, uidsPercorso);
+      aggiornaControlliPercorso();
+    }
   }
 
   // Stat cards
@@ -1641,6 +1895,39 @@ document.querySelectorAll('#modo-foco-bar .filtro-btn').forEach(btn => {
     modoFoco = btn.dataset.modo;
     renderTutto();
   });
+});
+// Bersaglio "Percorso a step": toggle modalità (additiva, il classico resta il default/invariato).
+document.querySelectorAll('#bersaglio-modalita-bar .filtro-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#bersaglio-modalita-bar .filtro-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    modalitaBersaglio = btn.dataset.modalitab;
+    renderTutto();
+  });
+});
+// Salto libero fra i 4 step: sempre disponibile, in qualsiasi ordine; ogni cambio step riparte
+// dalla Battuta A (bersaglio vuoto) del nuovo step.
+document.querySelectorAll('#percorso-stepper .percorso-step-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    stepPercorso = Number(btn.dataset.step);
+    battutaPercorso = 'A';
+    renderTutto();
+  });
+});
+document.getElementById('percorso-btn-step-prec').addEventListener('click', () => {
+  if (stepPercorso > 0) { stepPercorso--; battutaPercorso = 'A'; renderTutto(); }
+});
+document.getElementById('percorso-btn-step-succ').addEventListener('click', () => {
+  if (stepPercorso < STEP_PERCORSO.length - 1) { stepPercorso++; battutaPercorso = 'A'; renderTutto(); }
+});
+// Coreografia A → B → C → D (Mostra naufraghi/e → Chi dà → Chi riceve), avanti/indietro.
+document.getElementById('percorso-btn-battuta-avanti').addEventListener('click', () => {
+  const i = BATTUTE_PERCORSO.indexOf(battutaPercorso);
+  if (i < BATTUTE_PERCORSO.length - 1) { battutaPercorso = BATTUTE_PERCORSO[i + 1]; renderTutto(); }
+});
+document.getElementById('percorso-btn-battuta-indietro').addEventListener('click', () => {
+  const i = BATTUTE_PERCORSO.indexOf(battutaPercorso);
+  if (i > 0) { battutaPercorso = BATTUTE_PERCORSO[i - 1]; renderTutto(); }
 });
 // Filtro per categoria della vista Rete (Obiettivo 2a): checkbox indipendenti, aggiornano i
 // DataSet delle reti già disegnate senza un nuovo render completo (il layout non si sposta).
