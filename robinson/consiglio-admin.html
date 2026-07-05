@@ -326,7 +326,7 @@ function buildEdges(risposte, filtro, uidsCompleti, categorieConsentite) {
       const aScogB = ma.scogli.has(b), bScogA = mb.scogli.has(a);
 
       if (consentito('ciurma') && (filtro === 'ciurma' || filtro === 'tutte')) {
-        if (aCiurmaB && bCiurmaA) edges.push({ from: a, to: b, color: { color: '#3498db' }, width: 4, arrows: '' });
+        if (aCiurmaB && bCiurmaA) edges.push({ from: a, to: b, color: { color: '#3498db' }, width: 4, arrows: '', reciproco: true });
         else if (aCiurmaB || bCiurmaA) edges.push({ from: aCiurmaB ? a : b, to: aCiurmaB ? b : a, color: { color: '#2ecc71' }, width: 2, arrows: 'to' });
       }
       if (consentito('ponti') && (filtro === 'ponti' || filtro === 'tutte')) {
@@ -335,14 +335,14 @@ function buildEdges(risposte, filtro, uidsCompleti, categorieConsentite) {
           if (aPontiB) edges.push({ from: a, to: b, color: { color: '#f1c40f' }, width: 2, arrows: 'to' });
           if (bPontiA) edges.push({ from: b, to: a, color: { color: '#f1c40f' }, width: 2, arrows: 'to' });
         } else if (filtro === 'ponti' && (aPontiB || bPontiA)) {
-          edges.push({ from: a, to: b, color: { color: '#3498db' }, width: 3, arrows: '' });
+          edges.push({ from: a, to: b, color: { color: '#3498db' }, width: 3, arrows: '', reciproco: true });
         }
       }
       if (consentito('correnti') && (filtro === 'correnti' || filtro === 'tutte')) {
         if (aCorrB || bCorrA) edges.push({ from: aCorrB ? a : b, to: aCorrB ? b : a, color: { color: '#e67e22' }, width: aCorrB && bCorrA ? 3 : 1.5, dashes: true, arrows: 'to' });
       }
       if (consentito('scogli') && (filtro === 'scogli' || filtro === 'tutte')) {
-        if (aScogB && bScogA) edges.push({ from: a, to: b, color: { color: '#e74c3c' }, width: 3, dashes: true, arrows: '' });
+        if (aScogB && bScogA) edges.push({ from: a, to: b, color: { color: '#e74c3c' }, width: 3, dashes: true, arrows: '', reciproco: true });
         else if (aScogB || bScogA) edges.push({ from: aScogB ? a : b, to: aScogB ? b : a, color: { color: '#e74c3c' }, width: 1.5, dashes: true, arrows: 'to' });
       }
     }
@@ -350,18 +350,46 @@ function buildEdges(risposte, filtro, uidsCompleti, categorieConsentite) {
   return edges;
 }
 
+// Etichetta breve (solo primo nome) salvo quando serve disambiguare: nomi propri ripetuti
+// nel gruppo, o "Emanuele" (che va sempre col cognome, per convenzione dell'isola).
+function calcolaLabelDisambiguate(uids) {
+  const conta = {};
+  uids.forEach(u => {
+    const primo = nomeVisualizzato(u).split(' ')[0];
+    conta[primo] = (conta[primo] || 0) + 1;
+  });
+  const label = {};
+  uids.forEach(u => {
+    const nome = nomeVisualizzato(u);
+    const primo = nome.split(' ')[0];
+    label[u] = (conta[primo] > 1 || primo === 'Emanuele') ? nome : primo;
+  });
+  return label;
+}
+
+// Converte l'arco { arrows, reciproco } di buildEdges() nella proprietà nativa `arrows`
+// di vis-network (solo per la vista Rete — la vista Bersaglio resta su marker SVG e legge
+// ancora arrows come stringa, quindi questa trasformazione non deve toccare buildEdges()).
+function arrowsVisNetwork(e) {
+  const scaleFactor = Math.max(0.6, e.width / 2);
+  if (e.reciproco) return { to: { enabled: true, scaleFactor }, from: { enabled: true, scaleFactor } };
+  if (e.arrows === 'to') return { to: { enabled: true, scaleFactor } };
+  return false;
+}
+
 function disegnaGrafo(containerId, risposte, filtro, aggregati) {
   const uidsCompleti = calcolaUidCoinvolti(risposte);
   const rispondentiSet = new Set(risposte.map(r => r.userId));
   const isolatiSet = new Set(aggregati?.isolati || []);
   const leaderSet = new Set((aggregati?.leader || []).slice(0, 3).map(l => l.uid));
+  const labelPerUid = calcolaLabelDisambiguate(uidsCompleti);
 
   const nodes = uidsCompleti.map(uid => {
     const nonRispondente = !rispondentiSet.has(uid);
     const nome = nomeVisualizzato(uid);
     return {
       id: uid,
-      label: nome,
+      label: labelPerUid[uid],
       shape: 'dot',
       size: leaderSet.has(uid) ? 20 : 14,
       opacity: nonRispondente ? 0.55 : 1,
@@ -373,11 +401,12 @@ function disegnaGrafo(containerId, risposte, filtro, aggregati) {
           : nonRispondente
             ? { background: '#fdf3d9', border: '#c8860a' }
             : { background: '#1a3a5c', border: '#0d1b2a' },
-      font: { color: '#2c1e0f', size: 12 },
+      font: { color: '#2c1e0f', size: 12, strokeWidth: 3, strokeColor: '#ffffff' },
       title: nonRispondente ? `${nome} — non ha ancora risposto` : nome,
     };
   });
-  const edges = buildEdges(risposte, filtro, uidsCompleti);
+  const edges = buildEdges(risposte, filtro, uidsCompleti)
+    .map(e => ({ ...e, arrows: arrowsVisNetwork(e) }));
 
   const container = document.getElementById(containerId);
   const network = new vis.Network(container, { nodes: new vis.DataSet(nodes), edges: new vis.DataSet(edges) }, {
@@ -592,7 +621,7 @@ function disegnaBersaglio(risposte, filtro, aggregati, tema) {
   const infoBody = document.getElementById('bersaglio-info-body');
   function mostraInfo(uid) {
     const nome = nomeVisualizzato(uid);
-    const reciproche = edges.filter(e => e.arrows === '' && (e.from === uid || e.to === uid)).length;
+    const reciproche = edges.filter(e => e.reciproco && (e.from === uid || e.to === uid)).length;
     const avviso = !rispondentiSet.has(uid)
       ? `<div class="item" style="color:var(--oro);font-style:italic;">✏️ Non ha ancora risposto — nomine ricevute mostrate, nessuna scelta in uscita.</div>`
       : '';
