@@ -45,7 +45,7 @@
     .graph-row { display:flex; gap:14px; flex-wrap:wrap; margin-bottom: 16px; }
     .graph-col { flex:1; min-width: 300px; background:#fff; border:1.5px solid var(--carta-scura); border-radius:10px; padding:10px; }
     .graph-col h3 { font-family:'Playfair Display',serif; font-size:0.9rem; color:var(--navy); margin-bottom:8px; text-align:center; }
-    .graph-canvas { width:100%; height: 420px; border-radius:8px; background:#fbfaf7; }
+    .graph-canvas { width:100%; height: 520px; border-radius:8px; background:#fbfaf7; cursor:pointer; }
 
     .liste-row { display:flex; gap:14px; flex-wrap:wrap; margin-bottom:16px; }
     .lista-box { flex:1; min-width:220px; background:#fff; border:1.5px solid var(--carta-scura); border-radius:10px; padding:12px 14px; }
@@ -92,6 +92,11 @@
     /* ── Modalità focus del Bersaglio (uscita/ricevute positive/ricevute difficili) ── */
     #modo-foco-bar { margin-bottom:4px; }
     .modo-foco-hint { font-size:0.72rem; color:var(--muted); font-style:italic; margin:0 0 10px; }
+
+    /* ── Vista Rete: filtro categorie (checkbox indipendenti) + hint focus al clic ── */
+    .rete-cat-toggle { display:inline-flex; align-items:center; gap:5px; font-size:0.78rem; color:var(--navy); cursor:pointer; padding:5px 12px; border:1.5px solid var(--navy); border-radius:20px; background:#fff; font-family:'Lora',serif; }
+    .rete-cat-toggle input { cursor:pointer; }
+    .rete-foco-hint { font-size:0.72rem; color:var(--muted); font-style:italic; margin:0 0 10px; }
   </style>
 </head>
 <body>
@@ -151,6 +156,14 @@
       <button class="filtro-btn" data-filtro="correnti">🌊 Solo Correnti</button>
       <button class="filtro-btn" data-filtro="scogli">🪨 Solo Scogli</button>
     </div>
+
+    <div class="filtro-bar" id="rete-categorie-bar" style="display:none;">
+      <label class="rete-cat-toggle"><input type="checkbox" data-cat="ciurma" checked> 🔥 Ciurma (amicizia)</label>
+      <label class="rete-cat-toggle"><input type="checkbox" data-cat="ponti" checked> 🌉 Ponti</label>
+      <label class="rete-cat-toggle"><input type="checkbox" data-cat="correnti" checked> 🌊 Correnti</label>
+      <label class="rete-cat-toggle"><input type="checkbox" data-cat="scogli" checked> 🪨 Scogli</label>
+    </div>
+    <div class="rete-foco-hint" id="rete-foco-hint" style="display:none;">Clicca un/a naufrago/a per isolare la sua rete di legami diretti; clicca di nuovo o su uno spazio vuoto per tornare alla vista completa.</div>
 
     <div class="legenda" id="legenda-rete">
       <span><span class="dot" style="background:var(--verde);"></span> Amicizia unilaterale</span>
@@ -437,7 +450,19 @@ function arrowsVisNetwork(e) {
   return false;
 }
 
-function disegnaGrafo(containerId, risposte, filtro, aggregati) {
+// Mappa colore→categoria per gli edges della vista Rete, costruiti SEMPRE con buildEdges(...,
+// 'tutte', uidsCompleti) senza categorieConsentite: sotto 'tutte' il blu identifica sempre e
+// solo la ciurma reciproca (il ramo ponti-reciproco che condivide lo stesso colore scatta
+// solo quando filtro==='ponti', mai qui), quindi la mappa resta univoca.
+const CATEGORIA_PER_COLORE_RETE = { '#2ecc71': 'ciurma', '#3498db': 'ciurma', '#f1c40f': 'ponti', '#e67e22': 'correnti', '#e74c3c': 'scogli' };
+function categoriaEdgeRete(e) {
+  return CATEGORIA_PER_COLORE_RETE[e.color?.color] || null;
+}
+// Filtro per categoria della vista Rete (Obiettivo 2a): checkbox indipendenti, separate dal
+// filtro/tema a scelta singola della vista Bersaglio — non condividono stato con esso.
+let categorieReteAttive = new Set(['ciurma', 'ponti', 'correnti', 'scogli']);
+
+function disegnaGrafo(containerId, risposte, aggregati) {
   const uidsCompleti = calcolaUidCoinvolti(risposte);
   const rispondentiSet = new Set(risposte.map(r => r.userId));
   const isolatiSet = new Set(aggregati?.isolati || []);
@@ -447,12 +472,14 @@ function disegnaGrafo(containerId, risposte, filtro, aggregati) {
   const nodes = uidsCompleti.map(uid => {
     const nonRispondente = !rispondentiSet.has(uid);
     const nome = nomeVisualizzato(uid);
+    const opacityBase = nonRispondente ? 0.55 : 1;
     return {
       id: uid,
       label: labelPerUid[uid],
       shape: 'dot',
       size: leaderSet.has(uid) ? 20 : 14,
-      opacity: nonRispondente ? 0.55 : 1,
+      opacity: opacityBase,
+      opacityBase, // campo custom (ignorato da vis-network): per ripristinare l'opacità dopo il focus
       shapeProperties: nonRispondente ? { borderDashes: [4, 3] } : undefined,
       color: isolatiSet.has(uid)
         ? { background: '#e0e0e0', border: '#95a5a6' }
@@ -465,15 +492,74 @@ function disegnaGrafo(containerId, risposte, filtro, aggregati) {
       title: nonRispondente ? `${nome} — non ha ancora risposto` : nome,
     };
   });
-  const edges = buildEdges(risposte, filtro, uidsCompleti)
-    .map(e => ({ ...e, arrows: arrowsVisNetwork(e) }));
+
+  // Set SEMPRE completo (buildEdges senza restrizioni): il filtro per categoria della vista
+  // Rete agisce qui sotto sull'array già costruito, non tocca buildEdges() né lo stato del
+  // filtro/tema condiviso con la vista Bersaglio.
+  const edgesCompleti = buildEdges(risposte, 'tutte', uidsCompleti).map((e, i) => ({
+    ...e,
+    id: `e${i}`,
+    categoria: categoriaEdgeRete(e),
+    arrows: arrowsVisNetwork(e),
+  }));
+  const edgesVisibili = edgesCompleti.filter(e => categorieReteAttive.has(e.categoria));
+
+  const nodesDataSet = new vis.DataSet(nodes);
+  const edgesDataSet = new vis.DataSet(edgesVisibili);
 
   const container = document.getElementById(containerId);
-  const network = new vis.Network(container, { nodes: new vis.DataSet(nodes), edges: new vis.DataSet(edges) }, {
-    physics: { stabilization: true, barnesHut: { gravitationalConstant: -3000, springLength: 110 } },
+  const network = new vis.Network(container, { nodes: nodesDataSet, edges: edgesDataSet }, {
+    // Obiettivo 2c: più repulsione/molla per distanziare i ~25 nodi e ridurre gli incroci;
+    // physics disattivata a stabilizzazione conclusa per un grafo fermo e leggibile.
+    physics: {
+      stabilization: { iterations: 300 },
+      barnesHut: { gravitationalConstant: -4200, springLength: 150, springConstant: 0.02 },
+    },
     interaction: { hover: true },
   });
-  return network;
+  network.once('stabilizationIterationsDone', () => network.setOptions({ physics: false }));
+
+  // ── Focus al clic (Obiettivo 2b): ego-network del naufrago/a cliccato/a ─────────
+  // Evidenzia il nodo e i suoi archi diretti, attenua (fade) gli altri nodi e NASCONDE (non
+  // solo attenua) gli archi non connessi — stessa lezione appresa nel Bersaglio: un arco
+  // solo sbiadito resta comunque visibile e può dare l'impressione di un legame che non c'è.
+  let focoUid = null;
+  function applicaFocoRete(uid) {
+    focoUid = uid;
+    const connessi = new Set(network.getConnectedNodes(uid));
+    connessi.add(uid);
+    nodesDataSet.update(nodesDataSet.get().map(n => ({ id: n.id, opacity: connessi.has(n.id) ? n.opacityBase : 0.08 })));
+    const edgeIdsConnessi = new Set(network.getConnectedEdges(uid));
+    edgesDataSet.update(edgesDataSet.get().map(e => ({ id: e.id, hidden: !edgeIdsConnessi.has(e.id) })));
+  }
+  function resetFocoRete() {
+    focoUid = null;
+    nodesDataSet.update(nodesDataSet.get().map(n => ({ id: n.id, opacity: n.opacityBase })));
+    edgesDataSet.update(edgesDataSet.get().map(e => ({ id: e.id, hidden: false })));
+  }
+  network.on('click', params => {
+    if (params.nodes.length > 0) {
+      const uid = params.nodes[0];
+      if (focoUid === uid) resetFocoRete(); else applicaFocoRete(uid);
+    } else {
+      resetFocoRete();
+    }
+  });
+
+  return {
+    network,
+    // Chiamata dai checkbox categoria (Obiettivo 2a): aggiunge/rimuove dal DataSet mantenendo
+    // il layout già stabilizzato (nessun ricalcolo fisico, i nodi non si spostano).
+    setCategorieVisibili(categorie) {
+      edgesCompleti.forEach(e => {
+        const dovrebbeEsserci = categorie.has(e.categoria);
+        const presente = !!edgesDataSet.get(e.id);
+        if (dovrebbeEsserci && !presente) edgesDataSet.add(e);
+        else if (!dovrebbeEsserci && presente) edgesDataSet.remove(e.id);
+      });
+      if (focoUid) applicaFocoRete(focoUid); // riapplica il focus col nuovo insieme di archi visibili
+    },
+  };
 }
 
 // ── Vista Bersaglio: calcolo impatto/preferenza/anello/profilo ─────────────
@@ -1015,11 +1101,13 @@ let networkMain = null, networkCompare = null;
 // Mostra nel filtro-bar solo le categorie pertinenti al tema attivo (in vista Bersaglio);
 // in vista Rete tutte e 5 restano disponibili come sempre.
 function aggiornaFiltriVisibili() {
+  // La vista Rete usa il filtro per categoria dedicato (checkbox indipendenti, Obiettivo 2a),
+  // non il filtro a scelta singola condiviso con il Bersaglio.
+  document.getElementById('filtro-bar').style.display = vistaAttiva === 'rete' ? 'none' : 'flex';
+  document.getElementById('rete-categorie-bar').style.display = vistaAttiva === 'rete' ? 'flex' : 'none';
+  if (vistaAttiva === 'rete') return;
+
   const bottoni = document.querySelectorAll('#filtro-bar .filtro-btn');
-  if (vistaAttiva === 'rete') {
-    bottoni.forEach(b => { b.style.display = ''; });
-    return;
-  }
   const { tutti } = categorieTema(bersaglioTema);
   const consentiti = new Set(['tutte', ...tutti]);
   let filtroValido = false;
@@ -1081,6 +1169,7 @@ async function renderTutto() {
   document.getElementById('modo-foco-bar').style.display = vistaAttiva === 'bersaglio' ? 'flex' : 'none';
   document.getElementById('modo-foco-hint').style.display = vistaAttiva === 'bersaglio' ? 'block' : 'none';
   document.getElementById('modo-foco-hint').textContent = MODI_FOCO[modoFoco].hint;
+  document.getElementById('rete-foco-hint').style.display = vistaAttiva === 'rete' ? 'block' : 'none';
   aggiornaFiltriVisibili();
 
   if (vistaAttiva === 'rete') {
@@ -1089,8 +1178,8 @@ async function renderTutto() {
     document.getElementById('legenda-rete').style.display = 'flex';
     document.getElementById('legenda-bersaglio').style.display = 'none';
     document.getElementById('blocco-confronto').style.display = 'flex';
-    if (networkMain) networkMain.destroy();
-    networkMain = disegnaGrafo('graph-main', risposte, filtroAttivo, aggregati);
+    if (networkMain) networkMain.network.destroy();
+    networkMain = disegnaGrafo('graph-main', risposte, aggregati);
   } else {
     document.getElementById('titolo-bersaglio').textContent = `🎯 Bersaglio — ${TEMI_BERSAGLIO[bersaglioTema].label} — ${MODI_FOCO[modoFoco].label} — Rilevazione #${ril.numero}`;
     document.getElementById('graph-row').style.display = 'none';
@@ -1143,8 +1232,8 @@ async function renderTutto() {
     const risposteC = await caricaRisposte(rilIdC);
     const aggregatiC = calcolaAggregati(risposteC);
     document.getElementById('titolo-graph-compare').textContent = `Rilevazione #${rilC.numero}`;
-    if (networkCompare) networkCompare.destroy();
-    networkCompare = disegnaGrafo('graph-compare', risposteC, filtroAttivo, aggregatiC);
+    if (networkCompare) networkCompare.network.destroy();
+    networkCompare = disegnaGrafo('graph-compare', risposteC, aggregatiC);
   }
 
   // Pulsanti azione
@@ -1264,6 +1353,15 @@ document.querySelectorAll('#modo-foco-bar .filtro-btn').forEach(btn => {
     btn.classList.add('active');
     modoFoco = btn.dataset.modo;
     renderTutto();
+  });
+});
+// Filtro per categoria della vista Rete (Obiettivo 2a): checkbox indipendenti, aggiornano i
+// DataSet delle reti già disegnate senza un nuovo render completo (il layout non si sposta).
+document.querySelectorAll('#rete-categorie-bar input[type="checkbox"]').forEach(chk => {
+  chk.addEventListener('change', () => {
+    if (chk.checked) categorieReteAttive.add(chk.dataset.cat); else categorieReteAttive.delete(chk.dataset.cat);
+    if (networkMain) networkMain.setCategorieVisibili(categorieReteAttive);
+    if (networkCompare) networkCompare.setCategorieVisibili(categorieReteAttive);
   });
 });
 
