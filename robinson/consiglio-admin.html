@@ -862,6 +862,43 @@ function calcolaRilevantiFoco(edgesSet, uid, modo) {
   return { rilevanti, altroEstremo: e => (e.from === uid ? e.to : e.from), versoN: false };
 }
 
+// Scelte in uscita di N per un dato tema, calcolate SEMPRE dalla fonte grezza (il documento di
+// N), MAI dagli edges collassati di buildEdges(): il verso è sempre N -> x, per ogni x elencato
+// nel/nei campo/i del tema. Così nessuna scelta sparisce mai, reciproca o no — buildEdges() può
+// non produrre alcun arco per una coppia reciproca solo-su-ponti (o solo-su-scogli) sotto
+// filtro='tutte' (stesso gap già risolto per i grafici "Ricevute"), ma qui non serve: si legge
+// direttamente propriaRisposta[campo], niente edges di mezzo.
+function calcolaUsciteTema(risposte, uid, tema) {
+  const propria = risposte.find(r => r.userId === uid);
+  if (!propria) return [];
+  const mappa = {};
+  risposte.forEach(r => { mappa[r.userId] = r; });
+  const { positivi, negativi } = categorieTema(tema);
+  const visti = new Set();
+  const uscite = [];
+  [...positivi, ...negativi].forEach(campo => {
+    (propria[campo] || []).forEach(x => {
+      if (x === uid || visti.has(x)) return; // niente autonomina, niente doppioni fra campi del tema
+      visti.add(x);
+      const altrui = mappa[x];
+      // Reciprocità = stesso campo su entrambi i lati. Le Correnti restano SEMPRE a punta
+      // singola (scelta stilistica esistente per la vista Rete/Bersaglio, anche se mutue).
+      const reciproco = campo !== 'correnti' && !!altrui && (altrui[campo] || []).includes(uid);
+      uscite.push({ to: x, campo, reciproco, positivo: positivi.includes(campo) });
+    });
+  });
+  return uscite;
+}
+
+// Colore/spessore di un arco "scelta in uscita", coerenti con la legenda e con buildEdges().
+function coloreUscita(campo, reciproco) {
+  if (campo === 'ciurma') return reciproco ? { color: '#3498db', width: 4 } : { color: '#2ecc71', width: 2 };
+  if (campo === 'ponti') return reciproco ? { color: '#3498db', width: 3 } : { color: '#f1c40f', width: 2 };
+  if (campo === 'correnti') return { color: '#e67e22', width: 1.5, dashes: true };
+  if (campo === 'scogli') return reciproco ? { color: '#e74c3c', width: 3, dashes: true } : { color: '#e74c3c', width: 1.5, dashes: true };
+  return { color: '#999999', width: 2 };
+}
+
 // Linea SVG "overlay" per un arco rilevante del focus, con marker riusati da defsMarkers.
 // versoN=true → freccia nominante→N (p1=altro, p2=N); versoN=false → freccia N→scelto (p1=N, p2=altro).
 function costruisciArcoFocoSvg(e, pN, pAltro, versoN) {
@@ -1095,13 +1132,24 @@ function disegnaBersaglio(risposte, filtro, aggregati, tema) {
       return;
     }
 
-    // 'uscita' resta scoped su tema/filtro attivi (stesso set già disegnato in baseline,
-    // solo col fix di direzione per i reciproci): coerente con ciò che il Bersaglio mostra
-    // già in quella scheda. 'ricevute_positive' usa edgesCiurma (solo Domanda 1, la
-    // definizione di "positiva ricevuta"). 'ricevute_difficili' usa edgesFoco (set completo,
-    // filtrato per colore su correnti∪scogli) — entrambi indipendenti da tema/filtro attivi.
-    const edgesPerModo = modoFoco === 'uscita' ? edges : modoFoco === 'ricevute_positive' ? edgesCiurma : edgesFoco;
-    const { rilevanti, altroEstremo, versoN } = calcolaRilevantiFoco(edgesPerModo, uid, modoFoco);
+    // 'uscita' si calcola SEMPRE dalla fonte grezza (calcolaUsciteTema, propriaRisposta[campo]),
+    // mai dagli edges collassati: buildEdges() può non produrre alcun arco per una coppia
+    // reciproca solo-su-ponti/solo-su-scogli sotto filtro='tutte', facendo sparire scelte intere.
+    // 'ricevute_positive' usa edgesCiurma (solo Domanda 1, la definizione di "positiva ricevuta").
+    // 'ricevute_difficili' usa edgesFoco (set completo, filtrato per colore su correnti∪scogli).
+    let rilevanti, altroEstremo, versoN;
+    if (modoFoco === 'uscita') {
+      const uscite = calcolaUsciteTema(risposte, uid, tema);
+      rilevanti = uscite.map(u => {
+        const { color, width, dashes } = coloreUscita(u.campo, u.reciproco);
+        return { from: uid, to: u.to, reciproco: u.reciproco, color: { color }, width, dashes };
+      });
+      altroEstremo = e => e.to;
+      versoN = false;
+    } else {
+      const edgesPerModo = modoFoco === 'ricevute_positive' ? edgesCiurma : edgesFoco;
+      ({ rilevanti, altroEstremo, versoN } = calcolaRilevantiFoco(edgesPerModo, uid, modoFoco));
+    }
     const targetPositivi = new Set(rilevanti.filter(e => COLORI_POSITIVI.has(e.color?.color)).map(altroEstremo));
     const targetTutti = new Set(rilevanti.map(altroEstremo));
 
