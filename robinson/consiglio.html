@@ -72,6 +72,8 @@
     .dash-safeguard { text-align:center; padding: 30px 16px; color: var(--muted); font-style: italic; line-height:1.6; }
 
     .msg-attesa { text-align:center; padding: 30px 16px; color: var(--muted); font-style: italic; line-height: 1.6; }
+
+    .errore-salvataggio { background:#fdecea; border:1.5px solid var(--rosso); color:#7a2015; border-radius:8px; padding:10px 14px; font-size:0.82rem; margin-top:12px; line-height:1.5; }
   </style>
 </head>
 <body>
@@ -285,6 +287,7 @@ function renderRiepilogo(ril) {
         </div>
       </div>
     `).join('')}
+    <div id="errore-salvataggio" class="errore-salvataggio" style="display:none;"></div>
     <div class="step-nav">
       <button class="btn" style="background:var(--carta-scura);" id="btn-indietro">← Modifica</button>
       <button class="btn btn-primary" id="btn-conferma">⚓ Affida le tue scelte al mare</button>
@@ -294,23 +297,57 @@ function renderRiepilogo(ril) {
   document.getElementById('btn-conferma').addEventListener('click', async () => {
     const btn = document.getElementById('btn-conferma');
     btn.disabled = true; btn.textContent = 'Salvataggio...';
+    mostraErroreSalvataggio('');
+    const TIMEOUT_MS = 20000;
+    let timeoutId;
     try {
-      await setDoc(doc(db, 'attivita', ATT_ID, 'rilevazioni', ril.id, 'risposte', currentUser.uid), {
+      const rifDoc = doc(db, 'attivita', ATT_ID, 'rilevazioni', ril.id, 'risposte', currentUser.uid);
+      const dati = {
         userId: currentUser.uid,
         ciurma: selezioni.ciurma,
         ponti: selezioni.ponti,
         correnti: selezioni.correnti,
         scogli: selezioni.scogli,
         completatoIl: serverTimestamp(),
+      };
+      // setDoc() su connessione assente/instabile puo' restare "pending" indefinitamente (non
+      // risolve ne' rifiuta) finche' non torna la rete: senza un limite l'utente vede
+      // "Salvataggio..." bloccato a oltranza e puo' abbandonare la pagina pensando sia riuscito,
+      // perdendo la scrittura senza che venga mai mostrato un errore.
+      const timeout = new Promise((_, reject) => {
+        timeoutId = setTimeout(() => reject(new Error('Tempo scaduto: verifica la connessione e riprova.')), TIMEOUT_MS);
       });
+      await Promise.race([setDoc(rifDoc, dati), timeout]);
+      clearTimeout(timeoutId);
+
+      // Verifica lettura-dopo-scrittura: non ci fidiamo della sola risoluzione della promise,
+      // rileggiamo il documento per confermare che sia REALMENTE presente sul server prima di
+      // mostrare l'esito positivo.
+      const verifica = await getDoc(rifDoc);
+      if (!verifica.exists() || !verifica.data().completatoIl) {
+        throw new Error('Il salvataggio non risulta confermato sul server.');
+      }
+
       main.innerHTML = `<div class="msg-attesa">⚓ Le tue scelte sono state affidate al Consiglio dell'Isola.<br>Grazie per aver contribuito a costruire la nostra ciurma.<br><br>
         <button class="btn btn-primary" id="btn-torna-attivita">Torna alle Attività</button></div>`;
       document.getElementById('btn-torna-attivita').addEventListener('click', () => location.href = 'attivita.html');
     } catch (e) {
-      alert('Errore nel salvataggio: ' + e.message);
+      clearTimeout(timeoutId);
+      console.error('[consiglio] Salvataggio risposte fallito:', e);
+      mostraErroreSalvataggio(`⚠️ Salvataggio non riuscito: ${e.message || e}. Controlla la connessione e riprova — le tue scelte restano qui, non hai perso nulla.`);
       btn.disabled = false; btn.textContent = '⚓ Affida le tue scelte al mare';
     }
   });
+}
+
+// Banner d'errore persistente (non un alert(), facile da perdere/bloccare su mobile e WebView
+// in-app): resta visibile finche' l'utente non riprova con successo o torna indietro.
+function mostraErroreSalvataggio(messaggio) {
+  const el = document.getElementById('errore-salvataggio');
+  if (!el) return;
+  if (!messaggio) { el.style.display = 'none'; el.textContent = ''; return; }
+  el.textContent = messaggio;
+  el.style.display = 'block';
 }
 
 // ── Dashboard narrativa (rilevazione chiusa) ──────────────────────────────
