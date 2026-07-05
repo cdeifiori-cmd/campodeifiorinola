@@ -264,7 +264,7 @@ let bersaglioTema = 'preferenze'; // 'preferenze' | 'difficolta' | 'avvicinament
 // scelto N. Asse indipendente dal tema (che resta solo per anelli/etichette/numero).
 const MODI_FOCO = {
   uscita:             { label: 'Scelte in uscita',    hint: 'Clicca un nodo per vedere le SUE scelte in uscita (frecce N → nominati/e).' },
-  ricevute_positive:  { label: 'Ricevute positive',   hint: 'Clicca un nodo per vedere CHI lo ha scelto in positivo (frecce nominante → N).' },
+  ricevute_positive:  { label: 'Ricevute positive',   hint: 'Clicca un nodo per vedere CHI lo ha messo/a nella propria ciurma (Domanda 1 — frecce nominante → N).' },
   ricevute_difficili: { label: 'Ricevute difficili',  hint: 'Clicca un nodo per vedere CHI lo ha messo tra le nomine difficili (frecce nominante → N).' },
 };
 let modoFoco = 'uscita'; // 'uscita' | 'ricevute_positive' | 'ricevute_difficili'
@@ -300,7 +300,8 @@ function chipsNomi(listaUid, rispondentiSet, vuotoText = '—') {
 // per tema/filtro) così l'elenco resta sempre coerente col conteggio bersaglio.posIn/negIn,
 // che è a sua volta calcolato su tutte e 4 le categorie indipendentemente da tema/filtro attivi.
 function nominantiPositivi(risposte, uid) {
-  return risposte.filter(r => (r.ciurma || []).includes(uid) || (r.ponti || []).includes(uid)).map(r => r.userId);
+  // Solo Domanda 1 (campo ciurma) — vedi calcolaBersaglio.posIn per lo stesso criterio.
+  return risposte.filter(r => r.userId !== uid && (r.ciurma || []).includes(uid)).map(r => r.userId);
 }
 function nominantiDifficili(risposte, uid) {
   return risposte.filter(r => (r.correnti || []).includes(uid) || (r.scogli || []).includes(uid)).map(r => r.userId);
@@ -487,8 +488,9 @@ function calcolaBersaglio(risposte, aggregati, uidsCompleti, tema) {
   const posIn = {}, negIn = {};
   uids.forEach(u => { posIn[u] = 0; negIn[u] = 0; });
   risposte.forEach(r => {
-    (r.ciurma || []).forEach(v => { if (posIn[v] !== undefined) posIn[v]++; });
-    (r.ponti || []).forEach(v => { if (posIn[v] !== undefined) posIn[v]++; });
+    // "Positiva ricevuta" = SOLO Domanda 1 (campo ciurma) — i Ponti (Domanda 2) restano una
+    // categoria valida altrove (scelte in uscita, archi propri) ma non contano qui.
+    (r.ciurma || []).forEach(v => { if (v !== r.userId && posIn[v] !== undefined) posIn[v]++; });
     (r.correnti || []).forEach(v => { if (negIn[v] !== undefined) negIn[v]++; });
     (r.scogli || []).forEach(v => { if (negIn[v] !== undefined) negIn[v]++; });
   });
@@ -601,14 +603,15 @@ function posizioniBersaglio(uids, anello, uidToCluster) {
 // Calcolo INDIPENDENTE dagli edges (che sono filtrati per tema/filtro) e dal pannello
 // Dettaglio naufrago: legge direttamente le risposte grezze, per servire anche da
 // riferimento di controllo per eventuali divergenze nel pannello (vedi verificaCoerenzaBarChart).
-// Per ogni naufrago/a X conta le PERSONE DISTINTE che l'hanno nominato/a in ciurma o ponti,
-// deduplicando chi lo nomina in entrambi i campi ed escludendo l'autonomina.
+// "Positiva ricevuta" = SOLO Domanda 1 (campo ciurma): per ogni naufrago/a X conta le PERSONE
+// DISTINTE che l'hanno messo/a nella propria ciurma, escludendo l'autonomina. I Ponti (Domanda 2)
+// restano visibili altrove (scelte in uscita) ma non contano qui.
 function calcolaPositiveGrezze(risposte, uids) {
   const positive = {};
   uids.forEach(u => { positive[u] = []; });
   risposte.forEach(r => {
     const nominante = r.userId;
-    const targets = new Set([...(r.ciurma || []), ...(r.ponti || [])]);
+    const targets = new Set(r.ciurma || []);
     targets.forEach(u => {
       if (u === nominante) return; // niente autonomina
       if (positive[u] !== undefined) positive[u].push(nominante);
@@ -617,20 +620,24 @@ function calcolaPositiveGrezze(risposte, uids) {
   return positive;
 }
 
-// Confronto in console tra il valore "grezzo" (fonte diretta) e quello mostrato nel pannello
-// Dettaglio naufrago (bersaglio.posIn), per far emergere eventuali divergenze da correggere.
+// Confronto in console fra tre fonti indipendenti che DEVONO coincidere ora che "positiva
+// ricevuta" è ristretta a ciurma ovunque: il calcolo grezzo (bar chart), il pannello Dettaglio
+// naufrago (bersaglio.posIn) e il numero mostrato sul nodo nel bersaglio tematico "Preferenze"
+// (già ciurma-only anche prima di questa correzione, vedi TEMI_BERSAGLIO.preferenze).
 function verificaCoerenzaBarChart(risposte, uids, bersaglio) {
   const grezze = calcolaPositiveGrezze(risposte, uids);
+  const ricevuteTemaPreferenze = calcolaRicevutePerTema(risposte, uids, 'preferenze');
   const righe = uids.map(u => ({
     nome: nomeVisualizzato(u),
-    positiveGrezze: grezze[u].length,
+    ciurmaEntranteGrezza: grezze[u].length,
     valorePannello: bersaglio.posIn[u],
-    divergenza: grezze[u].length !== bersaglio.posIn[u] ? '⚠️' : '',
+    valoreNodoBersaglio: ricevuteTemaPreferenze[u],
+    divergenza: (grezze[u].length !== bersaglio.posIn[u] || grezze[u].length !== ricevuteTemaPreferenze[u]) ? '⚠️' : '',
   }));
   const divergenti = righe.filter(r => r.divergenza);
-  console.log(`[Bar chart] Controllo coerenza "Nomine positive ricevute" — ${divergenti.length} divergenze su ${righe.length} naufraghi/e`);
+  console.log(`[Bar chart] Controllo coerenza "Nomine positive ricevute" (solo ciurma) — ${divergenti.length} divergenze su ${righe.length} naufraghi/e`);
   if (console.table) console.table(righe); else console.log(righe);
-  if (divergenti.length) console.warn('[Bar chart] Naufraghi/e con valore pannello diverso dalla fonte grezza:', divergenti);
+  if (divergenti.length) console.warn('[Bar chart] Naufraghi/e con valori discordanti tra grezzo/pannello/nodo bersaglio:', divergenti);
 }
 
 function disegnaBarChart(risposte, uids, labelPerUid) {
@@ -659,34 +666,25 @@ function disegnaBarChart(risposte, uids, labelPerUid) {
     : '<div class="vuoto">Nessun dato per questa rilevazione.</div>';
 }
 
-// buildEdges() con filtro='tutte' non marca reciproco:true in due casi mutui: ponti-mutuo
-// senza ciurma-mutuo (marcato solo sotto filtro='ponti'), e correnti-mutuo (mai marcato, per
-// design della vista Rete/Bersaglio-uscita che tiene le Correnti sempre a punta singola anche
-// se reciproche). Per i grafici "Ricevute" (Parte 2), che devono riflettere il conteggio reale
-// indipendentemente da queste scelte stilistiche, integriamo qui i legami mutui mancanti come
-// archi reciproco:true dedicati — SENZA toccare buildEdges() né la vista Rete/Bersaglio-uscita.
-function integraLegamiMutuiMancanti(risposte, uids, edgesBase) {
+// buildEdges() con filtro='tutte' non marca mai reciproco:true sulle correnti (per design
+// della vista Rete/Bersaglio-uscita, che tiene le Correnti sempre a punta singola anche se
+// reciproche). Per il grafico "Ricevute difficili" (Parte 2), che deve riflettere il conteggio
+// reale indipendentemente da questa scelta stilistica, integriamo qui il legame mancante come
+// arco reciproco:true dedicato — SENZA toccare buildEdges() né la vista Rete/Bersaglio-uscita.
+// (Il ramo "ricevute positive" non usa più questa funzione: "positiva ricevuta" = solo ciurma,
+// il cui ramo di buildEdges() marca già correttamente reciproco:true in ogni caso, senza gap.)
+function integraCorrentiReciprocheMancanti(risposte, uids, edgesBase) {
   const map = {};
-  uids.forEach(u => { map[u] = { ciurma: new Set(), ponti: new Set(), correnti: new Set(), scogli: new Set() }; });
-  risposte.forEach(r => {
-    map[r.userId] = {
-      ciurma: new Set(r.ciurma || []), ponti: new Set(r.ponti || []),
-      correnti: new Set(r.correnti || []), scogli: new Set(r.scogli || []),
-    };
-  });
+  uids.forEach(u => { map[u] = { correnti: new Set() }; });
+  risposte.forEach(r => { map[r.userId] = { correnti: new Set(r.correnti || []) }; });
   const chiave = (a, b) => [a, b].sort().join('|');
-  const giaPositivo = new Set(edgesBase.filter(e => e.reciproco && COLORI_POSITIVI.has(e.color?.color)).map(e => chiave(e.from, e.to)));
   const giaNegativo = new Set(edgesBase.filter(e => e.reciproco && COLORI_NEGATIVI.has(e.color?.color)).map(e => chiave(e.from, e.to)));
   const extra = [];
   const correntiSostituite = new Set();
   for (let i = 0; i < uids.length; i++) {
     for (let j = i + 1; j < uids.length; j++) {
       const a = uids[i], b = uids[j];
-      const aPontiB = map[a].ponti.has(b), bPontiA = map[b].ponti.has(a);
       const aCorrB = map[a].correnti.has(b), bCorrA = map[b].correnti.has(a);
-      if (aPontiB && bPontiA && !giaPositivo.has(chiave(a, b))) {
-        extra.push({ from: a, to: b, color: { color: '#3498db' }, width: 3, reciproco: true });
-      }
       if (aCorrB && bCorrA && !giaNegativo.has(chiave(a, b))) {
         extra.push({ from: a, to: b, color: { color: '#e67e22' }, width: 3, dashes: true, reciproco: true });
         correntiSostituite.add(chiave(a, b));
@@ -705,17 +703,21 @@ function integraLegamiMutuiMancanti(risposte, uids, edgesBase) {
 // IMPORTANTE: per gli archi RECIPROCI, buildEdges() assegna from/to in base al semplice
 // ordine di iterazione degli uid — non c'è un "chi ha scelto per primo" significativo —
 // quindi in ciascuna modalità vanno considerate ENTRAMBE le direzioni quando e.reciproco.
-function calcolaRilevantiFoco(edgesFoco, uid, modo) {
+// 'ricevute_positive' si aspetta un set GIÀ ristretto a ciurma (vedi edgesCiurma in
+// disegnaBersaglio): nessun controllo colore necessario, il set stesso è la definizione di
+// "positiva ricevuta". 'ricevute_difficili' riceve invece il set completo (edgesFoco) e filtra
+// per colore, perché negativo = correnti∪scogli resta un OR fra due campi.
+function calcolaRilevantiFoco(edgesSet, uid, modo) {
   if (modo === 'ricevute_positive') {
-    const rilevanti = edgesFoco.filter(e => COLORI_POSITIVI.has(e.color?.color) && (e.to === uid || (e.reciproco && e.from === uid)));
+    const rilevanti = edgesSet.filter(e => e.to === uid || (e.reciproco && e.from === uid));
     return { rilevanti, altroEstremo: e => (e.to === uid ? e.from : e.to), versoN: true };
   }
   if (modo === 'ricevute_difficili') {
-    const rilevanti = edgesFoco.filter(e => COLORI_NEGATIVI.has(e.color?.color) && (e.to === uid || (e.reciproco && e.from === uid)));
+    const rilevanti = edgesSet.filter(e => COLORI_NEGATIVI.has(e.color?.color) && (e.to === uid || (e.reciproco && e.from === uid)));
     return { rilevanti, altroEstremo: e => (e.to === uid ? e.from : e.to), versoN: true };
   }
   // 'uscita' (default): le scelte fatte DA N
-  const rilevanti = edgesFoco.filter(e => e.from === uid || (e.reciproco && e.to === uid));
+  const rilevanti = edgesSet.filter(e => e.from === uid || (e.reciproco && e.to === uid));
   return { rilevanti, altroEstremo: e => (e.from === uid ? e.to : e.from), versoN: false };
 }
 
@@ -735,9 +737,9 @@ function costruisciArcoFocoSvg(e, pN, pAltro, versoN) {
 // Confronto in console tra il numero di frecce entranti (positive/difficili) nei due nuovi
 // grafici e il valore mostrato nel pannello Dettaglio naufrago — stesso spirito di
 // verificaCoerenzaBarChart, esteso anche al lato "difficili". Nessuna correzione qui.
-function verificaCoerenzaGraficiEntrata(risposte, uids, edgesFoco, bersaglio) {
+function verificaCoerenzaGraficiEntrata(risposte, uids, edgesCiurma, edgesFoco, bersaglio) {
   const righe = uids.map(u => {
-    const pos = calcolaRilevantiFoco(edgesFoco, u, 'ricevute_positive');
+    const pos = calcolaRilevantiFoco(edgesCiurma, u, 'ricevute_positive');
     const neg = calcolaRilevantiFoco(edgesFoco, u, 'ricevute_difficili');
     const entrantiPositiveGrafico = new Set(pos.rilevanti.map(pos.altroEstremo)).size;
     const entrantiDifficiliGrafico = new Set(neg.rilevanti.map(neg.altroEstremo)).size;
@@ -761,13 +763,16 @@ function disegnaBersaglio(risposte, filtro, aggregati, tema) {
   const { pos, CX, CY } = posizioniBersaglio(uids, bersaglio.anello, bersaglio.uidToCluster);
   const categorieConsentite = new Set(categorieTema(tema).tutti);
   const edges = buildEdges(risposte, filtro, uids, categorieConsentite);
-  // Set SEMPRE completo (tutte le 4 categorie, nessun filtro), indipendente da tema/filtro
-  // attivi: usato per le modalità focus "Ricevute positive/difficili" (Parte 2) e per il
-  // controllo di coerenza in console, così combaciano sempre coi conteggi reali (posIn/negIn)
-  // qualunque scheda tema/filtro sia selezionata per gli anelli. La modalità "Scelte in
-  // uscita" (Parte 1) resta invece scoped su `edges` (tema/filtro attivi), come già in
-  // precedenza — solo col fix di direzione per i reciproci.
-  const edgesFoco = integraLegamiMutuiMancanti(risposte, uids, buildEdges(risposte, 'tutte', uids));
+  // Set SEMPRE ristretto a ciurma (Domanda 1), indipendente da tema/filtro attivi: è la
+  // definizione stessa di "positiva ricevuta" per la modalità focus "Ricevute positive" e per
+  // il controllo di coerenza. Il ramo ciurma di buildEdges() non ha gap di reciprocità, quindi
+  // qui non serve alcuna patch aggiuntiva.
+  const edgesCiurma = buildEdges(risposte, 'tutte', uids, new Set(['ciurma']));
+  // Set SEMPRE completo (tutte le 4 categorie), indipendente da tema/filtro attivi: usato SOLO
+  // dalla modalità focus "Ricevute difficili" (correnti∪scogli) e dal relativo controllo di
+  // coerenza. La modalità "Scelte in uscita" (Parte 1) resta invece scoped su `edges`
+  // (tema/filtro attivi), come già in precedenza — solo col fix di direzione per i reciproci.
+  const edgesFoco = integraCorrentiReciprocheMancanti(risposte, uids, buildEdges(risposte, 'tutte', uids));
   // Risoluzione nome condivisa con il bar chart (stessa regola cognome: Emanuele/duplicati)
   const labelPerUid = calcolaLabelDisambiguate(uids);
 
@@ -851,7 +856,7 @@ function disegnaBersaglio(risposte, filtro, aggregati, tema) {
   // Bar chart additivo (Parte 2) — stessa risoluzione nome, calcolo indipendente da fonte grezza
   disegnaBarChart(risposte, uids, labelPerUid);
   verificaCoerenzaBarChart(risposte, uids, bersaglio);
-  verificaCoerenzaGraficiEntrata(risposte, uids, edgesFoco, bersaglio);
+  verificaCoerenzaGraficiEntrata(risposte, uids, edgesCiurma, edgesFoco, bersaglio);
 
   const infoBody = document.getElementById('bersaglio-info-body');
   function mostraInfo(uid) {
@@ -932,10 +937,10 @@ function disegnaBersaglio(risposte, filtro, aggregati, tema) {
 
     // 'uscita' resta scoped su tema/filtro attivi (stesso set già disegnato in baseline,
     // solo col fix di direzione per i reciproci): coerente con ciò che il Bersaglio mostra
-    // già in quella scheda. Le due modalità "ricevute" usano invece il set SEMPRE completo
-    // (edgesFoco), perché devono riflettere il conteggio reale (posIn/negIn), indipendente
-    // da quale tema/filtro sia selezionato per gli anelli.
-    const edgesPerModo = modoFoco === 'uscita' ? edges : edgesFoco;
+    // già in quella scheda. 'ricevute_positive' usa edgesCiurma (solo Domanda 1, la
+    // definizione di "positiva ricevuta"). 'ricevute_difficili' usa edgesFoco (set completo,
+    // filtrato per colore su correnti∪scogli) — entrambi indipendenti da tema/filtro attivi.
+    const edgesPerModo = modoFoco === 'uscita' ? edges : modoFoco === 'ricevute_positive' ? edgesCiurma : edgesFoco;
     const { rilevanti, altroEstremo, versoN } = calcolaRilevantiFoco(edgesPerModo, uid, modoFoco);
     const targetPositivi = new Set(rilevanti.filter(e => COLORI_POSITIVI.has(e.color?.color)).map(altroEstremo));
     const targetTutti = new Set(rilevanti.map(altroEstremo));
