@@ -238,12 +238,23 @@ function calcolaRicevutePerTema(risposte, uids, tema) {
 }
 
 // Chip HTML per un elenco di uid (usato nel pannello "Dettaglio naufrago")
-function chipsNomi(listaUid, rispondentiSet) {
-  if (!listaUid || !listaUid.length) return '<span class="vuoto">—</span>';
+function chipsNomi(listaUid, rispondentiSet, vuotoText = '—') {
+  if (!listaUid || !listaUid.length) return `<span class="vuoto">${esc(vuotoText)}</span>`;
   return listaUid.map(u => {
     const nonRisp = rispondentiSet && !rispondentiSet.has(u);
     return `<span class="chip${nonRisp ? ' non-rispondente' : ''}">${esc(nomeVisualizzato(u))}${nonRisp ? ' ✏️' : ''}</span>`;
   }).join('');
+}
+
+// Dati PASSIVI (in entrata) per il pannello "Dettaglio naufrago": chi ha nominato uid,
+// non chi uid ha nominato. Calcolati direttamente da risposte (non dagli edges filtrati
+// per tema/filtro) così l'elenco resta sempre coerente col conteggio bersaglio.posIn/negIn,
+// che è a sua volta calcolato su tutte e 4 le categorie indipendentemente da tema/filtro attivi.
+function nominantiPositivi(risposte, uid) {
+  return risposte.filter(r => (r.ciurma || []).includes(uid) || (r.ponti || []).includes(uid)).map(r => r.userId);
+}
+function nominantiDifficili(risposte, uid) {
+  return risposte.filter(r => (r.correnti || []).includes(uid) || (r.scogli || []).includes(uid)).map(r => r.userId);
 }
 
 async function caricaNaufraghi() {
@@ -621,7 +632,11 @@ function disegnaBersaglio(risposte, filtro, aggregati, tema) {
   const infoBody = document.getElementById('bersaglio-info-body');
   function mostraInfo(uid) {
     const nome = nomeVisualizzato(uid);
-    const reciproche = edges.filter(e => e.reciproco && (e.from === uid || e.to === uid)).length;
+    const reciprocheEdges = edges.filter(e => e.reciproco && (e.from === uid || e.to === uid));
+    const reciproche = reciprocheEdges.length;
+    const reciprocheUids = reciprocheEdges.map(e => e.from === uid ? e.to : e.from);
+    const positiviRicevutiUids = nominantiPositivi(risposte, uid);
+    const difficiliRicevutiUids = nominantiDifficili(risposte, uid);
     const avviso = !rispondentiSet.has(uid)
       ? `<div class="item" style="color:var(--oro);font-style:italic;">✏️ Non ha ancora risposto — nomine ricevute mostrate, nessuna scelta in uscita.</div>`
       : '';
@@ -638,8 +653,11 @@ function disegnaBersaglio(risposte, filtro, aggregati, tema) {
       <div style="font-weight:700;color:var(--navy);margin-bottom:6px;">${esc(nome)}</div>
       ${avviso}
       <div class="item">❤️ Nomine positive ricevute: <strong>${bersaglio.posIn[uid]}</strong></div>
+      <div class="item">${chipsNomi(positiviRicevutiUids, rispondentiSet, 'nessuno/a')}</div>
       <div class="item">🌊 Nomine difficili ricevute: <strong>${bersaglio.negIn[uid]}</strong></div>
+      <div class="item">${chipsNomi(difficiliRicevutiUids, rispondentiSet, 'nessuno/a')}</div>
       <div class="item">🔵 Legami reciproci: <strong>${reciproche}</strong></div>
+      <div class="item">${chipsNomi(reciprocheUids, rispondentiSet, 'nessuno/a')}</div>
       <div class="item">Profilo: <strong>${esc(PROFILO_LABEL[bersaglio.profilo[uid]])}</strong></div>
       ${rigaCategoria('🔥', 'Porterebbe con sé', propriaRisposta?.ciurma)}
       ${rigaCategoria('🌉', 'Vorrebbe avvicinare', propriaRisposta?.ponti)}
