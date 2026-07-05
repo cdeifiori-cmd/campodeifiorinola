@@ -70,10 +70,25 @@
     .bersaglio-nodo text { font-family:'Lora',serif; fill:#2c1e0f; pointer-events:none; user-select:none; }
     .bersaglio-nodo, .bersaglio-arco { transition: opacity 0.15s; }
     .bersaglio-dim { opacity: 0.12; }
+    .bersaglio-nodo.bersaglio-foco-sorgente circle { stroke:#c8860a; stroke-width:3.5; }
+    .bersaglio-etichetta-evidenziata { font-weight:700; paint-order:stroke; stroke:#fff; stroke-width:3px; stroke-linejoin:round; }
+    .bersaglio-etichetta-evidenziata.positiva { fill:#1e8449; }
+    .bersaglio-etichetta-evidenziata.negativa { fill:#c0392b; }
+    .bersaglio-arco-foco { stroke-width:4; }
     #bersaglio-info-body .item { font-size:0.84rem; padding:3px 0; }
     #bersaglio-info-body .item-titolo { font-weight:600; margin-top:8px; font-size:0.8rem; color:var(--navy); }
     .chip { display:inline-block; background:var(--carta-scura); border-radius:12px; padding:2px 9px; font-size:0.76rem; margin:2px 4px 2px 0; }
     .chip.non-rispondente { border:1px dashed #c8860a; opacity:0.8; }
+
+    /* ── Coesistenza Bersaglio + Bar chart (additivo) ── */
+    .bersaglio-barchart-split { display:flex; gap:14px; flex-wrap:wrap; }
+    .bersaglio-col { flex:1.7; min-width:300px; }
+    .barchart-col { flex:1; min-width:220px; }
+    .bersaglio-col-head { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px; }
+    .bersaglio-col-head h3 { margin:0; }
+    #btn-deseleziona-foco { padding:4px 10px; font-size:0.72rem; }
+    #barchart-svg-wrap svg { width:100%; height:auto; display:block; }
+    .barchart-riga text { font-family:'Lora',serif; }
   </style>
 </head>
 <body>
@@ -153,8 +168,19 @@
 
     <div class="bersaglio-row" id="bersaglio-row" style="display:none;">
       <div class="graph-col" style="flex:2; min-width:340px;">
-        <h3 id="titolo-bersaglio">🎯 Bersaglio</h3>
-        <div id="bersaglio-svg-wrap"></div>
+        <div class="bersaglio-barchart-split">
+          <div class="bersaglio-col">
+            <div class="bersaglio-col-head">
+              <h3 id="titolo-bersaglio">🎯 Bersaglio</h3>
+              <button class="filtro-btn" id="btn-deseleziona-foco" style="display:none;">✖️ Deseleziona</button>
+            </div>
+            <div id="bersaglio-svg-wrap"></div>
+          </div>
+          <div class="barchart-col">
+            <h3>📊 Nomine positive ricevute</h3>
+            <div id="barchart-svg-wrap"></div>
+          </div>
+        </div>
       </div>
       <div class="graph-col" style="flex:1; min-width:220px;">
         <h3>ℹ️ Dettaglio naufrago</h3>
@@ -218,6 +244,7 @@ const TEMI_BERSAGLIO = {
 const PREFERENZE_INCLUDE_PONTI = false; // true per includere anche i Ponti tra le "Preferenze" del bersaglio 1
 const CONVERGENZA_MIN_FRECCE = 2;       // soglia minima di frecce convergenti per evidenziare "molti contro uno"
 const PALETTE_CLUSTER = ['#8e44ad', '#16a085', '#2980b9', '#d35400', '#c0392b', '#27ae60', '#7f8c8d'];
+const COLORI_POSITIVI = new Set(['#3498db', '#2ecc71', '#f1c40f']); // amicizia reciproca/unilaterale, ponte
 let bersaglioTema = 'preferenze'; // 'preferenze' | 'difficolta' | 'avvicinamenti'
 
 function categorieTema(tema) {
@@ -548,6 +575,68 @@ function posizioniBersaglio(uids, anello, uidToCluster) {
   return { pos, CX, CY };
 }
 
+// ── Bar chart "Nomine positive ricevute" — additivo, sola lettura ───────────────
+// Calcolo INDIPENDENTE dagli edges (che sono filtrati per tema/filtro) e dal pannello
+// Dettaglio naufrago: legge direttamente le risposte grezze, per servire anche da
+// riferimento di controllo per eventuali divergenze nel pannello (vedi verificaCoerenzaBarChart).
+// Per ogni naufrago/a X conta le PERSONE DISTINTE che l'hanno nominato/a in ciurma o ponti,
+// deduplicando chi lo nomina in entrambi i campi ed escludendo l'autonomina.
+function calcolaPositiveGrezze(risposte, uids) {
+  const positive = {};
+  uids.forEach(u => { positive[u] = []; });
+  risposte.forEach(r => {
+    const nominante = r.userId;
+    const targets = new Set([...(r.ciurma || []), ...(r.ponti || [])]);
+    targets.forEach(u => {
+      if (u === nominante) return; // niente autonomina
+      if (positive[u] !== undefined) positive[u].push(nominante);
+    });
+  });
+  return positive;
+}
+
+// Confronto in console tra il valore "grezzo" (fonte diretta) e quello mostrato nel pannello
+// Dettaglio naufrago (bersaglio.posIn), per far emergere eventuali divergenze da correggere.
+function verificaCoerenzaBarChart(risposte, uids, bersaglio) {
+  const grezze = calcolaPositiveGrezze(risposte, uids);
+  const righe = uids.map(u => ({
+    nome: nomeVisualizzato(u),
+    positiveGrezze: grezze[u].length,
+    valorePannello: bersaglio.posIn[u],
+    divergenza: grezze[u].length !== bersaglio.posIn[u] ? '⚠️' : '',
+  }));
+  const divergenti = righe.filter(r => r.divergenza);
+  console.log(`[Bar chart] Controllo coerenza "Nomine positive ricevute" — ${divergenti.length} divergenze su ${righe.length} naufraghi/e`);
+  if (console.table) console.table(righe); else console.log(righe);
+  if (divergenti.length) console.warn('[Bar chart] Naufraghi/e con valore pannello diverso dalla fonte grezza:', divergenti);
+}
+
+function disegnaBarChart(risposte, uids, labelPerUid) {
+  const grezze = calcolaPositiveGrezze(risposte, uids);
+  const dati = uids.map(u => ({ uid: u, label: labelPerUid[u], valore: grezze[u].length }))
+    .sort((a, b) => b.valore - a.valore || a.label.localeCompare(b.label, 'it'));
+
+  const barH = 20, gapY = 8, leftPad = 84, rightPad = 30, topPad = 6, chartW = 260;
+  const maxValore = Math.max(1, ...dati.map(d => d.valore));
+  const svgW = leftPad + chartW + rightPad;
+  const svgH = topPad * 2 + dati.length * (barH + gapY);
+
+  const righeSvg = dati.map((d, i) => {
+    const y = topPad + i * (barH + gapY);
+    const w = (d.valore / maxValore) * chartW;
+    return `<g class="barchart-riga" data-uid="${esc(d.uid)}">
+      <text x="${leftPad - 8}" y="${(y + barH / 2 + 4).toFixed(1)}" text-anchor="end" font-size="11" fill="#2c1e0f">${esc(d.label)}</text>
+      <rect x="${leftPad}" y="${y}" width="${Math.max(2, w).toFixed(1)}" height="${barH}" rx="4" fill="#2ecc71"></rect>
+      <text x="${(leftPad + Math.max(2, w) + 6).toFixed(1)}" y="${(y + barH / 2 + 4).toFixed(1)}" font-size="11" font-weight="700" fill="#1a3a5c">${d.valore}</text>
+    </g>`;
+  }).join('');
+
+  const wrap = document.getElementById('barchart-svg-wrap');
+  wrap.innerHTML = dati.length
+    ? `<svg viewBox="0 0 ${svgW} ${svgH}" xmlns="http://www.w3.org/2000/svg">${righeSvg}</svg>`
+    : '<div class="vuoto">Nessun dato per questa rilevazione.</div>';
+}
+
 function disegnaBersaglio(risposte, filtro, aggregati, tema) {
   const uids = calcolaUidCoinvolti(risposte);
   const rispondentiSet = new Set(risposte.map(r => r.userId));
@@ -555,6 +644,8 @@ function disegnaBersaglio(risposte, filtro, aggregati, tema) {
   const { pos, CX, CY } = posizioniBersaglio(uids, bersaglio.anello, bersaglio.uidToCluster);
   const categorieConsentite = new Set(categorieTema(tema).tutti);
   const edges = buildEdges(risposte, filtro, uids, categorieConsentite);
+  // Risoluzione nome condivisa con il bar chart (stessa regola cognome: Emanuele/duplicati)
+  const labelPerUid = calcolaLabelDisambiguate(uids);
 
   // Convergenza: quanti "vettori" (frecce unilaterali + reciproche) toccano ogni nodo,
   // usato per evidenziare il "molti contro uno" nei bersagli Difficoltà/Avvicinamenti.
@@ -587,7 +678,11 @@ function disegnaBersaglio(risposte, filtro, aggregati, tema) {
     if (!p1 || !p2) return '';
     const colHex = (e.color?.color || '#999999').replace('#', '');
     const dash = e.dashes ? ' stroke-dasharray="5,4"' : '';
-    const marker = e.arrows === 'to' ? ` marker-end="url(#arrow-${colHex})"` : '';
+    // Reciproci: doppia punta (marker-start + marker-end, stesso marker per colore, riusato
+    // tal quale grazie a orient="auto-start-reverse" già presente in defsMarkers).
+    const marker = e.reciproco
+      ? ` marker-start="url(#arrow-${colHex})" marker-end="url(#arrow-${colHex})"`
+      : e.arrows === 'to' ? ` marker-end="url(#arrow-${colHex})"` : '';
     return `<line class="bersaglio-arco" data-from="${esc(e.from)}" data-to="${esc(e.to)}" x1="${p1.x.toFixed(1)}" y1="${p1.y.toFixed(1)}" x2="${p2.x.toFixed(1)}" y2="${p2.y.toFixed(1)}" stroke="#${colHex}" stroke-width="${e.width}"${dash}${marker}></line>`;
   }).join('');
 
@@ -595,7 +690,6 @@ function disegnaBersaglio(risposte, filtro, aggregati, tema) {
     const p = pos[u];
     if (!p) return '';
     const nonRispondente = !rispondentiSet.has(u);
-    const nome = nomeVisualizzato(u);
     const colore = PROFILO_COLORI[bersaglio.profilo[u]];
     const numero = bersaglio.ricevuteTema[u];
     const dash = nonRispondente ? ' stroke-dasharray="3,2"' : '';
@@ -616,7 +710,7 @@ function disegnaBersaglio(risposte, filtro, aggregati, tema) {
       ${haloCluster}${haloConvergenza}
       <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="16" fill="${colore}" stroke="#1a3a5c" stroke-width="1.5"${dash}${opacity}></circle>
       <text x="${p.x.toFixed(1)}" y="${(p.y + 3).toFixed(1)}" text-anchor="middle" font-weight="700" fill="#fff" font-size="10"${opacity}>${numero}</text>
-      <text x="${p.x.toFixed(1)}" y="${(p.y + 27).toFixed(1)}" text-anchor="middle" font-size="9"${opacity}>${esc(nome.split(' ')[0])}</text>
+      <text class="bersaglio-etichetta-nome" x="${p.x.toFixed(1)}" y="${(p.y + 27).toFixed(1)}" text-anchor="middle" font-size="9"${opacity}>${esc(labelPerUid[u])}</text>
     </g>`;
   }).join('');
 
@@ -628,6 +722,10 @@ function disegnaBersaglio(risposte, filtro, aggregati, tema) {
     <g id="bersaglio-nodi">${nodesSvg}</g>
     <g id="bersaglio-etichette">${etichetteSvg}</g>
   </svg>`;
+
+  // Bar chart additivo (Parte 2) — stessa risoluzione nome, calcolo indipendente da fonte grezza
+  disegnaBarChart(risposte, uids, labelPerUid);
+  verificaCoerenzaBarChart(risposte, uids, bersaglio);
 
   const infoBody = document.getElementById('bersaglio-info-body');
   function mostraInfo(uid) {
@@ -676,12 +774,83 @@ function disegnaBersaglio(risposte, filtro, aggregati, tema) {
       l.classList.toggle('bersaglio-dim', !!uid && !collegata);
     });
   }
+
+  // ── Focus al clic (Parte 3): sticky, indipendente dall'hover ────────────────
+  // Mostra solo le scelte IN USCITA di N (from===N.uid): nodo sorgente pienamente visibile,
+  // nominati/e evidenziati con etichetta grassetto/colorata (verde=positiva, rosso=difficile),
+  // tutto il resto attenuato. Le frecce sono già disegnate (unilaterali/reciproche) da edgesSvg;
+  // qui basta portarle in primo piano e assicurarsi che non restino coperte.
+  let focoUid = null;
+  const btnDeseleziona = document.getElementById('btn-deseleziona-foco');
+  const gruppoNodi = wrap.querySelector('#bersaglio-nodi');
+  const gruppoEdges = wrap.querySelector('#bersaglio-edges');
+
+  function applicaFoco(uid) {
+    focoUid = uid;
+    if (btnDeseleziona) btnDeseleziona.style.display = uid ? '' : 'none';
+
+    const nodi = wrap.querySelectorAll('.bersaglio-nodo');
+    const archi = wrap.querySelectorAll('.bersaglio-arco');
+
+    if (!uid) {
+      nodi.forEach(g => {
+        g.classList.remove('bersaglio-dim', 'bersaglio-foco-sorgente');
+        g.querySelector('.bersaglio-etichetta-nome')?.classList.remove('bersaglio-etichetta-evidenziata', 'positiva', 'negativa');
+      });
+      archi.forEach(l => l.classList.remove('bersaglio-dim', 'bersaglio-arco-foco'));
+      return;
+    }
+
+    // Per gli archi RECIPROCI, buildEdges() assegna from/to in base al semplice ordine di
+    // iterazione degli uid (non c'è un "chi ha scelto per primo" significativo quando la
+    // nomina è reciproca): filtrare solo e.from===uid perderebbe le scelte di N quando N
+    // capita di trovarsi nello slot `to`. Per i reciproci contano entrambe le direzioni.
+    const usciti = edges.filter(e => e.from === uid || (e.reciproco && e.to === uid));
+    const altroEstremo = e => (e.from === uid ? e.to : e.from);
+    const targetPositivi = new Set(usciti.filter(e => COLORI_POSITIVI.has(e.color?.color)).map(altroEstremo));
+    const targetTutti = new Set(usciti.map(altroEstremo));
+
+    nodi.forEach(g => {
+      const u = g.dataset.uid;
+      const isSorgente = u === uid;
+      const isScelto = targetTutti.has(u);
+      g.classList.toggle('bersaglio-dim', !isSorgente && !isScelto);
+      g.classList.toggle('bersaglio-foco-sorgente', isSorgente);
+      const etichetta = g.querySelector('.bersaglio-etichetta-nome');
+      if (isScelto) {
+        etichetta?.classList.add('bersaglio-etichetta-evidenziata');
+        etichetta?.classList.toggle('positiva', targetPositivi.has(u));
+        etichetta?.classList.toggle('negativa', !targetPositivi.has(u));
+      } else {
+        etichetta?.classList.remove('bersaglio-etichetta-evidenziata', 'positiva', 'negativa');
+      }
+      // Anti-sovrapposizione: sorgente e scelti/e in primo piano (z-order) sopra gli attenuati
+      if ((isSorgente || isScelto) && gruppoNodi) gruppoNodi.appendChild(g);
+    });
+
+    archi.forEach(l => {
+      const daFoco = l.dataset.from === uid;
+      l.classList.toggle('bersaglio-dim', !daFoco);
+      l.classList.toggle('bersaglio-arco-foco', daFoco);
+      if (daFoco && gruppoEdges) gruppoEdges.appendChild(l);
+    });
+  }
+  if (btnDeseleziona) btnDeseleziona.onclick = () => applicaFoco(null);
+
   wrap.querySelectorAll('.bersaglio-nodo').forEach(g => {
     const uid = g.dataset.uid;
-    g.addEventListener('mouseenter', () => { evidenzia(uid); mostraInfo(uid); });
-    g.addEventListener('click', () => { evidenzia(uid); mostraInfo(uid); });
+    g.addEventListener('mouseenter', () => { if (!focoUid) evidenzia(uid); mostraInfo(uid); });
+    g.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      applicaFoco(focoUid === uid ? null : uid);
+      mostraInfo(uid);
+    });
   });
-  wrap.addEventListener('mouseleave', () => evidenzia(null));
+  wrap.addEventListener('mouseleave', () => { if (!focoUid) evidenzia(null); });
+  // Clic su area vuota (anelli, sfondo, archi) → deseleziona il focus
+  wrap.addEventListener('click', (ev) => {
+    if (!ev.target.closest('.bersaglio-nodo')) applicaFoco(null);
+  });
 }
 
 // ── Render principale ──────────────────────────────────────────────────────
