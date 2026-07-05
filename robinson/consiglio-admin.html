@@ -195,7 +195,10 @@
           <div class="bersaglio-col">
             <div class="bersaglio-col-head">
               <h3 id="titolo-bersaglio">🎯 Bersaglio</h3>
-              <button class="filtro-btn" id="btn-deseleziona-foco" style="display:none;">✖️ Deseleziona</button>
+              <div style="display:flex;gap:8px;align-items:center;">
+                <button class="filtro-btn" id="btn-modalita-anonima" title="Nasconde i nomi dei/delle naufraghi/e, per condividere o presentare la struttura del gruppo in sicurezza">👁 Nomi visibili</button>
+                <button class="filtro-btn" id="btn-deseleziona-foco" style="display:none;">✖️ Deseleziona</button>
+              </div>
             </div>
             <div id="bersaglio-svg-wrap"></div>
           </div>
@@ -281,6 +284,23 @@ const MODI_FOCO = {
 };
 let modoFoco = 'uscita'; // 'uscita' | 'ricevute_positive' | 'ricevute_difficili'
 
+// ── Modalità anonima del Bersaglio: solo UI/sessione, nessuna scrittura su Firestore ────────
+// Nasconde i nomi (nodi, etichette focus, pannello Dettaglio naufrago, bar chart) sostituendoli
+// con una sigla stabile per uid (N1, N2, ...) NON derivata dal nome, per condividere/presentare
+// la struttura del gruppo senza esporre l'identità dei/delle naufraghi/e (minori). Si resetta
+// da sola solo con un refresh di pagina; il toggle vale per l'intera sessione del browser.
+let modalitaAnonima = false;
+
+// Sigla deterministica e stabile per uid, indipendente dal nome (niente iniziali): l'ordine è
+// quello alfabetico degli uid stessi, quindi sempre lo stesso finché l'insieme di naufraghi/e
+// coinvolti nella rilevazione non cambia.
+function calcolaSigle(uids) {
+  const ordinati = [...uids].sort();
+  const sigle = {};
+  ordinati.forEach((u, i) => { sigle[u] = `N${i + 1}`; });
+  return sigle;
+}
+
 function categorieTema(tema) {
   const cfg = TEMI_BERSAGLIO[tema];
   const positivi = tema === 'preferenze' && PREFERENZE_INCLUDE_PONTI ? ['ciurma', 'ponti'] : cfg.campiPositivi;
@@ -298,12 +318,13 @@ function calcolaRicevutePerTema(risposte, uids, tema) {
   return ricevute;
 }
 
-// Chip HTML per un elenco di uid (usato nel pannello "Dettaglio naufrago")
-function chipsNomi(listaUid, rispondentiSet, vuotoText = '—') {
+// Chip HTML per un elenco di uid (usato nel pannello "Dettaglio naufrago"). risolviNome è
+// sostituibile per la modalità anonima (mostra la sigla invece del nome reale).
+function chipsNomi(listaUid, rispondentiSet, vuotoText = '—', risolviNome = nomeVisualizzato) {
   if (!listaUid || !listaUid.length) return `<span class="vuoto">${esc(vuotoText)}</span>`;
   return listaUid.map(u => {
     const nonRisp = rispondentiSet && !rispondentiSet.has(u);
-    return `<span class="chip${nonRisp ? ' non-rispondente' : ''}">${esc(nomeVisualizzato(u))}${nonRisp ? ' ✏️' : ''}</span>`;
+    return `<span class="chip${nonRisp ? ' non-rispondente' : ''}">${esc(risolviNome(u))}${nonRisp ? ' ✏️' : ''}</span>`;
   }).join('');
 }
 
@@ -872,8 +893,12 @@ function disegnaBersaglio(risposte, filtro, aggregati, tema) {
   // coerenza. La modalità "Scelte in uscita" (Parte 1) resta invece scoped su `edges`
   // (tema/filtro attivi), come già in precedenza — solo col fix di direzione per i reciproci.
   const edgesFoco = integraCorrentiReciprocheMancanti(risposte, uids, buildEdges(risposte, 'tutte', uids));
-  // Risoluzione nome condivisa con il bar chart (stessa regola cognome: Emanuele/duplicati)
+  // Risoluzione nome condivisa con il bar chart (stessa regola cognome: Emanuele/duplicati).
+  // In modalità anonima la regola cognome non si applica: conta solo la sigla (N1, N2, ...),
+  // usata ovunque nodi/etichette/pannello mostrerebbero altrimenti il nome reale.
   const labelPerUid = calcolaLabelDisambiguate(uids);
+  const etichettePerUid = modalitaAnonima ? calcolaSigle(uids) : labelPerUid;
+  const risolviNome = uid => (modalitaAnonima ? etichettePerUid[uid] : nomeVisualizzato(uid));
 
   // Convergenza: quanti "vettori" (frecce unilaterali + reciproche) toccano ogni nodo,
   // usato per evidenziare il "molti contro uno" nei bersagli Difficoltà/Avvicinamenti.
@@ -938,7 +963,7 @@ function disegnaBersaglio(risposte, filtro, aggregati, tema) {
       ${haloCluster}${haloConvergenza}
       <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="16" fill="${colore}" stroke="#1a3a5c" stroke-width="1.5"${dash}${opacity}></circle>
       <text x="${p.x.toFixed(1)}" y="${(p.y + 3).toFixed(1)}" text-anchor="middle" font-weight="700" fill="#fff" font-size="10"${opacity}>${numero}</text>
-      <text class="bersaglio-etichetta-nome" x="${p.x.toFixed(1)}" y="${(p.y + 27).toFixed(1)}" text-anchor="middle" font-size="9"${opacity}>${esc(labelPerUid[u])}</text>
+      <text class="bersaglio-etichetta-nome" x="${p.x.toFixed(1)}" y="${(p.y + 27).toFixed(1)}" text-anchor="middle" font-size="9"${opacity}>${esc(etichettePerUid[u])}</text>
     </g>`;
   }).join('');
 
@@ -952,14 +977,15 @@ function disegnaBersaglio(risposte, filtro, aggregati, tema) {
     <g id="bersaglio-etichette">${etichetteSvg}</g>
   </svg>`;
 
-  // Bar chart additivo (Parte 2) — stessa risoluzione nome, calcolo indipendente da fonte grezza
-  disegnaBarChart(risposte, uids, labelPerUid);
+  // Bar chart additivo (Parte 2) — stessa risoluzione nome (sigla in modalità anonima), calcolo
+  // indipendente da fonte grezza
+  disegnaBarChart(risposte, uids, etichettePerUid);
   verificaCoerenzaBarChart(risposte, uids, bersaglio);
   verificaCoerenzaGraficiEntrata(risposte, uids, edgesCiurma, edgesFoco, bersaglio);
 
   const infoBody = document.getElementById('bersaglio-info-body');
   function mostraInfo(uid) {
-    const nome = nomeVisualizzato(uid);
+    const nome = risolviNome(uid);
     const reciprocheEdges = edges.filter(e => e.reciproco && (e.from === uid || e.to === uid));
     const reciproche = reciprocheEdges.length;
     const reciprocheUids = reciprocheEdges.map(e => e.from === uid ? e.to : e.from);
@@ -973,7 +999,7 @@ function disegnaBersaglio(risposte, filtro, aggregati, tema) {
     const propriaRisposta = risposte.find(r => r.userId === uid);
     const rigaCategoria = (emoji, label, lista) => `
       <div class="item-titolo">${emoji} ${label}</div>
-      <div class="item">${chipsNomi(lista, rispondentiSet)}</div>`;
+      <div class="item">${chipsNomi(lista, rispondentiSet, '—', risolviNome)}</div>`;
     const clusterIdx = bersaglio.uidToCluster[uid];
     const membriCluster = clusterIdx !== undefined ? (aggregati.cluster[clusterIdx] || []).filter(u => u !== uid) : [];
 
@@ -981,18 +1007,18 @@ function disegnaBersaglio(risposte, filtro, aggregati, tema) {
       <div style="font-weight:700;color:var(--navy);margin-bottom:6px;">${esc(nome)}</div>
       ${avviso}
       <div class="item">❤️ Nomine positive ricevute: <strong>${bersaglio.posIn[uid]}</strong></div>
-      <div class="item">${chipsNomi(positiviRicevutiUids, rispondentiSet, 'nessuno/a')}</div>
+      <div class="item">${chipsNomi(positiviRicevutiUids, rispondentiSet, 'nessuno/a', risolviNome)}</div>
       <div class="item">🌊 Nomine difficili ricevute: <strong>${bersaglio.negIn[uid]}</strong></div>
-      <div class="item">${chipsNomi(difficiliRicevutiUids, rispondentiSet, 'nessuno/a')}</div>
+      <div class="item">${chipsNomi(difficiliRicevutiUids, rispondentiSet, 'nessuno/a', risolviNome)}</div>
       <div class="item">🔵 Legami reciproci: <strong>${reciproche}</strong></div>
-      <div class="item">${chipsNomi(reciprocheUids, rispondentiSet, 'nessuno/a')}</div>
+      <div class="item">${chipsNomi(reciprocheUids, rispondentiSet, 'nessuno/a', risolviNome)}</div>
       <div class="item">Profilo: <strong>${esc(PROFILO_LABEL[bersaglio.profilo[uid]])}</strong></div>
       ${rigaCategoria('🔥', 'Porterebbe con sé', propriaRisposta?.ciurma)}
       ${rigaCategoria('🌉', 'Vorrebbe avvicinare', propriaRisposta?.ponti)}
       ${rigaCategoria('🌊', 'Fa più fatica a stare', propriaRisposta?.correnti)}
       ${rigaCategoria('🪨', 'Difficile costruire un rapporto', propriaRisposta?.scogli)}
       <div class="item-titolo">👥 Fa parte del sottogruppo con</div>
-      <div class="item">${membriCluster.length ? chipsNomi(membriCluster, rispondentiSet) : '<span class="vuoto">Nessun sottogruppo</span>'}</div>
+      <div class="item">${membriCluster.length ? chipsNomi(membriCluster, rispondentiSet, '—', risolviNome) : '<span class="vuoto">Nessun sottogruppo</span>'}</div>
     `;
   }
   function evidenzia(uid) {
@@ -1363,6 +1389,15 @@ document.querySelectorAll('#rete-categorie-bar input[type="checkbox"]').forEach(
     if (networkMain) networkMain.setCategorieVisibili(categorieReteAttive);
     if (networkCompare) networkCompare.setCategorieVisibili(categorieReteAttive);
   });
+});
+// Modalità anonima del Bersaglio: solo UI/sessione, un nuovo render basta a rigenerare
+// nodi/etichette/pannello con la sigla al posto del nome (vedi calcolaSigle/risolviNome).
+document.getElementById('btn-modalita-anonima').addEventListener('click', () => {
+  modalitaAnonima = !modalitaAnonima;
+  const btn = document.getElementById('btn-modalita-anonima');
+  btn.textContent = modalitaAnonima ? '🕶 Anonima' : '👁 Nomi visibili';
+  btn.classList.toggle('active', modalitaAnonima);
+  renderTutto();
 });
 
 async function ricaricaTutto() {
