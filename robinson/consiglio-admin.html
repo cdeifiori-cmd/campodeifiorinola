@@ -1769,6 +1769,17 @@ async function renderTutto() {
   // non sparisce per un pareggio nell'ordinamento. Calcolata qui, prima delle Liste, perché sia
   // "Più scelti" (stesso consensoGrezzo) sia la versione compatta qui sotto la riusano.
   const leadership = calcolaLeadershipTrasversale(risposte, cluster);
+  // Taglio "top-N ma nessun pari-merito spezzato": prende le prime n voci di un array già
+  // ordinato desc, poi estende finché il valore-chiave della voce successiva è identico a
+  // quello dell'ultima inclusa — così un gruppo a pari merito sul bordo della finestra non
+  // perde membri per un tie-break secondario (stesso bug già risolto per Luis nella lista estesa).
+  function topConParimerito(vociOrdinate, n, chiave) {
+    if (vociOrdinate.length <= n) return vociOrdinate;
+    const valoreSoglia = chiave(vociOrdinate[n - 1]);
+    let fine = n;
+    while (fine < vociOrdinate.length && chiave(vociOrdinate[fine]) === valoreSoglia) fine++;
+    return vociOrdinate.slice(0, fine);
+  }
   const leadershipVoci = Object.entries(leadership)
     .filter(([, v]) => v.consensoGrezzo > 0)
     .sort((a, b) => b[1].ampiezzaConsenso - a[1].ampiezzaConsenso
@@ -1795,17 +1806,19 @@ async function renderTutto() {
     .sort((a, b) => b[1].consensoGrezzo - a[1].consensoGrezzo
       || (naufraghiInfo[a[0]]?.nome || a[0]).localeCompare(naufraghiInfo[b[0]]?.nome || b[0], 'it'));
   document.getElementById('lista-piu-scelti').innerHTML = piuScelti.length
-    ? piuScelti.slice(0, 6).map(([uid, v]) => `<div class="item">🔝 ${esc(naufraghiInfo[uid]?.nome || uid)} <span style="color:var(--muted);font-size:0.72rem;">(${v.consensoGrezzo} ricevute)</span></div>`).join('')
+    ? topConParimerito(piuScelti, 6, ([, v]) => v.consensoGrezzo).map(([uid, v]) => `<div class="item">🔝 ${esc(naufraghiInfo[uid]?.nome || uid)} <span style="color:var(--muted);font-size:0.72rem;">(${v.consensoGrezzo} ricevute)</span></div>`).join('')
     : '<div class="vuoto">Nessuna preferenza ricevuta in questa rilevazione.</div>';
 
   document.getElementById('lista-cluster').innerHTML = cluster.filter(c => c.length >= 2).length
     ? cluster.filter(c => c.length >= 2).map((c, i) => `<div class="item">🔥 Gruppo ${i + 1}: ${c.map(u => esc(naufraghiInfo[u]?.nome || u)).join(', ')}</div>`).join('')
     : '<div class="vuoto">Nessun sottogruppo denso individuato.</div>';
 
-  // Versione compatta (top 6) della Leadership trasversale per la card "In sintesi"; la sezione
-  // dedicata più sotto (#lista-leadership-trasversale) resta la vista completa, senza taglio.
+  // Versione compatta (top 6, pari-merito inclusi) della Leadership trasversale per la card
+  // "In sintesi"; la sezione dedicata più sotto (#lista-leadership-trasversale) resta la vista
+  // completa, senza taglio. Il pari-merito qui è sull'ampiezza di consenso (la metrica che si
+  // legge per prima nell'indicatore), coerente con "Più scelti" sopra.
   document.getElementById('lista-leader-trasversale-compatta').innerHTML = leadershipVoci.length
-    ? leadershipVoci.slice(0, 6).map(([uid, v]) => `
+    ? topConParimerito(leadershipVoci, 6, ([, v]) => v.ampiezzaConsenso).map(([uid, v]) => `
       <div class="item">🧭 ${esc(naufraghiInfo[uid]?.nome || uid)}
         <span style="color:var(--muted);font-size:0.72rem;">(${v.ampiezzaConsenso}/${v.sottogruppiTotali} sottogruppi · ${v.ponteMarginali} marginali)</span>
       </div>`).join('')
