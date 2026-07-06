@@ -152,6 +152,12 @@
     .lista-box h4 { font-family:'Playfair Display',serif; font-size:0.88rem; color:var(--navy); border-bottom:1px solid var(--carta-scura); padding-bottom:6px; margin-bottom:8px; }
     .lista-box .item { font-size:0.82rem; padding:3px 0; }
     .lista-box .vuoto { font-size:0.78rem; color:var(--muted); font-style:italic; }
+    .leadership-item { display:flex; flex-wrap:wrap; align-items:baseline; gap:6px 10px; font-size:0.82rem; padding:5px 0; border-bottom:1px dashed var(--carta-scura); }
+    .leadership-item:last-child { border-bottom:none; }
+    .leadership-nome { font-weight:700; color:var(--navy); }
+    .leadership-indicatore { color:var(--muted); font-size:0.78rem; }
+    .leadership-indicatore strong { color:var(--navy); }
+    .leadership-indicatore.ha-marginali strong { color:#c8860a; }
 
     /* ── Andamento indice + azioni di chiusura rilevazione ── */
     .chart-wrap { background:#fff; border:var(--rc-bordo); border-radius:var(--rc-radius); box-shadow:var(--rc-ombra); padding:var(--rc-sp-3); }
@@ -356,6 +362,17 @@
       </div>
     </section>
 
+    <!-- ═══ Leadership trasversale (feature separata dai 3 bug in corso): distingue leader di
+    fazione (molti consensi ma da un solo sottogruppo) da leader inclusivi (consensi trasversali
+    ai sottogruppi + ponte verso chi resta ai margini). Due indicatori sempre separati, mai un
+    punteggio unico — vedi calcolaLeadershipTrasversale() in robinson-sociogramma.js. ═══ -->
+    <section class="rc-sezione">
+      <div class="lista-box">
+        <h4>🧭 Leadership trasversale</h4>
+        <div id="lista-leadership-trasversale"></div>
+      </div>
+    </section>
+
     <section class="rc-sezione">
       <div class="chart-wrap">
         <h3>📈 Andamento dell'Indice di Coesione</h3>
@@ -377,7 +394,10 @@ import {
   collection, getDocs, query, orderBy, doc, getDoc, setDoc, addDoc, updateDoc, serverTimestamp
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { esc, fmtDateShort } from './js/robinson-utils.js';
-import { calcolaAggregati, trovaMediatori, calcolaDelta, generaFrase } from './js/robinson-sociogramma.js';
+import {
+  calcolaAggregati, trovaMediatori, calcolaDelta, generaFrase,
+  calcolaFasceAnelli, trovaAnelloPerValore, calcolaLeadershipTrasversale,
+} from './js/robinson-sociogramma.js';
 
 const ATT_ID = new URLSearchParams(location.search).get('attId') || 'consiglio-isola';
 
@@ -818,30 +838,9 @@ function calcolaBersaglio(risposte, aggregati, uidsCompleti, tema) {
   return { posIn, negIn, impattoGenerale, preferenza, ricevuteTema, anello, profilo, uidToCluster, fasce };
 }
 
-// Divide [0, maxImpatto] in 4 fasce crescenti verso il centro (ring0=centro..ring3=bordo).
-// Regola fissa: impatto 0 → sempre ring3. Con poca varietà di valori (max<=2) le fasce
-// intermedie si accorpano nel centro invece di restare vuote/senza senso.
-function calcolaFasceAnelli(maxImpatto) {
-  if (maxImpatto <= 0) return [[0, -1], [0, -1], [0, -1], [0, 0]];
-  if (maxImpatto <= 2) return [[1, maxImpatto], [0, -1], [0, -1], [0, 0]];
-  const s1 = Math.ceil(maxImpatto / 3);
-  const s2 = Math.ceil(maxImpatto * 2 / 3);
-  return [
-    [s2 + 1, maxImpatto], // ring0 — centro
-    [s1 + 1, s2],         // ring1
-    [1, s1],              // ring2
-    [0, 0],                // ring3 — bordo
-  ];
-}
-
-// Stesso criterio delle etichette: un valore finisce nell'anello la cui fascia lo contiene.
-function trovaAnelloPerValore(v, fasce) {
-  for (let i = 0; i < fasce.length; i++) {
-    const [mn, mx] = fasce[i];
-    if (mn <= mx && v >= mn && v <= mx) return i;
-  }
-  return 3;
-}
+// calcolaFasceAnelli/trovaAnelloPerValore ora condivise da robinson-sociogramma.js (import in
+// testa al file): stesso criterio a fasce assolute riusato anche da calcolaLeadershipTrasversale
+// per individuare la periferia, non solo per il raggio del Bersaglio.
 
 function etichettaFascia(fascia) {
   const [mn, mx] = fascia;
@@ -1079,6 +1078,16 @@ function accorciaSegmento(p1, p2, raggio = BERSAGLIO_NODO_RAGGIO, gap = FRECCIA_
   };
 }
 
+// Spessore delle frecce nel SOLO Bersaglio (mai in buildEdges(): quei width restano invariati
+// per non alterare la vista Rete/vis-network, che condivide gli stessi oggetti edge). Clamp
+// esplicito min/MAX — nessuna freccia, per quanto pesante sia il legame, supera SPESSORE_MAX —
+// coi marker a markerUnits="userSpaceOnUse" (vedi defsMarkers/costruisciArcoFocoSvg) la punta
+// non si moltiplica più per questo valore, quindi resta piccola a prescindere dal peso.
+const SPESSORE_MIN = 1, SPESSORE_MAX = 3;
+function spessoreBersaglio(width) {
+  return Math.min(SPESSORE_MAX, Math.max(SPESSORE_MIN, Math.round((width || 2) * 0.5 * 10) / 10));
+}
+
 // Linea SVG "overlay" per un arco rilevante del focus, con marker riusati da defsMarkers.
 // versoN=true → freccia nominante→N (p1=altro, p2=N); versoN=false → freccia N→scelto (p1=N, p2=altro).
 function costruisciArcoFocoSvg(e, pN, pAltro, versoN) {
@@ -1090,7 +1099,8 @@ function costruisciArcoFocoSvg(e, pN, pAltro, versoN) {
   const marker = e.reciproco
     ? ` marker-start="url(#arrow-${colHex})" marker-end="url(#arrow-${colHex})"`
     : ` marker-end="url(#arrow-${colHex})"`;
-  return `<line class="bersaglio-arco-foco-linea" x1="${p1.x.toFixed(1)}" y1="${p1.y.toFixed(1)}" x2="${p2.x.toFixed(1)}" y2="${p2.y.toFixed(1)}" stroke="#${colHex}" stroke-width="${(e.width || 2) + 1.5}"${dash}${marker}></line>`;
+  const spessore = Math.min(SPESSORE_MAX, spessoreBersaglio(e.width) + 0.8);
+  return `<line class="bersaglio-arco-foco-linea" x1="${p1.x.toFixed(1)}" y1="${p1.y.toFixed(1)}" x2="${p2.x.toFixed(1)}" y2="${p2.y.toFixed(1)}" stroke="#${colHex}" stroke-width="${spessore}" stroke-opacity="0.92"${dash}${marker}></line>`;
 }
 
 // Confronto in console fra QUATTRO fonti indipendenti per il lato "positive": l'insieme
@@ -1161,12 +1171,14 @@ function disegnaBersaglio(risposte, filtro, aggregati, tema) {
     else { inDegree[e.from] = (inDegree[e.from] || 0) + 1; inDegree[e.to] = (inDegree[e.to] || 0) + 1; }
   });
 
-  // Punta ingrandita (era markerWidth/Height 6, ora 9) con un sottile contorno bianco per
-  // staccarla dagli anelli concentrici sottostanti; refX leggermente arretrato dal vertice
-  // (8.5 su un path che ora arriva a 9.5, non più 10) così la punta sporge visibilmente oltre
-  // il segmento già accorciato da accorciaSegmento(), invece di restare a filo o sotto il nodo.
+  // Punta piccola e di dimensione FISSA (markerUnits="userSpaceOnUse"): di default un marker
+  // SVG scala con lo stroke-width della linea a cui è agganciato (markerUnits="strokeWidth"),
+  // quindi con archi reciproci spessi (fino a 4) la punta arrivava a 9*4=36px — abbastanza da
+  // coprire interi nodi vicini nei cluster affollati. Con userSpaceOnUse la punta resta 5px
+  // (contro un raggio nodo di 16px, quindi nettamente più piccola) qualunque sia lo spessore
+  // della linea (vedi spessoreBersaglio() per il clamp min/max delle linee stesse).
   const defsMarkers = MARKER_COLORI.map(c => `
-    <marker id="arrow-${c}" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+    <marker id="arrow-${c}" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="5" markerHeight="5" markerUnits="userSpaceOnUse" orient="auto-start-reverse">
       <path d="M0.5,0.5 L9.5,5 L0.5,9.5 z" fill="#${c}" stroke="#ffffff" stroke-width="0.8" stroke-linejoin="round"></path>
     </marker>`).join('');
 
@@ -1194,7 +1206,9 @@ function disegnaBersaglio(risposte, filtro, aggregati, tema) {
     const marker = e.reciproco
       ? ` marker-start="url(#arrow-${colHex})" marker-end="url(#arrow-${colHex})"`
       : e.arrows === 'to' ? ` marker-end="url(#arrow-${colHex})"` : '';
-    return `<line class="bersaglio-arco" data-from="${esc(e.from)}" data-to="${esc(e.to)}" x1="${p1.x.toFixed(1)}" y1="${p1.y.toFixed(1)}" x2="${p2.x.toFixed(1)}" y2="${p2.y.toFixed(1)}" stroke="#${colHex}" stroke-width="${e.width}"${dash}${marker}></line>`;
+    // stroke-opacity solo sulla linea (mai sul <path> della punta dentro <marker>, che resta
+    // pieno): fa "respirare" i tratti sovrapposti nei cluster densi senza sbiadire le frecce.
+    return `<line class="bersaglio-arco" data-from="${esc(e.from)}" data-to="${esc(e.to)}" x1="${p1.x.toFixed(1)}" y1="${p1.y.toFixed(1)}" x2="${p2.x.toFixed(1)}" y2="${p2.y.toFixed(1)}" stroke="#${colHex}" stroke-width="${spessoreBersaglio(e.width)}" stroke-opacity="0.85"${dash}${marker}></line>`;
   }).join('');
 
   const nodesSvg = uids.map(u => {
@@ -1763,6 +1777,26 @@ async function renderTutto() {
   document.getElementById('lista-cluster').innerHTML = cluster.filter(c => c.length >= 2).length
     ? cluster.filter(c => c.length >= 2).map((c, i) => `<div class="item">🔥 Gruppo ${i + 1}: ${c.map(u => esc(naufraghiInfo[u]?.nome || u)).join(', ')}</div>`).join('')
     : '<div class="vuoto">Nessun sottogruppo denso individuato.</div>';
+
+  // Leadership trasversale: due indicatori sempre separati (mai un punteggio unico), niente
+  // taglio arbitrario a top-N — mostra chiunque abbia ricevuto almeno una scelta in ciurma, così
+  // un leader ad ampio consenso ma con pochi legami reciproci (vedi Luis) non sparisce per un
+  // pareggio nell'ordinamento, come accadeva nella lista "Leader positivi" basata su reciprocità.
+  const leadership = calcolaLeadershipTrasversale(risposte, cluster);
+  const leadershipVoci = Object.entries(leadership)
+    .filter(([, v]) => v.consensoGrezzo > 0)
+    .sort((a, b) => b[1].ampiezzaConsenso - a[1].ampiezzaConsenso
+      || b[1].ponteMarginali - a[1].ponteMarginali
+      || b[1].consensoGrezzo - a[1].consensoGrezzo
+      || (naufraghiInfo[a[0]]?.nome || a[0]).localeCompare(naufraghiInfo[b[0]]?.nome || b[0], 'it'));
+  document.getElementById('lista-leadership-trasversale').innerHTML = leadershipVoci.length
+    ? leadershipVoci.map(([uid, v]) => `
+      <div class="leadership-item">
+        <span class="leadership-nome">${esc(naufraghiInfo[uid]?.nome || uid)}</span>
+        <span class="leadership-indicatore">riceve da <strong>${v.ampiezzaConsenso}</strong> sottogrupp${v.ampiezzaConsenso === 1 ? 'o' : 'i'} su ${v.sottogruppiTotali}</span>
+        <span class="leadership-indicatore${v.ponteMarginali > 0 ? ' ha-marginali' : ''}">raggiunge <strong>${v.ponteMarginali}</strong> marginal${v.ponteMarginali === 1 ? 'e' : 'i'}</span>
+      </div>`).join('')
+    : '<div class="vuoto">Nessuna scelta positiva ricevuta in questa rilevazione.</div>';
 
   // Confronto — disponibile solo per la vista Rete (il Bersaglio si riferisce sempre alla rilevazione selezionata)
   const confronta = vistaAttiva === 'rete' && document.getElementById('chk-confronta').checked;

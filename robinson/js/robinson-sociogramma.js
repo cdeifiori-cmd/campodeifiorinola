@@ -50,6 +50,26 @@ function buildNomineMap(risposte) {
   return map;
 }
 
+// ── Fonte di verità unica per "chi ha ricevuto cosa" (entrante) e "chi ha dato cosa"
+// (uscente), campo per campo. Ogni metrica di POSIZIONE SOCIALE (isolati, popolarità,
+// leader, pallino verde...) deve leggere solo insiemeEntrante: l'uscente descrive
+// l'orientamento di chi sceglie, non come il gruppo vede la persona, e va usato solo per
+// disegnare le frecce o analizzare chi sceglie — mai per isolamento/popolarità/leadership.
+export function insiemeEntrante(risposte, uid, campo) {
+  const set = new Set();
+  risposte.forEach(r => {
+    if (r.userId === uid) return; // niente autoscelte
+    if ((r[campo] || []).includes(uid)) set.add(r.userId);
+  });
+  return set;
+}
+export function insiemeUscente(risposte, uid, campo) {
+  const propria = risposte.find(r => r.userId === uid);
+  const set = new Set(propria ? (propria[campo] || []) : []);
+  set.delete(uid); // niente autoscelte
+  return set;
+}
+
 function positivo(map, u, v) {
   const n = map[u];
   if (!n) return false;
@@ -83,9 +103,8 @@ export function calcolaAggregati(risposte) {
   let scogliPaiaCount = 0;
   let pontiDistintiCount = 0;
 
-  const inDegreePositivo = {}; // uid -> numero di nomine positive ricevute (per isolati/leader)
   const inDegreeReciproco = {}; // uid -> numero di legami reciproci positivi (per leader)
-  uids.forEach(u => { inDegreePositivo[u] = 0; inDegreeReciproco[u] = 0; });
+  uids.forEach(u => { inDegreeReciproco[u] = 0; });
 
   // Coppie (ciurma reciproca) per il calcolo dei cluster
   const edgesCiurmaReciproca = [];
@@ -95,8 +114,6 @@ export function calcolaAggregati(risposte) {
       const a = uids[i], b = uids[j];
       const aToB = positivo(map, a, b);
       const bToA = positivo(map, b, a);
-      if (aToB) inDegreePositivo[b]++;
-      if (bToA) inDegreePositivo[a]++;
 
       const reciprocoPositivo = aToB && bToA;
       if (aToB || bToA) anyPositiviCount++;
@@ -128,7 +145,12 @@ export function calcolaAggregati(risposte) {
     }
   }
 
-  const isolati = uids.filter(u => inDegreePositivo[u] === 0);
+  // Isolato = nessun entrante su ciurma (D1) NÉ su ponti (D2), indipendentemente da quante
+  // nomine ha DATO (uscente pieno non basta a farlo uscire dall'isolamento in ricezione).
+  const isolati = uids.filter(u =>
+    insiemeEntrante(risposte, u, 'ciurma').size === 0 &&
+    insiemeEntrante(risposte, u, 'ponti').size === 0
+  );
 
   const reciprocitaPositiva = anyPositiviCount > 0 ? reciprocalPositiviCount / anyPositiviCount : 0;
   const integrazione = R > 0 ? (R - isolati.length) / R : 0;
@@ -218,6 +240,72 @@ export function trovaMediatori(risposte, cluster) {
     if (clusterVicini.size >= 2) mediatori.push(u);
   });
   return mediatori;
+}
+
+// ── Fasce ad anelli su un conteggio (usata sia dal Bersaglio per il raggio sia dalla
+// Leadership trasversale per individuare la periferia): [0, max] diviso in 4 fasce assolute
+// che crescono verso il centro/ring0. Regola fissa: 0 → sempre l'anello più esterno (ring3).
+export function calcolaFasceAnelli(maxImpatto) {
+  if (maxImpatto <= 0) return [[0, -1], [0, -1], [0, -1], [0, 0]];
+  if (maxImpatto <= 2) return [[1, maxImpatto], [0, -1], [0, -1], [0, 0]];
+  const s1 = Math.ceil(maxImpatto / 3);
+  const s2 = Math.ceil(maxImpatto * 2 / 3);
+  return [
+    [s2 + 1, maxImpatto], // ring0 — centro
+    [s1 + 1, s2],         // ring1
+    [1, s1],              // ring2
+    [0, 0],                // ring3 — bordo
+  ];
+}
+export function trovaAnelloPerValore(v, fasce) {
+  for (let i = 0; i < fasce.length; i++) {
+    const [mn, mx] = fasce[i];
+    if (mn <= mx && v >= mn && v <= mx) return i;
+  }
+  return 3;
+}
+
+// ── Leadership trasversale: distingue il leader "vero" (consenso trasversale a più
+// sottogruppi + ponte anche verso chi resta ai margini) dal leader "di fazione" (molti consensi
+// ma tutti dallo stesso sottogruppo). Sempre sulle preferenze RICEVUTE (D1/ciurma) — la
+// reciprocità entra SOLO tramite `cluster` (già calcolato su legami reciproci di ciurma per
+// definire chi sta con chi), MAI per misurare la leadership in sé.
+//
+// Per ogni votante che ha scelto il naufrago in ciurma, tre categorie:
+//  1. Membro di un sottogruppo (presente in uidToCluster) → conta per l'AMPIEZZA DI CONSENSO
+//     (un cluster distinto raggiunto conta una volta sola, non per ogni votante al suo interno).
+//  2. Marginale: assente da uidToCluster (nessun legame reciproco) E in periferia (fascia più
+//     esterna del conteggio entrante ciurma) → conta per il PONTE AI MARGINALI.
+//  3. Fuori-cluster ma non marginale (es. consenso normale senza reciprocità, tipo "Morena" nei
+//     dati reali): non muove nessuno dei due indicatori, resta solo nel volume grezzo ricevuto.
+export function calcolaLeadershipTrasversale(risposte, cluster) {
+  const uids = risposte.map(r => r.userId);
+  const uidToCluster = {};
+  cluster.forEach((gruppo, idx) => gruppo.forEach(u => { uidToCluster[u] = idx; }));
+
+  const ricevuteCiurma = {};
+  uids.forEach(u => { ricevuteCiurma[u] = insiemeEntrante(risposte, u, 'ciurma').size; });
+  const maxRicevute = uids.length ? Math.max(0, ...uids.map(u => ricevuteCiurma[u])) : 0;
+  const fasceCiurma = calcolaFasceAnelli(maxRicevute);
+  const inPeriferia = u => trovaAnelloPerValore(ricevuteCiurma[u], fasceCiurma) === 3;
+
+  const risultato = {};
+  uids.forEach(leaderUid => {
+    const clusterRaggiunti = new Set();
+    let ponteMarginali = 0;
+    insiemeEntrante(risposte, leaderUid, 'ciurma').forEach(votante => {
+      const clusterVotante = uidToCluster[votante];
+      if (clusterVotante !== undefined) clusterRaggiunti.add(clusterVotante);
+      else if (inPeriferia(votante)) ponteMarginali++;
+    });
+    risultato[leaderUid] = {
+      ampiezzaConsenso: clusterRaggiunti.size,
+      sottogruppiTotali: cluster.length,
+      ponteMarginali,
+      consensoGrezzo: ricevuteCiurma[leaderUid],
+    };
+  });
+  return risultato;
 }
 
 // ── Delta tra due rilevazioni consecutive (per timeline educatore) ─────────
