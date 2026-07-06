@@ -199,6 +199,12 @@
     }
     .btn-valutazione-fab:hover { background: #0f2540; }
     .valutazione-data { font-size: 0.8rem; color: #888; font-style: italic; margin-bottom: 12px; }
+    .valutazione-data-picker-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+    .valutazione-data-picker-row label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.05em; }
+    #valutazione-data-input {
+      font-family: 'Lora', serif; font-size: 0.85rem; color: #1a3a5c;
+      border: 1px solid #c8860a80; border-radius: 6px; padding: 4px 8px; background: #fff;
+    }
     .val-casa-block { margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px dashed #c8860a40; }
     .val-casa-block:last-of-type { border-bottom: none; }
     .val-casa-nome { font-family: 'Playfair Display', serif; font-size: 15px; color: #1a3a5c; font-weight: 700; margin-bottom: 6px; }
@@ -245,8 +251,12 @@
 <div class="popup-overlay" id="valutazione-overlay"></div>
 <div class="casa-popup" id="valutazione-popup">
   <div class="casa-popup-header">
-    <span class="casa-nome">📋 Valutazione di oggi</span>
+    <span class="casa-nome">📋 Valutazione</span>
     <button class="popup-close" id="valutazione-close">✕</button>
+  </div>
+  <div class="valutazione-data-picker-row">
+    <label for="valutazione-data-input">Giorno</label>
+    <input type="date" id="valutazione-data-input">
   </div>
   <div class="valutazione-data" id="valutazione-data"></div>
   <div id="valutazione-body"></div>
@@ -317,6 +327,7 @@ requireAuth(async user => {
     fab.addEventListener('click', apriValutazione);
     document.getElementById('valutazione-close').addEventListener('click', chiudiValutazione);
     document.getElementById('valutazione-overlay').addEventListener('click', chiudiValutazione);
+    document.getElementById('valutazione-data-input').addEventListener('change', onCambioDataValutazione);
   }
 });
 
@@ -479,44 +490,65 @@ const CASE_VALUTAZIONE = [
 const PULIZIA_OPZIONI = [1, 2, 3, 4, 5];
 const PENALITA_OPZIONI = [0, -1, -2, -3, -4, -5];
 
-let _valutazioneOggi = {}; // casaId -> { pulizia, penalita }
+let _valutazioneCorrente = {}; // casaId -> { pulizia, penalita }
+let _dataValutazioneKey = null; // YYYY-MM-DD del giorno attualmente aperto nel popup
 
 function oggiKeyLocale() {
-  const d = new Date();
+  return dataKeyLocale(new Date());
+}
+
+function dataKeyLocale(d) {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
 
-function oggiMezzanotteLocale() {
-  const d = new Date();
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+// Parsing manuale (non new Date(key), che l'ISO senza ora interpreta come UTC e può sballare
+// di un giorno nei fusi negativi): stessa chiave YYYY-MM-DD usata per l'id documento.
+function dataMezzanotteDaKey(key) {
+  const [y, m, d] = key.split('-').map(Number);
+  return new Date(y, m - 1, d);
 }
 
-function fmtDataOggiIt() {
+function fmtDataIt(d) {
   const giorni = ['Domenica','Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato'];
   const mesi = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
-  const d = new Date();
   return `${giorni[d.getDay()]} ${d.getDate()} ${mesi[d.getMonth()]} ${d.getFullYear()}`;
 }
 
 async function apriValutazione() {
   document.getElementById('valutazione-overlay').classList.add('open');
   document.getElementById('valutazione-popup').classList.add('open');
-  document.getElementById('valutazione-data').textContent = fmtDataOggiIt();
+
+  const oggiKey = oggiKeyLocale();
+  const input = document.getElementById('valutazione-data-input');
+  input.max = oggiKey; // blocca la scelta di date future
+  if (!input.value || input.value > oggiKey) input.value = oggiKey;
+  await caricaValutazionePerData(input.value);
+}
+
+function onCambioDataValutazione() {
+  const input = document.getElementById('valutazione-data-input');
+  const oggiKey = oggiKeyLocale();
+  if (!input.value || input.value > oggiKey) input.value = oggiKey; // guardia extra oltre a max=
+  caricaValutazionePerData(input.value);
+}
+
+async function caricaValutazionePerData(key) {
+  _dataValutazioneKey = key;
+  document.getElementById('valutazione-data').textContent = fmtDataIt(dataMezzanotteDaKey(key));
   document.getElementById('valutazione-body').innerHTML = '<div class="popup-loading">⏳ Caricamento...</div>';
   document.getElementById('valutazione-msg').textContent = '';
 
-  const oggiKey = oggiKeyLocale();
-  _valutazioneOggi = {};
+  _valutazioneCorrente = {};
   await Promise.all(CASE_VALUTAZIONE.map(async c => {
     try {
-      const snap = await getDoc(doc(db, 'robinson_villaggio_valutazioni', `${oggiKey}_${c.id}`));
+      const snap = await getDoc(doc(db, 'robinson_villaggio_valutazioni', `${key}_${c.id}`));
       if (snap.exists()) {
         const d = snap.data();
-        _valutazioneOggi[c.id] = { pulizia: d.pulizia ?? null, penalita: d.penalitaOrganizzazione ?? 0 };
+        _valutazioneCorrente[c.id] = { pulizia: d.pulizia ?? null, penalita: d.penalitaOrganizzazione ?? 0 };
       } else {
-        _valutazioneOggi[c.id] = { pulizia: null, penalita: 0 };
+        _valutazioneCorrente[c.id] = { pulizia: null, penalita: 0 };
       }
-    } catch(_) { _valutazioneOggi[c.id] = { pulizia: null, penalita: 0 }; }
+    } catch(_) { _valutazioneCorrente[c.id] = { pulizia: null, penalita: 0 }; }
   }));
 
   renderValutazioneForm();
@@ -527,9 +559,15 @@ function chiudiValutazione() {
   document.getElementById('valutazione-popup').classList.remove('open');
 }
 
+function testoBtnSalva(key) {
+  if (key === oggiKeyLocale()) return '💾 Salva valutazione di oggi';
+  const [, m, d] = key.split('-');
+  return `💾 Salva valutazione del ${d}/${m}`;
+}
+
 function renderValutazioneForm() {
   const html = CASE_VALUTAZIONE.map(c => {
-    const stato = _valutazioneOggi[c.id] || { pulizia: null, penalita: 0 };
+    const stato = _valutazioneCorrente[c.id] || { pulizia: null, penalita: 0 };
     const puliziaBtns = PULIZIA_OPZIONI.map(v =>
       `<button type="button" class="val-pill${stato.pulizia===v?' selected':''}" data-casa="${c.id}" data-campo="pulizia" data-val="${v}">${v}</button>`
     ).join('');
@@ -548,29 +586,29 @@ function renderValutazioneForm() {
   }).join('');
 
   document.getElementById('valutazione-body').innerHTML = html +
-    `<button class="btn-salva-casa" id="btn-salva-valutazione" style="width:100%;margin-top:6px;">💾 Salva valutazione di oggi</button>`;
+    `<button class="btn-salva-casa" id="btn-salva-valutazione" style="width:100%;margin-top:6px;">${testoBtnSalva(_dataValutazioneKey)}</button>`;
 
   document.querySelectorAll('.val-pill').forEach(btn => {
     btn.addEventListener('click', () => {
       const casaId = btn.dataset.casa;
       const campo = btn.dataset.campo;
       const val = Number(btn.dataset.val);
-      _valutazioneOggi[casaId] = _valutazioneOggi[casaId] || { pulizia: null, penalita: 0 };
-      _valutazioneOggi[casaId][campo] = val;
+      _valutazioneCorrente[casaId] = _valutazioneCorrente[casaId] || { pulizia: null, penalita: 0 };
+      _valutazioneCorrente[casaId][campo] = val;
       document.querySelectorAll(`.val-pill[data-casa="${casaId}"][data-campo="${campo}"]`)
         .forEach(b => b.classList.toggle('selected', b === btn));
-      const tot = (_valutazioneOggi[casaId].pulizia||0) + (_valutazioneOggi[casaId].penalita||0);
+      const tot = (_valutazioneCorrente[casaId].pulizia||0) + (_valutazioneCorrente[casaId].penalita||0);
       const totEl = document.getElementById('val-tot-' + casaId);
       if (totEl) totEl.textContent = tot;
     });
   });
 
-  document.getElementById('btn-salva-valutazione').addEventListener('click', salvaValutazioneOggi);
+  document.getElementById('btn-salva-valutazione').addEventListener('click', salvaValutazione);
 }
 
-async function salvaValutazioneOggi() {
+async function salvaValutazione() {
   const msgEl = document.getElementById('valutazione-msg');
-  const mancanti = CASE_VALUTAZIONE.filter(c => !_valutazioneOggi[c.id] || _valutazioneOggi[c.id].pulizia == null);
+  const mancanti = CASE_VALUTAZIONE.filter(c => !_valutazioneCorrente[c.id] || _valutazioneCorrente[c.id].pulizia == null);
   if (mancanti.length) {
     msgEl.style.color = '#c0392b';
     msgEl.textContent = 'Seleziona la pulizia per: ' + mancanti.map(c => c.nome).join(', ');
@@ -579,12 +617,12 @@ async function salvaValutazioneOggi() {
 
   const btn = document.getElementById('btn-salva-valutazione');
   btn.disabled = true; btn.textContent = '⏳ Salvataggio...';
-  const oggiKey = oggiKeyLocale();
-  const mezzanotte = oggiMezzanotteLocale();
+  const oggiKey = _dataValutazioneKey; // data selezionata nel picker, non necessariamente oggi
+  const mezzanotte = dataMezzanotteDaKey(oggiKey);
 
   try {
     await Promise.all(CASE_VALUTAZIONE.map(c => {
-      const stato = _valutazioneOggi[c.id];
+      const stato = _valutazioneCorrente[c.id];
       const totale = (stato.pulizia||0) + (stato.penalita||0);
       return setDoc(doc(db, 'robinson_villaggio_valutazioni', `${oggiKey}_${c.id}`), {
         data: mezzanotte,
@@ -604,7 +642,7 @@ async function salvaValutazioneOggi() {
     msgEl.style.color = '#c0392b';
     msgEl.textContent = 'Errore: ' + e.message;
   } finally {
-    btn.disabled = false; btn.textContent = '💾 Salva valutazione di oggi';
+    btn.disabled = false; btn.textContent = testoBtnSalva(oggiKey);
   }
 }
 </script>
