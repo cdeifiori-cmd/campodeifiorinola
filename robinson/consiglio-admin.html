@@ -1174,11 +1174,13 @@ function disegnaBersaglio(risposte, filtro, aggregati, tema) {
   // Punta piccola e di dimensione FISSA (markerUnits="userSpaceOnUse"): di default un marker
   // SVG scala con lo stroke-width della linea a cui è agganciato (markerUnits="strokeWidth"),
   // quindi con archi reciproci spessi (fino a 4) la punta arrivava a 9*4=36px — abbastanza da
-  // coprire interi nodi vicini nei cluster affollati. Con userSpaceOnUse la punta resta 5px
-  // (contro un raggio nodo di 16px, quindi nettamente più piccola) qualunque sia lo spessore
-  // della linea (vedi spessoreBersaglio() per il clamp min/max delle linee stesse).
+  // coprire interi nodi vicini nei cluster affollati. Con userSpaceOnUse la punta resta 8px
+  // (contro un raggio nodo di 16px: metà, chiaramente subordinata) qualunque sia lo spessore
+  // della linea (vedi spessoreBersaglio() per il clamp min/max delle linee stesse). A 5px era
+  // tecnicamente ancora presente (verificato pixel per pixel) ma alla scala reale della pagina
+  // (viewBox 640 reso a poche centinaia di px CSS) risultava troppo piccola per essere percepita.
   const defsMarkers = MARKER_COLORI.map(c => `
-    <marker id="arrow-${c}" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="5" markerHeight="5" markerUnits="userSpaceOnUse" orient="auto-start-reverse">
+    <marker id="arrow-${c}" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto-start-reverse">
       <path d="M0.5,0.5 L9.5,5 L0.5,9.5 z" fill="#${c}" stroke="#ffffff" stroke-width="0.8" stroke-linejoin="round"></path>
     </marker>`).join('');
 
