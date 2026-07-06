@@ -51,6 +51,7 @@
     .stat-card { background:#fff; border:var(--rc-bordo); border-radius:var(--rc-radius); box-shadow:var(--rc-ombra); padding:var(--rc-sp-3) var(--rc-sp-2); text-align:center; display:flex; flex-direction:column; justify-content:center; min-height:84px; }
     .stat-card .sc-val { font-size:1.7rem; font-weight:700; color:var(--oro); font-family:'Playfair Display',serif; line-height:1.1; }
     .stat-card .sc-lbl { font-size:0.72rem; color:var(--muted); margin-top:4px; }
+    .stat-card .sc-desc { font-size:0.66rem; color:var(--muted); margin-top:2px; font-style:italic; }
     .stat-card.delta-up .sc-val { color:#1e8449; }
     .stat-card.delta-down .sc-val { color:var(--rosso); }
 
@@ -1756,10 +1757,10 @@ async function renderTutto() {
     deltaHtml = `<div class="stat-card ${d > 0 ? 'delta-up' : d < 0 ? 'delta-down' : ''}"><div class="sc-val">${d > 0 ? '▲' : d < 0 ? '▼' : '—'} ${Math.abs(d)}</div><div class="sc-lbl">Delta indice</div></div>`;
   }
   document.getElementById('stat-cards').innerHTML = `
-    <div class="stat-card"><div class="sc-val">${aggregati.indice}%</div><div class="sc-lbl">Indice di Coesione</div></div>
+    <div class="stat-card"><div class="sc-val">${aggregati.indice}%</div><div class="sc-lbl">Indice di Coesione</div><div class="sc-desc">Quanto il gruppo è legato da scelte reciproche</div></div>
     <div class="stat-card"><div class="sc-val">${aggregati.R}</div><div class="sc-lbl">Rispondenti</div></div>
     <div class="stat-card"><div class="sc-val">${aggregati.isolati.length}</div><div class="sc-lbl">Isolati</div></div>
-    <div class="stat-card"><div class="sc-val">${aggregati.fuochiCiurma}</div><div class="sc-lbl">Fuochi della Ciurma</div></div>
+    <div class="stat-card"><div class="sc-val">${aggregati.fuochiCiurma}</div><div class="sc-lbl">Fuochi della Ciurma</div><div class="sc-desc">I più scelti: poli di attrazione del gruppo</div></div>
     ${deltaHtml}
   `;
 
