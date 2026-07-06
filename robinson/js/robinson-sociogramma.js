@@ -145,12 +145,11 @@ export function calcolaAggregati(risposte) {
     }
   }
 
-  // Isolato = nessun entrante su ciurma (D1) NÉ su ponti (D2), indipendentemente da quante
-  // nomine ha DATO (uscente pieno non basta a farlo uscire dall'isolamento in ricezione).
-  const isolati = uids.filter(u =>
-    insiemeEntrante(risposte, u, 'ciurma').size === 0 &&
-    insiemeEntrante(risposte, u, 'ponti').size === 0
-  );
+  // Isolato = zero preferenze positive RICEVUTE in ciurma (D1), indipendentemente da quante
+  // nomine ha DATO (uscente irrilevante) e da quante ne riceve su ponti/D2 (che non è più parte
+  // di questa definizione). Coerente con SOGLIA_MARGINALE: l'isolato è il caso estremo (0) della
+  // fascia dei marginali (<=2), non una condizione separata su un secondo campo.
+  const isolati = uids.filter(u => insiemeEntrante(risposte, u, 'ciurma').size === 0);
 
   const reciprocitaPositiva = anyPositiviCount > 0 ? reciprocalPositiviCount / anyPositiviCount : 0;
   const integrazione = R > 0 ? (R - isolati.length) / R : 0;
