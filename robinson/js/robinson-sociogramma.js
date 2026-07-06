@@ -265,19 +265,25 @@ export function trovaAnelloPerValore(v, fasce) {
   return 3;
 }
 
+// Soglia del PONTE AI MARGINALI: marginale = riceve <= questa soglia di preferenze positive in
+// ciurma (D1), indipendentemente da tutto il resto (appartenenza a un sottogruppo inclusa — un
+// marginale può benissimo stare in un cluster, es. Mohamed nel cluster 2 con pochissime ricevute).
+// Gli isolati (0 ricevute) sono il caso estremo di questa fascia, non una categoria a parte.
+const SOGLIA_MARGINALE = 2;
+
 // ── Leadership trasversale: distingue il leader "vero" (consenso trasversale a più
 // sottogruppi + ponte anche verso chi resta ai margini) dal leader "di fazione" (molti consensi
 // ma tutti dallo stesso sottogruppo). Sempre sulle preferenze RICEVUTE (D1/ciurma) — la
 // reciprocità entra SOLO tramite `cluster` (già calcolato su legami reciproci di ciurma per
-// definire chi sta con chi), MAI per misurare la leadership in sé.
+// definire chi sta con chi, e usato SOLO per l'AMPIEZZA DI CONSENSO), MAI per misurare la
+// leadership in sé e MAI per definire chi è marginale.
 //
-// Per ogni votante che ha scelto il naufrago in ciurma, tre categorie:
-//  1. Membro di un sottogruppo (presente in uidToCluster) → conta per l'AMPIEZZA DI CONSENSO
-//     (un cluster distinto raggiunto conta una volta sola, non per ogni votante al suo interno).
-//  2. Marginale: assente da uidToCluster (nessun legame reciproco) E in periferia (fascia più
-//     esterna del conteggio entrante ciurma) → conta per il PONTE AI MARGINALI.
-//  3. Fuori-cluster ma non marginale (es. consenso normale senza reciprocità, tipo "Morena" nei
-//     dati reali): non muove nessuno dei due indicatori, resta solo nel volume grezzo ricevuto.
+// Per ogni votante che ha scelto il naufrago in ciurma, due controlli INDIPENDENTI (uno stesso
+// votante può contribuire a entrambi gli indicatori, o a nessuno, o a uno solo):
+//  - Membro di un sottogruppo (presente in uidToCluster) → conta per l'AMPIEZZA DI CONSENSO
+//    (un cluster distinto raggiunto conta una volta sola, non per ogni votante al suo interno).
+//  - Marginale (riceve <= SOGLIA_MARGINALE preferenze in ciurma, a prescindere dal cluster) →
+//    conta per il PONTE AI MARGINALI.
 export function calcolaLeadershipTrasversale(risposte, cluster) {
   const uids = risposte.map(r => r.userId);
   const uidToCluster = {};
@@ -285,9 +291,7 @@ export function calcolaLeadershipTrasversale(risposte, cluster) {
 
   const ricevuteCiurma = {};
   uids.forEach(u => { ricevuteCiurma[u] = insiemeEntrante(risposte, u, 'ciurma').size; });
-  const maxRicevute = uids.length ? Math.max(0, ...uids.map(u => ricevuteCiurma[u])) : 0;
-  const fasceCiurma = calcolaFasceAnelli(maxRicevute);
-  const inPeriferia = u => trovaAnelloPerValore(ricevuteCiurma[u], fasceCiurma) === 3;
+  const marginale = u => ricevuteCiurma[u] <= SOGLIA_MARGINALE;
 
   const risultato = {};
   uids.forEach(leaderUid => {
@@ -296,7 +300,7 @@ export function calcolaLeadershipTrasversale(risposte, cluster) {
     insiemeEntrante(risposte, leaderUid, 'ciurma').forEach(votante => {
       const clusterVotante = uidToCluster[votante];
       if (clusterVotante !== undefined) clusterRaggiunti.add(clusterVotante);
-      else if (inPeriferia(votante)) ponteMarginali++;
+      if (marginale(votante)) ponteMarginali++;
     });
     risultato[leaderUid] = {
       ampiezzaConsenso: clusterRaggiunti.size,
