@@ -219,6 +219,24 @@
     .val-pill:hover { background: #f5ead5; border-color: #c8860a; }
     .val-pill.selected { background: #1a3a5c; border-color: #1a3a5c; color: #c8860a; }
     .val-pill-penalita.selected { background: #c0392b; border-color: #c0392b; color: #fff; }
+    .val-mansione-row { display: flex; gap: 6px; flex-wrap: wrap; }
+    .val-mansione-pill {
+      flex: 1; min-width: 90px; padding: 8px 6px; text-align: center;
+      background: #fff; border: 1.5px solid #c8b89a; border-radius: 10px;
+      font-family: 'Lora', serif; font-size: 0.78rem; font-weight: 600; color: #1a3a5c;
+      cursor: pointer; transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+    .val-mansione-pill:hover { background: #f5ead5; border-color: #c8860a; }
+    .val-mansione-pill.selected { background: #1a3a5c; border-color: #1a3a5c; color: #c8860a; }
+    .val-penalita-section { margin-top: 4px; padding-top: 14px; border-top: 2px solid #c0392b40; }
+    .val-penalita-titolo { font-family: 'Playfair Display', serif; font-size: 14px; color: #c0392b; font-weight: 700; margin-bottom: 8px; }
+    .val-penalita-casa-row { margin-bottom: 12px; }
+    .val-penalita-casa-nome { font-size: 12.5px; font-weight: 600; color: #1a3a5c; margin-bottom: 4px; }
+    .val-mansione-avviso {
+      background: #fdecec; border: 1px solid #c0392b80; color: #c0392b;
+      font-size: 0.76rem; border-radius: 8px; padding: 6px 10px; margin: 8px 0;
+    }
+    .val-mansione-libera-row { display: flex; align-items: center; gap: 6px; font-size: 0.74rem; color: #888; margin: 6px 0 2px; }
     .val-casa-totale { margin-top: 8px; font-size: 0.85rem; font-weight: 700; color: #1a3a5c; text-align: right; }
     .val-casa-totale span { color: #c8860a; font-size: 1rem; }
   </style>
@@ -489,8 +507,21 @@ const CASE_VALUTAZIONE = [
 ];
 const PULIZIA_OPZIONI = [1, 2, 3, 4, 5];
 const PENALITA_OPZIONI = [0, -1, -2, -3, -4, -5];
+const MANSIONE_VOTO_OPZIONI = [0, 1, 2, 3, 4, 5];
 
-let _valutazioneCorrente = {}; // casaId -> { pulizia, penalita }
+// Le 3 mansioni serali, in rotazione 1-a-1 con le 3 casette (vedi mansioneDefaultId sotto).
+const MANSIONI = [
+  { id: 'lavaggio_cucina', nome: 'Lavaggio cucina/piatti', emoji: '🍽️' },
+  { id: 'pulizia_campo',   nome: 'Pulizia campo / apparecchia e sparecchia', emoji: '🧹' },
+  { id: 'spazzatura',      nome: 'Spazzatura', emoji: '🗑️' },
+];
+// Ancora fissa della rotazione (stesso giorno di apertura campo già usato come gate altrove):
+// la mansione-default per una data è calcolata SOLO dalla data stessa (mai dalla cronologia dei
+// giorni precedenti), così qualunque sera passata resti valutabile/inseribile in isolamento.
+const EPOCA_ROTAZIONE_KEY = '2026-07-02';
+
+let _valutazioneCorrente = {}; // casaId -> { pulizia, penalita, mansione, mansioneVoto }
+let _mansioneLibera = false; // true = disattiva lo swap automatico, permette stati non 1-a-1
 let _dataValutazioneKey = null; // YYYY-MM-DD del giorno attualmente aperto nel popup
 
 function oggiKeyLocale() {
@@ -512,6 +543,30 @@ function fmtDataIt(d) {
   const giorni = ['Domenica','Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato'];
   const mesi = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
   return `${giorni[d.getDay()]} ${d.getDate()} ${mesi[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+// Giorni interi (con segno) tra la data e l'ancora fissa della rotazione.
+function giorniDaEpoca(key) {
+  const ms = dataMezzanotteDaKey(key) - dataMezzanotteDaKey(EPOCA_ROTAZIONE_KEY);
+  return Math.round(ms / 86400000);
+}
+
+// Mansione proposta per una casa in una data: sommare l'indice-casa allo scarto di giorni
+// dall'ancora, modulo 3, produce SEMPRE una permutazione valida (1-a-1) tra le 3 case e le 3
+// mansioni per quella sera, e ruota le mansioni di ogni casa di un passo ogni giorno.
+function mansioneDefaultId(casaId, key) {
+  const casaIndex = CASE_VALUTAZIONE.findIndex(c => c.id === casaId);
+  const g = giorniDaEpoca(key);
+  const idx = (((casaIndex + g) % 3) + 3) % 3; // sempre 0..2, anche per g negativo
+  return MANSIONI[idx].id;
+}
+
+// Vero se le mansioni assegnate in _valutazioneCorrente formano una permutazione 1-a-1
+// (nessuna mansione duplicata/scoperta tra le 3 case). Con lo swap automatico attivo questo
+// resta sempre vero; solo la modalità "assegnazione libera" può romperlo.
+function mansioniValide() {
+  const assegnate = CASE_VALUTAZIONE.map(c => _valutazioneCorrente[c.id]?.mansione).filter(Boolean);
+  return new Set(assegnate).size === MANSIONI.length && assegnate.length === CASE_VALUTAZIONE.length;
 }
 
 async function apriValutazione() {
@@ -539,16 +594,27 @@ async function caricaValutazionePerData(key) {
   document.getElementById('valutazione-msg').textContent = '';
 
   _valutazioneCorrente = {};
+  _mansioneLibera = false;
   await Promise.all(CASE_VALUTAZIONE.map(async c => {
+    const defaultMansione = mansioneDefaultId(c.id, key);
     try {
       const snap = await getDoc(doc(db, 'robinson_villaggio_valutazioni', `${key}_${c.id}`));
       if (snap.exists()) {
         const d = snap.data();
-        _valutazioneCorrente[c.id] = { pulizia: d.pulizia ?? null, penalita: d.penalitaOrganizzazione ?? 0 };
+        _valutazioneCorrente[c.id] = {
+          pulizia: d.pulizia ?? null,
+          penalita: d.penalitaOrganizzazione ?? 0,
+          // Doc vecchi (pre-mansioni) non hanno questi campi: propone il default di rotazione
+          // per quella sera invece di lasciare la scelta vuota.
+          mansione: d.mansione ?? defaultMansione,
+          mansioneVoto: d.mansioneVoto ?? null,
+        };
       } else {
-        _valutazioneCorrente[c.id] = { pulizia: null, penalita: 0 };
+        _valutazioneCorrente[c.id] = { pulizia: null, penalita: 0, mansione: defaultMansione, mansioneVoto: null };
       }
-    } catch(_) { _valutazioneCorrente[c.id] = { pulizia: null, penalita: 0 }; }
+    } catch(_) {
+      _valutazioneCorrente[c.id] = { pulizia: null, penalita: 0, mansione: defaultMansione, mansioneVoto: null };
+    }
   }));
 
   renderValutazioneForm();
@@ -565,27 +631,59 @@ function testoBtnSalva(key) {
   return `💾 Salva valutazione del ${d}/${m}`;
 }
 
+// Totale complessivo di una casa: le tre voci si leggono da sole, questo è solo il loro
+// riepilogo per la card del popup — la penalità (già negativa) entra così com'è.
+function totaleCasa(stato) {
+  return (stato.pulizia||0) + (stato.mansioneVoto||0) + (stato.penalita||0);
+}
+
 function renderValutazioneForm() {
   const html = CASE_VALUTAZIONE.map(c => {
-    const stato = _valutazioneCorrente[c.id] || { pulizia: null, penalita: 0 };
+    const stato = _valutazioneCorrente[c.id] || { pulizia: null, penalita: 0, mansione: null, mansioneVoto: null };
     const puliziaBtns = PULIZIA_OPZIONI.map(v =>
       `<button type="button" class="val-pill${stato.pulizia===v?' selected':''}" data-casa="${c.id}" data-campo="pulizia" data-val="${v}">${v}</button>`
     ).join('');
-    const penalitaBtns = PENALITA_OPZIONI.map(v =>
-      `<button type="button" class="val-pill val-pill-penalita${stato.penalita===v?' selected':''}" data-casa="${c.id}" data-campo="penalita" data-val="${v}">${v === 0 ? 'Nessuna' : v}</button>`
+    const mansioneBtns = MANSIONI.map(m =>
+      `<button type="button" class="val-mansione-pill${stato.mansione===m.id?' selected':''}" data-casa="${c.id}" data-mansione="${m.id}">${m.emoji} ${esc(m.nome)}</button>`
     ).join('');
-    const totale = (stato.pulizia||0) + (stato.penalita||0);
+    const mansioneVotoBtns = MANSIONE_VOTO_OPZIONI.map(v =>
+      `<button type="button" class="val-pill${stato.mansioneVoto===v?' selected':''}" data-casa="${c.id}" data-campo="mansioneVoto" data-val="${v}">${v}</button>`
+    ).join('');
     return `<div class="val-casa-block">
       <div class="val-casa-nome">🏠 ${esc(c.nome)}</div>
       <div class="val-label">Pulizia</div>
       <div class="val-pill-row">${puliziaBtns}</div>
-      <div class="val-label">Penalità organizzazione</div>
-      <div class="val-pill-row">${penalitaBtns}</div>
-      <div class="val-casa-totale">Totale: <span id="val-tot-${c.id}">${totale}</span> pt</div>
+      <div class="val-label">Mansione del giorno</div>
+      <div class="val-mansione-row" data-casa-mansione="${c.id}">${mansioneBtns}</div>
+      <div class="val-label">Voto mansione</div>
+      <div class="val-pill-row">${mansioneVotoBtns}</div>
+      <div class="val-casa-totale">Totale: <span id="val-tot-${c.id}">${totaleCasa(stato)}</span> pt</div>
     </div>`;
   }).join('');
 
-  document.getElementById('valutazione-body').innerHTML = html +
+  const penalitaHtml = `<div class="val-penalita-section">
+    <div class="val-penalita-titolo">⚠️ Penalità organizzazione</div>
+    ${CASE_VALUTAZIONE.map(c => {
+      const stato = _valutazioneCorrente[c.id] || { penalita: 0 };
+      const penalitaBtns = PENALITA_OPZIONI.map(v =>
+        `<button type="button" class="val-pill val-pill-penalita${stato.penalita===v?' selected':''}" data-casa="${c.id}" data-campo="penalita" data-val="${v}">${v === 0 ? 'Nessuna' : v}</button>`
+      ).join('');
+      return `<div class="val-penalita-casa-row">
+        <div class="val-penalita-casa-nome">🏠 ${esc(c.nome)}</div>
+        <div class="val-pill-row">${penalitaBtns}</div>
+      </div>`;
+    }).join('')}
+  </div>`;
+
+  const avvisoHtml = mansioniValide() ? '' :
+    `<div class="val-mansione-avviso" id="val-mansione-avviso">⚠️ Assegnazione mansioni non valida: con "assegnazione libera" attiva, controlla che ogni mansione sia coperta una sola volta.</div>`;
+
+  const liberaHtml = `<div class="val-mansione-libera-row">
+    <input type="checkbox" id="val-mansione-libera" ${_mansioneLibera ? 'checked' : ''}>
+    <label for="val-mansione-libera">Assegnazione mansioni libera (disattiva lo scambio automatico)</label>
+  </div>`;
+
+  document.getElementById('valutazione-body').innerHTML = html + penalitaHtml + liberaHtml + avvisoHtml +
     `<button class="btn-salva-casa" id="btn-salva-valutazione" style="width:100%;margin-top:6px;">${testoBtnSalva(_dataValutazioneKey)}</button>`;
 
   document.querySelectorAll('.val-pill').forEach(btn => {
@@ -593,17 +691,38 @@ function renderValutazioneForm() {
       const casaId = btn.dataset.casa;
       const campo = btn.dataset.campo;
       const val = Number(btn.dataset.val);
-      _valutazioneCorrente[casaId] = _valutazioneCorrente[casaId] || { pulizia: null, penalita: 0 };
       _valutazioneCorrente[casaId][campo] = val;
       document.querySelectorAll(`.val-pill[data-casa="${casaId}"][data-campo="${campo}"]`)
         .forEach(b => b.classList.toggle('selected', b === btn));
-      const tot = (_valutazioneCorrente[casaId].pulizia||0) + (_valutazioneCorrente[casaId].penalita||0);
       const totEl = document.getElementById('val-tot-' + casaId);
-      if (totEl) totEl.textContent = tot;
+      if (totEl) totEl.textContent = totaleCasa(_valutazioneCorrente[casaId]);
     });
   });
 
+  document.querySelectorAll('.val-mansione-pill').forEach(btn => {
+    btn.addEventListener('click', () => assegnaMansione(btn.dataset.casa, btn.dataset.mansione));
+  });
+
+  document.getElementById('val-mansione-libera').addEventListener('change', e => {
+    _mansioneLibera = e.target.checked;
+    renderValutazioneForm();
+  });
+
   document.getElementById('btn-salva-valutazione').addEventListener('click', salvaValutazione);
+}
+
+// Assegna mansioneId alla casaId. Di default (swap automatico) scambia con la casa che aveva
+// già quella mansione, restando sempre 1-a-1; in modalità "libera" assegna soltanto, senza
+// garantire la permutazione (l'avviso in renderValutazioneForm segnala l'eventuale stato non valido).
+function assegnaMansione(casaId, mansioneId) {
+  const attuale = _valutazioneCorrente[casaId].mansione;
+  if (attuale === mansioneId) return;
+  if (!_mansioneLibera) {
+    const altraCasa = CASE_VALUTAZIONE.find(c => c.id !== casaId && _valutazioneCorrente[c.id].mansione === mansioneId);
+    if (altraCasa) _valutazioneCorrente[altraCasa.id].mansione = attuale;
+  }
+  _valutazioneCorrente[casaId].mansione = mansioneId;
+  renderValutazioneForm();
 }
 
 async function salvaValutazione() {
@@ -623,14 +742,15 @@ async function salvaValutazione() {
   try {
     await Promise.all(CASE_VALUTAZIONE.map(c => {
       const stato = _valutazioneCorrente[c.id];
-      const totale = (stato.pulizia||0) + (stato.penalita||0);
       return setDoc(doc(db, 'robinson_villaggio_valutazioni', `${oggiKey}_${c.id}`), {
         data: mezzanotte,
         dataGiorno: oggiKey,
         casa: c.id,
         pulizia: stato.pulizia,
+        mansione: stato.mansione,
+        mansioneVoto: stato.mansioneVoto,
         penalitaOrganizzazione: stato.penalita,
-        totale,
+        totale: totaleCasa(stato),
         autore: _currentUser.uid,
         aggiornatoIl: serverTimestamp()
       });

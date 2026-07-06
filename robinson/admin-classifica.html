@@ -48,6 +48,12 @@
     /* ── Classifica lista ── */
     .list-wrap { max-width:640px; margin:0 auto; padding:10px 12px 90px; }
     .mini-badge { display:inline-block; background:var(--carta-scura); border-radius:4px; padding:1px 5px; font-size:0.65rem; color:var(--muted); margin-right:2px; margin-bottom:2px; }
+    .villaggio-breakdown { margin-top:6px; border-collapse:collapse; font-size:0.64rem; color:var(--muted); }
+    .villaggio-breakdown th { font-weight:600; color:var(--muted); text-align:right; padding:1px 6px; }
+    .villaggio-breakdown th:first-child { text-align:left; }
+    .villaggio-breakdown td { text-align:right; padding:1px 6px; color:var(--inchiostro); }
+    .villaggio-breakdown td:first-child, .villaggio-breakdown th:first-child { text-align:left; color:var(--muted); }
+    .villaggio-breakdown tr.tot td { font-weight:700; color:var(--navy); border-top:1px solid var(--carta-scura); }
     .sort-btn-row { display:flex; gap:6px; flex-wrap:wrap; margin:10px 12px 0; }
     .sort-btn { padding:5px 12px; background:var(--carta-scura); border:1px solid #c8b89a; border-radius:20px; font-family:'Lora',serif; font-size:0.75rem; cursor:pointer; }
     .sort-btn.active { background:var(--navy); color:var(--oro); border-color:var(--navy); }
@@ -802,7 +808,7 @@ const CASE_VILLAGGIO = [
   { id: 'perla',     nome: 'Perla Centrale', emoji: '🏠' },
 ];
 
-let villaggioValutazioni = []; // { casa, pulizia, penalita, totale, ts }
+let villaggioValutazioni = []; // { casa, pulizia, mansione, penalita, totale, ts }
 
 async function loadVillaggio() {
   villaggioValutazioni = [];
@@ -812,12 +818,16 @@ async function loadVillaggio() {
       const v = d.data();
       const ts = (v.data?.toDate ? v.data.toDate() : null) || parseDataKey(v.dataGiorno);
       const pulizia = Number(v.pulizia) || 0;
+      // mansione/mansioneVoto assenti sui doc pre-esistenti (schema esteso, non migrato): contano
+      // 0 nell'asse mansione, senza toccare il totale storico già salvato per quei giorni.
+      const mansione = Number(v.mansioneVoto) || 0;
       const penalita = Number(v.penalitaOrganizzazione) || 0;
       return {
         casa: v.casa,
         pulizia,
+        mansione,
         penalita,
-        totale: typeof v.totale === 'number' ? v.totale : (pulizia + penalita),
+        totale: typeof v.totale === 'number' ? v.totale : (pulizia + mansione + penalita),
         ts
       };
     });
@@ -826,30 +836,71 @@ async function loadVillaggio() {
   renderVillaggio();
 }
 
-function aggregaVillaggio() {
-  const lower = computePeriodoStart(null);
+// Le 3 voci (pulizia/mansione/penalità) sommate per casa su una singola finestra temporale
+// (lower = data di inizio finestra, inclusa). Usata sia per la classifica (finestra scelta dal
+// periodo-toggle condiviso) sia per il riepilogo oggi/settimana/mese (finestre fisse).
+function aggregaVillaggioFinestra(lower) {
   const perCasa = {};
-  CASE_VILLAGGIO.forEach(c => { perCasa[c.id] = { id: c.id, nome: c.nome, emoji: c.emoji, totale: 0, pulizia: 0, penalita: 0 }; });
+  CASE_VILLAGGIO.forEach(c => { perCasa[c.id] = { pulizia: 0, mansione: 0, penalita: 0, totale: 0 }; });
   villaggioValutazioni.forEach(v => {
     if (!v.ts || isNaN(v.ts.getTime()) || v.ts < lower) return;
     if (!perCasa[v.casa]) return;
-    perCasa[v.casa].totale += v.totale;
     perCasa[v.casa].pulizia += v.pulizia;
+    perCasa[v.casa].mansione += v.mansione;
     perCasa[v.casa].penalita += v.penalita;
+    perCasa[v.casa].totale += v.totale;
   });
-  return Object.values(perCasa);
+  return perCasa;
+}
+
+// Le 3 finestre fisse richieste per il riepilogo (indipendenti dal periodo-toggle condiviso,
+// che resta usato solo per l'ordinamento della classifica qui sotto).
+function finestreVillaggio() {
+  const now = new Date();
+  const oggi = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const day = now.getDay() || 7; // 1=lun...7=dom, stessa convenzione di computePeriodoStart
+  const settimana = new Date(now.getFullYear(), now.getMonth(), now.getDate() - day + 1);
+  const mese = new Date(now.getFullYear(), now.getMonth(), 1);
+  return { oggi, settimana, mese };
+}
+
+function aggregaVillaggio() {
+  const lower = computePeriodoStart(null);
+  const perFinestra = aggregaVillaggioFinestra(lower);
+  return CASE_VILLAGGIO.map(c => ({ id: c.id, nome: c.nome, emoji: c.emoji, ...perFinestra[c.id] }));
+}
+
+// Tabellina oggi/settimana/mese per le 3 voci + il totale complessivo di una casa — sempre
+// visibile a prescindere dal periodo-toggle condiviso, che qui serve solo per ordinare la
+// classifica (podio/lista) su una delle due finestre.
+function tabellaBreakdownVillaggio(casaId, perOggi, perSettimana, perMese) {
+  const riga = (label, campo, classe = '') => `<tr${classe ? ` class="${classe}"` : ''}><td>${label}</td><td>${perOggi[casaId][campo]}</td><td>${perSettimana[casaId][campo]}</td><td>${perMese[casaId][campo]}</td></tr>`;
+  return `<table class="villaggio-breakdown">
+    <tr><th></th><th>Oggi</th><th>Sett.</th><th>Mese</th></tr>
+    ${riga('🧹 Pulizia', 'pulizia')}
+    ${riga('🧺 Mansione', 'mansione')}
+    ${riga('⚠️ Penalità', 'penalita')}
+    ${riga('Totale', 'totale', 'tot')}
+  </table>`;
 }
 
 function renderVillaggio() {
   // Ordinamento primario per punteggio; a parità, ordine alfabetico solo estetico/stabile
-  // (non implica una posizione migliore — la posizione viene calcolata a parte).
+  // (non implica una posizione migliore — la posizione viene calcolata a parte). La finestra usata
+  // per l'ordinamento è quella del periodo-toggle condiviso (default settimana); il riepiogo
+  // oggi/settimana/mese sotto ogni riga resta comunque sempre visibile su tutte e tre le finestre.
   const sorted = aggregaVillaggio().sort((a,b) => b.totale - a.totale || a.nome.localeCompare(b.nome, 'it'));
+
+  const { oggi, settimana, mese } = finestreVillaggio();
+  const perOggi = aggregaVillaggioFinestra(oggi);
+  const perSettimana = aggregaVillaggioFinestra(settimana);
+  const perMese = aggregaVillaggioFinestra(mese);
 
   const podio = document.getElementById('podio-villaggio');
   const lista = document.getElementById('lista-villaggio');
 
-  // Nessun dato nel periodo: nessuna casa ha ricevuto valutazioni (pulizia e penalità entrambe a 0 per tutte).
-  const haDati = sorted.some(c => c.pulizia !== 0 || c.penalita !== 0);
+  // Nessun dato nel periodo: nessuna casa ha ricevuto valutazioni su nessuna delle 3 voci.
+  const haDati = sorted.some(c => c.pulizia !== 0 || c.mansione !== 0 || c.penalita !== 0);
 
   if (!haDati) {
     podio.innerHTML = `<div class="podio-empty-msg">🏠 Ancora nessuna valutazione per questo periodo.<br>Le case appariranno in classifica dopo la prima valutazione nel Villaggio.</div>`;
@@ -858,11 +909,13 @@ function renderVillaggio() {
         <div style="font-size:0.88rem;font-weight:600;color:var(--inchiostro);">${c.emoji} ${esc(c.nome)}</div>
         <div style="margin-top:3px;">
           <span class="mini-badge">🧹 pulizia 0pt</span>
+          <span class="mini-badge">🧺 mansioni 0pt</span>
           <span class="mini-badge">⚠️ penalità 0pt</span>
         </div>
         <div class="classifica-bar-bg" style="margin-top:5px;">
           <div class="classifica-bar" style="width:0%;"></div>
         </div>
+        ${tabellaBreakdownVillaggio(c.id, perOggi, perSettimana, perMese)}
       </div>
       <div style="font-size:0.95rem;font-weight:700;color:var(--oro);min-width:40px;text-align:right;">0</div>
     </div>`).join('');
@@ -893,11 +946,13 @@ function renderVillaggio() {
         <div style="font-size:0.88rem;font-weight:600;color:var(--inchiostro);">${c.emoji} ${esc(c.nome)}</div>
         <div style="margin-top:3px;">
           <span class="mini-badge">🧹 pulizia ${c.pulizia}pt</span>
+          <span class="mini-badge">🧺 mansioni ${c.mansione}pt</span>
           <span class="mini-badge">⚠️ penalità ${c.penalita}pt</span>
         </div>
         <div class="classifica-bar-bg" style="margin-top:5px;">
           <div class="classifica-bar" style="width:${pct}%;"></div>
         </div>
+        ${tabellaBreakdownVillaggio(c.id, perOggi, perSettimana, perMese)}
       </div>
       <div style="font-size:0.95rem;font-weight:700;color:var(--oro);min-width:40px;text-align:right;">${c.totale}</div>
     </div>`;
