@@ -213,32 +213,45 @@ function calcolaCluster(uids, edges) {
   return componenti;
 }
 
-// ── Mediatori: nodi con legami positivi verso più di un cluster distinto ────
+// Soglia minima di coppie-ponte per comparire tra i Mediatori: chi ne collega solo 1 non
+// basta, serve un contributo sostanziale al tenere insieme il gruppo. Il vero filtro selettivo
+// resta il radicamento in entrata (vedi sotto), non questa soglia.
+const SOGLIA_MEDIATORE_COPPIE = 2;
+
+// ── Mediatori: chi SCEGLIE (uscente D1/ciurma) naufraghi che tra loro non sono collegati da un
+// legame reciproco — cioè tiene insieme, con le proprie scelte, persone che altrimenti
+// resterebbero in sottogruppi (cluster) distinti o fuori da ogni sottogruppo. Conta quante
+// coppie "scollegate" ciascuno tiene insieme tra i propri scelti; compare solo chi ne collega
+// almeno SOGLIA_MEDIATORE_COPPIE, ordinato per numero di coppie-ponte. Chi sceglie solo persone
+// dello stesso cluster (chiusura di gruppo, non ponte) non è mediatore. Riusa uidToCluster
+// (calcolaCluster, legami reciproci di ciurma) come unica fonte di "collegati", senza un
+// secondo algoritmo.
+// RADICAMENTO (due condizioni, non solo l'uscente): un ponte regge solo se qualcuno lo
+// attraversa, quindi il mediatore deve essere scelto dal gruppo, non solo scegliere.
+//  - Escluso chi è isolato in entrata (insiemeEntrante D1 vuoto — nessuno lo sceglie).
+//  - Escluso anche chi è marginale (insiemeEntrante D1 <= SOGLIA_MARGINALE, la stessa soglia
+//    già usata per i marginali della Leadership trasversale): disperso in uscita ma debole in
+//    entrata non è un tramite reale, solo qualcuno con molte nomine sparse.
 export function trovaMediatori(risposte, cluster) {
-  const map = buildNomineMap(risposte);
   const uidToCluster = {};
   cluster.forEach((gruppo, idx) => gruppo.forEach(u => { uidToCluster[u] = idx; }));
 
-  const mediatori = [];
   const uids = risposte.map(r => r.userId);
+  const risultato = [];
   uids.forEach(u => {
-    const clusterVicini = new Set();
-    const n = map[u];
-    if (!n) return;
-    [...n.ciurma, ...n.ponti].forEach(v => {
-      if (uidToCluster[v] !== undefined) clusterVicini.add(uidToCluster[v]);
-    });
-    // Considera anche chi nomina u
-    uids.forEach(altro => {
-      if (altro === u) return;
-      const alt = map[altro];
-      if (alt && (alt.ciurma.has(u) || alt.ponti.has(u)) && uidToCluster[altro] !== undefined) {
-        clusterVicini.add(uidToCluster[altro]);
+    if (insiemeEntrante(risposte, u, 'ciurma').size <= SOGLIA_MARGINALE) return; // isolato o marginale in entrata: escluso
+    const scelti = [...insiemeUscente(risposte, u, 'ciurma')];
+    let coppiePonte = 0;
+    for (let i = 0; i < scelti.length; i++) {
+      for (let j = i + 1; j < scelti.length; j++) {
+        const a = scelti[i], b = scelti[j];
+        const stessoCluster = uidToCluster[a] !== undefined && uidToCluster[a] === uidToCluster[b];
+        if (!stessoCluster) coppiePonte++;
       }
-    });
-    if (clusterVicini.size >= 2) mediatori.push(u);
+    }
+    if (coppiePonte >= SOGLIA_MEDIATORE_COPPIE) risultato.push({ uid: u, coppiePonte });
   });
-  return mediatori;
+  return risultato.sort((a, b) => b.coppiePonte - a.coppiePonte);
 }
 
 // ── Fasce ad anelli su un conteggio (usata sia dal Bersaglio per il raggio sia dalla

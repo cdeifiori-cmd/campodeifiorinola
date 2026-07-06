@@ -145,10 +145,8 @@
     .barchart-svg-wrap svg { width:100%; height:auto; display:block; }
     .barchart-riga text { font-family:'Lora',serif; }
 
-    /* ── Sezione 5: card finali (Isolati/Mediatori/Leader/Sottogruppi) ── */
-    .liste-row { display:grid; grid-template-columns:repeat(4, 1fr); gap:var(--rc-sp-2); }
-    @media (max-width: 900px) { .liste-row { grid-template-columns:repeat(2, 1fr); } }
-    @media (max-width: 480px) { .liste-row { grid-template-columns:1fr; } }
+    /* ── Sezione 5: card finali (Isolati/Mediatori/Più scelti/Leader trasversali/Sottogruppi) ── */
+    .liste-row { display:grid; grid-template-columns:repeat(auto-fit, minmax(190px, 1fr)); gap:var(--rc-sp-2); }
     .lista-box { background:#fff; border:var(--rc-bordo); border-radius:var(--rc-radius); box-shadow:var(--rc-ombra); padding:var(--rc-sp-3) var(--rc-sp-2); }
     .lista-box h4 { font-family:'Playfair Display',serif; font-size:0.88rem; color:var(--navy); border-bottom:1px solid var(--carta-scura); padding-bottom:6px; margin-bottom:8px; }
     .lista-box .item { font-size:0.82rem; padding:3px 0; }
@@ -358,7 +356,8 @@
       <div class="liste-row">
         <div class="lista-box"><h4>🏝️ Isolati</h4><div id="lista-isolati"></div></div>
         <div class="lista-box"><h4>🌉 Mediatori</h4><div id="lista-mediatori"></div></div>
-        <div class="lista-box"><h4>⭐ Leader positivi</h4><div id="lista-leader"></div></div>
+        <div class="lista-box"><h4>🔝 Più scelti</h4><div id="lista-piu-scelti"></div></div>
+        <div class="lista-box"><h4>🧭 Leader trasversali</h4><div id="lista-leader-trasversale-compatta"></div></div>
         <div class="lista-box"><h4>🔥 Sottogruppi</h4><div id="lista-cluster"></div></div>
       </div>
     </section>
@@ -1764,27 +1763,11 @@ async function renderTutto() {
     ${deltaHtml}
   `;
 
-  // Liste
-  document.getElementById('lista-isolati').innerHTML = aggregati.isolati.length
-    ? aggregati.isolati.map(u => `<div class="item">⚓ ${esc(naufraghiInfo[u]?.nome || u)}</div>`).join('')
-    : '<div class="vuoto">Nessun isolato in questa rilevazione.</div>';
-
-  document.getElementById('lista-mediatori').innerHTML = mediatori.length
-    ? mediatori.map(u => `<div class="item">🌉 ${esc(naufraghiInfo[u]?.nome || u)}</div>`).join('')
-    : '<div class="vuoto">Nessun mediatore individuato.</div>';
-
-  document.getElementById('lista-leader').innerHTML = aggregati.leader.length
-    ? aggregati.leader.slice(0, 6).map(l => `<div class="item">⭐ ${esc(naufraghiInfo[l.uid]?.nome || l.uid)} <span style="color:var(--muted);font-size:0.72rem;">(${l.reciproci} legami reciproci)</span></div>`).join('')
-    : '<div class="vuoto">Nessun leader emerso.</div>';
-
-  document.getElementById('lista-cluster').innerHTML = cluster.filter(c => c.length >= 2).length
-    ? cluster.filter(c => c.length >= 2).map((c, i) => `<div class="item">🔥 Gruppo ${i + 1}: ${c.map(u => esc(naufraghiInfo[u]?.nome || u)).join(', ')}</div>`).join('')
-    : '<div class="vuoto">Nessun sottogruppo denso individuato.</div>';
-
   // Leadership trasversale: due indicatori sempre separati (mai un punteggio unico), niente
-  // taglio arbitrario a top-N — mostra chiunque abbia ricevuto almeno una scelta in ciurma, così
-  // un leader ad ampio consenso ma con pochi legami reciproci (vedi Luis) non sparisce per un
-  // pareggio nell'ordinamento, come accadeva nella lista "Leader positivi" basata su reciprocità.
+  // taglio arbitrario a top-N nella versione estesa — mostra chiunque abbia ricevuto almeno una
+  // scelta in ciurma, così un leader ad ampio consenso ma con pochi legami reciproci (vedi Luis)
+  // non sparisce per un pareggio nell'ordinamento. Calcolata qui, prima delle Liste, perché sia
+  // "Più scelti" (stesso consensoGrezzo) sia la versione compatta qui sotto la riusano.
   const leadership = calcolaLeadershipTrasversale(risposte, cluster);
   const leadershipVoci = Object.entries(leadership)
     .filter(([, v]) => v.consensoGrezzo > 0)
@@ -1792,6 +1775,42 @@ async function renderTutto() {
       || b[1].ponteMarginali - a[1].ponteMarginali
       || b[1].consensoGrezzo - a[1].consensoGrezzo
       || (naufraghiInfo[a[0]]?.nome || a[0]).localeCompare(naufraghiInfo[b[0]]?.nome || b[0], 'it'));
+
+  // Liste
+  document.getElementById('lista-isolati').innerHTML = aggregati.isolati.length
+    ? aggregati.isolati.map(u => `<div class="item">⚓ ${esc(naufraghiInfo[u]?.nome || u)}</div>`).join('')
+    : '<div class="vuoto">Nessun isolato in questa rilevazione.</div>';
+
+  // Mediatore = chi SCEGLIE (uscente D1/ciurma) naufraghi non collegati tra loro da un legame
+  // reciproco (cluster diversi, o fuori da ogni cluster) — non più "chiunque tocchi >=2 cluster
+  // in entrata o in uscita", che finiva per includere quasi tutti i rispondenti.
+  document.getElementById('lista-mediatori').innerHTML = mediatori.length
+    ? mediatori.map(m => `<div class="item">🌉 ${esc(naufraghiInfo[m.uid]?.nome || m.uid)} <span style="color:var(--muted);font-size:0.72rem;">(${m.coppiePonte} coppi${m.coppiePonte === 1 ? 'a' : 'e'}-ponte)</span></div>`).join('')
+    : '<div class="vuoto">Nessun mediatore individuato.</div>';
+
+  // Più scelti: puro conteggio di preferenze RICEVUTE in ciurma (D1) — nessuna condizione di
+  // reciprocità o sottogruppo, a differenza della vecchia lista "Leader positivi".
+  const piuScelti = Object.entries(leadership)
+    .filter(([, v]) => v.consensoGrezzo > 0)
+    .sort((a, b) => b[1].consensoGrezzo - a[1].consensoGrezzo
+      || (naufraghiInfo[a[0]]?.nome || a[0]).localeCompare(naufraghiInfo[b[0]]?.nome || b[0], 'it'));
+  document.getElementById('lista-piu-scelti').innerHTML = piuScelti.length
+    ? piuScelti.slice(0, 6).map(([uid, v]) => `<div class="item">🔝 ${esc(naufraghiInfo[uid]?.nome || uid)} <span style="color:var(--muted);font-size:0.72rem;">(${v.consensoGrezzo} ricevute)</span></div>`).join('')
+    : '<div class="vuoto">Nessuna preferenza ricevuta in questa rilevazione.</div>';
+
+  document.getElementById('lista-cluster').innerHTML = cluster.filter(c => c.length >= 2).length
+    ? cluster.filter(c => c.length >= 2).map((c, i) => `<div class="item">🔥 Gruppo ${i + 1}: ${c.map(u => esc(naufraghiInfo[u]?.nome || u)).join(', ')}</div>`).join('')
+    : '<div class="vuoto">Nessun sottogruppo denso individuato.</div>';
+
+  // Versione compatta (top 6) della Leadership trasversale per la card "In sintesi"; la sezione
+  // dedicata più sotto (#lista-leadership-trasversale) resta la vista completa, senza taglio.
+  document.getElementById('lista-leader-trasversale-compatta').innerHTML = leadershipVoci.length
+    ? leadershipVoci.slice(0, 6).map(([uid, v]) => `
+      <div class="item">🧭 ${esc(naufraghiInfo[uid]?.nome || uid)}
+        <span style="color:var(--muted);font-size:0.72rem;">(${v.ampiezzaConsenso}/${v.sottogruppiTotali} sottogruppi · ${v.ponteMarginali} marginali)</span>
+      </div>`).join('')
+    : '<div class="vuoto">Nessun leader emerso.</div>';
+
   document.getElementById('lista-leadership-trasversale').innerHTML = leadershipVoci.length
     ? leadershipVoci.map(([uid, v]) => `
       <div class="leadership-item">
