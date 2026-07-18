@@ -272,9 +272,10 @@ let allertaNaufraghi = new Set(); // uid con emozioni negative 3gg consecutivi
 requireAuth(async user => {
   if (user.uid !== ADMIN_UID) { window.location.replace('index.html'); return; }
 
-  // Carica lista naufraghi
+  // Carica lista naufraghi (esclude doc-fantasma senza nome, es. foto salvata
+  // per errore su un uid di un ruolo diverso — vedi robinson-modal-profilo.js)
   const snap = await getDocs(collection(db, 'robinson_naufraghi'));
-  uidList = snap.docs.map(d => d.id);
+  uidList = snap.docs.filter(d => !!d.data().nome).map(d => d.id);
 
   // Carica profili
   await Promise.all(uidList.map(async uid => {

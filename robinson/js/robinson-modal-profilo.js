@@ -1,6 +1,6 @@
 // robinson-modal-profilo.js — modal stack con 3 ruoli: proprietario | visitatore | admin
 import { db, auth, ADMIN_UID, CLOUD_NAME, CLOUD_PRESET } from './robinson-firebase.js';
-import { esc, uploadOne } from './robinson-utils.js';
+import { esc, uploadOne, cloudinaryVideoUrl, configProfilo } from './robinson-utils.js';
 import {
   doc, getDoc, getDocs, setDoc, addDoc, deleteDoc, updateDoc,
   collection, query, orderBy, serverTimestamp
@@ -12,6 +12,10 @@ let _stack = [];
 let _modal = null;
 let _content = null;
 let _cartaParams = null;
+// ruolo profilo (naufrago/ciurma) per uid, popolato da apriModal — usato da
+// _rmpCambiaFoto per scrivere la foto nella collezione/campo giusti (vedi
+// configProfilo in robinson-utils.js).
+let _ruoloProfiloCache = {};
 
 const EMOJIS = ['❤️','😂','👏','🔥','😢'];
 
@@ -52,15 +56,19 @@ export async function apriModal(uid, params = {}) {
 
   try {
     const ruolo = await _getRuolo(uid);
-    const [snapN, snapU] = await Promise.all([
-      getDoc(doc(db, 'robinson_naufraghi', uid)),
-      getDoc(doc(db, 'utenti', uid))
-    ]);
-    const dN = snapN.exists() ? snapN.data() : {};
+    const snapU = await getDoc(doc(db, 'utenti', uid));
     const dU = snapU.exists() ? snapU.data() : {};
-    const foto = dN.fotoRobinson || dN.fotoProfilo || dU.fotoProfilo || dU.photoURL || params.foto || '';
-    const nome = dN.nome || dU.nome || dU.displayName || params.nome || 'Naufrago';
-    const ruoloLabel = params.ruolo || dN.ruolo || dU.ruolo || '';
+    // Ruolo del PROFILO aperto (naufrago/ciurma) — determina in quale
+    // collezione/campo vive la sua foto (vedi configProfilo), non va confuso
+    // con `ruolo` sopra che è la relazione del VISITATORE rispetto a questo profilo.
+    const ruoloProfilo = dU.ruolo === 'ciurma' ? 'ciurma' : 'naufrago';
+    _ruoloProfiloCache[uid] = ruoloProfilo;
+    const { collection: collezioneProfilo, fotoField } = configProfilo(ruoloProfilo);
+    const snapP = await getDoc(doc(db, collezioneProfilo, uid));
+    const dP = snapP.exists() ? snapP.data() : {};
+    const foto = dP[fotoField] || dP.fotoRobinson || dP.fotoProfilo || dU.fotoProfilo || dU.photoURL || params.foto || '';
+    const nome = dP.nome || dU.nome || dU.displayName || params.nome || 'Naufrago';
+    const ruoloLabel = params.ruolo || dP.ruolo || dU.ruolo || '';
     await _push('scelta', { uid, nome, foto, ruolo, ruoloLabel });
   } catch(e) {
     _content.innerHTML = `<div style="padding:20px;color:red;">${esc(e.message)}</div>`;
@@ -218,7 +226,8 @@ window._rmpCambiaFoto = async function(input, uid) {
     const data = await res.json();
     if (!data.secure_url) throw new Error(data.error?.message || 'Upload fallito');
     const fotoUrl = data.secure_url;
-    await setDoc(doc(db, 'robinson_naufraghi', uid), { fotoRobinson: fotoUrl }, { merge: true });
+    const { collection: collezioneProfilo, fotoField } = configProfilo(_ruoloProfiloCache[uid]);
+    await setDoc(doc(db, collezioneProfilo, uid), { [fotoField]: fotoUrl }, { merge: true });
     const av = document.querySelector('.modal-avatar');
     if (av?.tagName === 'IMG') av.src = fotoUrl;
     _mostraToast('✅ Foto Robinson aggiornata!');
@@ -473,7 +482,7 @@ function _cartaReadonly(uid, nome, ci, ruolo, container) {
   }
 }
 
-// ── NOTTE PRIMA DI PARTIRE ────────────────────────────────────────────────
+// ── NOTTE PRIMA DI APPRODARE ────────────────────────────────────────────────
 let _notteDb = null;
 
 const NOTTE_DOMANDE = [
@@ -554,7 +563,7 @@ async function _nottePartenza(uid, ruolo, container) {
   const outer = document.createElement('div');
   outer.style.marginBottom = '6px';
   outer.innerHTML = `
-    <div class="rmp-acc-toggle" style="background:linear-gradient(90deg,#0d1b2a,#1a1a4e);color:#FFD700;border-color:#FFD70044;">🌙 Notte prima di partire <span class="rmp-arr">▼</span></div>
+    <div class="rmp-acc-toggle" style="background:linear-gradient(90deg,#0d1b2a,#1a1a4e);color:#FFD700;border-color:#FFD70044;">🌙 Notte prima di approdare <span class="rmp-arr">▼</span></div>
     <div class="rmp-acc-body" style="display:block;background:transparent;border:none;padding:10px 0 0;">
       ${bodyHtml}
     </div>`;
@@ -807,7 +816,7 @@ async function _giorno({ uid, nome, foto, ruolo, ruoloLabel, dataKey }) {
 
     // E) Tesori
     const media=p.media||[]; let tH='';
-    media.forEach(m=>{const type=m.type||m.mediaType||'';if(type==='image') tH+=`<img src="${esc(m.url)}" style="max-width:100%;border-radius:6px;margin-bottom:8px;display:block;">`;else if(type==='video') tH+=`<video src="${esc(m.url)}" controls style="max-width:100%;border-radius:6px;margin-bottom:8px;display:block;"></video>`;else if(type==='audio') tH+=`<audio src="${esc(m.url)}" controls style="width:100%;margin-bottom:8px;display:block;"></audio>`;});
+    media.forEach(m=>{const type=m.type||m.mediaType||'';if(type==='image') tH+=`<img src="${esc(m.url)}" style="max-width:100%;border-radius:6px;margin-bottom:8px;display:block;">`;else if(type==='video') tH+=`<video controls playsinline preload="metadata" style="max-width:100%;border-radius:6px;margin-bottom:8px;display:block;"><source src="${esc(cloudinaryVideoUrl(m.url))}" type="video/mp4"></video>`;else if(type==='audio') tH+=`<audio src="${esc(m.url)}" controls style="width:100%;margin-bottom:8px;display:block;"></audio>`;});
     html+=_acc('📸 Tesori',tH);
 
     // F) Isola

@@ -136,14 +136,15 @@ async function loadNaufraghi() {
   const grid = document.getElementById('grid');
   try {
     const snap = await getDocs(collection(db, 'robinson_naufraghi'));
-    const entries = await Promise.all(snap.docs.map(async d => {
-      const data = d.data();
-      const uid = d.id;
-      const foto = data.fotoRobinson || data.fotoProfilo || await getFotoRobinson(uid);
-      return { uid, nome: data.nome || uid, foto: foto || '' };
-    }));
+    const entries = await Promise.all(snap.docs
+      .filter(d => !!d.data().nome) // esclude doc-fantasma senza nome (es. foto salvata per uid di un ruolo diverso)
+      .map(async d => {
+        const data = d.data();
+        const uid = d.id;
+        const foto = data.fotoRobinson || data.fotoProfilo || await getFotoRobinson(uid);
+        return { uid, nome: data.nome, foto: foto || '' };
+      }));
     allNaufraghi = entries
-      .filter(n => !!n.nome)
       .sort((a, b) => a.nome.localeCompare(b.nome, 'it'));
     renderGrid(allNaufraghi);
   } catch(e) {
