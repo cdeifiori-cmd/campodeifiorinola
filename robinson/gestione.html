@@ -107,6 +107,7 @@ let currentUser = null;
 
 requireAuth(async user => {
   currentUser = user;
+  console.log('[gestione] uid sessione:', user.uid, '| isAdmin (ADMIN_UID):', user.uid === ADMIN_UID);
   const ok = await puoAccedereGestione(user);
   if (!ok) { window.location.replace('index.html'); return; }
 
@@ -124,7 +125,13 @@ async function risolviPinUid(pin) {
 
 async function caricaAutorizzati() {
   const cont = document.getElementById('lista-autorizzati');
-  const snap = await getDocs(collection(db, 'magazzino_autorizzati'));
+  let snap;
+  try {
+    snap = await getDocs(collection(db, 'magazzino_autorizzati'));
+  } catch (e) {
+    cont.innerHTML = `<p class="empty-msg" style="color:var(--rosso);">Errore di lettura: ${esc(e.message)}${e.code === 'permission-denied' ? ' — le regole Firestore di questa sezione non sono ancora state deployate.' : ''}</p>`;
+    return;
+  }
   if (snap.empty) {
     cont.innerHTML = `<p class="empty-msg">Nessuna persona autorizzata oltre all'admin.</p>`;
     return;
