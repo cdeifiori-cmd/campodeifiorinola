@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Storico – Robinson</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
+  <meta name="theme-color" content="#1a3a5c">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/robinson.css">
+  <style>
+    body { padding-bottom: 90px; }
+    #nav-auth-slot-wrap { position: fixed; top: 10px; right: 10px; z-index: 300; }
+
+    .st-header { background: linear-gradient(135deg, var(--navy) 0%, #0d1b2a 100%); color: #fff; padding: 20px 18px 16px; text-align: center; }
+    .st-header .breadcrumb { font-size: 0.75rem; margin-bottom: 4px; }
+    .st-header .breadcrumb a { color: var(--oro); text-decoration: none; }
+    .st-header h1 { font-family: 'Playfair Display', serif; font-size: 1.4rem; color: var(--oro-light); }
+
+    .st-content { max-width: 720px; margin: 0 auto; padding: 8px 12px 20px; }
+
+    .filtro-riga { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; margin: 14px 0; }
+    .filtro-riga .form-group { margin-bottom: 0; flex: 1; min-width: 130px; }
+
+    .tot-periodo { font-family: 'Playfair Display', serif; font-size: 1.3rem; color: var(--oro); text-align: center; margin: 10px 0 16px; }
+
+    .row-spesa { display: flex; justify-content: space-between; align-items: center; background: var(--post-bg); border-radius: 8px; padding: 10px 14px; margin-bottom: 6px; }
+    .row-spesa .rs-data { font-weight: 600; color: var(--navy); font-size: 0.88rem; }
+    .row-spesa .rs-tot { color: var(--oro); font-weight: 600; font-size: 0.88rem; }
+
+    .prod-select-wrap { margin-bottom: 14px; }
+    .stat-strip { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+    .stat-box { flex: 1; min-width: 120px; background: var(--post-bg); border-radius: 10px; padding: 12px; text-align: center; }
+    .stat-box .sv { font-family: 'Playfair Display', serif; font-size: 1.15rem; color: var(--navy); font-weight: 700; }
+    .stat-box .sl { font-size: 0.68rem; color: var(--muted); margin-top: 2px; }
+
+    .acquisto-row { display: flex; justify-content: space-between; background: var(--post-bg); border-radius: 8px; padding: 8px 12px; margin-bottom: 5px; font-size: 0.82rem; }
+
+    .cat-report { background: var(--post-bg); border-left: 4px solid var(--oro); border-radius: 4px 10px 10px 4px; padding: 12px 14px; margin-bottom: 10px; }
+    .cat-report .cr-head { display: flex; justify-content: space-between; font-family: 'Playfair Display', serif; color: var(--navy); font-weight: 700; }
+    .cat-report .cr-prod { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--inchiostro); padding: 4px 0; border-top: 1px solid var(--carta-scura); margin-top: 6px; }
+  </style>
+</head>
+<body>
+
+<div id="nav-auth-slot-wrap"><div id="nav-auth-slot"></div></div>
+
+<div class="st-header">
+  <div class="breadcrumb"><a href="gestione.html">📦 Gestione</a> · Storico</div>
+  <h1>📊 Storico</h1>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" data-tab="spesa">Per spesa</button>
+  <button class="tab-btn" data-tab="prodotto">Per prodotto</button>
+  <button class="tab-btn" data-tab="tipologia">Per tipologia</button>
+</div>
+
+<div class="st-content">
+
+  <div class="tab-panel active" id="panel-spesa">
+    <div class="filtro-riga">
+      <div class="form-group"><label>Dal</label><input type="date" id="sp-dal"></div>
+      <div class="form-group"><label>Al</label><input type="date" id="sp-al"></div>
+    </div>
+    <div class="tot-periodo" id="sp-tot-periodo"></div>
+    <div id="sp-lista"><div class="spinner"></div></div>
+  </div>
+
+  <div class="tab-panel" id="panel-prodotto">
+    <div class="prod-select-wrap">
+      <select id="pr-select" style="width:100%;padding:9px 12px;border:1.5px solid #c8b89a;border-radius:8px;font-family:'Lora',serif;"></select>
+    </div>
+    <div id="pr-body"></div>
+  </div>
+
+  <div class="tab-panel" id="panel-tipologia">
+    <div class="filtro-riga">
+      <div class="form-group"><label>Dal</label><input type="date" id="tp-dal"></div>
+      <div class="form-group"><label>Al</label><input type="date" id="tp-al"></div>
+    </div>
+    <div id="tp-body"><div class="spinner"></div></div>
+  </div>
+
+</div>
+
+<nav class="bottom-nav">
+  <a href="gestione.html" class="nav-item"><span class="nav-icon">📦</span><span>Gestione</span></a>
+  <a href="magazzino.html" class="nav-item"><span class="nav-icon">📦</span><span>Magazzino</span></a>
+  <a href="liste-spesa.html" class="nav-item"><span class="nav-icon">🛒</span><span>Spesa</span></a>
+  <a href="gestione-storico.html" class="nav-item active"><span class="nav-icon">📊</span><span>Storico</span></a>
+</nav>
+
+<script type="module">
+import { db } from './js/robinson-firebase.js';
+import { requireAuth } from './js/robinson-auth.js';
+import { setupNavAuth } from './js/robinson-nav.js';
+import { esc } from './js/robinson-utils.js';
+import { puoAccedereGestione, fmtEuro, fmtDataBreve } from './js/robinson-magazzino.js';
+import {
+  collection, collectionGroup, getDocs, query, orderBy
+} from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+setupNavAuth('nav-auth-slot');
+
+let listeChiuse = [];   // { id, data, totale }
+let vociStoriche = [];  // voci delle sole liste chiuse, con listaId risolto
+let catMap = {};
+
+requireAuth(async user => {
+  const ok = await puoAccedereGestione(user);
+  if (!ok) { window.location.replace('index.html'); return; }
+  await caricaStorico();
+  attivaTabs();
+  renderPerSpesa();
+  renderPerProdotto();
+  renderPerTipologia();
+});
+
+async function caricaStorico() {
+  const [catSnap, listeSnap, vociSnap] = await Promise.all([
+    getDocs(collection(db, 'magazzino_categorie')),
+    getDocs(query(collection(db, 'liste_spesa'), orderBy('data', 'desc'))),
+    getDocs(collectionGroup(db, 'voci'))
+  ]);
+  catMap = Object.fromEntries(catSnap.docs.map(d => [d.id, d.data().nome]));
+
+  const listeMap = {};
+  listeSnap.forEach(d => {
+    const l = d.data();
+    if (l.stato !== 'chiusa') return;
+    listeMap[d.id] = { id: d.id, data: l.data, totale: l.totale || 0 };
+  });
+  listeChiuse = Object.values(listeMap).sort((a, b) => b.data.toMillis() - a.data.toMillis());
+
+  vociStoriche = vociSnap.docs
+    .map(d => ({ id: d.id, listaId: d.ref.parent.parent.id, ...d.data() }))
+    .filter(v => listeMap[v.listaId]);
+}
+
+function attivaTabs() {
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+    });
+  });
+}
+
+function nelPeriodo(ts, dal, al) {
+  if (!ts) return false;
+  const t = ts.toMillis ? ts.toMillis() : new Date(ts).getTime();
+  if (dal && t < new Date(dal).getTime()) return false;
+  if (al && t > new Date(al).getTime() + 86400000 - 1) return false;
+  return true;
+}
+
+// ── Per spesa ────────────────────────────────────────────────────────────
+function renderPerSpesa() {
+  const dal = document.getElementById('sp-dal').value;
+  const al = document.getElementById('sp-al').value;
+  const filtrate = listeChiuse.filter(l => nelPeriodo(l.data, dal, al));
+
+  const totPeriodo = filtrate.reduce((s, l) => s + (l.totale || 0), 0);
+  document.getElementById('sp-tot-periodo').textContent = `Totale periodo: ${fmtEuro(totPeriodo)}`;
+
+  const cont = document.getElementById('sp-lista');
+  if (!filtrate.length) { cont.innerHTML = `<p class="empty-msg">Nessuna spesa chiusa nel periodo.</p>`; return; }
+  cont.innerHTML = '';
+  filtrate.forEach(l => {
+    const row = document.createElement('a');
+    row.href = `lista-spesa-dettaglio.html?id=${l.id}`;
+    row.style.textDecoration = 'none'; row.style.color = 'inherit';
+    row.innerHTML = `<div class="row-spesa"><span class="rs-data">${esc(fmtDataBreve(l.data))}</span><span class="rs-tot">${fmtEuro(l.totale)}</span></div>`;
+    cont.appendChild(row);
+  });
+}
+document.getElementById('sp-dal').addEventListener('change', renderPerSpesa);
+document.getElementById('sp-al').addEventListener('change', renderPerSpesa);
+
+// ── Per prodotto ─────────────────────────────────────────────────────────
+function renderPerProdotto() {
+  const distinti = new Map();
+  vociStoriche.filter(v => v.prodotto_id).forEach(v => {
+    if (!distinti.has(v.prodotto_id)) distinti.set(v.prodotto_id, v.nome);
+  });
+  const sel = document.getElementById('pr-select');
+  sel.innerHTML = distinti.size
+    ? [...distinti.entries()].sort((a, b) => a[1].localeCompare(b[1], 'it'))
+        .map(([id, nome]) => `<option value="${esc(id)}">${esc(nome)}</option>`).join('')
+    : '<option value="">Nessun prodotto con storico</option>';
+  sel.onchange = () => renderProdottoBody(sel.value);
+  renderProdottoBody(sel.value);
+}
+
+function renderProdottoBody(prodottoId) {
+  const body = document.getElementById('pr-body');
+  const acquisti = vociStoriche.filter(v => v.prodotto_id === prodottoId).sort((a, b) => (b.data_lista?.toMillis() || 0) - (a.data_lista?.toMillis() || 0));
+  if (!acquisti.length) { body.innerHTML = `<p class="empty-msg">Nessun acquisto storico per questo prodotto.</p>`; return; }
+
+  const qtyTot = acquisti.reduce((s, v) => s + (v.quantita || 0), 0);
+  const spesaTot = acquisti.reduce((s, v) => s + (v.prezzo || 0), 0);
+  const prezzoMedio = qtyTot ? spesaTot / qtyTot : null;
+
+  body.innerHTML = `
+    <div class="stat-strip">
+      <div class="stat-box"><div class="sv">${qtyTot}</div><div class="sl">Quantità acquistata</div></div>
+      <div class="stat-box"><div class="sv">${fmtEuro(spesaTot)}</div><div class="sl">Spesa totale</div></div>
+      <div class="stat-box"><div class="sv">${prezzoMedio != null ? fmtEuro(prezzoMedio) : '–'}</div><div class="sl">Prezzo unitario medio</div></div>
+    </div>
+    <div id="pr-acquisti"></div>`;
+
+  const acquistiCont = document.getElementById('pr-acquisti');
+  acquisti.forEach(v => {
+    const row = document.createElement('div');
+    row.className = 'acquisto-row';
+    row.innerHTML = `<span>${esc(fmtDataBreve(v.data_lista))} · ${v.quantita ?? '–'} ${esc(v.unita || '')} × ${v.prezzo_unitario != null ? fmtEuro(v.prezzo_unitario) : '–'}</span><span>${fmtEuro(v.prezzo)}</span>`;
+    acquistiCont.appendChild(row);
+  });
+}
+
+// ── Per tipologia ────────────────────────────────────────────────────────
+function renderPerTipologia() {
+  const dal = document.getElementById('tp-dal').value;
+  const al = document.getElementById('tp-al').value;
+  const filtrate = vociStoriche.filter(v => nelPeriodo(v.data_lista, dal, al));
+
+  const perCategoria = {};
+  filtrate.forEach(v => {
+    const catKey = v.categoria || '__none';
+    if (!perCategoria[catKey]) perCategoria[catKey] = { totale: 0, prodotti: {} };
+    perCategoria[catKey].totale += (v.prezzo || 0);
+    const pKey = v.prodotto_id || v.nome;
+    perCategoria[catKey].prodotti[pKey] = perCategoria[catKey].prodotti[pKey] || { nome: v.nome, totale: 0 };
+    perCategoria[catKey].prodotti[pKey].totale += (v.prezzo || 0);
+  });
+
+  const body = document.getElementById('tp-body');
+  const chiavi = Object.keys(perCategoria).sort((a, b) => perCategoria[b].totale - perCategoria[a].totale);
+  if (!chiavi.length) { body.innerHTML = `<p class="empty-msg">Nessuna spesa nel periodo.</p>`; return; }
+  body.innerHTML = '';
+  chiavi.forEach(k => {
+    const c = perCategoria[k];
+    const prodotti = Object.values(c.prodotti).sort((a, b) => b.totale - a.totale);
+    const el = document.createElement('div');
+    el.className = 'cat-report';
+    el.innerHTML = `<div class="cr-head"><span>${esc(catMap[k] || 'Senza categoria')}</span><span>${fmtEuro(c.totale)}</span></div>` +
+      prodotti.map(p => `<div class="cr-prod"><span>${esc(p.nome)}</span><span>${fmtEuro(p.totale)}</span></div>`).join('');
+    body.appendChild(el);
+  });
+}
+document.getElementById('tp-dal').addEventListener('change', renderPerTipologia);
+document.getElementById('tp-al').addEventListener('change', renderPerTipologia);
+</script>
+</body>
+</html>

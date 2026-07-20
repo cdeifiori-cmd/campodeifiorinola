@@ -1,6 +1,7 @@
 import { auth, db, ADMIN_UID } from './robinson-firebase.js';
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { puoAccedereGestione } from './robinson-magazzino.js';
 
 export function setupNavAuth(slotId = 'nav-auth-slot') {
   const slot = document.getElementById(slotId);
@@ -40,6 +41,8 @@ export function setupNavAuth(slotId = 'nav-auth-slot') {
       }
     } catch (e) { console.warn('robinson-nav: errore lettura profilo', e); }
 
+    const gestione = admin || await puoAccedereGestione(user);
+
     const avatarHtml = foto
       ? `<img src="${foto}" alt="${nome}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;border:2px solid var(--oro);">`
       : `<div style="width:32px;height:32px;border-radius:50%;background:var(--oro);color:#fff;display:flex;align-items:center;justify-content:center;font-size:1rem;">⚓</div>`;
@@ -54,6 +57,7 @@ export function setupNavAuth(slotId = 'nav-auth-slot') {
         <div id="_navDropdown" style="display:none;position:absolute;right:0;top:calc(100% + 4px);background:#fff;border:2px solid var(--oro);border-radius:10px;min-width:190px;box-shadow:0 6px 20px rgba(0,0,0,0.18);z-index:300;overflow:hidden;">
           <div style="padding:10px 16px;font-size:0.78rem;color:var(--muted);border-bottom:1px solid #f0e8d8;font-style:italic;">${nome}</div>
           <a href="naufrago.html?uid=${user.uid}" style="display:block;padding:10px 16px;color:var(--inchiostro);text-decoration:none;font-size:0.85rem;border-bottom:1px solid #f0e8d8;">⚓ Il mio profilo</a>
+          ${gestione ? `<a href="gestione.html" style="display:block;padding:10px 16px;color:var(--inchiostro);text-decoration:none;font-size:0.85rem;border-bottom:1px solid #f0e8d8;">📦 Gestione</a>` : ''}
           ${admin ? `<a href="admin-classifica.html" style="display:block;padding:10px 16px;color:var(--inchiostro);text-decoration:none;font-size:0.85rem;border-bottom:1px solid #f0e8d8;">📊 Classifica</a>` : ''}
           ${admin ? `<a href="admin-isola.html" style="display:block;padding:10px 16px;color:var(--inchiostro);text-decoration:none;font-size:0.85rem;border-bottom:1px solid #f0e8d8;">🏝️ Admin Isola</a>` : ''}
           ${admin ? `<a href="admin-pin.html" style="display:block;padding:10px 16px;color:var(--inchiostro);text-decoration:none;font-size:0.85rem;border-bottom:1px solid #f0e8d8;">🔑 Gestione PIN</a>` : ''}

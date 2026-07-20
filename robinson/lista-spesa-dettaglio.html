@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spesa – Robinson</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
+  <meta name="theme-color" content="#1a3a5c">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/robinson.css">
+  <style>
+    body { padding-bottom: 100px; }
+    #nav-auth-slot-wrap { position: fixed; top: 10px; right: 10px; z-index: 300; }
+
+    .sd-header { background: linear-gradient(135deg, var(--navy) 0%, #0d1b2a 100%); color: #fff; padding: 20px 18px 16px; text-align: center; }
+    .sd-header .breadcrumb { font-size: 0.75rem; margin-bottom: 4px; }
+    .sd-header .breadcrumb a { color: var(--oro); text-decoration: none; }
+    .sd-header h1 { font-family: 'Playfair Display', serif; font-size: 1.25rem; color: var(--oro-light); }
+    .sd-totale { font-family: 'Playfair Display', serif; font-size: 1.7rem; color: var(--oro); margin-top: 6px; }
+    .sd-badge { display: inline-block; margin-top: 6px; font-size: 0.7rem; font-weight: 700; padding: 3px 12px; border-radius: 20px; }
+    .sd-badge.aperta { background:#fef9e7; color:#b7770d; border:1px solid #f39c12; }
+    .sd-badge.chiusa { background:#d5f5e3; color:#1e8449; border:1px solid #2ecc71; }
+
+    .sd-toolbar { display: flex; gap: 8px; justify-content: center; padding: 12px; flex-wrap: wrap; }
+    .sd-content { max-width: 720px; margin: 0 auto; padding: 8px 12px 20px; }
+
+    .cat-titolo { font-family: 'Playfair Display', serif; color: var(--navy); font-size: 1rem; border-bottom: 2px solid var(--oro); padding-bottom: 5px; margin: 20px 0 10px; }
+
+    .voce-row { background: var(--post-bg); border-left: 4px solid var(--navy); border-radius: 4px 10px 10px 4px; padding: 10px 12px; margin-bottom: 8px; }
+    .voce-row.presa { opacity: 0.7; }
+    .voce-top { display: flex; align-items: center; gap: 8px; }
+    .voce-nome { flex: 1; font-weight: 600; color: var(--navy); font-size: 0.9rem; }
+    .voce-nome .origine-tag { font-size: 0.65rem; color: var(--muted); font-weight: 400; margin-left: 4px; }
+    .voce-del { background: none; border: none; color: var(--rosso); cursor: pointer; font-size: 0.9rem; padding: 2px 4px; }
+    .voce-fields { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; align-items: center; }
+    .voce-fields input[type=number] { width: 72px; padding: 6px 8px; border: 1.5px solid #c8b89a; border-radius: 6px; font-family: 'Lora', serif; font-size: 0.85rem; }
+    .voce-fields .voce-unita { font-size: 0.78rem; color: var(--muted); }
+    .voce-importo { font-weight: 700; color: var(--oro); margin-left: auto; font-size: 0.9rem; }
+    .voce-checks { display: flex; gap: 14px; margin-top: 8px; }
+    .voce-checks label { display: flex; align-items: center; gap: 5px; font-size: 0.78rem; cursor: pointer; }
+    .voce-crea-prod { font-size: 0.72rem; margin-top: 6px; background: none; border: 1px dashed var(--oro); color: var(--oro); border-radius: 6px; padding: 3px 8px; cursor: pointer; }
+
+    .add-voce-form { background: var(--post-bg); border: 2px dashed var(--oro); border-radius: 12px; padding: 14px 16px; margin-top: 20px; }
+    .add-voce-form h3 { font-family: 'Playfair Display', serif; color: var(--navy); font-size: 0.95rem; margin-bottom: 10px; }
+    .add-voce-form .riga { display: flex; gap: 8px; flex-wrap: wrap; }
+    .add-voce-form .riga > * { flex: 1; min-width: 90px; }
+
+    .riepilogo-chiusura { background: var(--oro-light); border: 1.5px solid var(--oro); border-radius: 10px; padding: 12px 14px; margin-bottom: 14px; font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+
+<div id="nav-auth-slot-wrap"><div id="nav-auth-slot"></div></div>
+
+<div class="sd-header">
+  <div class="breadcrumb"><a href="gestione.html">📦 Gestione</a> · <a href="liste-spesa.html">Lista spesa</a></div>
+  <h1 id="sd-titolo">Spesa del …</h1>
+  <div class="sd-totale" id="sd-totale">€0,00</div>
+  <div id="sd-badge-wrap"></div>
+</div>
+
+<div class="sd-toolbar" id="sd-toolbar"></div>
+
+<div class="sd-content">
+  <div id="sd-riepilogo"></div>
+  <div id="sd-voci"><div class="spinner"></div></div>
+
+  <div class="add-voce-form" id="add-voce-form">
+    <h3>➕ Aggiungi voce manuale</h3>
+    <div class="riga">
+      <input type="text" id="av-nome" placeholder="Nome prodotto">
+      <select id="av-categoria"></select>
+    </div>
+    <div class="riga" style="margin-top:8px;">
+      <input type="number" id="av-quantita" step="any" placeholder="Quantità">
+      <input type="text" id="av-unita" placeholder="Unità">
+      <input type="number" id="av-prezzo" step="0.01" placeholder="Prezzo unitario €">
+      <button class="btn btn-oro" id="av-aggiungi" style="flex:0 0 auto;">➕</button>
+    </div>
+  </div>
+</div>
+
+<nav class="bottom-nav">
+  <a href="gestione.html" class="nav-item"><span class="nav-icon">📦</span><span>Gestione</span></a>
+  <a href="magazzino.html" class="nav-item"><span class="nav-icon">📦</span><span>Magazzino</span></a>
+  <a href="liste-spesa.html" class="nav-item active"><span class="nav-icon">🛒</span><span>Spesa</span></a>
+  <a href="gestione-storico.html" class="nav-item"><span class="nav-icon">📊</span><span>Storico</span></a>
+</nav>
+
+<script type="module">
+import { db } from './js/robinson-firebase.js';
+import { requireAuth } from './js/robinson-auth.js';
+import { setupNavAuth } from './js/robinson-nav.js';
+import { esc } from './js/robinson-utils.js';
+import { puoAccedereGestione, fmtEuro, fmtDataBreve, quantitaSuggerita } from './js/robinson-magazzino.js';
+import {
+  doc, getDoc, updateDoc, deleteDoc, addDoc, setDoc, collection, getDocs, query, orderBy,
+  serverTimestamp, writeBatch, increment
+} from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+setupNavAuth('nav-auth-slot');
+
+const params = new URLSearchParams(window.location.search);
+const listaId = params.get('id');
+let currentUser = null;
+let lista = null;
+let voci = [];
+let categorie = [];
+let catMap = {};
+
+if (!listaId) {
+  document.getElementById('sd-voci').innerHTML = `<p class="empty-msg">Lista non trovata.</p>`;
+} else {
+  requireAuth(async user => {
+    currentUser = user;
+    const ok = await puoAccedereGestione(user);
+    if (!ok) { window.location.replace('index.html'); return; }
+    await caricaCategorie();
+    await caricaTutto();
+  });
+}
+
+async function caricaCategorie() {
+  const snap = await getDocs(query(collection(db, 'magazzino_categorie'), orderBy('ordine')));
+  categorie = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  catMap = Object.fromEntries(categorie.map(c => [c.id, c.nome]));
+  const sel = document.getElementById('av-categoria');
+  sel.innerHTML = categorie.filter(c => c.attiva !== false).map(c => `<option value="${esc(c.id)}">${esc(c.nome)}</option>`).join('');
+}
+
+async function caricaTutto() {
+  const listaSnap = await getDoc(doc(db, 'liste_spesa', listaId));
+  if (!listaSnap.exists()) {
+    document.getElementById('sd-voci').innerHTML = `<p class="empty-msg">Lista non trovata.</p>`;
+    return;
+  }
+  lista = listaSnap.data();
+  const vociSnap = await getDocs(collection(db, 'liste_spesa', listaId, 'voci'));
+  voci = vociSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+  render();
+}
+
+function render() {
+  document.getElementById('sd-titolo').textContent = `Robinson 2026 — spesa del ${fmtDataBreve(lista.data)}`;
+  document.getElementById('sd-totale').textContent = fmtEuro(lista.totale || 0);
+  document.getElementById('sd-badge-wrap').innerHTML = `<span class="sd-badge ${lista.stato}">${lista.stato === 'chiusa' ? '✅ Chiusa' : '⏳ Aperta'}</span>`;
+
+  const toolbar = document.getElementById('sd-toolbar');
+  toolbar.innerHTML = '';
+  if (lista.stato === 'aperta') {
+    toolbar.innerHTML = `
+      <button class="btn" id="btn-aggiorna-magazzino" style="background:var(--carta-scura);color:var(--navy);">🔄 Aggiorna da magazzino</button>
+      <button class="btn btn-primary" id="btn-chiudi-lista">✅ Chiudi lista</button>`;
+    document.getElementById('btn-aggiorna-magazzino').addEventListener('click', aggiornaDaMagazzino);
+    document.getElementById('btn-chiudi-lista').addEventListener('click', chiudiLista);
+  } else {
+    toolbar.innerHTML = `<button class="btn" id="btn-riapri-lista" style="background:none;border:1.5px solid var(--navy);color:var(--navy);">🔓 Riapri lista</button>`;
+    document.getElementById('btn-riapri-lista').addEventListener('click', riapriLista);
+  }
+
+  document.getElementById('add-voce-form').style.display = lista.stato === 'aperta' ? 'block' : 'none';
+
+  const cont = document.getElementById('sd-voci');
+  if (!voci.length) {
+    cont.innerHTML = `<p class="empty-msg">Nessuna voce in questa lista. Aggiungine una qui sotto o aggiorna dal magazzino.</p>`;
+    return;
+  }
+  cont.innerHTML = '';
+
+  const gruppi = {};
+  voci.forEach(v => {
+    const key = v.categoria || '__none';
+    (gruppi[key] = gruppi[key] || []).push(v);
+  });
+  const ordineCat = categorie.map(c => c.id);
+  const chiavi = Object.keys(gruppi).sort((a, b) => {
+    const ia = ordineCat.indexOf(a), ib = ordineCat.indexOf(b);
+    if (ia === -1 && ib === -1) return 0;
+    if (ia === -1) return 1;
+    if (ib === -1) return -1;
+    return ia - ib;
+  });
+
+  chiavi.forEach(k => {
+    const sez = document.createElement('div');
+    sez.innerHTML = `<div class="cat-titolo">${esc(catMap[k] || 'Senza categoria')}</div>`;
+    gruppi[k].forEach(v => sez.appendChild(renderVoceRow(v)));
+    cont.appendChild(sez);
+  });
+}
+
+function calcolaImporto(v) {
+  if (v.prezzo_unitario == null || v.quantita == null) return null;
+  return Math.round(v.prezzo_unitario * v.quantita * 100) / 100;
+}
+
+function renderVoceRow(v) {
+  const readonly = lista.stato === 'chiusa';
+  const row = document.createElement('div');
+  row.className = 'voce-row' + (v.acquistato ? ' presa' : '');
+  row.innerHTML = `
+    <div class="voce-top">
+      <div class="voce-nome">${esc(v.nome)}<span class="origine-tag">${v.origine === 'manuale' ? '· manuale' : ''}</span></div>
+      ${!readonly ? `<button class="voce-del" title="Elimina voce">🗑️</button>` : ''}
+    </div>
+    <div class="voce-fields">
+      <input type="number" class="v-quantita" step="any" placeholder="Quantità" value="${v.quantita ?? ''}" ${readonly ? 'disabled' : ''}>
+      <span class="voce-unita">${esc(v.unita || '')}</span>
+      <input type="number" class="v-prezzo" step="0.01" placeholder="Prezzo unit. €" value="${v.prezzo_unitario ?? ''}" ${readonly ? 'disabled' : ''}>
+      <span class="voce-importo">${fmtEuro(v.prezzo)}</span>
+    </div>
+    <div class="voce-checks">
+      <label><input type="checkbox" class="v-acquistato" ${v.acquistato ? 'checked' : ''} ${readonly ? 'disabled' : ''}> Preso</label>
+      <label><input type="checkbox" class="v-consumo" ${v.consumo_diretto ? 'checked' : ''} ${readonly ? 'disabled' : ''}> Consumo diretto</label>
+    </div>
+    ${(!v.prodotto_id) ? `<button class="voce-crea-prod">📦 Crea prodotto a magazzino</button>` : ''}`;
+
+  const salva = async campi => {
+    Object.assign(v, campi);
+    await updateDoc(doc(db, 'liste_spesa', listaId, 'voci', v.id), campi);
+  };
+
+  if (!readonly) {
+    row.querySelector('.voce-del').addEventListener('click', async () => {
+      if (!confirm(`Eliminare "${v.nome}" dalla lista?`)) return;
+      await deleteDoc(doc(db, 'liste_spesa', listaId, 'voci', v.id));
+      voci = voci.filter(x => x.id !== v.id);
+      await ricalcolaTotale();
+      render();
+    });
+    row.querySelector('.v-quantita').addEventListener('change', async e => {
+      const q = e.target.value === '' ? null : parseFloat(e.target.value);
+      const prezzo = calcolaImporto({ ...v, quantita: q });
+      await salva({ quantita: q, prezzo });
+      await ricalcolaTotale();
+      render();
+    });
+    row.querySelector('.v-prezzo').addEventListener('change', async e => {
+      const pu = e.target.value === '' ? null : parseFloat(e.target.value);
+      const prezzo = calcolaImporto({ ...v, prezzo_unitario: pu });
+      await salva({ prezzo_unitario: pu, prezzo });
+      await ricalcolaTotale();
+      render();
+    });
+    row.querySelector('.v-acquistato').addEventListener('change', e => salva({ acquistato: e.target.checked }));
+    row.querySelector('.v-consumo').addEventListener('change', e => salva({ consumo_diretto: e.target.checked }));
+  }
+  const btnCreaProd = row.querySelector('.voce-crea-prod');
+  if (btnCreaProd) btnCreaProd.addEventListener('click', () => creaProdottoDaVoce(v));
+
+  return row;
+}
+
+async function ricalcolaTotale() {
+  const totale = Math.round(voci.reduce((s, v) => s + (v.prezzo || 0), 0) * 100) / 100;
+  lista.totale = totale;
+  await updateDoc(doc(db, 'liste_spesa', listaId), { totale });
+}
+
+// ── Aggiorna da magazzino (dedup su prodotto_id) ────────────────────────────
+async function aggiornaDaMagazzino() {
+  const prodSnap = await getDocs(collection(db, 'magazzino_prodotti'));
+  const giaPresenti = new Set(voci.filter(v => v.prodotto_id).map(v => v.prodotto_id));
+  const nuovi = prodSnap.docs
+    .map(d => ({ id: d.id, ...d.data() }))
+    .filter(p => p.attivo !== false && (p.quantita_attuale ?? 0) <= (p.soglia_minima ?? 0) && !giaPresenti.has(p.id));
+
+  if (!nuovi.length) { alert('Nessun nuovo prodotto sotto soglia da aggiungere.'); return; }
+
+  await Promise.all(nuovi.map(p => addDoc(collection(db, 'liste_spesa', listaId, 'voci'), {
+    nome: p.nome, categoria: p.categoria || null, origine: 'magazzino', prodotto_id: p.id,
+    quantita: quantitaSuggerita(p), unita: p.unita || null, prezzo_unitario: p.prezzo_riferimento ?? null,
+    prezzo: null, acquistato: false, consumo_diretto: false, caricato_a_magazzino: false, data_lista: lista.data
+  })));
+
+  await caricaTutto();
+  alert(`Aggiunti ${nuovi.length} nuovi prodotti sotto soglia.`);
+}
+
+// ── Chiudi lista: congela + reintegra il magazzino ──────────────────────────
+async function chiudiLista() {
+  if (!confirm('Chiudere la lista? Le quantità acquistate reintegreranno il magazzino.')) return;
+  const daCaricare = voci.filter(v => v.acquistato && !v.consumo_diretto && v.prodotto_id && !v.caricato_a_magazzino && v.quantita);
+
+  const batch = writeBatch(db);
+  batch.update(doc(db, 'liste_spesa', listaId), { stato: 'chiusa', chiusa_il: serverTimestamp() });
+  daCaricare.forEach(v => {
+    batch.update(doc(db, 'magazzino_prodotti', v.prodotto_id), { quantita_attuale: increment(v.quantita), aggiornato_il: serverTimestamp() });
+    batch.update(doc(db, 'liste_spesa', listaId, 'voci', v.id), { caricato_a_magazzino: true });
+  });
+  await batch.commit();
+
+  document.getElementById('sd-riepilogo').innerHTML =
+    `<div class="riepilogo-chiusura">✅ Lista chiusa. Aggiornati ${daCaricare.length} prodott${daCaricare.length === 1 ? 'o' : 'i'} a magazzino.</div>`;
+
+  await caricaTutto();
+}
+
+async function riapriLista() {
+  if (!confirm('Riaprire la lista per modificarla?')) return;
+  await updateDoc(doc(db, 'liste_spesa', listaId), { stato: 'aperta', chiusa_il: null });
+  document.getElementById('sd-riepilogo').innerHTML = '';
+  await caricaTutto();
+}
+
+// ── Crea prodotto a magazzino da una voce manuale ───────────────────────────
+async function creaProdottoDaVoce(v) {
+  const dati = {
+    nome: v.nome, categoria: v.categoria || (categorie[0]?.id || null), unita: v.unita || '',
+    quantita_attuale: 0, soglia_minima: 0, scorta_obiettivo: null,
+    prezzo_riferimento: v.prezzo_unitario ?? null, attivo: true,
+    creato_da: currentUser.uid, creato_il: serverTimestamp()
+  };
+  const ref = await addDoc(collection(db, 'magazzino_prodotti'), dati);
+  const aggiornamenti = { prodotto_id: ref.id };
+
+  // Se la lista è già chiusa e la voce è acquistata (non consumo diretto), reintegra subito
+  if (lista.stato === 'chiusa' && v.acquistato && !v.consumo_diretto && !v.caricato_a_magazzino && v.quantita) {
+    await updateDoc(doc(db, 'magazzino_prodotti', ref.id), { quantita_attuale: increment(v.quantita) });
+    aggiornamenti.caricato_a_magazzino = true;
+  }
+
+  await updateDoc(doc(db, 'liste_spesa', listaId, 'voci', v.id), aggiornamenti);
+  await caricaTutto();
+}
+
+// ── Aggiungi voce manuale ────────────────────────────────────────────────────
+document.getElementById('av-aggiungi').addEventListener('click', async () => {
+  const nome = document.getElementById('av-nome').value.trim();
+  if (!nome) { alert('Inserisci il nome del prodotto.'); return; }
+  const categoria = document.getElementById('av-categoria').value || null;
+  const quantitaRaw = document.getElementById('av-quantita').value;
+  const quantita = quantitaRaw === '' ? null : parseFloat(quantitaRaw);
+  const unita = document.getElementById('av-unita').value.trim() || null;
+  const prezzoRaw = document.getElementById('av-prezzo').value;
+  const prezzo_unitario = prezzoRaw === '' ? null : parseFloat(prezzoRaw);
+  const prezzo = calcolaImporto({ prezzo_unitario, quantita });
+
+  await addDoc(collection(db, 'liste_spesa', listaId, 'voci'), {
+    nome, categoria, origine: 'manuale', prodotto_id: null, quantita, unita, prezzo_unitario, prezzo,
+    acquistato: false, consumo_diretto: false, caricato_a_magazzino: false, data_lista: lista.data
+  });
+
+  document.getElementById('av-nome').value = '';
+  document.getElementById('av-quantita').value = '';
+  document.getElementById('av-unita').value = '';
+  document.getElementById('av-prezzo').value = '';
+
+  await caricaTutto();
+  await ricalcolaTotale();
+  render();
+});
+</script>
+</body>
+</html>

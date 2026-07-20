@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lista spesa – Robinson</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
+  <meta name="theme-color" content="#1a3a5c">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/robinson.css">
+  <style>
+    body { padding-bottom: 90px; }
+    #nav-auth-slot-wrap { position: fixed; top: 10px; right: 10px; z-index: 300; }
+    .ls-header { background: linear-gradient(135deg, var(--navy) 0%, #0d1b2a 100%); color: #fff; padding: 20px 18px 16px; text-align: center; }
+    .ls-header h1 { font-family: 'Playfair Display', serif; font-size: 1.4rem; color: var(--oro-light); }
+    .ls-header .breadcrumb { font-size: 0.75rem; margin-top: 4px; }
+    .ls-header .breadcrumb a { color: var(--oro); text-decoration: none; }
+
+    .ls-content { max-width: 640px; margin: 0 auto; padding: 14px 12px 20px; }
+    .btn-nuova-wrap { text-align: center; margin-bottom: 18px; }
+
+    .lista-row { display: flex; align-items: center; gap: 12px; background: var(--post-bg); border-left: 4px solid var(--navy); border-radius: 4px 10px 10px 4px; padding: 12px 14px; margin-bottom: 8px; text-decoration: none; color: inherit; }
+    .lista-row:hover { border-left-color: var(--oro); }
+    .lista-data { flex: 1; font-family: 'Playfair Display', serif; font-weight: 700; color: var(--navy); font-size: 0.95rem; }
+    .lista-tot { font-size: 0.88rem; color: var(--oro); font-weight: 600; }
+    .lista-badge { font-size: 0.68rem; font-weight: 700; padding: 3px 10px; border-radius: 20px; white-space: nowrap; }
+    .lista-badge.aperta { background:#fef9e7; color:#b7770d; border:1px solid #f39c12; }
+    .lista-badge.chiusa { background:#d5f5e3; color:#1e8449; border:1px solid #2ecc71; }
+  </style>
+</head>
+<body>
+
+<div id="nav-auth-slot-wrap"><div id="nav-auth-slot"></div></div>
+
+<div class="ls-header">
+  <div class="breadcrumb"><a href="gestione.html">📦 Gestione</a> · Lista spesa</div>
+  <h1>🛒 Lista spesa</h1>
+</div>
+
+<div class="ls-content">
+  <div class="btn-nuova-wrap">
+    <button class="btn btn-oro" id="btn-nuova-lista">➕ Nuova lista spesa</button>
+  </div>
+  <div id="liste-cont"><div class="spinner"></div></div>
+</div>
+
+<nav class="bottom-nav">
+  <a href="gestione.html" class="nav-item"><span class="nav-icon">📦</span><span>Gestione</span></a>
+  <a href="magazzino.html" class="nav-item"><span class="nav-icon">📦</span><span>Magazzino</span></a>
+  <a href="liste-spesa.html" class="nav-item active"><span class="nav-icon">🛒</span><span>Spesa</span></a>
+  <a href="gestione-storico.html" class="nav-item"><span class="nav-icon">📊</span><span>Storico</span></a>
+</nav>
+
+<script type="module">
+import { db } from './js/robinson-firebase.js';
+import { requireAuth } from './js/robinson-auth.js';
+import { setupNavAuth } from './js/robinson-nav.js';
+import { esc } from './js/robinson-utils.js';
+import { puoAccedereGestione, quantitaSuggerita, fmtEuro, fmtDataBreve } from './js/robinson-magazzino.js';
+import {
+  collection, getDocs, doc, addDoc, setDoc, query, orderBy, serverTimestamp, Timestamp
+} from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+setupNavAuth('nav-auth-slot');
+
+let currentUser = null;
+
+requireAuth(async user => {
+  currentUser = user;
+  const ok = await puoAccedereGestione(user);
+  if (!ok) { window.location.replace('index.html'); return; }
+  await caricaListe();
+});
+
+async function caricaListe() {
+  const cont = document.getElementById('liste-cont');
+  const snap = await getDocs(query(collection(db, 'liste_spesa'), orderBy('data', 'desc')));
+  if (snap.empty) {
+    cont.innerHTML = `<p class="empty-msg">Nessuna lista spesa ancora. Creane una nuova.</p>`;
+    return;
+  }
+  cont.innerHTML = '';
+  snap.forEach(d => {
+    const l = d.data();
+    const a = document.createElement('a');
+    a.className = 'lista-row';
+    a.href = `lista-spesa-dettaglio.html?id=${d.id}`;
+    a.innerHTML = `
+      <div class="lista-data">Spesa del ${esc(fmtDataBreve(l.data))}</div>
+      <div class="lista-tot">${fmtEuro(l.totale || 0)}</div>
+      <span class="lista-badge ${l.stato}">${l.stato === 'chiusa' ? '✅ Chiusa' : '⏳ Aperta'}</span>`;
+    cont.appendChild(a);
+  });
+}
+
+document.getElementById('btn-nuova-lista').addEventListener('click', async () => {
+  const btn = document.getElementById('btn-nuova-lista');
+  btn.disabled = true; btn.textContent = '⏳ Creazione...';
+  try {
+    const dataLista = Timestamp.now();
+    const listaRef = await addDoc(collection(db, 'liste_spesa'), {
+      data: dataLista,
+      stato: 'aperta',
+      totale: 0,
+      note: null,
+      creata_da: currentUser.uid,
+      creata_il: serverTimestamp(),
+      chiusa_il: null
+    });
+
+    // Pre-riempimento con i prodotti sotto soglia (snapshot alla creazione)
+    const prodSnap = await getDocs(collection(db, 'magazzino_prodotti'));
+    const sottoSogliaProdotti = prodSnap.docs
+      .map(d => ({ id: d.id, ...d.data() }))
+      .filter(p => p.attivo !== false && (p.quantita_attuale ?? 0) <= (p.soglia_minima ?? 0));
+
+    await Promise.all(sottoSogliaProdotti.map(p => addDoc(collection(db, 'liste_spesa', listaRef.id, 'voci'), {
+      nome: p.nome,
+      categoria: p.categoria || null,
+      origine: 'magazzino',
+      prodotto_id: p.id,
+      quantita: quantitaSuggerita(p),
+      unita: p.unita || null,
+      prezzo_unitario: p.prezzo_riferimento ?? null,
+      prezzo: null,
+      acquistato: false,
+      consumo_diretto: false,
+      caricato_a_magazzino: false,
+      data_lista: dataLista
+    })));
+
+    window.location.href = `lista-spesa-dettaglio.html?id=${listaRef.id}`;
+  } catch (e) {
+    alert('Errore nella creazione della lista: ' + e.message);
+    btn.disabled = false; btn.textContent = '➕ Nuova lista spesa';
+  }
+});
+</script>
+</body>
+</html>

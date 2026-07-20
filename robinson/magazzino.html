@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Magazzino – Robinson</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
+  <meta name="theme-color" content="#1a3a5c">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/robinson.css">
+  <style>
+    body { padding-bottom: 90px; }
+    #nav-auth-slot-wrap { position: fixed; top: 10px; right: 10px; z-index: 300; }
+
+    .mag-header { background: linear-gradient(135deg, var(--navy) 0%, #0d1b2a 100%); color: #fff; padding: 20px 18px 16px; text-align: center; }
+    .mag-header h1 { font-family: 'Playfair Display', serif; font-size: 1.4rem; color: var(--oro-light); }
+    .mag-header .breadcrumb { font-size: 0.75rem; margin-top: 4px; }
+    .mag-header .breadcrumb a { color: var(--oro); text-decoration: none; }
+    .sotto-soglia-count { display: inline-block; margin-top: 8px; background: rgba(192,57,43,0.25); border: 1px solid var(--rosso); color: #fff; border-radius: 20px; padding: 3px 12px; font-size: 0.78rem; }
+
+    .mag-toolbar { display: flex; gap: 8px; justify-content: center; padding: 12px; flex-wrap: wrap; }
+
+    .mag-content { max-width: 720px; margin: 0 auto; padding: 8px 12px 20px; }
+
+    .cat-titolo { font-family: 'Playfair Display', serif; color: var(--navy); font-size: 1rem; border-bottom: 2px solid var(--oro); padding-bottom: 5px; margin: 20px 0 10px; }
+
+    .prod-row { display: flex; align-items: center; gap: 10px; background: var(--post-bg); border-left: 4px solid var(--navy); border-radius: 4px 10px 10px 4px; padding: 10px 12px; margin-bottom: 8px; }
+    .prod-row.sotto { border-left-color: var(--rosso); background: #fdf1ef; }
+    .prod-info { flex: 1; min-width: 0; }
+    .prod-nome { font-weight: 600; color: var(--navy); font-size: 0.92rem; }
+    .prod-nome .sotto-badge { display: inline-block; background: var(--rosso); color: #fff; font-size: 0.62rem; border-radius: 10px; padding: 1px 7px; margin-left: 6px; vertical-align: middle; }
+    .prod-meta { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
+    .prod-qty-ctrl { display: flex; align-items: center; gap: 4px; }
+    .qty-btn { width: 28px; height: 28px; border-radius: 50%; border: 1.5px solid var(--navy); background: #fff; color: var(--navy); font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .qty-btn:hover { background: var(--navy); color: #fff; }
+    .qty-input { width: 54px; text-align: center; padding: 5px 2px; border: 1.5px solid #c8b89a; border-radius: 6px; font-family: 'Lora', serif; font-size: 0.88rem; }
+    .prod-edit-btn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 0.95rem; padding: 4px; }
+
+    .modal-box.wide { max-width: 460px; }
+
+    .cat-manage-row { display: flex; align-items: center; gap: 8px; padding: 8px 6px; border-bottom: 1px solid var(--carta-scura); }
+    .cat-manage-row input[type=text] { flex: 1; padding: 6px 8px; border: 1.5px solid #c8b89a; border-radius: 6px; font-family: 'Lora', serif; font-size: 0.85rem; }
+    .cat-manage-row.disattiva { opacity: 0.5; }
+    .cat-mini-btn { background: none; border: 1px solid var(--carta-scura); border-radius: 6px; width: 26px; height: 26px; cursor: pointer; font-size: 0.85rem; }
+
+    .fab-wrap { position: fixed; bottom: 78px; right: 16px; display: flex; flex-direction: column; gap: 10px; z-index: 90; }
+  </style>
+</head>
+<body>
+
+<div id="nav-auth-slot-wrap"><div id="nav-auth-slot"></div></div>
+
+<div class="mag-header">
+  <div class="breadcrumb"><a href="gestione.html">📦 Gestione</a> · Magazzino</div>
+  <h1>📦 Magazzino</h1>
+  <div id="sotto-soglia-wrap"></div>
+</div>
+
+<div class="mag-toolbar">
+  <button class="btn btn-primary btn-sm" id="btn-nuovo-prodotto">➕ Nuovo prodotto</button>
+  <button class="btn btn-sm" style="background:var(--carta-scura);color:var(--navy);" id="btn-gestisci-categorie">🗂️ Categorie</button>
+</div>
+
+<div class="mag-content" id="mag-content"><div class="spinner"></div></div>
+
+<!-- Modal prodotto -->
+<div class="modal-overlay" id="modal-prodotto">
+  <div class="modal-box wide">
+    <div class="modal-title" id="pm-title">➕ Nuovo prodotto</div>
+    <div class="form-group">
+      <label>Nome</label>
+      <input type="text" id="pm-nome" placeholder="Es. Pasta corta">
+    </div>
+    <div class="form-group">
+      <label>Categoria</label>
+      <select id="pm-categoria"></select>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <div class="form-group" style="flex:1;">
+        <label>Unità</label>
+        <input type="text" id="pm-unita" placeholder="pz, kg, l...">
+      </div>
+      <div class="form-group" style="flex:1;">
+        <label>Quantità attuale</label>
+        <input type="number" id="pm-quantita" step="any" value="0">
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <div class="form-group" style="flex:1;">
+        <label>Soglia minima</label>
+        <input type="number" id="pm-soglia" step="any" value="0">
+      </div>
+      <div class="form-group" style="flex:1;">
+        <label>Scorta obiettivo (opz.)</label>
+        <input type="number" id="pm-scorta-obiettivo" step="any" placeholder="–">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Prezzo di riferimento (opz.)</label>
+      <input type="number" id="pm-prezzo" step="0.01" placeholder="€">
+    </div>
+    <div class="msg-esito" id="pm-error" style="color:var(--rosso);font-size:0.8rem;min-height:18px;"></div>
+    <div style="display:flex;gap:10px;margin-top:8px;">
+      <button class="btn btn-primary" id="pm-salva" style="flex:1;">💾 Salva</button>
+      <button class="btn" id="pm-elimina" style="display:none;background:none;border:1.5px solid var(--rosso);color:var(--rosso);">🗑️ Elimina</button>
+      <button class="btn" id="pm-annulla" style="background:none;border:1.5px solid var(--navy);color:var(--navy);">Annulla</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal categorie -->
+<div class="modal-overlay" id="modal-categorie">
+  <div class="modal-box wide">
+    <div class="modal-title">🗂️ Categorie</div>
+    <div id="cat-manage-list"></div>
+    <div style="display:flex;gap:8px;margin-top:12px;">
+      <input type="text" id="cat-nuova-nome" placeholder="Nuova categoria..." style="flex:1;padding:8px 10px;border:1.5px solid #c8b89a;border-radius:8px;font-family:'Lora',serif;font-size:0.85rem;">
+      <button class="btn btn-oro btn-sm" id="btn-cat-aggiungi">➕</button>
+    </div>
+    <button class="btn" id="cat-chiudi" style="width:100%;margin-top:14px;background:none;border:1.5px solid var(--navy);color:var(--navy);">Chiudi</button>
+  </div>
+</div>
+
+<nav class="bottom-nav">
+  <a href="gestione.html" class="nav-item"><span class="nav-icon">📦</span><span>Gestione</span></a>
+  <a href="magazzino.html" class="nav-item active"><span class="nav-icon">📦</span><span>Magazzino</span></a>
+  <a href="liste-spesa.html" class="nav-item"><span class="nav-icon">🛒</span><span>Spesa</span></a>
+  <a href="gestione-storico.html" class="nav-item"><span class="nav-icon">📊</span><span>Storico</span></a>
+</nav>
+
+<script type="module">
+import { db, ADMIN_UID } from './js/robinson-firebase.js';
+import { requireAuth } from './js/robinson-auth.js';
+import { setupNavAuth } from './js/robinson-nav.js';
+import { esc } from './js/robinson-utils.js';
+import { puoAccedereGestione, seedCategorieIniziali, sottoSoglia, fmtEuro } from './js/robinson-magazzino.js';
+import {
+  collection, getDocs, doc, setDoc, updateDoc, deleteDoc, addDoc, query, orderBy, serverTimestamp
+} from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+setupNavAuth('nav-auth-slot');
+
+let currentUser = null;
+let categorie = [];   // { id, nome, ordine, attiva }
+let prodotti = [];    // { id, nome, categoria, unita, quantita_attuale, soglia_minima, scorta_obiettivo, prezzo_riferimento, attivo }
+
+requireAuth(async user => {
+  currentUser = user;
+  const ok = await puoAccedereGestione(user);
+  if (!ok) { window.location.replace('index.html'); return; }
+  await seedCategorieIniziali();
+  await caricaTutto();
+});
+
+async function caricaTutto() {
+  const [catSnap, prodSnap] = await Promise.all([
+    getDocs(query(collection(db, 'magazzino_categorie'), orderBy('ordine'))),
+    getDocs(collection(db, 'magazzino_prodotti'))
+  ]);
+  categorie = catSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+  prodotti = prodSnap.docs
+    .map(d => ({ id: d.id, ...d.data() }))
+    .filter(p => p.attivo !== false)
+    .sort((a, b) => a.nome.localeCompare(b.nome, 'it'));
+  render();
+}
+
+function render() {
+  const contatore = prodotti.filter(sottoSoglia).length;
+  document.getElementById('sotto-soglia-wrap').innerHTML = contatore
+    ? `<span class="sotto-soglia-count">⚠️ ${contatore} prodott${contatore === 1 ? 'o' : 'i'} sotto soglia</span>`
+    : '';
+
+  const cont = document.getElementById('mag-content');
+  if (!prodotti.length) {
+    cont.innerHTML = `<p class="empty-msg">Nessun prodotto a magazzino. Aggiungine uno con "➕ Nuovo prodotto".</p>`;
+    return;
+  }
+  cont.innerHTML = '';
+
+  const catAttiveOrdinate = categorie.filter(c => c.attiva !== false);
+  const catIds = new Set(catAttiveOrdinate.map(c => c.id));
+  const gruppi = catAttiveOrdinate.map(c => ({ cat: c, prodotti: prodotti.filter(p => p.categoria === c.id) }));
+  const senzaCategoria = prodotti.filter(p => !catIds.has(p.categoria));
+  if (senzaCategoria.length) gruppi.push({ cat: { id: null, nome: 'Senza categoria' }, prodotti: senzaCategoria });
+
+  gruppi.filter(g => g.prodotti.length).forEach(g => {
+    const sez = document.createElement('div');
+    sez.innerHTML = `<div class="cat-titolo">${esc(g.cat.nome)}</div>`;
+    const list = document.createElement('div');
+    g.prodotti.forEach(p => list.appendChild(renderProdRow(p)));
+    sez.appendChild(list);
+    cont.appendChild(sez);
+  });
+}
+
+function renderProdRow(p) {
+  const row = document.createElement('div');
+  const sotto = sottoSoglia(p);
+  row.className = 'prod-row' + (sotto ? ' sotto' : '');
+  row.innerHTML = `
+    <div class="prod-info">
+      <div class="prod-nome">${esc(p.nome)}${sotto ? '<span class="sotto-badge">sotto soglia</span>' : ''}</div>
+      <div class="prod-meta">soglia ${esc(p.soglia_minima ?? 0)} ${esc(p.unita || '')}${p.prezzo_riferimento != null ? ' · ' + fmtEuro(p.prezzo_riferimento) : ''}</div>
+    </div>
+    <div class="prod-qty-ctrl">
+      <button class="qty-btn btn-meno">−</button>
+      <input type="number" class="qty-input" step="any" value="${p.quantita_attuale ?? 0}">
+      <button class="qty-btn btn-piu">+</button>
+    </div>
+    <button class="prod-edit-btn" title="Modifica">✏️</button>`;
+
+  const input = row.querySelector('.qty-input');
+  const salvaQty = async val => {
+    const n = parseFloat(val);
+    if (isNaN(n)) return;
+    p.quantita_attuale = n;
+    await updateDoc(doc(db, 'magazzino_prodotti', p.id), { quantita_attuale: n, aggiornato_il: serverTimestamp() });
+    render();
+  };
+  row.querySelector('.btn-meno').addEventListener('click', () => salvaQty((p.quantita_attuale ?? 0) - 1));
+  row.querySelector('.btn-piu').addEventListener('click', () => salvaQty((p.quantita_attuale ?? 0) + 1));
+  input.addEventListener('change', () => salvaQty(input.value));
+  row.querySelector('.prod-edit-btn').addEventListener('click', () => apriModalProdotto(p));
+  return row;
+}
+
+// ── Modal prodotto ────────────────────────────────────────────────────────
+let editUid = null;
+
+function popolaSelectCategorie() {
+  const sel = document.getElementById('pm-categoria');
+  sel.innerHTML = categorie.filter(c => c.attiva !== false)
+    .map(c => `<option value="${esc(c.id)}">${esc(c.nome)}</option>`).join('');
+}
+
+function apriModalProdotto(p) {
+  popolaSelectCategorie();
+  editUid = p?.id || null;
+  document.getElementById('pm-title').textContent = p ? '✏️ Modifica prodotto' : '➕ Nuovo prodotto';
+  document.getElementById('pm-nome').value = p?.nome || '';
+  document.getElementById('pm-categoria').value = p?.categoria || (categorie[0]?.id || '');
+  document.getElementById('pm-unita').value = p?.unita || '';
+  document.getElementById('pm-quantita').value = p?.quantita_attuale ?? 0;
+  document.getElementById('pm-soglia').value = p?.soglia_minima ?? 0;
+  document.getElementById('pm-scorta-obiettivo').value = p?.scorta_obiettivo ?? '';
+  document.getElementById('pm-prezzo').value = p?.prezzo_riferimento ?? '';
+  document.getElementById('pm-error').textContent = '';
+  document.getElementById('pm-elimina').style.display = p ? 'block' : 'none';
+  document.getElementById('modal-prodotto').classList.add('open');
+}
+
+document.getElementById('btn-nuovo-prodotto').addEventListener('click', () => apriModalProdotto(null));
+document.getElementById('pm-annulla').addEventListener('click', () => document.getElementById('modal-prodotto').classList.remove('open'));
+
+document.getElementById('pm-salva').addEventListener('click', async () => {
+  const nome = document.getElementById('pm-nome').value.trim();
+  const errEl = document.getElementById('pm-error');
+  if (!nome) { errEl.textContent = 'Inserisci il nome del prodotto.'; return; }
+  const categoria = document.getElementById('pm-categoria').value;
+  const unita = document.getElementById('pm-unita').value.trim();
+  const quantita_attuale = parseFloat(document.getElementById('pm-quantita').value) || 0;
+  const soglia_minima = parseFloat(document.getElementById('pm-soglia').value) || 0;
+  const scorteRaw = document.getElementById('pm-scorta-obiettivo').value;
+  const scorta_obiettivo = scorteRaw === '' ? null : parseFloat(scorteRaw);
+  const prezzoRaw = document.getElementById('pm-prezzo').value;
+  const prezzo_riferimento = prezzoRaw === '' ? null : parseFloat(prezzoRaw);
+
+  const dati = { nome, categoria, unita, quantita_attuale, soglia_minima, scorta_obiettivo, prezzo_riferimento, attivo: true, aggiornato_il: serverTimestamp() };
+
+  try {
+    if (editUid) {
+      await updateDoc(doc(db, 'magazzino_prodotti', editUid), dati);
+    } else {
+      await setDoc(doc(collection(db, 'magazzino_prodotti')), { ...dati, creato_da: currentUser.uid, creato_il: serverTimestamp() });
+    }
+    document.getElementById('modal-prodotto').classList.remove('open');
+    await caricaTutto();
+  } catch (e) {
+    errEl.textContent = 'Errore: ' + e.message;
+  }
+});
+
+document.getElementById('pm-elimina').addEventListener('click', async () => {
+  if (!editUid) return;
+  if (!confirm('Eliminare questo prodotto dal magazzino?')) return;
+  await deleteDoc(doc(db, 'magazzino_prodotti', editUid));
+  document.getElementById('modal-prodotto').classList.remove('open');
+  await caricaTutto();
+});
+
+// ── Modal categorie ───────────────────────────────────────────────────────
+document.getElementById('btn-gestisci-categorie').addEventListener('click', () => {
+  renderCatManage();
+  document.getElementById('modal-categorie').classList.add('open');
+});
+document.getElementById('cat-chiudi').addEventListener('click', async () => {
+  document.getElementById('modal-categorie').classList.remove('open');
+  await caricaTutto();
+});
+
+function renderCatManage() {
+  const cont = document.getElementById('cat-manage-list');
+  cont.innerHTML = '';
+  categorie.sort((a, b) => a.ordine - b.ordine).forEach((c, i) => {
+    const row = document.createElement('div');
+    row.className = 'cat-manage-row' + (c.attiva === false ? ' disattiva' : '');
+    row.innerHTML = `
+      <button class="cat-mini-btn" data-act="up" ${i === 0 ? 'disabled' : ''}>↑</button>
+      <button class="cat-mini-btn" data-act="down" ${i === categorie.length - 1 ? 'disabled' : ''}>↓</button>
+      <input type="text" value="${esc(c.nome)}">
+      <button class="cat-mini-btn" data-act="toggle" title="${c.attiva === false ? 'Riattiva' : 'Disattiva'}">${c.attiva === false ? '🚫' : '✅'}</button>`;
+    cont.appendChild(row);
+
+    row.querySelector('input').addEventListener('change', async e => {
+      const nuovoNome = e.target.value.trim();
+      if (!nuovoNome) return;
+      c.nome = nuovoNome;
+      await updateDoc(doc(db, 'magazzino_categorie', c.id), { nome: nuovoNome });
+    });
+    row.querySelector('[data-act=toggle]').addEventListener('click', async () => {
+      c.attiva = c.attiva === false ? true : false;
+      await updateDoc(doc(db, 'magazzino_categorie', c.id), { attiva: c.attiva });
+      renderCatManage();
+    });
+    row.querySelector('[data-act=up]').addEventListener('click', () => spostaCategoria(i, -1));
+    row.querySelector('[data-act=down]').addEventListener('click', () => spostaCategoria(i, 1));
+  });
+}
+
+async function spostaCategoria(i, delta) {
+  const j = i + delta;
+  if (j < 0 || j >= categorie.length) return;
+  const ordinate = categorie.sort((a, b) => a.ordine - b.ordine);
+  [ordinate[i].ordine, ordinate[j].ordine] = [ordinate[j].ordine, ordinate[i].ordine];
+  await Promise.all([
+    updateDoc(doc(db, 'magazzino_categorie', ordinate[i].id), { ordine: ordinate[i].ordine }),
+    updateDoc(doc(db, 'magazzino_categorie', ordinate[j].id), { ordine: ordinate[j].ordine })
+  ]);
+  renderCatManage();
+}
+
+document.getElementById('btn-cat-aggiungi').addEventListener('click', async () => {
+  const input = document.getElementById('cat-nuova-nome');
+  const nome = input.value.trim();
+  if (!nome) return;
+  const ordine = categorie.length ? Math.max(...categorie.map(c => c.ordine)) + 1 : 0;
+  const ref = await addDoc(collection(db, 'magazzino_categorie'), { nome, ordine, attiva: true });
+  categorie.push({ id: ref.id, nome, ordine, attiva: true });
+  input.value = '';
+  renderCatManage();
+});
+</script>
+</body>
+</html>

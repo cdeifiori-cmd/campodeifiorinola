@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestione – Robinson</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
+  <meta name="theme-color" content="#1a3a5c">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/robinson.css">
+  <style>
+    body { padding-bottom: 90px; }
+    #nav-auth-slot-wrap { position: fixed; top: 10px; right: 10px; z-index: 300; }
+
+    .gestione-header { background: linear-gradient(135deg, var(--navy) 0%, #0d1b2a 100%); color: #fff; padding: 22px 18px 18px; text-align: center; }
+    .gestione-header h1 { font-family: 'Playfair Display', serif; font-size: 1.5rem; color: var(--oro-light); }
+    .gestione-header p { font-size: 0.85rem; opacity: 0.85; margin-top: 6px; font-style: italic; }
+
+    .gestione-content { max-width: 720px; margin: 0 auto; padding: 16px 12px 20px; }
+
+    .hero-nav.gestione-nav { grid-template-columns: 1fr 1fr; }
+    @media(min-width:520px) { .hero-nav.gestione-nav { grid-template-columns: 1fr 1fr 1fr; } }
+
+    .sez-titolo { font-family: 'Playfair Display', serif; color: var(--navy); font-size: 1.05rem; border-bottom: 2px solid var(--oro); padding-bottom: 6px; margin: 26px 0 12px; }
+
+    .autorizzato-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--post-bg); border-radius: 8px; margin-bottom: 6px; }
+    .autorizzato-nome { flex: 1; font-weight: 600; color: var(--navy); font-size: 0.9rem; }
+    .autorizzato-pin { font-family: monospace; font-size: 0.85rem; color: var(--muted); }
+    .btn-rimuovi { background: none; border: 1px solid var(--rosso); color: var(--rosso); border-radius: 8px; padding: 5px 10px; font-size: 0.75rem; cursor: pointer; font-family: 'Lora', serif; }
+    .btn-rimuovi:hover { background: rgba(192,57,43,0.1); }
+
+    .add-form { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 16px; }
+    .add-form .form-group { flex: 1; min-width: 140px; margin-bottom: 0; }
+    .msg-esito { font-size: 0.82rem; margin-top: 8px; min-height: 18px; }
+    .msg-esito.ok { color: #1e8449; }
+    .msg-esito.err { color: var(--rosso); }
+  </style>
+</head>
+<body>
+
+<div id="nav-auth-slot-wrap"><div id="nav-auth-slot"></div></div>
+
+<div class="gestione-header">
+  <h1>📦 Gestione</h1>
+  <p>Magazzino e lista della spesa, uniti in un solo ciclo.</p>
+</div>
+
+<div class="gestione-content">
+  <div class="hero-nav gestione-nav">
+    <a class="hero-card" href="magazzino.html">
+      <span class="hc-icon">📦</span>
+      <span class="hc-label">Magazzino</span>
+      <span class="hc-sub">Prodotti, scorte, soglie</span>
+    </a>
+    <a class="hero-card" href="liste-spesa.html">
+      <span class="hc-icon">🛒</span>
+      <span class="hc-label">Lista spesa</span>
+      <span class="hc-sub">Fogli giornalieri</span>
+    </a>
+    <a class="hero-card" href="gestione-storico.html">
+      <span class="hc-icon">📊</span>
+      <span class="hc-label">Storico</span>
+      <span class="hc-sub">Report e spese</span>
+    </a>
+  </div>
+
+  <div id="admin-panel" style="display:none;">
+    <div class="sez-titolo">🔑 Persone autorizzate</div>
+    <p style="font-size:0.82rem;color:var(--muted);margin-bottom:14px;">Inserisci il PIN Robinson (già generato in Gestione PIN) della persona da abilitare a Gestione. Per revocare, rimuovila dall'elenco.</p>
+
+    <div class="add-form">
+      <div class="form-group">
+        <label>PIN</label>
+        <input type="tel" id="in-pin" placeholder="0000" maxlength="6" inputmode="numeric" pattern="[0-9]*">
+      </div>
+      <button class="btn btn-primary" id="btn-abilita">➕ Abilita</button>
+    </div>
+    <div class="msg-esito" id="msg-esito"></div>
+
+    <div id="lista-autorizzati"><div class="spinner"></div></div>
+  </div>
+</div>
+
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-item"><span class="nav-icon">🏝️</span><span>Home</span></a>
+  <a href="magazzino.html" class="nav-item"><span class="nav-icon">📦</span><span>Magazzino</span></a>
+  <a href="liste-spesa.html" class="nav-item"><span class="nav-icon">🛒</span><span>Spesa</span></a>
+  <a href="gestione-storico.html" class="nav-item"><span class="nav-icon">📊</span><span>Storico</span></a>
+</nav>
+
+<script type="module">
+import { db, ADMIN_UID } from './js/robinson-firebase.js';
+import { requireAuth } from './js/robinson-auth.js';
+import { setupNavAuth } from './js/robinson-nav.js';
+import { esc } from './js/robinson-utils.js';
+import { puoAccedereGestione } from './js/robinson-magazzino.js';
+import {
+  doc, getDoc, setDoc, deleteDoc, collection, getDocs, serverTimestamp
+} from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+setupNavAuth('nav-auth-slot');
+
+let currentUser = null;
+
+requireAuth(async user => {
+  currentUser = user;
+  const ok = await puoAccedereGestione(user);
+  if (!ok) { window.location.replace('index.html'); return; }
+
+  if (user.uid === ADMIN_UID) {
+    document.getElementById('admin-panel').style.display = 'block';
+    await caricaAutorizzati();
+  }
+});
+
+async function risolviPinUid(pin) {
+  const snap = await getDoc(doc(db, 'robinson_pin_lookup', pin));
+  if (!snap.exists()) return null;
+  return snap.data().uid;
+}
+
+async function caricaAutorizzati() {
+  const cont = document.getElementById('lista-autorizzati');
+  const snap = await getDocs(collection(db, 'magazzino_autorizzati'));
+  if (snap.empty) {
+    cont.innerHTML = `<p class="empty-msg">Nessuna persona autorizzata oltre all'admin.</p>`;
+    return;
+  }
+  cont.innerHTML = '';
+  snap.forEach(d => {
+    const data = d.data();
+    const row = document.createElement('div');
+    row.className = 'autorizzato-row';
+    row.innerHTML = `
+      <span class="autorizzato-nome">${esc(data.nome || d.id)}</span>
+      <span class="autorizzato-pin">PIN ${esc(data.pin || '–')}</span>
+      <button class="btn-rimuovi" data-uid="${d.id}">🗑️ Rimuovi</button>`;
+    cont.appendChild(row);
+    row.querySelector('.btn-rimuovi').addEventListener('click', () => rimuoviAutorizzato(d.id, data.nome));
+  });
+}
+
+async function rimuoviAutorizzato(uid, nome) {
+  if (!confirm(`Rimuovere ${nome || uid} da Gestione?`)) return;
+  await deleteDoc(doc(db, 'magazzino_autorizzati', uid));
+  await caricaAutorizzati();
+}
+
+document.getElementById('btn-abilita').addEventListener('click', async () => {
+  const pin = document.getElementById('in-pin').value.trim();
+  const msg = document.getElementById('msg-esito');
+  msg.className = 'msg-esito'; msg.textContent = '';
+
+  if (!/^\d{4,6}$/.test(pin)) { msg.className = 'msg-esito err'; msg.textContent = 'Inserisci un PIN valido (4-6 cifre).'; return; }
+
+  const btn = document.getElementById('btn-abilita');
+  btn.disabled = true;
+  try {
+    const uid = await risolviPinUid(pin);
+    if (!uid) { msg.className = 'msg-esito err'; msg.textContent = 'Nessuna persona trovata con questo PIN.'; return; }
+
+    const pinDoc = await getDoc(doc(db, 'robinson_pin', uid));
+    const nome = pinDoc.exists() ? pinDoc.data().nome : uid;
+
+    await setDoc(doc(db, 'magazzino_autorizzati', uid), {
+      nome, pin,
+      aggiunto_da: currentUser.uid,
+      aggiunto_il: serverTimestamp()
+    });
+
+    document.getElementById('in-pin').value = '';
+    msg.className = 'msg-esito ok'; msg.textContent = `✅ ${nome} abilitato a Gestione.`;
+    await caricaAutorizzati();
+  } catch (e) {
+    msg.className = 'msg-esito err'; msg.textContent = 'Errore: ' + e.message;
+  }
+  btn.disabled = false;
+});
+</script>
+</body>
+</html>

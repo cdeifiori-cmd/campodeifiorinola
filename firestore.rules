@@ -401,5 +401,40 @@ service cloud.firestore {
         }
       }
     }
+
+    // ── Bussola del gruppo — questionario "Migliori/Peggiori/Chi può migliorare" ──────
+    // Strumento diagnostico admin-only: nessun naufrago vede MAI le risposte altrui né gli
+    // aggregati (list riservato all'admin: impedisce l'enumerazione dell'intera collezione).
+    // get invece è aperto anche al proprietario perché bussola-gruppo.html lo usa per il
+    // resume della propria compilazione (rilegge SOLO il proprio doc, mai quello di altri).
+    // Update consentito al proprietario finché il documento non è bloccato dall'admin (stesso
+    // pattern di robinson_naufraghi/carta_identita); reset/delete solo admin.
+    match /robinson_questionario_campo/{uid} {
+      allow get: if isAdmin() || isOwner(uid);
+      allow list: if isAdmin();
+      allow create: if isOwner(uid);
+      allow update: if isAdmin() ||
+        (isOwner(uid) && resource.data.get('bloccata', false) == false);
+      allow delete: if isAdmin();
+    }
+
+    // ── Gestione: Magazzino & Lista spesa (NON deployare senza ok esplicito di Giacomo) ──
+    // Accesso solo admin o persone abilitate dall'admin (PIN Robinson risolto a UID
+    // stabile, vedi robinson/js/robinson-magazzino.js:puoAccedereGestione).
+    function puoAccedereGestione() {
+      return isAdmin() ||
+        (isLoggedIn() && exists(/databases/$(database)/documents/magazzino_autorizzati/$(request.auth.uid)));
+    }
+
+    match /magazzino_categorie/{doc} { allow read, write: if puoAccedereGestione(); }
+    match /magazzino_prodotti/{doc}  { allow read, write: if puoAccedereGestione(); }
+    match /liste_spesa/{id} {
+      allow read, write: if puoAccedereGestione();
+      match /voci/{voceId} { allow read, write: if puoAccedereGestione(); }
+    }
+    match /magazzino_autorizzati/{uid} {
+      allow read: if puoAccedereGestione();
+      allow write: if isAdmin();
+    }
   }
 }
