@@ -25,30 +25,45 @@
     .sd-badge.chiusa { background:#d5f5e3; color:#1e8449; border:1px solid #2ecc71; }
 
     .sd-toolbar { display: flex; gap: 8px; justify-content: center; padding: 12px; flex-wrap: wrap; }
-    .sd-content { max-width: 720px; margin: 0 auto; padding: 8px 12px 20px; }
-
-    .cat-titolo { font-family: 'Playfair Display', serif; color: var(--navy); font-size: 1rem; border-bottom: 2px solid var(--oro); padding-bottom: 5px; margin: 20px 0 10px; }
-
-    .voce-row { background: var(--post-bg); border-left: 4px solid var(--navy); border-radius: 4px 10px 10px 4px; padding: 10px 12px; margin-bottom: 8px; }
-    .voce-row.presa { opacity: 0.7; }
-    .voce-top { display: flex; align-items: center; gap: 8px; }
-    .voce-nome { flex: 1; font-weight: 600; color: var(--navy); font-size: 0.9rem; }
-    .voce-nome .origine-tag { font-size: 0.65rem; color: var(--muted); font-weight: 400; margin-left: 4px; }
-    .voce-del { background: none; border: none; color: var(--rosso); cursor: pointer; font-size: 0.9rem; padding: 2px 4px; }
-    .voce-fields { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; align-items: center; }
-    .voce-fields input[type=number] { width: 72px; padding: 6px 8px; border: 1.5px solid #c8b89a; border-radius: 6px; font-family: 'Lora', serif; font-size: 0.85rem; }
-    .voce-fields .voce-unita { font-size: 0.78rem; color: var(--muted); }
-    .voce-importo { font-weight: 700; color: var(--oro); margin-left: auto; font-size: 0.9rem; }
-    .voce-checks { display: flex; gap: 14px; margin-top: 8px; }
-    .voce-checks label { display: flex; align-items: center; gap: 5px; font-size: 0.78rem; cursor: pointer; }
-    .voce-crea-prod { font-size: 0.72rem; margin-top: 6px; background: none; border: 1px dashed var(--oro); color: var(--oro); border-radius: 6px; padding: 3px 8px; cursor: pointer; }
-
-    .add-voce-form { background: var(--post-bg); border: 2px dashed var(--oro); border-radius: 12px; padding: 14px 16px; margin-top: 20px; }
-    .add-voce-form h3 { font-family: 'Playfair Display', serif; color: var(--navy); font-size: 0.95rem; margin-bottom: 10px; }
-    .add-voce-form .riga { display: flex; gap: 8px; flex-wrap: wrap; }
-    .add-voce-form .riga > * { flex: 1; min-width: 90px; }
+    .sd-content { max-width: 960px; margin: 0 auto; padding: 0 12px 20px; }
 
     .riepilogo-chiusura { background: var(--oro-light); border: 1.5px solid var(--oro); border-radius: 10px; padding: 12px 14px; margin-bottom: 14px; font-size: 0.85rem; }
+
+    /* Griglia: colonne = categorie (stessa struttura/CSS del Magazzino) */
+    .mag-grid { display: flex; gap: 12px; align-items: flex-start; padding: 4px 0 20px; overflow-x: auto; }
+    .mag-col { flex: 0 0 250px; background: var(--post-bg); border: 2px solid var(--carta-scura); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; }
+    .mag-col-header { background: var(--navy); color: #fff; display: flex; align-items: center; gap: 4px; padding: 8px 10px; }
+    .mag-col-nome { flex: 1; min-width: 0; color: var(--oro-light); font-family: 'Playfair Display', serif; font-weight: 700; font-size: 0.88rem; }
+    .col-mini-btn { background: rgba(255,255,255,0.12); border: none; color: #fff; width: 24px; height: 24px; border-radius: 6px; cursor: pointer; font-size: 0.78rem; flex-shrink: 0; }
+    .col-mini-btn:hover { background: rgba(255,255,255,0.28); }
+    .mag-col-body { padding: 8px; display: flex; flex-direction: column; gap: 6px; }
+    .mag-col-add { padding: 0 8px 8px; }
+    .mag-col-add button { width: 100%; background: none; border: 1px dashed var(--oro); color: var(--oro); border-radius: 8px; padding: 6px; cursor: pointer; font-size: 0.78rem; font-family: 'Lora', serif; }
+    .mag-col-add button:hover { background: var(--oro-light); }
+    .mag-col.collassata .mag-col-body, .mag-col.collassata .mag-col-add { display: none; }
+    .mag-col-empty { font-size: 0.75rem; color: var(--muted); font-style: italic; padding: 6px 2px; }
+
+    @media (max-width: 720px) {
+      .mag-grid { flex-direction: column; overflow-x: visible; }
+      .mag-col { flex: 1 1 auto; width: 100%; }
+    }
+
+    /* Cella voce */
+    .voce-cell { background: #fff; border-left: 4px solid var(--navy); border-radius: 4px 8px 8px 4px; padding: 8px 10px; box-shadow: 1px 1px 6px rgba(26,58,92,0.08); }
+    .voce-cell.presa { opacity: 0.7; }
+    .voce-top { display: flex; align-items: center; gap: 6px; }
+    .voce-nome { flex: 1; min-width: 0; font-weight: 600; color: var(--navy); font-size: 0.84rem; }
+    .voce-nome .origine-tag { font-size: 0.62rem; color: var(--muted); font-weight: 400; margin-left: 4px; }
+    .voce-del { background: none; border: none; color: var(--rosso); cursor: pointer; font-size: 0.85rem; padding: 2px 4px; flex-shrink: 0; }
+    .voce-fields { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; align-items: center; }
+    .voce-fields input[type=number] { width: 64px; padding: 5px 6px; border: 1.5px solid #c8b89a; border-radius: 6px; font-family: 'Lora', serif; font-size: 0.8rem; }
+    .voce-fields .voce-unita { font-size: 0.72rem; color: var(--muted); }
+    .voce-importo { font-weight: 700; color: var(--oro); margin-left: auto; font-size: 0.84rem; }
+    .voce-checks { display: flex; gap: 10px; margin-top: 6px; flex-wrap: wrap; }
+    .voce-checks label { display: flex; align-items: center; gap: 4px; font-size: 0.72rem; cursor: pointer; }
+    .voce-crea-prod { font-size: 0.68rem; margin-top: 6px; background: none; border: 1px dashed var(--oro); color: var(--oro); border-radius: 6px; padding: 3px 8px; cursor: pointer; width: 100%; }
+
+    .modal-box.wide { max-width: 420px; }
   </style>
 </head>
 <body>
@@ -66,19 +81,38 @@
 
 <div class="sd-content">
   <div id="sd-riepilogo"></div>
-  <div id="sd-voci"><div class="spinner"></div></div>
+  <div class="mag-grid" id="sd-grid"><div class="spinner"></div></div>
+</div>
 
-  <div class="add-voce-form" id="add-voce-form">
-    <h3>➕ Aggiungi voce manuale</h3>
-    <div class="riga">
-      <input type="text" id="av-nome" placeholder="Nome prodotto">
-      <select id="av-categoria"></select>
+<!-- Modal nuova voce -->
+<div class="modal-overlay" id="modal-voce">
+  <div class="modal-box wide">
+    <div class="modal-title">➕ Nuova voce</div>
+    <div class="form-group">
+      <label>Nome</label>
+      <input type="text" id="vm-nome" placeholder="Es. Pane">
     </div>
-    <div class="riga" style="margin-top:8px;">
-      <input type="number" id="av-quantita" step="any" placeholder="Quantità">
-      <input type="text" id="av-unita" placeholder="Unità">
-      <input type="number" id="av-prezzo" step="0.01" placeholder="Prezzo unitario €">
-      <button class="btn btn-oro" id="av-aggiungi" style="flex:0 0 auto;">➕</button>
+    <div class="form-group">
+      <label>Categoria</label>
+      <select id="vm-categoria"></select>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <div class="form-group" style="flex:1;">
+        <label>Quantità</label>
+        <input type="number" id="vm-quantita" step="any" placeholder="–">
+      </div>
+      <div class="form-group" style="flex:1;">
+        <label>Unità</label>
+        <input type="text" id="vm-unita" placeholder="pz, kg...">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Prezzo unitario (€)</label>
+      <input type="number" id="vm-prezzo" step="0.01" placeholder="–">
+    </div>
+    <div style="display:flex;gap:10px;margin-top:8px;">
+      <button class="btn btn-primary" id="vm-salva" style="flex:1;">💾 Aggiungi</button>
+      <button class="btn" id="vm-annulla" style="background:none;border:1.5px solid var(--navy);color:var(--navy);">Annulla</button>
     </div>
   </div>
 </div>
@@ -97,7 +131,7 @@ import { setupNavAuth } from './js/robinson-nav.js';
 import { esc } from './js/robinson-utils.js';
 import { puoAccedereGestione, fmtEuro, fmtDataBreve, quantitaSuggerita } from './js/robinson-magazzino.js';
 import {
-  doc, getDoc, updateDoc, deleteDoc, addDoc, setDoc, collection, getDocs, query, orderBy,
+  doc, getDoc, updateDoc, deleteDoc, addDoc, collection, getDocs, query, orderBy,
   serverTimestamp, writeBatch, increment
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
@@ -109,10 +143,10 @@ let currentUser = null;
 let lista = null;
 let voci = [];
 let categorie = [];
-let catMap = {};
+const collassate = new Set(); // id categoria collassate (solo UI, non persistito)
 
 if (!listaId) {
-  document.getElementById('sd-voci').innerHTML = `<p class="empty-msg">Lista non trovata.</p>`;
+  document.getElementById('sd-grid').innerHTML = `<p class="empty-msg">Lista non trovata.</p>`;
 } else {
   requireAuth(async user => {
     currentUser = user;
@@ -125,16 +159,13 @@ if (!listaId) {
 
 async function caricaCategorie() {
   const snap = await getDocs(query(collection(db, 'magazzino_categorie'), orderBy('ordine')));
-  categorie = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-  catMap = Object.fromEntries(categorie.map(c => [c.id, c.nome]));
-  const sel = document.getElementById('av-categoria');
-  sel.innerHTML = categorie.filter(c => c.attiva !== false).map(c => `<option value="${esc(c.id)}">${esc(c.nome)}</option>`).join('');
+  categorie = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(c => c.attiva !== false);
 }
 
 async function caricaTutto() {
   const listaSnap = await getDoc(doc(db, 'liste_spesa', listaId));
   if (!listaSnap.exists()) {
-    document.getElementById('sd-voci').innerHTML = `<p class="empty-msg">Lista non trovata.</p>`;
+    document.getElementById('sd-grid').innerHTML = `<p class="empty-msg">Lista non trovata.</p>`;
     return;
   }
   lista = listaSnap.data();
@@ -143,14 +174,17 @@ async function caricaTutto() {
   render();
 }
 
+// ── Griglia: colonne = categorie, come nel Magazzino ────────────────────────
 function render() {
   document.getElementById('sd-titolo').textContent = `Robinson 2026 — spesa del ${fmtDataBreve(lista.data)}`;
   document.getElementById('sd-totale').textContent = fmtEuro(lista.totale || 0);
   document.getElementById('sd-badge-wrap').innerHTML = `<span class="sd-badge ${lista.stato}">${lista.stato === 'chiusa' ? '✅ Chiusa' : '⏳ Aperta'}</span>`;
 
+  const readonly = lista.stato === 'chiusa';
+
   const toolbar = document.getElementById('sd-toolbar');
   toolbar.innerHTML = '';
-  if (lista.stato === 'aperta') {
+  if (!readonly) {
     toolbar.innerHTML = `
       <button class="btn" id="btn-aggiorna-magazzino" style="background:var(--carta-scura);color:var(--navy);">🔄 Aggiorna da magazzino</button>
       <button class="btn btn-primary" id="btn-chiudi-lista">✅ Chiudi lista</button>`;
@@ -161,35 +195,49 @@ function render() {
     document.getElementById('btn-riapri-lista').addEventListener('click', riapriLista);
   }
 
-  document.getElementById('add-voce-form').style.display = lista.stato === 'aperta' ? 'block' : 'none';
+  const grid = document.getElementById('sd-grid');
+  grid.innerHTML = '';
 
-  const cont = document.getElementById('sd-voci');
-  if (!voci.length) {
-    cont.innerHTML = `<p class="empty-msg">Nessuna voce in questa lista. Aggiungine una qui sotto o aggiorna dal magazzino.</p>`;
-    return;
+  const catIds = new Set(categorie.map(c => c.id));
+  const senzaCategoria = voci.filter(v => !catIds.has(v.categoria));
+
+  categorie.forEach(c => grid.appendChild(renderColonna(c, voci.filter(v => v.categoria === c.id), readonly)));
+  if (senzaCategoria.length) grid.appendChild(renderColonna({ id: null, nome: 'Senza categoria' }, senzaCategoria, readonly, true));
+}
+
+function renderColonna(c, vociCat, readonly, sola = false) {
+  const col = document.createElement('div');
+  col.className = 'mag-col' + (collassate.has(c.id) ? ' collassata' : '');
+
+  const header = document.createElement('div');
+  header.className = 'mag-col-header';
+  header.innerHTML = `
+    <button class="col-mini-btn" data-act="collassa" title="Comprimi/espandi">${collassate.has(c.id) ? '▸' : '▾'}</button>
+    <span class="mag-col-nome">${esc(c.nome)}</span>`;
+  header.querySelector('[data-act=collassa]').addEventListener('click', () => {
+    if (collassate.has(c.id)) collassate.delete(c.id); else collassate.add(c.id);
+    render();
+  });
+  col.appendChild(header);
+
+  const body = document.createElement('div');
+  body.className = 'mag-col-body';
+  if (!vociCat.length) {
+    body.innerHTML = `<div class="mag-col-empty">Nessuna voce.</div>`;
+  } else {
+    vociCat.forEach(v => body.appendChild(renderVoceCell(v, readonly)));
   }
-  cont.innerHTML = '';
+  col.appendChild(body);
 
-  const gruppi = {};
-  voci.forEach(v => {
-    const key = v.categoria || '__none';
-    (gruppi[key] = gruppi[key] || []).push(v);
-  });
-  const ordineCat = categorie.map(c => c.id);
-  const chiavi = Object.keys(gruppi).sort((a, b) => {
-    const ia = ordineCat.indexOf(a), ib = ordineCat.indexOf(b);
-    if (ia === -1 && ib === -1) return 0;
-    if (ia === -1) return 1;
-    if (ib === -1) return -1;
-    return ia - ib;
-  });
+  if (!readonly && !sola) {
+    const addWrap = document.createElement('div');
+    addWrap.className = 'mag-col-add';
+    addWrap.innerHTML = `<button>➕ Voce</button>`;
+    addWrap.querySelector('button').addEventListener('click', () => apriModalVoce(c.id));
+    col.appendChild(addWrap);
+  }
 
-  chiavi.forEach(k => {
-    const sez = document.createElement('div');
-    sez.innerHTML = `<div class="cat-titolo">${esc(catMap[k] || 'Senza categoria')}</div>`;
-    gruppi[k].forEach(v => sez.appendChild(renderVoceRow(v)));
-    cont.appendChild(sez);
-  });
+  return col;
 }
 
 function calcolaImporto(v) {
@@ -197,26 +245,25 @@ function calcolaImporto(v) {
   return Math.round(v.prezzo_unitario * v.quantita * 100) / 100;
 }
 
-function renderVoceRow(v) {
-  const readonly = lista.stato === 'chiusa';
-  const row = document.createElement('div');
-  row.className = 'voce-row' + (v.acquistato ? ' presa' : '');
-  row.innerHTML = `
+function renderVoceCell(v, readonly) {
+  const cell = document.createElement('div');
+  cell.className = 'voce-cell' + (v.acquistato ? ' presa' : '');
+  cell.innerHTML = `
     <div class="voce-top">
-      <div class="voce-nome">${esc(v.nome)}<span class="origine-tag">${v.origine === 'manuale' ? '· manuale' : ''}</span></div>
+      <div class="voce-nome">${esc(v.nome)}${v.origine === 'manuale' ? '<span class="origine-tag">· manuale</span>' : ''}</div>
       ${!readonly ? `<button class="voce-del" title="Elimina voce">🗑️</button>` : ''}
     </div>
     <div class="voce-fields">
-      <input type="number" class="v-quantita" step="any" placeholder="Quantità" value="${v.quantita ?? ''}" ${readonly ? 'disabled' : ''}>
+      <input type="number" class="v-quantita" step="any" placeholder="Qtà" value="${v.quantita ?? ''}" ${readonly ? 'disabled' : ''}>
       <span class="voce-unita">${esc(v.unita || '')}</span>
-      <input type="number" class="v-prezzo" step="0.01" placeholder="Prezzo unit. €" value="${v.prezzo_unitario ?? ''}" ${readonly ? 'disabled' : ''}>
+      <input type="number" class="v-prezzo" step="0.01" placeholder="€ unit." value="${v.prezzo_unitario ?? ''}" ${readonly ? 'disabled' : ''}>
       <span class="voce-importo">${fmtEuro(v.prezzo)}</span>
     </div>
     <div class="voce-checks">
       <label><input type="checkbox" class="v-acquistato" ${v.acquistato ? 'checked' : ''} ${readonly ? 'disabled' : ''}> Preso</label>
       <label><input type="checkbox" class="v-consumo" ${v.consumo_diretto ? 'checked' : ''} ${readonly ? 'disabled' : ''}> Consumo diretto</label>
     </div>
-    ${(!v.prodotto_id) ? `<button class="voce-crea-prod">📦 Crea prodotto a magazzino</button>` : ''}`;
+    ${(!v.prodotto_id) ? `<button class="voce-crea-prod">📦 Crea prodotto</button>` : ''}`;
 
   const salva = async campi => {
     Object.assign(v, campi);
@@ -224,34 +271,34 @@ function renderVoceRow(v) {
   };
 
   if (!readonly) {
-    row.querySelector('.voce-del').addEventListener('click', async () => {
+    cell.querySelector('.voce-del').addEventListener('click', async () => {
       if (!confirm(`Eliminare "${v.nome}" dalla lista?`)) return;
       await deleteDoc(doc(db, 'liste_spesa', listaId, 'voci', v.id));
       voci = voci.filter(x => x.id !== v.id);
       await ricalcolaTotale();
       render();
     });
-    row.querySelector('.v-quantita').addEventListener('change', async e => {
+    cell.querySelector('.v-quantita').addEventListener('change', async e => {
       const q = e.target.value === '' ? null : parseFloat(e.target.value);
       const prezzo = calcolaImporto({ ...v, quantita: q });
       await salva({ quantita: q, prezzo });
       await ricalcolaTotale();
       render();
     });
-    row.querySelector('.v-prezzo').addEventListener('change', async e => {
+    cell.querySelector('.v-prezzo').addEventListener('change', async e => {
       const pu = e.target.value === '' ? null : parseFloat(e.target.value);
       const prezzo = calcolaImporto({ ...v, prezzo_unitario: pu });
       await salva({ prezzo_unitario: pu, prezzo });
       await ricalcolaTotale();
       render();
     });
-    row.querySelector('.v-acquistato').addEventListener('change', e => salva({ acquistato: e.target.checked }));
-    row.querySelector('.v-consumo').addEventListener('change', e => salva({ consumo_diretto: e.target.checked }));
+    cell.querySelector('.v-acquistato').addEventListener('change', e => salva({ acquistato: e.target.checked }));
+    cell.querySelector('.v-consumo').addEventListener('change', e => salva({ consumo_diretto: e.target.checked }));
   }
-  const btnCreaProd = row.querySelector('.voce-crea-prod');
+  const btnCreaProd = cell.querySelector('.voce-crea-prod');
   if (btnCreaProd) btnCreaProd.addEventListener('click', () => creaProdottoDaVoce(v));
 
-  return row;
+  return cell;
 }
 
 async function ricalcolaTotale() {
@@ -327,15 +374,27 @@ async function creaProdottoDaVoce(v) {
   await caricaTutto();
 }
 
-// ── Aggiungi voce manuale ────────────────────────────────────────────────────
-document.getElementById('av-aggiungi').addEventListener('click', async () => {
-  const nome = document.getElementById('av-nome').value.trim();
+// ── Modal nuova voce manuale ─────────────────────────────────────────────────
+function apriModalVoce(categoriaDefault) {
+  document.getElementById('vm-categoria').innerHTML = categorie.map(c => `<option value="${esc(c.id)}">${esc(c.nome)}</option>`).join('');
+  document.getElementById('vm-categoria').value = categoriaDefault || (categorie[0]?.id || '');
+  document.getElementById('vm-nome').value = '';
+  document.getElementById('vm-quantita').value = '';
+  document.getElementById('vm-unita').value = '';
+  document.getElementById('vm-prezzo').value = '';
+  document.getElementById('modal-voce').classList.add('open');
+  setTimeout(() => document.getElementById('vm-nome').focus(), 50);
+}
+document.getElementById('vm-annulla').addEventListener('click', () => document.getElementById('modal-voce').classList.remove('open'));
+
+document.getElementById('vm-salva').addEventListener('click', async () => {
+  const nome = document.getElementById('vm-nome').value.trim();
   if (!nome) { alert('Inserisci il nome del prodotto.'); return; }
-  const categoria = document.getElementById('av-categoria').value || null;
-  const quantitaRaw = document.getElementById('av-quantita').value;
+  const categoria = document.getElementById('vm-categoria').value || null;
+  const quantitaRaw = document.getElementById('vm-quantita').value;
   const quantita = quantitaRaw === '' ? null : parseFloat(quantitaRaw);
-  const unita = document.getElementById('av-unita').value.trim() || null;
-  const prezzoRaw = document.getElementById('av-prezzo').value;
+  const unita = document.getElementById('vm-unita').value.trim() || null;
+  const prezzoRaw = document.getElementById('vm-prezzo').value;
   const prezzo_unitario = prezzoRaw === '' ? null : parseFloat(prezzoRaw);
   const prezzo = calcolaImporto({ prezzo_unitario, quantita });
 
@@ -344,11 +403,7 @@ document.getElementById('av-aggiungi').addEventListener('click', async () => {
     acquistato: false, consumo_diretto: false, caricato_a_magazzino: false, data_lista: lista.data
   });
 
-  document.getElementById('av-nome').value = '';
-  document.getElementById('av-quantita').value = '';
-  document.getElementById('av-unita').value = '';
-  document.getElementById('av-prezzo').value = '';
-
+  document.getElementById('modal-voce').classList.remove('open');
   await caricaTutto();
   await ricalcolaTotale();
   render();
