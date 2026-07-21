@@ -432,6 +432,10 @@ service cloud.firestore {
       allow read, write: if puoAccedereGestione();
       match /voci/{voceId} { allow read, write: if puoAccedereGestione(); }
     }
+    // Regola separata per la collection-group query su "voci" usata dallo storico
+    // (gestione-storico.html: collectionGroup(db,'voci')) — la match annidata sopra
+    // copre solo le letture dirette sotto liste_spesa/{id}/voci, non la collection group.
+    match /{path=**}/voci/{voceId} { allow read: if puoAccedereGestione(); }
     match /magazzino_autorizzati/{uid} {
       allow read: if puoAccedereGestione();
       allow write: if isAdmin();

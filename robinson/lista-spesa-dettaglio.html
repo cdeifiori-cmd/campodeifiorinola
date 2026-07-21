@@ -129,7 +129,7 @@ import { db } from './js/robinson-firebase.js';
 import { requireAuth } from './js/robinson-auth.js';
 import { setupNavAuth } from './js/robinson-nav.js';
 import { esc } from './js/robinson-utils.js';
-import { puoAccedereGestione, fmtEuro, fmtDataBreve, quantitaSuggerita } from './js/robinson-magazzino.js';
+import { puoAccedereGestione, prodottiDaComprare, fmtEuro, fmtDataBreve, quantitaSuggerita } from './js/robinson-magazzino.js';
 import {
   doc, getDoc, updateDoc, deleteDoc, addDoc, collection, getDocs, query, orderBy,
   serverTimestamp, writeBatch, increment
@@ -311,11 +311,10 @@ async function ricalcolaTotale() {
 async function aggiornaDaMagazzino() {
   const prodSnap = await getDocs(collection(db, 'magazzino_prodotti'));
   const giaPresenti = new Set(voci.filter(v => v.prodotto_id).map(v => v.prodotto_id));
-  const nuovi = prodSnap.docs
-    .map(d => ({ id: d.id, ...d.data() }))
-    .filter(p => p.attivo !== false && (p.quantita_attuale ?? 0) <= (p.soglia_minima ?? 0) && !giaPresenti.has(p.id));
+  const prodotti = prodSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const nuovi = prodottiDaComprare(prodotti).filter(p => !giaPresenti.has(p.id));
 
-  if (!nuovi.length) { alert('Nessun nuovo prodotto sotto soglia da aggiungere.'); return; }
+  if (!nuovi.length) { alert('Nessun nuovo prodotto da comprare da aggiungere.'); return; }
 
   await Promise.all(nuovi.map(p => addDoc(collection(db, 'liste_spesa', listaId, 'voci'), {
     nome: p.nome, categoria: p.categoria || null, origine: 'magazzino', prodotto_id: p.id,
@@ -323,8 +322,16 @@ async function aggiornaDaMagazzino() {
     prezzo: null, acquistato: false, consumo_diretto: false, caricato_a_magazzino: false, data_lista: lista.data
   })));
 
+  // Il flag "serve" si azzera all'inserimento in lista (§4 del brief)
+  const daAzzerare = nuovi.filter(p => p.serve);
+  if (daAzzerare.length) {
+    const batch = writeBatch(db);
+    daAzzerare.forEach(p => batch.update(doc(db, 'magazzino_prodotti', p.id), { serve: false }));
+    await batch.commit();
+  }
+
   await caricaTutto();
-  alert(`Aggiunti ${nuovi.length} nuovi prodotti sotto soglia.`);
+  alert(`Aggiunti ${nuovi.length} nuovi prodotti da comprare.`);
 }
 
 // ── Chiudi lista: congela + reintegra il magazzino ──────────────────────────

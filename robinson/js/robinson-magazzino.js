@@ -50,16 +50,43 @@ export async function seedCategorieIniziali() {
   ));
 }
 
-// ── Soglia minima ────────────────────────────────────────────────────────────
-// Punto di riordino prudente: sotto soglia già quando si tocca il minimo.
+// ── Modalità di riordino ─────────────────────────────────────────────────────
+// soglia: si riordina sotto la soglia minima (stabili). ricorrente: entra sempre
+// in ogni nuova lista (freschi/giornalieri: pane, latte, frutta). manuale: mai
+// automatico, entra solo se il flag `serve` è attivo (consumo sporadico).
+export function modalitaProdotto(prodotto) {
+  return prodotto.modalita_riordino || 'soglia';
+}
+
+export const ETICHETTA_MODALITA = { ricorrente: 'giornaliero', manuale: 'a richiesta' };
+
+// Sotto soglia ha senso solo per la modalità `soglia`: punto di riordino
+// prudente, sotto soglia già quando si tocca il minimo.
 export function sottoSoglia(prodotto) {
+  if (modalitaProdotto(prodotto) !== 'soglia') return false;
   return (prodotto.quantita_attuale ?? 0) <= (prodotto.soglia_minima ?? 0);
 }
 
+// Un prodotto è "da comprare" secondo la sua modalità, oppure se qualcuno lo ha
+// forzato a mano col flag `serve` (utilizzabile su qualsiasi modalità).
+export function daComprare(prodotto) {
+  const m = modalitaProdotto(prodotto);
+  if (m === 'ricorrente') return true;
+  if (m === 'manuale') return !!prodotto.serve;
+  return sottoSoglia(prodotto) || !!prodotto.serve;
+}
+
 export function quantitaSuggerita(prodotto) {
+  if (modalitaProdotto(prodotto) === 'ricorrente') return prodotto.quantita_ricorrente ?? null;
   if (prodotto.scorta_obiettivo == null) return null;
   const q = prodotto.scorta_obiettivo - (prodotto.quantita_attuale ?? 0);
   return q > 0 ? q : 0;
+}
+
+// Prodotti attivi da inserire in una nuova lista (o da ritirare con "Aggiorna
+// da magazzino"), secondo la logica a tre modalità (vedi §4 del brief).
+export function prodottiDaComprare(prodotti) {
+  return prodotti.filter(p => p.attivo !== false && daComprare(p));
 }
 
 // ── Formattazione ────────────────────────────────────────────────────────────

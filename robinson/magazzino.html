@@ -48,6 +48,8 @@
     .prod-cell-nome { font-weight: 600; color: var(--navy); font-size: 0.84rem; line-height: 1.3; }
     .prod-cell-nome .sotto-badge { display: inline-block; background: var(--rosso); color: #fff; font-size: 0.6rem; border-radius: 10px; padding: 1px 6px; margin-left: 4px; vertical-align: middle; }
     .prod-cell-meta { font-size: 0.68rem; color: var(--muted); margin-top: 2px; }
+    .modalita-badge { display: inline-block; background: var(--carta-scura); color: var(--navy); font-size: 0.62rem; font-weight: 600; border-radius: 10px; padding: 1px 8px; }
+    .serve-toggle { display: flex; align-items: center; gap: 5px; font-size: 0.68rem; color: var(--navy); margin-top: 6px; cursor: pointer; }
     .prod-cell-qty { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
     .qty-btn { width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid var(--navy); background: #fff; color: var(--navy); font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
     .qty-btn:hover { background: var(--navy); color: #fff; }
@@ -103,15 +105,30 @@
         <input type="number" id="pm-quantita" step="any" value="0">
       </div>
     </div>
+    <div class="form-group">
+      <label>Modalità di riordino</label>
+      <select id="pm-modalita">
+        <option value="soglia">Soglia — si riordina sotto un minimo (stabili)</option>
+        <option value="ricorrente">Ricorrente — sempre in lista (freschi/giornalieri)</option>
+        <option value="manuale">Manuale — solo su richiesta</option>
+      </select>
+    </div>
     <div style="display:flex;gap:10px;">
-      <div class="form-group" style="flex:1;">
+      <div class="form-group" style="flex:1;" id="pm-soglia-wrap">
         <label>Soglia minima</label>
         <input type="number" id="pm-soglia" step="any" value="0">
       </div>
-      <div class="form-group" style="flex:1;">
+      <div class="form-group" style="flex:1;" id="pm-ricorrente-wrap">
+        <label>Quantità ricorrente</label>
+        <input type="number" id="pm-quantita-ricorrente" step="any" placeholder="–">
+      </div>
+      <div class="form-group" style="flex:1;" id="pm-scorta-wrap">
         <label>Scorta obiettivo (opz.)</label>
         <input type="number" id="pm-scorta-obiettivo" step="any" placeholder="–">
       </div>
+    </div>
+    <div class="form-group">
+      <label><input type="checkbox" id="pm-serve"> Serve — inseriscilo nella prossima lista spesa</label>
     </div>
     <div class="form-group">
       <label>Prezzo di riferimento (opz.)</label>
@@ -155,7 +172,7 @@ import { db, ADMIN_UID } from './js/robinson-firebase.js';
 import { requireAuth } from './js/robinson-auth.js';
 import { setupNavAuth } from './js/robinson-nav.js';
 import { esc } from './js/robinson-utils.js';
-import { puoAccedereGestione, seedCategorieIniziali, sottoSoglia, fmtEuro } from './js/robinson-magazzino.js';
+import { puoAccedereGestione, seedCategorieIniziali, sottoSoglia, daComprare, modalitaProdotto, ETICHETTA_MODALITA, fmtEuro } from './js/robinson-magazzino.js';
 import {
   collection, getDocs, doc, setDoc, updateDoc, deleteDoc, addDoc, writeBatch, query, orderBy, serverTimestamp
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
@@ -190,9 +207,9 @@ async function caricaTutto() {
 
 // ── Griglia: colonne = categorie, righe = prodotti ──────────────────────────
 function render() {
-  const contatore = prodotti.filter(sottoSoglia).length;
+  const contatore = prodotti.filter(daComprare).length;
   document.getElementById('sotto-soglia-wrap').innerHTML = contatore
-    ? `<span class="sotto-soglia-count">⚠️ ${contatore} prodott${contatore === 1 ? 'o' : 'i'} sotto soglia</span>`
+    ? `<span class="sotto-soglia-count">⚠️ ${contatore} prodott${contatore === 1 ? 'o' : 'i'} da comprare</span>`
     : '';
 
   const grid = document.getElementById('mag-grid');
@@ -279,15 +296,22 @@ function renderColonnaNuova() {
 function renderProdCell(p) {
   const cell = document.createElement('div');
   const sotto = sottoSoglia(p);
+  const modalita = modalitaProdotto(p);
   cell.className = 'prod-cell' + (sotto ? ' sotto' : '');
+
+  const meta = modalita === 'soglia'
+    ? `soglia ${esc(p.soglia_minima ?? 0)}`
+    : `<span class="modalita-badge">${esc(ETICHETTA_MODALITA[modalita])}</span>`;
+
   cell.innerHTML = `
     <div class="prod-cell-nome">${esc(p.nome)}${sotto ? '<span class="sotto-badge">sotto soglia</span>' : ''}</div>
-    <div class="prod-cell-meta">soglia ${esc(p.soglia_minima ?? 0)}${p.prezzo_riferimento != null ? ' · ' + fmtEuro(p.prezzo_riferimento) : ''}</div>
+    <div class="prod-cell-meta">${meta}${p.prezzo_riferimento != null ? ' · ' + fmtEuro(p.prezzo_riferimento) : ''}</div>
     <div class="prod-cell-qty">
       <button class="qty-btn btn-meno">−</button>
       <span class="qty-val">${p.quantita_attuale ?? 0} ${esc(p.unita || '')}</span>
       <button class="qty-btn btn-piu">+</button>
-    </div>`;
+    </div>
+    ${modalita === 'manuale' ? `<label class="serve-toggle"><input type="checkbox" class="chk-serve" ${p.serve ? 'checked' : ''}> serve alla prossima spesa</label>` : ''}`;
 
   const salvaQty = async n => {
     if (isNaN(n)) return;
@@ -297,6 +321,12 @@ function renderProdCell(p) {
   };
   cell.querySelector('.btn-meno').addEventListener('click', e => { e.stopPropagation(); salvaQty((p.quantita_attuale ?? 0) - 1); });
   cell.querySelector('.btn-piu').addEventListener('click', e => { e.stopPropagation(); salvaQty((p.quantita_attuale ?? 0) + 1); });
+  const chkServe = cell.querySelector('.chk-serve');
+  if (chkServe) chkServe.addEventListener('click', async e => {
+    e.stopPropagation();
+    p.serve = e.target.checked;
+    await updateDoc(doc(db, 'magazzino_prodotti', p.id), { serve: p.serve, aggiornato_il: serverTimestamp() });
+  });
   cell.addEventListener('click', () => apriModalProdotto(p));
   return cell;
 }
@@ -367,6 +397,14 @@ function popolaSelectCategorie() {
   sel.innerHTML = categorie.map(c => `<option value="${esc(c.id)}">${esc(c.nome)}</option>`).join('');
 }
 
+function aggiornaVisibilitaCampiModalita() {
+  const m = document.getElementById('pm-modalita').value;
+  document.getElementById('pm-soglia-wrap').style.display = m === 'soglia' ? '' : 'none';
+  document.getElementById('pm-ricorrente-wrap').style.display = m === 'ricorrente' ? '' : 'none';
+  document.getElementById('pm-scorta-wrap').style.display = m === 'soglia' ? '' : 'none';
+}
+document.getElementById('pm-modalita').addEventListener('change', aggiornaVisibilitaCampiModalita);
+
 function apriModalProdotto(p, categoriaDefault) {
   popolaSelectCategorie();
   editUid = p?.id || null;
@@ -375,11 +413,15 @@ function apriModalProdotto(p, categoriaDefault) {
   document.getElementById('pm-categoria').value = p?.categoria || categoriaDefault || (categorie[0]?.id || '');
   document.getElementById('pm-unita').value = p?.unita || '';
   document.getElementById('pm-quantita').value = p?.quantita_attuale ?? 0;
+  document.getElementById('pm-modalita').value = p?.modalita_riordino || 'soglia';
   document.getElementById('pm-soglia').value = p?.soglia_minima ?? 0;
+  document.getElementById('pm-quantita-ricorrente').value = p?.quantita_ricorrente ?? '';
   document.getElementById('pm-scorta-obiettivo').value = p?.scorta_obiettivo ?? '';
+  document.getElementById('pm-serve').checked = !!p?.serve;
   document.getElementById('pm-prezzo').value = p?.prezzo_riferimento ?? '';
   document.getElementById('pm-error').textContent = '';
   document.getElementById('pm-elimina').style.display = p ? 'block' : 'none';
+  aggiornaVisibilitaCampiModalita();
   document.getElementById('modal-prodotto').classList.add('open');
 }
 
@@ -393,13 +435,17 @@ document.getElementById('pm-salva').addEventListener('click', async () => {
   const categoria = document.getElementById('pm-categoria').value;
   const unita = document.getElementById('pm-unita').value.trim();
   const quantita_attuale = parseFloat(document.getElementById('pm-quantita').value) || 0;
+  const modalita_riordino = document.getElementById('pm-modalita').value;
   const soglia_minima = parseFloat(document.getElementById('pm-soglia').value) || 0;
+  const ricorrenteRaw = document.getElementById('pm-quantita-ricorrente').value;
+  const quantita_ricorrente = ricorrenteRaw === '' ? null : parseFloat(ricorrenteRaw);
   const scorteRaw = document.getElementById('pm-scorta-obiettivo').value;
   const scorta_obiettivo = scorteRaw === '' ? null : parseFloat(scorteRaw);
+  const serve = document.getElementById('pm-serve').checked;
   const prezzoRaw = document.getElementById('pm-prezzo').value;
   const prezzo_riferimento = prezzoRaw === '' ? null : parseFloat(prezzoRaw);
 
-  const dati = { nome, categoria, unita, quantita_attuale, soglia_minima, scorta_obiettivo, prezzo_riferimento, attivo: true, aggiornato_il: serverTimestamp() };
+  const dati = { nome, categoria, unita, quantita_attuale, modalita_riordino, soglia_minima, quantita_ricorrente, scorta_obiettivo, serve, prezzo_riferimento, attivo: true, aggiornato_il: serverTimestamp() };
 
   try {
     if (editUid) {

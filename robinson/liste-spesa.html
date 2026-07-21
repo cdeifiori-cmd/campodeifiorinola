@@ -59,9 +59,9 @@ import { db } from './js/robinson-firebase.js';
 import { requireAuth } from './js/robinson-auth.js';
 import { setupNavAuth } from './js/robinson-nav.js';
 import { esc } from './js/robinson-utils.js';
-import { puoAccedereGestione, quantitaSuggerita, fmtEuro, fmtDataBreve } from './js/robinson-magazzino.js';
+import { puoAccedereGestione, prodottiDaComprare, quantitaSuggerita, fmtEuro, fmtDataBreve } from './js/robinson-magazzino.js';
 import {
-  collection, getDocs, doc, addDoc, setDoc, query, orderBy, serverTimestamp, Timestamp
+  collection, getDocs, doc, addDoc, setDoc, query, orderBy, serverTimestamp, Timestamp, writeBatch
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 setupNavAuth('nav-auth-slot');
@@ -111,13 +111,12 @@ document.getElementById('btn-nuova-lista').addEventListener('click', async () =>
       chiusa_il: null
     });
 
-    // Pre-riempimento con i prodotti sotto soglia (snapshot alla creazione)
+    // Pre-riempimento secondo la modalità di ciascun prodotto (snapshot alla creazione)
     const prodSnap = await getDocs(collection(db, 'magazzino_prodotti'));
-    const sottoSogliaProdotti = prodSnap.docs
-      .map(d => ({ id: d.id, ...d.data() }))
-      .filter(p => p.attivo !== false && (p.quantita_attuale ?? 0) <= (p.soglia_minima ?? 0));
+    const prodotti = prodSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const daInserire = prodottiDaComprare(prodotti);
 
-    await Promise.all(sottoSogliaProdotti.map(p => addDoc(collection(db, 'liste_spesa', listaRef.id, 'voci'), {
+    await Promise.all(daInserire.map(p => addDoc(collection(db, 'liste_spesa', listaRef.id, 'voci'), {
       nome: p.nome,
       categoria: p.categoria || null,
       origine: 'magazzino',
@@ -131,6 +130,14 @@ document.getElementById('btn-nuova-lista').addEventListener('click', async () =>
       caricato_a_magazzino: false,
       data_lista: dataLista
     })));
+
+    // Il flag "serve" si azzera all'inserimento in lista (§4 del brief)
+    const daAzzerare = daInserire.filter(p => p.serve);
+    if (daAzzerare.length) {
+      const batch = writeBatch(db);
+      daAzzerare.forEach(p => batch.update(doc(db, 'magazzino_prodotti', p.id), { serve: false }));
+      await batch.commit();
+    }
 
     window.location.href = `lista-spesa-dettaglio.html?id=${listaRef.id}`;
   } catch (e) {
