@@ -172,7 +172,7 @@ import { db, ADMIN_UID } from './js/robinson-firebase.js';
 import { requireAuth } from './js/robinson-auth.js';
 import { setupNavAuth } from './js/robinson-nav.js';
 import { esc } from './js/robinson-utils.js';
-import { puoAccedereGestione, seedCategorieIniziali, sottoSoglia, daComprare, modalitaProdotto, ETICHETTA_MODALITA, fmtEuro } from './js/robinson-magazzino.js';
+import { puoAccedereGestione, seedCategorieIniziali, sottoSoglia, daComprare, modalitaProdotto, ETICHETTA_MODALITA, spostaCategoriaOrdine, fmtEuro } from './js/robinson-magazzino.js';
 import {
   collection, getDocs, doc, setDoc, updateDoc, deleteDoc, addDoc, writeBatch, query, orderBy, serverTimestamp
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
@@ -331,16 +331,9 @@ function renderProdCell(p) {
   return cell;
 }
 
-// ── Riordino colonne ─────────────────────────────────────────────────────
+// ── Riordino colonne (helper condiviso con la Lista spesa) ───────────────
 async function spostaCategoria(i, delta) {
-  const j = i + delta;
-  if (j < 0 || j >= categorie.length) return;
-  [categorie[i].ordine, categorie[j].ordine] = [categorie[j].ordine, categorie[i].ordine];
-  await Promise.all([
-    updateDoc(doc(db, 'magazzino_categorie', categorie[i].id), { ordine: categorie[i].ordine }),
-    updateDoc(doc(db, 'magazzino_categorie', categorie[j].id), { ordine: categorie[j].ordine })
-  ]);
-  await caricaTutto();
+  if (await spostaCategoriaOrdine(categorie, i, delta)) await caricaTutto();
 }
 
 // ── Eliminazione categoria (con gestione prodotti orfani) ───────────────────

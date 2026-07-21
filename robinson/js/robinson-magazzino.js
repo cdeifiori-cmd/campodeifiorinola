@@ -3,7 +3,7 @@
 // lista-spesa-dettaglio.html e gestione-storico.html. Unica fonte di verità
 // per il gate di accesso e per i calcoli usati in più pagine.
 import { db, ADMIN_UID } from './robinson-firebase.js';
-import { getDoc, doc, setDoc, getDocs, collection } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { getDoc, doc, setDoc, getDocs, collection, updateDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 // ── Gate di accesso alla cartella "Gestione" ────────────────────────────────
 // Ammessi: admin, oppure chi ha un documento in magazzino_autorizzati (chiave =
@@ -87,6 +87,22 @@ export function quantitaSuggerita(prodotto) {
 // da magazzino"), secondo la logica a tre modalità (vedi §4 del brief).
 export function prodottiDaComprare(prodotti) {
   return prodotti.filter(p => p.attivo !== false && daComprare(p));
+}
+
+// ── Riordino colonne (categorie) ────────────────────────────────────────────
+// Il campo `ordine` è condiviso tra Magazzino e Lista spesa: spostare una
+// colonna in una vista deve spostarla anche nell'altra. Unica implementazione
+// usata da entrambe (vedi §5 del brief: "controlli di colonna identici").
+export async function spostaCategoriaOrdine(categorie, indice, delta) {
+  const j = indice + delta;
+  if (j < 0 || j >= categorie.length) return false;
+  const a = categorie[indice], b = categorie[j];
+  [a.ordine, b.ordine] = [b.ordine, a.ordine];
+  await Promise.all([
+    updateDoc(doc(db, 'magazzino_categorie', a.id), { ordine: a.ordine }),
+    updateDoc(doc(db, 'magazzino_categorie', b.id), { ordine: b.ordine })
+  ]);
+  return true;
 }
 
 // ── Formattazione ────────────────────────────────────────────────────────────

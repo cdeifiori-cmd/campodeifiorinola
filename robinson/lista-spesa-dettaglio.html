@@ -129,7 +129,7 @@ import { db } from './js/robinson-firebase.js';
 import { requireAuth } from './js/robinson-auth.js';
 import { setupNavAuth } from './js/robinson-nav.js';
 import { esc } from './js/robinson-utils.js';
-import { puoAccedereGestione, prodottiDaComprare, fmtEuro, fmtDataBreve, quantitaSuggerita } from './js/robinson-magazzino.js';
+import { puoAccedereGestione, prodottiDaComprare, spostaCategoriaOrdine, fmtEuro, fmtDataBreve, quantitaSuggerita } from './js/robinson-magazzino.js';
 import {
   doc, getDoc, updateDoc, deleteDoc, addDoc, collection, getDocs, query, orderBy,
   serverTimestamp, writeBatch, increment
@@ -160,6 +160,11 @@ if (!listaId) {
 async function caricaCategorie() {
   const snap = await getDocs(query(collection(db, 'magazzino_categorie'), orderBy('ordine')));
   categorie = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(c => c.attiva !== false);
+}
+
+// Riordino colonne (helper condiviso col Magazzino, agisce sul campo `ordine`)
+async function spostaCategoria(i, delta) {
+  if (await spostaCategoriaOrdine(categorie, i, delta)) { await caricaCategorie(); render(); }
 }
 
 async function caricaTutto() {
@@ -201,23 +206,34 @@ function render() {
   const catIds = new Set(categorie.map(c => c.id));
   const senzaCategoria = voci.filter(v => !catIds.has(v.categoria));
 
-  categorie.forEach(c => grid.appendChild(renderColonna(c, voci.filter(v => v.categoria === c.id), readonly)));
+  categorie.forEach((c, i) => grid.appendChild(renderColonna(c, voci.filter(v => v.categoria === c.id), readonly, false, i)));
   if (senzaCategoria.length) grid.appendChild(renderColonna({ id: null, nome: 'Senza categoria' }, senzaCategoria, readonly, true));
 }
 
-function renderColonna(c, vociCat, readonly, sola = false) {
+// Controlli di colonna identici al Magazzino (collassa/espandi, riordina con
+// frecce sul campo `ordine` condiviso). Rinomina/elimina categoria restano
+// invece solo nel Magazzino: è lì che si gestisce la tassonomia condivisa.
+function renderColonna(c, vociCat, readonly, sola = false, indice = -1) {
   const col = document.createElement('div');
   col.className = 'mag-col' + (collassate.has(c.id) ? ' collassata' : '');
 
   const header = document.createElement('div');
   header.className = 'mag-col-header';
-  header.innerHTML = `
-    <button class="col-mini-btn" data-act="collassa" title="Comprimi/espandi">${collassate.has(c.id) ? '▸' : '▾'}</button>
-    <span class="mag-col-nome">${esc(c.nome)}</span>`;
-  header.querySelector('[data-act=collassa]').addEventListener('click', () => {
-    if (collassate.has(c.id)) collassate.delete(c.id); else collassate.add(c.id);
-    render();
-  });
+  header.innerHTML = sola
+    ? `<span class="mag-col-nome">${esc(c.nome)}</span>`
+    : `
+      <button class="col-mini-btn" data-act="collassa" title="Comprimi/espandi">${collassate.has(c.id) ? '▸' : '▾'}</button>
+      <span class="mag-col-nome">${esc(c.nome)}</span>
+      <button class="col-mini-btn" data-act="left" title="Sposta a sinistra" ${indice === 0 ? 'disabled' : ''}>◀</button>
+      <button class="col-mini-btn" data-act="right" title="Sposta a destra" ${indice === categorie.length - 1 ? 'disabled' : ''}>▶</button>`;
+  if (!sola) {
+    header.querySelector('[data-act=collassa]').addEventListener('click', () => {
+      if (collassate.has(c.id)) collassate.delete(c.id); else collassate.add(c.id);
+      render();
+    });
+    header.querySelector('[data-act=left]').addEventListener('click', () => spostaCategoria(indice, -1));
+    header.querySelector('[data-act=right]').addEventListener('click', () => spostaCategoria(indice, 1));
+  }
   col.appendChild(header);
 
   const body = document.createElement('div');
