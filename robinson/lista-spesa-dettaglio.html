@@ -25,7 +25,10 @@
     .sd-badge.chiusa { background:#d5f5e3; color:#1e8449; border:1px solid #2ecc71; }
 
     .sd-toolbar { display: flex; gap: 8px; justify-content: center; padding: 12px; flex-wrap: wrap; }
-    .sd-content { max-width: 960px; margin: 0 auto; padding: 0 12px 20px; }
+    /* Nessun max-width: la griglia deve occupare tutta la larghezza del
+       desktop come nel Magazzino, con scroll orizzontale se le colonne non
+       entrano (vedi §5 del brief). */
+    .sd-content { padding: 0 12px 20px; }
 
     .riepilogo-chiusura { background: var(--oro-light); border: 1.5px solid var(--oro); border-radius: 10px; padding: 12px 14px; margin-bottom: 14px; font-size: 0.85rem; }
 
