@@ -96,7 +96,7 @@ import { db, ADMIN_UID } from './js/robinson-firebase.js';
 import { requireAuth } from './js/robinson-auth.js';
 import { setupNavAuth } from './js/robinson-nav.js';
 import { esc } from './js/robinson-utils.js';
-import { puoAccedereGestione } from './js/robinson-magazzino.js';
+import { puoAccedereGestione, seedCategorieIniziali } from './js/robinson-magazzino.js';
 import {
   doc, getDoc, setDoc, deleteDoc, collection, getDocs, serverTimestamp
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
@@ -110,6 +110,12 @@ requireAuth(async user => {
   console.log('[gestione] uid sessione:', user.uid, '| isAdmin (ADMIN_UID):', user.uid === ADMIN_UID);
   const ok = await puoAccedereGestione(user);
   if (!ok) { window.location.replace('index.html'); return; }
+
+  // Seed idempotente delle categorie iniziali (§6 del brief): gestione.html è
+  // il vero punto d'ingresso della cartella, quindi va seedato qui e non solo
+  // da magazzino.html, altrimenti un primo accesso da Lista spesa/Storico
+  // troverebbe la griglia senza colonne.
+  await seedCategorieIniziali();
 
   if (user.uid === ADMIN_UID) {
     document.getElementById('admin-panel').style.display = 'block';
