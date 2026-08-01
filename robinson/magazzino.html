@@ -27,21 +27,22 @@
     .mag-grid { display: flex; gap: 12px; align-items: flex-start; padding: 4px 12px 20px; overflow-x: auto; }
     .mag-col { flex: 0 0 230px; background: var(--post-bg); border: 2px solid var(--carta-scura); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; }
     .mag-col-header { background: var(--navy); color: #fff; display: flex; align-items: center; gap: 4px; padding: 8px 8px 8px 10px; }
-    .mag-col-nome { flex: 1; min-width: 0; background: none; border: none; color: var(--oro-light); font-family: 'Playfair Display', serif; font-weight: 700; font-size: 0.88rem; padding: 4px 2px; }
-    .mag-col-nome:focus { outline: 1px solid var(--oro); border-radius: 4px; }
+    .mag-col-nome { flex: 1; min-width: 0; color: var(--oro-light); font-family: 'Playfair Display', serif; font-weight: 700; font-size: 0.88rem; padding: 4px 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .col-mini-btn { background: rgba(255,255,255,0.12); border: none; color: #fff; width: 24px; height: 24px; border-radius: 6px; cursor: pointer; font-size: 0.78rem; flex-shrink: 0; }
     .col-mini-btn:hover { background: rgba(255,255,255,0.28); }
     .col-mini-btn:disabled { opacity: 0.3; cursor: default; }
+    .col-menu-wrap { position: relative; flex-shrink: 0; }
+    .col-menu { display: none; position: absolute; top: 28px; right: 0; background: #fff; border: 1px solid var(--carta-scura); border-radius: 8px; box-shadow: 0 4px 14px rgba(0,0,0,0.22); z-index: 20; min-width: 150px; overflow: hidden; }
+    .col-menu.open { display: block; }
+    .col-menu button { display: block; width: 100%; text-align: left; background: none; border: none; padding: 9px 12px; font-size: 0.8rem; font-family: 'Lora', serif; color: var(--inchiostro); cursor: pointer; }
+    .col-menu button:hover { background: var(--carta-scura); }
+    .col-menu button.danger { color: var(--rosso); }
     .mag-col-body { padding: 8px; display: flex; flex-direction: column; gap: 6px; }
     .mag-col-add { padding: 0 8px 8px; }
     .mag-col-add button { width: 100%; background: none; border: 1px dashed var(--oro); color: var(--oro); border-radius: 8px; padding: 6px; cursor: pointer; font-size: 0.78rem; font-family: 'Lora', serif; }
     .mag-col-add button:hover { background: var(--oro-light); }
     .mag-col.collassata .mag-col-body, .mag-col.collassata .mag-col-add { display: none; }
     .mag-col-empty { font-size: 0.75rem; color: var(--muted); font-style: italic; padding: 6px 2px; }
-
-    .mag-col-new { flex: 0 0 190px; background: none; border: 2px dashed var(--carta-scura); border-radius: 12px; padding: 10px; display: flex; flex-direction: column; gap: 8px; align-self: stretch; justify-content: center; }
-    .mag-col-new input { padding: 8px 10px; border: 1.5px solid #c8b89a; border-radius: 8px; font-family: 'Lora', serif; font-size: 0.85rem; }
-    .mag-col-new button { background: var(--oro); color: #fff; border: none; border-radius: 8px; padding: 7px; cursor: pointer; font-family: 'Lora', serif; font-size: 0.8rem; font-weight: 600; }
 
     .prod-cell { background: #fff; border-left: 4px solid var(--navy); border-radius: 4px 8px 8px 4px; padding: 8px 10px; cursor: pointer; box-shadow: 1px 1px 6px rgba(26,58,92,0.08); }
     .prod-cell.sotto { border-left-color: var(--rosso); background: #fdf1ef; }
@@ -57,13 +58,9 @@
 
     .modal-box.wide { max-width: 460px; }
 
-    .radio-scelta { display: flex; flex-direction: column; gap: 8px; margin: 12px 0; }
-    .radio-scelta label { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; cursor: pointer; }
-    .radio-scelta select { margin-left: 24px; width: calc(100% - 24px); padding: 7px 10px; border: 1.5px solid #c8b89a; border-radius: 8px; font-family: 'Lora', serif; font-size: 0.85rem; }
-
     @media (max-width: 720px) {
       .mag-grid { flex-direction: column; overflow-x: visible; }
-      .mag-col, .mag-col-new { flex: 1 1 auto; width: 100%; }
+      .mag-col { flex: 1 1 auto; width: 100%; }
     }
   </style>
 </head>
@@ -79,6 +76,7 @@
 
 <div class="mag-toolbar">
   <button class="btn btn-primary btn-sm" id="btn-nuovo-prodotto">➕ Nuovo prodotto</button>
+  <button class="btn btn-sm" id="btn-nuova-categoria" style="background:none;border:1.5px solid var(--oro);color:var(--oro);">➕ Nuova categoria</button>
 </div>
 
 <div class="mag-grid" id="mag-grid"><div class="spinner"></div></div>
@@ -143,19 +141,22 @@
   </div>
 </div>
 
-<!-- Modal eliminazione categoria con prodotti -->
-<div class="modal-overlay" id="modal-elimina-cat">
-  <div class="modal-box wide">
-    <div class="modal-title">🗑️ Eliminare categoria</div>
-    <p id="ec-messaggio" style="font-size:0.85rem;color:var(--inchiostro);"></p>
-    <div class="radio-scelta">
-      <label><input type="radio" name="ec-scelta" value="sposta" checked> Sposta i prodotti in un'altra categoria</label>
-      <select id="ec-select-dest"></select>
-      <label><input type="radio" name="ec-scelta" value="elimina"> Elimina anche i prodotti</label>
+<!-- Modal categoria (nuova / rinomina) -->
+<div class="modal-overlay" id="modal-categoria">
+  <div class="modal-box">
+    <div class="modal-title" id="cm-title">➕ Nuova categoria</div>
+    <div class="form-group">
+      <label>Nome</label>
+      <input type="text" id="cm-nome" placeholder="Es. Bevande">
     </div>
-    <div style="display:flex;gap:10px;">
-      <button class="btn" style="background:none;border:1.5px solid var(--rosso);color:var(--rosso);flex:1;" id="ec-conferma">Conferma</button>
-      <button class="btn" style="background:none;border:1.5px solid var(--navy);color:var(--navy);flex:1;" id="ec-annulla">Annulla</button>
+    <div class="form-group">
+      <label>Emoji/icona (opzionale)</label>
+      <input type="text" id="cm-icona" placeholder="🥤" maxlength="4">
+    </div>
+    <div class="msg-esito" id="cm-error" style="color:var(--rosso);font-size:0.8rem;min-height:18px;"></div>
+    <div style="display:flex;gap:10px;margin-top:8px;">
+      <button class="btn btn-primary" id="cm-salva" style="flex:1;">💾 Salva</button>
+      <button class="btn" id="cm-annulla" style="background:none;border:1.5px solid var(--navy);color:var(--navy);">Annulla</button>
     </div>
   </div>
 </div>
@@ -174,7 +175,7 @@ import { setupNavAuth } from './js/robinson-nav.js';
 import { esc } from './js/robinson-utils.js';
 import { puoAccedereGestione, seedCategorieIniziali, sottoSoglia, daComprare, modalitaProdotto, ETICHETTA_MODALITA, spostaCategoriaOrdine, fmtEuro } from './js/robinson-magazzino.js';
 import {
-  collection, getDocs, doc, setDoc, updateDoc, deleteDoc, addDoc, writeBatch, query, orderBy, serverTimestamp
+  collection, getDocs, doc, setDoc, updateDoc, deleteDoc, addDoc, query, orderBy, serverTimestamp
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 setupNavAuth('nav-auth-slot');
@@ -220,9 +221,12 @@ function render() {
 
   categorie.forEach((c, i) => grid.appendChild(renderColonna(c, prodotti.filter(p => p.categoria === c.id), i)));
   if (senzaCategoria.length) grid.appendChild(renderColonna({ id: null, nome: 'Senza categoria' }, senzaCategoria, -1, true));
-
-  grid.appendChild(renderColonnaNuova());
 }
+
+function chiudiTuttiIMenu() {
+  document.querySelectorAll('.col-menu.open').forEach(m => m.classList.remove('open'));
+}
+document.addEventListener('click', chiudiTuttiIMenu);
 
 function renderColonna(c, prodottiCat, indice, sola = false) {
   const col = document.createElement('div');
@@ -230,14 +234,21 @@ function renderColonna(c, prodottiCat, indice, sola = false) {
 
   const header = document.createElement('div');
   header.className = 'mag-col-header';
+  const nomeVisualizzato = `${c.icona ? esc(c.icona) + ' ' : ''}${esc(c.nome)}`;
   header.innerHTML = sola
-    ? `<span class="mag-col-nome" style="padding:4px 2px;">${esc(c.nome)}</span>`
+    ? `<span class="mag-col-nome" style="padding:4px 2px;">${nomeVisualizzato}</span>`
     : `
       <button class="col-mini-btn" data-act="collassa" title="Comprimi/espandi">${collassate.has(c.id) ? '▸' : '▾'}</button>
-      <input class="mag-col-nome" value="${esc(c.nome)}">
+      <span class="mag-col-nome">${nomeVisualizzato}</span>
       <button class="col-mini-btn" data-act="left" title="Sposta a sinistra" ${indice === 0 ? 'disabled' : ''}>◀</button>
       <button class="col-mini-btn" data-act="right" title="Sposta a destra" ${indice === categorie.length - 1 ? 'disabled' : ''}>▶</button>
-      <button class="col-mini-btn" data-act="del" title="Elimina categoria">🗑️</button>`;
+      <div class="col-menu-wrap">
+        <button class="col-mini-btn" data-act="menu" title="Altre azioni">⋮</button>
+        <div class="col-menu" data-menu>
+          <button data-act="rinomina">✏️ Rinomina</button>
+          <button class="danger" data-act="elimina">🗑️ Elimina</button>
+        </div>
+      </div>`;
   col.appendChild(header);
 
   const body = document.createElement('div');
@@ -260,36 +271,31 @@ function renderColonna(c, prodottiCat, indice, sola = false) {
       if (collassate.has(c.id)) collassate.delete(c.id); else collassate.add(c.id);
       render();
     });
-    header.querySelector('.mag-col-nome').addEventListener('change', async e => {
-      const nuovoNome = e.target.value.trim();
-      if (!nuovoNome) { e.target.value = c.nome; return; }
-      c.nome = nuovoNome;
-      await updateDoc(doc(db, 'magazzino_categorie', c.id), { nome: nuovoNome });
-    });
     const btnLeft = header.querySelector('[data-act=left]');
     const btnRight = header.querySelector('[data-act=right]');
     if (btnLeft) btnLeft.addEventListener('click', () => spostaCategoria(indice, -1));
     if (btnRight) btnRight.addEventListener('click', () => spostaCategoria(indice, 1));
-    header.querySelector('[data-act=del]').addEventListener('click', () => eliminaCategoria(c));
+
+    const menuBtn = header.querySelector('[data-act=menu]');
+    const menuEl = header.querySelector('[data-menu]');
+    menuBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      const eraAperto = menuEl.classList.contains('open');
+      chiudiTuttiIMenu();
+      if (!eraAperto) menuEl.classList.add('open');
+    });
+    menuEl.querySelector('[data-act=rinomina]').addEventListener('click', e => {
+      e.stopPropagation();
+      chiudiTuttiIMenu();
+      apriModalCategoria(c);
+    });
+    menuEl.querySelector('[data-act=elimina]').addEventListener('click', e => {
+      e.stopPropagation();
+      chiudiTuttiIMenu();
+      eliminaCategoria(c);
+    });
   }
 
-  return col;
-}
-
-function renderColonnaNuova() {
-  const col = document.createElement('div');
-  col.className = 'mag-col-new';
-  col.innerHTML = `
-    <input type="text" id="nuova-cat-nome" placeholder="Nome nuova categoria...">
-    <button id="btn-nuova-cat">➕ Categoria</button>`;
-  col.querySelector('#btn-nuova-cat').addEventListener('click', async () => {
-    const input = col.querySelector('#nuova-cat-nome');
-    const nome = input.value.trim();
-    if (!nome) return;
-    const ordine = categorie.length ? Math.max(...categorie.map(c => c.ordine)) + 1 : 0;
-    await addDoc(collection(db, 'magazzino_categorie'), { nome, ordine, attiva: true });
-    await caricaTutto();
-  });
   return col;
 }
 
@@ -336,51 +342,58 @@ async function spostaCategoria(i, delta) {
   if (await spostaCategoriaOrdine(categorie, i, delta)) await caricaTutto();
 }
 
-// ── Eliminazione categoria (con gestione prodotti orfani) ───────────────────
-let catDaEliminare = null;
-
+// ── Eliminazione categoria (v1: blocco se contiene prodotti, nessuna cascata) ─
 function eliminaCategoria(c) {
   const inCategoria = prodotti.filter(p => p.categoria === c.id);
-  if (!inCategoria.length) {
-    if (confirm(`Eliminare la categoria "${c.nome}"?`)) eseguiEliminaCategoria(c, []);
+  if (inCategoria.length) {
+    alert(`Questa categoria contiene ${inCategoria.length} prodott${inCategoria.length === 1 ? 'o' : 'i'}: spostali o eliminali prima di procedere.`);
     return;
   }
-  catDaEliminare = c;
-  document.getElementById('ec-messaggio').textContent =
-    `La categoria "${c.nome}" contiene ${inCategoria.length} prodott${inCategoria.length === 1 ? 'o' : 'i'}. Cosa vuoi fare?`;
-  const selDest = document.getElementById('ec-select-dest');
-  selDest.innerHTML = categorie.filter(x => x.id !== c.id).map(x => `<option value="${esc(x.id)}">${esc(x.nome)}</option>`).join('');
-  document.querySelector('input[name=ec-scelta][value=sposta]').checked = true;
-  document.getElementById('modal-elimina-cat').classList.add('open');
+  if (!confirm(`Eliminare la categoria "${c.nome}"?`)) return;
+  eseguiEliminaCategoria(c);
 }
 
-document.getElementById('ec-annulla').addEventListener('click', () => document.getElementById('modal-elimina-cat').classList.remove('open'));
-document.getElementById('ec-conferma').addEventListener('click', async () => {
-  const c = catDaEliminare;
-  const inCategoria = prodotti.filter(p => p.categoria === c.id);
-  const scelta = document.querySelector('input[name=ec-scelta]:checked').value;
-  document.getElementById('modal-elimina-cat').classList.remove('open');
-
-  if (scelta === 'sposta') {
-    const dest = document.getElementById('ec-select-dest').value;
-    if (!dest) { alert('Nessuna categoria di destinazione disponibile.'); return; }
-    await eseguiEliminaCategoria(c, inCategoria, dest);
-  } else {
-    await eseguiEliminaCategoria(c, inCategoria, null);
-  }
-});
-
-async function eseguiEliminaCategoria(c, prodottiCoinvolti, destCategoriaId) {
-  const batch = writeBatch(db);
-  prodottiCoinvolti.forEach(p => {
-    const ref = doc(db, 'magazzino_prodotti', p.id);
-    if (destCategoriaId) batch.update(ref, { categoria: destCategoriaId });
-    else batch.delete(ref);
-  });
-  batch.delete(doc(db, 'magazzino_categorie', c.id));
-  await batch.commit();
+async function eseguiEliminaCategoria(c) {
+  await deleteDoc(doc(db, 'magazzino_categorie', c.id));
   await caricaTutto();
 }
+
+// ── Modal categoria (nuova / rinomina) ───────────────────────────────────────
+let categoriaEditId = null;
+
+function apriModalCategoria(c) {
+  categoriaEditId = c ? c.id : null;
+  document.getElementById('cm-title').textContent = c ? '✏️ Rinomina categoria' : '➕ Nuova categoria';
+  document.getElementById('cm-nome').value = c?.nome || '';
+  document.getElementById('cm-icona').value = c?.icona || '';
+  document.getElementById('cm-error').textContent = '';
+  document.getElementById('modal-categoria').classList.add('open');
+}
+
+document.getElementById('btn-nuova-categoria').addEventListener('click', () => apriModalCategoria(null));
+document.getElementById('cm-annulla').addEventListener('click', () => document.getElementById('modal-categoria').classList.remove('open'));
+
+document.getElementById('cm-salva').addEventListener('click', async () => {
+  const nome = document.getElementById('cm-nome').value.trim();
+  const icona = document.getElementById('cm-icona').value.trim();
+  const errEl = document.getElementById('cm-error');
+  if (!nome) { errEl.textContent = 'Inserisci il nome della categoria.'; return; }
+  const duplicato = categorie.some(x => x.id !== categoriaEditId && x.nome.trim().toLowerCase() === nome.toLowerCase());
+  if (duplicato) { errEl.textContent = 'Esiste già una categoria con questo nome.'; return; }
+
+  try {
+    if (categoriaEditId) {
+      await updateDoc(doc(db, 'magazzino_categorie', categoriaEditId), { nome, icona: icona || null });
+    } else {
+      const ordine = categorie.length ? Math.max(...categorie.map(x => x.ordine)) + 1 : 0;
+      await addDoc(collection(db, 'magazzino_categorie'), { nome, icona: icona || null, ordine, attiva: true });
+    }
+    document.getElementById('modal-categoria').classList.remove('open');
+    await caricaTutto();
+  } catch (e) {
+    errEl.textContent = 'Errore: ' + e.message;
+  }
+});
 
 // ── Modal prodotto ────────────────────────────────────────────────────────
 let editUid = null;

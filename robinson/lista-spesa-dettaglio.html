@@ -222,11 +222,12 @@ function renderColonna(c, vociCat, readonly, sola = false, indice = -1) {
 
   const header = document.createElement('div');
   header.className = 'mag-col-header';
+  const nomeVisualizzato = `${c.icona ? esc(c.icona) + ' ' : ''}${esc(c.nome)}`;
   header.innerHTML = sola
-    ? `<span class="mag-col-nome">${esc(c.nome)}</span>`
+    ? `<span class="mag-col-nome">${nomeVisualizzato}</span>`
     : `
       <button class="col-mini-btn" data-act="collassa" title="Comprimi/espandi">${collassate.has(c.id) ? '▸' : '▾'}</button>
-      <span class="mag-col-nome">${esc(c.nome)}</span>
+      <span class="mag-col-nome">${nomeVisualizzato}</span>
       <button class="col-mini-btn" data-act="left" title="Sposta a sinistra" ${indice === 0 ? 'disabled' : ''}>◀</button>
       <button class="col-mini-btn" data-act="right" title="Sposta a destra" ${indice === categorie.length - 1 ? 'disabled' : ''}>▶</button>`;
   if (!sola) {
