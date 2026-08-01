@@ -22,6 +22,7 @@
     .sotto-soglia-count { display: inline-block; margin-top: 8px; background: rgba(192,57,43,0.25); border: 1px solid var(--rosso); color: #fff; border-radius: 20px; padding: 3px 12px; font-size: 0.78rem; }
 
     .mag-toolbar { display: flex; gap: 8px; justify-content: center; padding: 12px; flex-wrap: wrap; }
+    .cp-wrap { margin-left: 12px; margin-right: 12px; }
 
     /* Griglia: colonne = categorie, righe = prodotti (richiama il foglio cartaceo) */
     .mag-grid { display: flex; gap: 12px; align-items: flex-start; padding: 4px 12px 20px; overflow-x: auto; }
@@ -77,6 +78,11 @@
 <div class="mag-toolbar">
   <button class="btn btn-primary btn-sm" id="btn-nuovo-prodotto">➕ Nuovo prodotto</button>
   <button class="btn btn-sm" id="btn-nuova-categoria" style="background:none;border:1.5px solid var(--oro);color:var(--oro);">➕ Nuova categoria</button>
+</div>
+
+<div class="cp-wrap">
+  <input type="text" class="cp-input" id="cp-input" placeholder="🔎 Cerca prodotto...">
+  <div class="cp-risultati" id="cp-risultati"></div>
 </div>
 
 <div class="mag-grid" id="mag-grid"><div class="spinner"></div></div>
@@ -173,7 +179,7 @@ import { db, ADMIN_UID } from './js/robinson-firebase.js';
 import { requireAuth } from './js/robinson-auth.js';
 import { setupNavAuth } from './js/robinson-nav.js';
 import { esc } from './js/robinson-utils.js';
-import { puoAccedereGestione, seedCategorieIniziali, sottoSoglia, daComprare, modalitaProdotto, ETICHETTA_MODALITA, spostaCategoriaOrdine, fmtEuro } from './js/robinson-magazzino.js';
+import { puoAccedereGestione, seedCategorieIniziali, sottoSoglia, daComprare, modalitaProdotto, ETICHETTA_MODALITA, spostaCategoriaOrdine, fmtEuro, attivaCercaProdotto } from './js/robinson-magazzino.js';
 import {
   collection, getDocs, doc, setDoc, updateDoc, deleteDoc, addDoc, query, orderBy, serverTimestamp
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
@@ -231,6 +237,7 @@ document.addEventListener('click', chiudiTuttiIMenu);
 function renderColonna(c, prodottiCat, indice, sola = false) {
   const col = document.createElement('div');
   col.className = 'mag-col' + (collassate.has(c.id) ? ' collassata' : '');
+  if (c.id) col.dataset.categoriaId = c.id;
 
   const header = document.createElement('div');
   header.className = 'mag-col-header';
@@ -304,6 +311,7 @@ function renderProdCell(p) {
   const sotto = sottoSoglia(p);
   const modalita = modalitaProdotto(p);
   cell.className = 'prod-cell' + (sotto ? ' sotto' : '');
+  cell.dataset.itemId = p.id;
 
   const meta = modalita === 'soglia'
     ? `soglia ${esc(p.soglia_minima ?? 0)}`
@@ -341,6 +349,19 @@ function renderProdCell(p) {
 async function spostaCategoria(i, delta) {
   if (await spostaCategoriaOrdine(categorie, i, delta)) await caricaTutto();
 }
+
+// ── Cerca prodotto (componente condiviso con la Lista spesa) ────────────────
+function espandiCategoria(catId) {
+  if (collassate.has(catId)) { collassate.delete(catId); render(); }
+}
+attivaCercaProdotto({
+  input: document.getElementById('cp-input'),
+  risultatiEl: document.getElementById('cp-risultati'),
+  items: () => prodotti,
+  categorie: () => categorie,
+  grid: document.getElementById('mag-grid'),
+  espandiCategoria
+});
 
 // ── Eliminazione categoria (v1: blocco se contiene prodotti, nessuna cascata) ─
 function eliminaCategoria(c) {

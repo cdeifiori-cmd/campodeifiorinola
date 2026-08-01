@@ -83,6 +83,10 @@
 <div class="sd-toolbar" id="sd-toolbar"></div>
 
 <div class="sd-content">
+  <div class="cp-wrap">
+    <input type="text" class="cp-input" id="cp-input" placeholder="🔎 Cerca prodotto...">
+    <div class="cp-risultati" id="cp-risultati"></div>
+  </div>
   <div id="sd-riepilogo"></div>
   <div class="mag-grid" id="sd-grid"><div class="spinner"></div></div>
 </div>
@@ -132,7 +136,7 @@ import { db } from './js/robinson-firebase.js';
 import { requireAuth } from './js/robinson-auth.js';
 import { setupNavAuth } from './js/robinson-nav.js';
 import { esc } from './js/robinson-utils.js';
-import { puoAccedereGestione, prodottiDaComprare, spostaCategoriaOrdine, fmtEuro, fmtDataBreve, quantitaSuggerita } from './js/robinson-magazzino.js';
+import { puoAccedereGestione, prodottiDaComprare, spostaCategoriaOrdine, fmtEuro, fmtDataBreve, quantitaSuggerita, attivaCercaProdotto } from './js/robinson-magazzino.js';
 import {
   doc, getDoc, updateDoc, deleteDoc, addDoc, collection, getDocs, query, orderBy,
   serverTimestamp, writeBatch, increment
@@ -169,6 +173,19 @@ async function caricaCategorie() {
 async function spostaCategoria(i, delta) {
   if (await spostaCategoriaOrdine(categorie, i, delta)) { await caricaCategorie(); render(); }
 }
+
+// ── Cerca prodotto (componente condiviso col Magazzino) ──────────────────────
+function espandiCategoria(catId) {
+  if (collassate.has(catId)) { collassate.delete(catId); render(); }
+}
+attivaCercaProdotto({
+  input: document.getElementById('cp-input'),
+  risultatiEl: document.getElementById('cp-risultati'),
+  items: () => voci,
+  categorie: () => categorie,
+  grid: document.getElementById('sd-grid'),
+  espandiCategoria
+});
 
 async function caricaTutto() {
   const listaSnap = await getDoc(doc(db, 'liste_spesa', listaId));
@@ -219,6 +236,7 @@ function render() {
 function renderColonna(c, vociCat, readonly, sola = false, indice = -1) {
   const col = document.createElement('div');
   col.className = 'mag-col' + (collassate.has(c.id) ? ' collassata' : '');
+  if (c.id) col.dataset.categoriaId = c.id;
 
   const header = document.createElement('div');
   header.className = 'mag-col-header';
@@ -268,6 +286,7 @@ function calcolaImporto(v) {
 function renderVoceCell(v, readonly) {
   const cell = document.createElement('div');
   cell.className = 'voce-cell' + (v.acquistato ? ' presa' : '');
+  cell.dataset.itemId = v.id;
   cell.innerHTML = `
     <div class="voce-top">
       <div class="voce-nome">${esc(v.nome)}${v.origine === 'manuale' ? '<span class="origine-tag">· manuale</span>' : ''}</div>

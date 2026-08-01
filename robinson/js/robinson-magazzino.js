@@ -3,6 +3,7 @@
 // lista-spesa-dettaglio.html e gestione-storico.html. Unica fonte di verità
 // per il gate di accesso e per i calcoli usati in più pagine.
 import { db, ADMIN_UID } from './robinson-firebase.js';
+import { esc } from './robinson-utils.js';
 import { getDoc, doc, setDoc, getDocs, collection, updateDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 // ── Gate di accesso alla cartella "Gestione" ────────────────────────────────
@@ -103,6 +104,78 @@ export async function spostaCategoriaOrdine(categorie, indice, delta) {
     updateDoc(doc(db, 'magazzino_categorie', b.id), { ordine: b.ordine })
   ]);
   return true;
+}
+
+// ── Cerca prodotto (typeahead condiviso tra Magazzino e Lista spesa) ────────
+// Normalizza case e accenti per il match a sottostringa (es. "citta" trova "Città").
+function normalizzaCerca(s) {
+  return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+}
+
+// Collega un input di ricerca + il suo dropdown risultati alla sorgente prodotti
+// già in memoria (nessuna query aggiuntiva). Alla selezione scorre fino alla card
+// nella sua colonna e la evidenzia — unico componente usato da magazzino.html e
+// lista-spesa-dettaglio.html, così comportamento ed etichette restano identici.
+//   input, risultatiEl: elementi DOM del campo di ricerca e del dropdown
+//   items(): getter sull'array prodotti/voci già caricato ({ id, nome, categoria })
+//   categorie(): getter sull'array categorie ({ id, nome }), per l'etichetta a fianco
+//   grid: contenitore con scroll orizzontale (.mag-grid / #sd-grid); le colonne al
+//     suo interno devono avere data-categoria-id e le card data-item-id
+//   espandiCategoria(categoriaId): riespande una colonna collassata prima di
+//     scorrere (la card è display:none finché la colonna resta chiusa)
+export function attivaCercaProdotto({ input, risultatiEl, items, categorie, grid, espandiCategoria }) {
+  function chiudiRisultati() {
+    risultatiEl.innerHTML = '';
+    risultatiEl.classList.remove('open');
+  }
+
+  function cerca() {
+    const q = normalizzaCerca(input.value.trim());
+    if (q.length < 2) { chiudiRisultati(); return; }
+
+    const nomeCategoria = new Map(categorie().map(c => [c.id, c.nome]));
+    const trovati = items().filter(it => normalizzaCerca(it.nome).includes(q));
+
+    risultatiEl.innerHTML = trovati.length
+      ? trovati.slice(0, 30).map(it => `
+          <button type="button" class="cp-risultato" data-id="${esc(it.id)}">
+            <span class="cp-nome">${esc(it.nome)}</span>
+            <span class="cp-cat">${esc(nomeCategoria.get(it.categoria) || 'Senza categoria')}</span>
+          </button>`).join('')
+      : `<div class="cp-vuoto">Nessun prodotto trovato.</div>`;
+    risultatiEl.classList.add('open');
+
+    risultatiEl.querySelectorAll('.cp-risultato').forEach(btn => {
+      btn.addEventListener('click', () => {
+        portamiAlProdotto(btn.dataset.id);
+        chiudiRisultati();
+        input.value = '';
+        input.blur();
+      });
+    });
+  }
+
+  function portamiAlProdotto(id, tentativi = 0) {
+    const card = grid.querySelector(`[data-item-id="${CSS.escape(id)}"]`);
+    if (!card) return;
+    const col = card.closest('.mag-col');
+    if (col?.classList.contains('collassata')) {
+      if (tentativi > 3) return; // guardia: evita loop se il re-render non arriva mai
+      espandiCategoria?.(col.dataset.categoriaId);
+      requestAnimationFrame(() => portamiAlProdotto(id, tentativi + 1));
+      return;
+    }
+    card.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+    card.classList.add('cp-evidenziata');
+    setTimeout(() => card.classList.remove('cp-evidenziata'), 2000);
+  }
+
+  input.addEventListener('input', cerca);
+  input.addEventListener('focus', () => { if (input.value.trim().length >= 2) cerca(); });
+  document.addEventListener('click', e => {
+    if (e.target !== input && !risultatiEl.contains(e.target)) chiudiRisultati();
+  });
+  input.addEventListener('keydown', e => { if (e.key === 'Escape') { chiudiRisultati(); input.blur(); } });
 }
 
 // ── Formattazione ────────────────────────────────────────────────────────────

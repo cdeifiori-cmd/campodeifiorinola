@@ -186,6 +186,8 @@ h1,h2,h3 { font-family: 'Playfair Display', serif; }
 .ricordo-item:hover { border-left-color: var(--oro); }
 .ricordo-data { font-size: 0.78rem; color: var(--muted); min-width: 80px; }
 .ricordo-titolo { flex: 1; font-size: 0.88rem; font-family: 'Playfair Display', serif; }
+.ricordo-del-btn { flex-shrink: 0; background: none; border: none; color: var(--rosso); font-size: 0.85rem; cursor: pointer; padding: 4px 6px; border-radius: 6px; }
+.ricordo-del-btn:hover { background: rgba(192,57,43,0.12); }
 
 /* Search bar */
 .search-bar { display: flex; align-items: center; gap: 8px; background: var(--post-bg); border: 1.5px solid #c8b89a; border-radius: 10px; padding: 6px 12px; margin: 10px 12px; }
@@ -212,6 +214,21 @@ h1,h2,h3 { font-family: 'Playfair Display', serif; }
 .falo-check { display: flex; flex-direction: column; gap: 8px; }
 .falo-check label { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; cursor: pointer; }
 .falo-check input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--oro); }
+
+/* Cerca prodotto (Magazzino / Lista spesa) */
+.cp-wrap { position: relative; margin: 0 0 14px; }
+.cp-input { width: 100%; box-sizing: border-box; padding: 10px 14px; border: 1.5px solid #c8b89a; border-radius: 10px; font-family: 'Lora', serif; font-size: 0.88rem; background: var(--post-bg); color: var(--inchiostro); }
+.cp-input:focus { border-color: var(--oro); outline: none; }
+.cp-risultati { display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: #fff; border: 1.5px solid var(--carta-scura); border-radius: 10px; box-shadow: 0 6px 20px rgba(0,0,0,0.18); max-height: 320px; overflow-y: auto; z-index: 200; }
+.cp-risultati.open { display: block; }
+.cp-risultato { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; text-align: left; background: none; border: none; border-bottom: 1px solid var(--carta-scura); padding: 9px 12px; cursor: pointer; font-family: 'Lora', serif; }
+.cp-risultato:last-child { border-bottom: none; }
+.cp-risultato:hover { background: var(--carta-scura); }
+.cp-nome { font-size: 0.85rem; color: var(--inchiostro); font-weight: 600; }
+.cp-cat { font-size: 0.7rem; color: var(--muted); flex-shrink: 0; }
+.cp-vuoto { padding: 12px; font-size: 0.82rem; color: var(--muted); font-style: italic; text-align: center; }
+@keyframes cp-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(200,134,10,0.5); } 50% { box-shadow: 0 0 0 8px rgba(200,134,10,0); } }
+.cp-evidenziata { outline: 3px solid var(--oro); outline-offset: 2px; animation: cp-pulse 0.6s ease-in-out 0s 3; }
 
 /* Punteggio profilo */
 .punti-badge { display: inline-flex; align-items: center; gap: 4px; background: var(--oro-light); border: 1.5px solid var(--oro); border-radius: 20px; padding: 3px 12px; font-size: 0.8rem; color: var(--oro); font-weight: 600; margin-top: 6px; }
