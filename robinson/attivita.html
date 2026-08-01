@@ -188,6 +188,11 @@ function azioneCard(att) {
   return `<button class="ca-btn" data-toggle="${esc(att.id)}">Scopri di più</button>`;
 }
 
+// Testo dell'unica domanda del Sociogramma di rifiuto (stessa stringa esatta di
+// sociogramma-rifiuto.html): mostrato sempre in chiaro sulla card, non affidato a cosa
+// l'admin scrive nel campo Descrizione del modal — quel campo resta libero/opzionale.
+const DOMANDA_SOCIOGRAMMA_RIFIUTO = 'Indica le due persone che trovi più insopportabili al campo.';
+
 function renderCard(att) {
   const dataInfo = att.dataInizio ? fmtDateShort(att.dataInizio) : '';
   return `
@@ -196,6 +201,7 @@ function renderCard(att) {
     <div class="ca-body">
       <div class="ca-titolo">${esc(att.titoloNarrativo || att.titolo || '')}</div>
       ${att.sottotitolo ? `<div class="ca-sottotitolo">${esc(att.sottotitolo)}</div>` : ''}
+      ${att.tipo === 'sociogramma_rifiuto' ? `<div class="ca-descrizione" style="font-style:italic;">"${esc(DOMANDA_SOCIOGRAMMA_RIFIUTO)}"</div>` : ''}
       <div class="ca-descrizione" id="desc-${esc(att.id)}" style="display:none;">${esc(att.descrizione || '')}</div>
       ${dataInfo ? `<div class="ca-date">📅 ${esc(dataInfo)}</div>` : ''}
       <div class="ca-footer">
