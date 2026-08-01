@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🎯 Bersaglio del rifiuto — Vista Educatore</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
+  <meta name="theme-color" content="#1a3a5c">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/robinson.css">
+  <style>
+    :root {
+      --rc-sp-1: 6px; --rc-sp-2: 10px; --rc-sp-3: 16px; --rc-sp-4: 22px;
+      --rc-radius: 12px; --rc-radius-sm: 8px;
+      --rc-ombra: 0 2px 8px rgba(26,58,92,0.07);
+      --rc-bordo: 1.5px solid var(--carta-scura);
+    }
+    body { padding-bottom: 40px; background:var(--carta); }
+
+    .admin-header { background:var(--navy); color:#fff; padding:14px 16px 10px; position:sticky; top:0; z-index:200; display:flex; align-items:center; justify-content:space-between; flex-wrap: wrap; gap: 8px; }
+    .admin-header h1 { font-family:'Playfair Display',serif; font-size:1.15rem; margin:0; }
+    .admin-header a { color:var(--oro); font-size:0.8rem; text-decoration:none; }
+
+    .content { max-width: 900px; margin: 0 auto; padding: var(--rc-sp-3) var(--rc-sp-2) 60px; }
+
+    .riservatezza-banner { background:#fdecea; border:1.5px solid var(--rosso); color:#7a2015; border-radius:var(--rc-radius-sm); padding:10px 14px; font-size:0.8rem; margin-bottom:var(--rc-sp-3); line-height:1.5; }
+    .riservatezza-banner b { display:block; margin-top:4px; }
+
+    .loading-msg { text-align:center; color:var(--muted); padding:40px 0; font-style:italic; }
+
+    .rc-card { background:#fff; border:var(--rc-bordo); border-radius:var(--rc-radius); box-shadow:var(--rc-ombra); padding:var(--rc-sp-3); margin-bottom: var(--rc-sp-3); }
+
+    .controlli-riga { display:flex; gap:var(--rc-sp-3); flex-wrap:wrap; align-items:center; margin-bottom: var(--rc-sp-2); }
+    .toggle-modo { display:flex; border-radius:20px; overflow:hidden; border:1.5px solid var(--navy); }
+    .toggle-modo button { border:none; background:#fff; color:var(--navy); padding:6px 14px; font-size:0.8rem; cursor:pointer; font-family:'Lora',serif; }
+    .toggle-modo button.active { background:var(--navy); color:var(--oro); }
+
+    .ricerca-wrap { flex:1 1 240px; min-width:200px; position:relative; }
+    .ricerca-input { width:100%; box-sizing:border-box; padding:7px 30px 7px 10px; border:1.5px solid var(--carta-scura); border-radius:8px; font-family:'Lora',serif; font-size:0.85rem; background:#fff; }
+    .ricerca-x { position:absolute; right:6px; top:6px; border:none; background:none; color:var(--muted); font-size:0.9rem; cursor:pointer; padding:2px 6px; }
+    .ricerca-risultati { position:absolute; z-index:50; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--carta-scura); border-radius:8px; margin-top:3px; max-height:220px; overflow-y:auto; box-shadow:0 4px 14px rgba(0,0,0,0.12); display:none; }
+    .rr-item { padding:7px 12px; font-size:0.84rem; cursor:pointer; }
+    .rr-item:hover { background:var(--carta-scura); }
+    .rr-vuoto { padding:10px 12px; font-size:0.82rem; color:var(--muted); font-style:italic; }
+
+    .soglia-wrap { display:flex; align-items:center; gap:8px; font-size:0.82rem; color:var(--navy); }
+    .soglia-wrap input[type=number] { width:56px; padding:5px 8px; border:1.5px solid var(--carta-scura); border-radius:6px; font-family:'Lora',serif; font-size:0.84rem; }
+
+    .nota-anonima { font-size:0.76rem; color:var(--muted); font-style:italic; margin-top:4px; }
+
+    .legenda { display:flex; gap:var(--rc-sp-3); flex-wrap:wrap; font-size:0.72rem; color:var(--muted); margin-top:var(--rc-sp-2); }
+    .legenda-voce { display:flex; align-items:center; gap:5px; }
+    .legenda-linea { width:22px; height:0; border-top:2px solid #8e44ad; }
+    .legenda-linea.reciproca { border-top-width:3px; }
+
+    .bersaglio-row { display:flex; gap:var(--rc-sp-3); flex-wrap:wrap; }
+    .mappa-col { flex:1.7; min-width:300px; }
+    .dettaglio-col { flex:1; min-width:220px; }
+    #bers-rif-svg-wrap svg { width:100%; height:auto; max-height:600px; display:block; }
+
+    .bers-rif-nodo circle { cursor:pointer; }
+    .bers-rif-nodo, .bers-rif-arco { transition: opacity 0.15s; }
+    .bers-rif-nodo.foco-dim, .bers-rif-arco.foco-dim, .bers-rif-nodo.dim, .bers-rif-arco.dim { opacity: 0.13; }
+    .bers-rif-nome { font-family:'Lora',serif; fill:#2c1e0f; pointer-events:none; user-select:none; }
+    .bers-rif-nodo.foco-sorgente circle { stroke:#c8860a; stroke-width:3.5; }
+
+    .bers-rif-pulse { fill:none; stroke:#c8860a; stroke-width:3; opacity:0.9; animation:bersRifPulse 1.1s ease-out 2; }
+    @keyframes bersRifPulse { 0% { r:16; opacity:0.9; } 100% { r:38; opacity:0; } }
+
+    #dettaglio-body .item { font-size:0.84rem; padding:3px 0; }
+    #dettaglio-body .item-titolo { font-weight:600; margin-top:8px; font-size:0.8rem; color:var(--navy); }
+    #dettaglio-body.vuoto { color:var(--muted); font-style:italic; font-size:0.85rem; text-align:center; padding:var(--rc-sp-4) var(--rc-sp-2); }
+    .chip { display:inline-block; background:var(--carta-scura); border-radius:12px; padding:2px 9px; font-size:0.78rem; margin:2px 3px 2px 0; }
+
+    .vuoto { color:var(--muted); font-style:italic; font-size:0.85rem; text-align:center; padding:24px 0; }
+  </style>
+</head>
+<body>
+
+<div class="admin-header">
+  <h1>🎯 Bersaglio del rifiuto — Vista Educatore</h1>
+  <div style="display:flex;gap:14px;align-items:center;">
+    <a href="sociogramma-rifiuto-admin.html">📋 Tabella e note</a>
+    <a href="consiglio-admin.html">🧩 Dinamiche di gruppo</a>
+    <a href="attivita.html">🧭 Attività</a>
+    <a href="index.html">← Home</a>
+  </div>
+</div>
+
+<div class="content">
+  <div id="loading" class="loading-msg">⏳ Caricamento…</div>
+
+  <div id="main" style="display:none;">
+
+    <div class="riservatezza-banner">
+      🔒 Dati riservati alla Ciurma educativa — mai visibili ai naufraghi, mai nel resoconto pubblico né nella classifica del Villaggio.
+      <b>La modalità Anonima nasconde i nomi, ma non è un sostituto della riservatezza: in un gruppo che si conosce, la sola posizione può bastare a riconoscere qualcuno. Restringi comunque la visione a chi ha bisogno di vederla.</b>
+    </div>
+
+    <div class="rc-card">
+      <div class="controlli-riga">
+        <div class="toggle-modo">
+          <button id="btn-modo-nomi" class="active">👁 Con nomi</button>
+          <button id="btn-modo-anonima">🕶 Anonima</button>
+        </div>
+        <div class="ricerca-wrap" id="ricerca-wrap">
+          <input type="text" id="ricerca-input" class="ricerca-input" placeholder="🔍 Cerca un naufrago/a per nome..." autocomplete="off">
+          <button id="ricerca-pulisci" class="ricerca-x" title="Pulisci ricerca" style="display:none;">✕</button>
+          <div id="ricerca-risultati" class="ricerca-risultati"></div>
+        </div>
+        <div class="soglia-wrap" id="soglia-wrap" style="display:none;">
+          <label for="soglia-input">Mostra solo chi ha ricevuto ≥</label>
+          <input type="number" id="soglia-input" min="0" step="1" value="0">
+          <span>rifiuti</span>
+        </div>
+      </div>
+      <div class="nota-anonima" id="nota-anonima" style="display:none;">
+        In modalità Anonima la ricerca per nome non è disponibile: il filtro qui sopra agisce solo sul numero di rifiuti ricevuti, non risolve mai un'identità.
+      </div>
+      <div class="legenda">
+        <span class="legenda-voce"><span class="legenda-linea"></span> Rifiuto in un solo senso (X non sopporta Y)</span>
+        <span class="legenda-voce"><span class="legenda-linea reciproca"></span> Rifiuto reciproco (X↔Y)</span>
+        <span>Centro = più nomination di rifiuto ricevute · Bordo = zero ricevute</span>
+      </div>
+    </div>
+
+    <div class="bersaglio-row">
+      <div class="mappa-col rc-card">
+        <div id="bers-rif-svg-wrap"></div>
+      </div>
+      <div class="dettaglio-col rc-card" id="dettaglio-col">
+        <div id="dettaglio-body" class="vuoto">Passa il mouse o tocca un punto per vedere i dettagli.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script type="module">
+import { db, auth, ADMIN_UID } from './js/robinson-firebase.js';
+import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { collection, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { esc, caricaMappaUidCanonico, uidCanonico } from './js/robinson-utils.js';
+import { insiemeRifiuto, calcolaFasceAnelli, trovaAnelloPerValore } from './js/robinson-sociogramma.js';
+
+// Stessa grammatica visiva del Bersaglio del Consiglio (cerchi concentrici + frecce SVG accorciate
+// ai bordi dei nodi), ma versione autonoma e più semplice: un solo indicatore (rifiuti ricevuti),
+// nessun tema/cluster. Colore frecce volutamente distinto dalla palette del Consiglio.
+const RING_RADII = [70, 145, 220, 295]; // 0=centro (più rifiutato/a) .. 3=bordo (zero ricevute)
+const NODO_RAGGIO = 16;
+const FRECCIA_GAP = 5;
+const FRECCIA_MIN_SEGMENTO = 10;
+const COLORE_FRECCIA = '8e44ad'; // viola — distinto da blu/verde/giallo/arancio/rosso del Consiglio
+
+let naufraghiInfo = {}; // authUid -> {nome}
+let mappaUidCanonico = {};
+let risposteRifiuto = []; // [{ userId, rifiuti:[{uid,perche}] }]
+let modalitaAnonima = false;
+let focoUid = null;
+let sogliaAttiva = 0;
+
+function nomeDi(uid) { return naufraghiInfo[uid]?.nome || '⚠ Sconosciuto'; }
+
+async function caricaNaufraghi() {
+  mappaUidCanonico = await caricaMappaUidCanonico();
+  const snap = await getDocs(collection(db, 'robinson_naufraghi'));
+  const seenAuth = new Set();
+  snap.forEach(d => {
+    const authUid = uidCanonico(mappaUidCanonico, d.id);
+    if (authUid === ADMIN_UID) return;
+    const data = d.data();
+    if (!data.nome) return;
+    if (seenAuth.has(authUid)) return;
+    seenAuth.add(authUid);
+    naufraghiInfo[authUid] = { nome: data.nome };
+  });
+}
+
+async function caricaRisposteRifiuto() {
+  const snap = await getDocs(collection(db, 'robinson_sociogramma_rifiuto'));
+  const canonEntry = e => (e && e.uid) ? { uid: uidCanonico(mappaUidCanonico, e.uid), perche: e.perche || '' } : null;
+  const perAutore = {};
+  snap.forEach(d => {
+    const raw = d.data();
+    const userId = uidCanonico(mappaUidCanonico, d.id);
+    const risposta = { userId, rifiuti: (raw.rifiuti || []).map(canonEntry).filter(Boolean), completatoIl: raw.completatoIl };
+    const esistente = perAutore[userId];
+    const tNuovo = risposta.completatoIl?.toMillis ? risposta.completatoIl.toMillis() : 0;
+    const tVecchio = esistente?.completatoIl?.toMillis ? esistente.completatoIl.toMillis() : -1;
+    if (!esistente || tNuovo >= tVecchio) perAutore[userId] = risposta;
+  });
+  risposteRifiuto = Object.values(perAutore);
+}
+
+// ── Geometria: stessa tecnica del Bersaglio del Consiglio (accorciamento frecce ai bordi
+// del nodo, posizionamento a corona con sfasamento di mezzo passo) ─────────────────────────
+function accorciaSegmento(p1, p2, raggio = NODO_RAGGIO, gap = FRECCIA_GAP) {
+  const dx = p2.x - p1.x, dy = p2.y - p1.y;
+  const dist = Math.hypot(dx, dy);
+  if (dist < 0.01) return { p1, p2 };
+  let arretro1 = raggio + gap, arretro2 = raggio + gap;
+  if (arretro1 + arretro2 + FRECCIA_MIN_SEGMENTO > dist) {
+    const scala = Math.max(0, dist - FRECCIA_MIN_SEGMENTO) / (arretro1 + arretro2);
+    arretro1 *= scala; arretro2 *= scala;
+  }
+  const ux = dx / dist, uy = dy / dist;
+  return {
+    p1: { x: p1.x + ux * arretro1, y: p1.y + uy * arretro1 },
+    p2: { x: p2.x - ux * arretro2, y: p2.y - uy * arretro2 },
+  };
+}
+
+function posizioni(uids, anello) {
+  const CX = 320, CY = 320;
+  const perAnello = [[], [], [], []];
+  uids.forEach(u => perAnello[anello[u]].push(u));
+  perAnello.forEach(lista => lista.sort((a, b) => nomeDi(a).localeCompare(nomeDi(b), 'it')));
+  const pos = {};
+  perAnello.forEach((lista, ringIdx) => {
+    const raggio = RING_RADII[ringIdx];
+    const n = lista.length;
+    lista.forEach((u, i) => {
+      const angolo = n > 0 ? -90 + (360 / n) / 2 + (i / n) * 360 : -90;
+      const rad = angolo * Math.PI / 180;
+      pos[u] = { x: CX + raggio * Math.cos(rad), y: CY + raggio * Math.sin(rad) };
+    });
+  });
+  return { pos, CX, CY };
+}
+
+// Un solo arco per coppia reciproca (doppia punta), altrimenti arco singolo nel verso reale.
+// Disegnato per OGNI nominante, indipendentemente dal proprio anello: chi è sul bordo (zero
+// ricevute) ma nomina qualcuno ha comunque la propria freccia in uscita verso il centro.
+function costruisciArchi(uids) {
+  const mappa = {};
+  uids.forEach(u => { mappa[u] = new Set(); });
+  risposteRifiuto.forEach(r => { if (mappa[r.userId]) mappa[r.userId] = new Set((r.rifiuti || []).map(e => e.uid)); });
+  const archi = [];
+  for (let i = 0; i < uids.length; i++) {
+    for (let j = i + 1; j < uids.length; j++) {
+      const a = uids[i], b = uids[j];
+      const aB = mappa[a]?.has(b), bA = mappa[b]?.has(a);
+      if (aB && bA) archi.push({ from: a, to: b, reciproco: true });
+      else if (aB) archi.push({ from: a, to: b, reciproco: false });
+      else if (bA) archi.push({ from: b, to: a, reciproco: false });
+    }
+  }
+  return archi;
+}
+
+function etichettaFascia(fascia) {
+  const [mn, mx] = fascia;
+  if (mn > mx) return '—';
+  return mn === mx ? String(mn) : `${mn}–${mx}`;
+}
+function etichettaAnelloSvg(cx, y, testo) {
+  const w = Math.max(24, testo.length * 6.4 + 14);
+  const h = 16;
+  return `<g>
+    <rect x="${(cx - w / 2).toFixed(1)}" y="${(y - h / 2).toFixed(1)}" width="${w.toFixed(1)}" height="${h}" rx="8" fill="#fdfaf3" stroke="#8a7699" stroke-width="1"></rect>
+    <text x="${cx.toFixed(1)}" y="${(y + 3.5).toFixed(1)}" text-anchor="middle" font-family="Lora, serif" font-size="10" font-weight="700" fill="#1a3a5c">${esc(testo)}</text>
+  </g>`;
+}
+
+// ── Render principale ────────────────────────────────────────────────────
+let posCorrente = {}; // uid -> {x,y}, riusato da ricerca/focus
+
+function disegnaBersaglio() {
+  const uids = Object.keys(naufraghiInfo);
+  const wrap = document.getElementById('bers-rif-svg-wrap');
+  if (!uids.length) { wrap.innerHTML = '<div class="vuoto">Nessun naufrago disponibile.</div>'; return; }
+
+  const ricevute = {};
+  uids.forEach(u => { ricevute[u] = insiemeRifiuto(risposteRifiuto, u).size; });
+  const maxRicevute = Math.max(0, ...uids.map(u => ricevute[u]));
+  const fasce = calcolaFasceAnelli(maxRicevute); // già robusto a maxRicevute=0 (gruppo tutto a zero)
+  const anello = {};
+  uids.forEach(u => { anello[u] = trovaAnelloPerValore(ricevute[u], fasce); });
+
+  const { pos, CX, CY } = posizioni(uids, anello);
+  posCorrente = pos;
+  const archi = costruisciArchi(uids);
+
+  const defsMarkers = `<marker id="arrow-rifiuto" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0.5,0.5 L9.5,5 L0.5,9.5 z" fill="#${COLORE_FRECCIA}" stroke="#ffffff" stroke-width="0.8" stroke-linejoin="round"></path></marker>`;
+
+  const raggioMinimo = Math.min(...RING_RADII);
+  const ringsSvg = [...RING_RADII].sort((a, b) => b - a).map(r => {
+    const isCentro = r === raggioMinimo;
+    return `<circle cx="${CX}" cy="${CY}" r="${r}" fill="#6c5a78" fill-opacity="0.08" stroke="#8a7699" stroke-width="${isCentro ? 2.5 : 1.4}"></circle>`;
+  }).join('');
+  const etichetteSvg = RING_RADII.map((r, i) => etichettaAnelloSvg(CX, CY - r, etichettaFascia(fasce[i]))).join('');
+
+  const sottoSoglia = u => modalitaAnonima && sogliaAttiva > 0 && ricevute[u] < sogliaAttiva;
+
+  const edgesSvg = archi.map(e => {
+    const p1n = pos[e.from], p2n = pos[e.to];
+    if (!p1n || !p2n) return '';
+    const { p1, p2 } = accorciaSegmento(p1n, p2n);
+    const marker = e.reciproco
+      ? ` marker-start="url(#arrow-rifiuto)" marker-end="url(#arrow-rifiuto)"`
+      : ` marker-end="url(#arrow-rifiuto)"`;
+    const spessore = e.reciproco ? 2.6 : 1.6;
+    const dim = sottoSoglia(e.from) && sottoSoglia(e.to);
+    return `<line class="bers-rif-arco${dim ? ' dim' : ''}" data-from="${esc(e.from)}" data-to="${esc(e.to)}" x1="${p1.x.toFixed(1)}" y1="${p1.y.toFixed(1)}" x2="${p2.x.toFixed(1)}" y2="${p2.y.toFixed(1)}" stroke="#${COLORE_FRECCIA}" stroke-width="${spessore}" stroke-opacity="0.85"${marker}></line>`;
+  }).join('');
+
+  const nodesSvg = uids.map(u => {
+    const p = pos[u];
+    const dim = sottoSoglia(u);
+    const etichetta = modalitaAnonima ? '' : `<text class="bers-rif-nome" x="${p.x.toFixed(1)}" y="${(p.y + 27).toFixed(1)}" text-anchor="middle" font-size="9">${esc(nomeDi(u))}</text>`;
+    return `<g class="bers-rif-nodo${dim ? ' dim' : ''}" data-uid="${esc(u)}">
+      <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="16" fill="#1a3a5c" stroke="#0d1b2a" stroke-width="1.5"></circle>
+      <text x="${p.x.toFixed(1)}" y="${(p.y + 3).toFixed(1)}" text-anchor="middle" font-weight="700" fill="#fff" font-size="10">${ricevute[u]}</text>
+      ${etichetta}
+    </g>`;
+  }).join('');
+
+  wrap.innerHTML = `<svg viewBox="0 0 640 640" xmlns="http://www.w3.org/2000/svg">
+    <defs>${defsMarkers}</defs>
+    ${ringsSvg}
+    <g id="bers-rif-edges">${edgesSvg}</g>
+    <g id="bers-rif-nodi">${nodesSvg}</g>
+    ${etichetteSvg}
+    <g id="bers-rif-pulse"></g>
+  </svg>`;
+
+  const infoBody = document.getElementById('dettaglio-body');
+  function mostraInfo(uid) {
+    if (modalitaAnonima) {
+      infoBody.className = 'vuoto';
+      infoBody.innerHTML = 'I dettagli individuali sono disponibili solo in modalità "Con nomi".';
+      return;
+    }
+    const entranti = risposteRifiuto.filter(r => r.userId !== uid && (r.rifiuti || []).some(e => e.uid === uid)).map(r => r.userId);
+    const propria = risposteRifiuto.find(r => r.userId === uid);
+    const uscenti = propria ? (propria.rifiuti || []).map(e => e.uid) : [];
+    const reciproci = entranti.filter(u2 => uscenti.includes(u2));
+    infoBody.className = '';
+    infoBody.innerHTML = `
+      <div class="item-titolo">${esc(nomeDi(uid))}</div>
+      <div class="item">🎯 Rifiuti ricevuti: <strong>${ricevute[uid]}</strong></div>
+      ${reciproci.length ? `<div class="item-titolo">↔ Reciproci</div><div class="item">${reciproci.map(u2 => `<span class="chip">${esc(nomeDi(u2))}</span>`).join('')}</div>` : ''}
+      <div class="item-titolo">⬅ Nominato/a da</div>
+      <div class="item">${entranti.length ? entranti.map(u2 => `<span class="chip">${esc(nomeDi(u2))}</span>`).join('') : '<span class="vuoto" style="padding:0;">Nessuno/a</span>'}</div>
+      <div class="item-titolo">➡ Ha nominato</div>
+      <div class="item">${uscenti.length ? uscenti.map(u2 => `<span class="chip">${esc(nomeDi(u2))}</span>`).join('') : '<span class="vuoto" style="padding:0;">Nessuno/a</span>'}</div>
+      <div class="nota-anonima" style="margin-top:8px;">Motivazioni ("perché") disponibili nella <a href="sociogramma-rifiuto-admin.html">vista Tabella e note</a>.</div>
+    `;
+  }
+
+  function applicaFoco(uid) {
+    focoUid = uid;
+    wrap.querySelectorAll('.bers-rif-nodo').forEach(g => {
+      g.classList.toggle('foco-dim', !!uid && g.dataset.uid !== uid);
+      g.classList.toggle('foco-sorgente', !!uid && g.dataset.uid === uid);
+    });
+    wrap.querySelectorAll('.bers-rif-arco').forEach(l => {
+      const coinvolta = uid && (l.dataset.from === uid || l.dataset.to === uid);
+      l.classList.toggle('foco-dim', !!uid && !coinvolta);
+    });
+  }
+
+  wrap.querySelectorAll('.bers-rif-nodo').forEach(g => {
+    const uid = g.dataset.uid;
+    g.addEventListener('mouseenter', () => { if (!focoUid) mostraInfo(uid); });
+    g.addEventListener('click', ev => {
+      ev.stopPropagation();
+      applicaFoco(focoUid === uid ? null : uid);
+      mostraInfo(uid);
+    });
+  });
+  wrap.addEventListener('click', ev => { if (!ev.target.closest('.bers-rif-nodo')) applicaFoco(null); });
+
+  if (focoUid && uids.includes(focoUid)) { applicaFoco(focoUid); mostraInfo(focoUid); }
+}
+
+// ── Ricerca per nome — SOLO in modalità "Con nomi" (vedi guardia nel toggle) ────────────────
+function normalizza(s) { return (s || '').toString().normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); }
+
+function pulsaNodo(uid) {
+  const gruppo = document.querySelector('#bers-rif-pulse');
+  const p = posCorrente[uid];
+  if (!gruppo || !p) return;
+  gruppo.innerHTML = `<circle class="bers-rif-pulse" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="16"></circle>`;
+  setTimeout(() => { gruppo.innerHTML = ''; }, 2300);
+}
+
+function pulisciTendina() {
+  const el = document.getElementById('ricerca-risultati');
+  el.innerHTML = ''; el.style.display = 'none';
+}
+
+function eseguiRicerca(testo) {
+  document.getElementById('ricerca-pulisci').style.display = testo ? '' : 'none';
+  const q = normalizza(testo).trim();
+  if (!q) { pulisciTendina(); return; }
+  const uids = Object.keys(naufraghiInfo).filter(u => normalizza(nomeDi(u)).includes(q));
+  const el = document.getElementById('ricerca-risultati');
+  if (!uids.length) { el.innerHTML = '<div class="rr-vuoto">Nessun naufrago/a trovato/a</div>'; el.style.display = 'block'; return; }
+  el.innerHTML = uids.sort((a, b) => nomeDi(a).localeCompare(nomeDi(b), 'it'))
+    .map(u => `<div class="rr-item" data-uid="${esc(u)}">${esc(nomeDi(u))}</div>`).join('');
+  el.style.display = 'block';
+  el.querySelectorAll('.rr-item').forEach(item => item.addEventListener('click', () => selezionaRisultato(item.dataset.uid)));
+}
+
+function selezionaRisultato(uid) {
+  document.getElementById('ricerca-input').value = nomeDi(uid);
+  document.getElementById('ricerca-pulisci').style.display = '';
+  pulisciTendina();
+  focoUid = uid;
+  disegnaBersaglio();
+  pulsaNodo(uid);
+}
+
+const inputRicerca = document.getElementById('ricerca-input');
+inputRicerca.addEventListener('input', () => eseguiRicerca(inputRicerca.value));
+inputRicerca.addEventListener('focus', () => { if (inputRicerca.value) eseguiRicerca(inputRicerca.value); });
+inputRicerca.addEventListener('keydown', ev => {
+  if (ev.key === 'Enter') { const primo = document.querySelector('.rr-item'); if (primo) selezionaRisultato(primo.dataset.uid); }
+  else if (ev.key === 'Escape') { inputRicerca.value = ''; pulisciTendina(); focoUid = null; disegnaBersaglio(); }
+});
+document.getElementById('ricerca-pulisci').addEventListener('click', () => {
+  inputRicerca.value = ''; document.getElementById('ricerca-pulisci').style.display = 'none';
+  pulisciTendina(); focoUid = null; disegnaBersaglio();
+});
+document.addEventListener('click', ev => {
+  if (!ev.target.closest('#ricerca-wrap')) pulisciTendina();
+});
+
+// ── Toggle Con nomi / Anonima ────────────────────────────────────────────────────
+// Requisito bloccante: in Anonima la ricerca per nome NON esiste (rimossa dal DOM interattivo,
+// non solo disabilitata) — de-anonimizzerebbe la mappa con un click. Al suo posto, un filtro
+// puramente numerico che non risolve mai un'identità.
+function aggiornaModo() {
+  document.getElementById('btn-modo-nomi').classList.toggle('active', !modalitaAnonima);
+  document.getElementById('btn-modo-anonima').classList.toggle('active', modalitaAnonima);
+  document.getElementById('ricerca-wrap').style.display = modalitaAnonima ? 'none' : '';
+  document.getElementById('soglia-wrap').style.display = modalitaAnonima ? 'flex' : 'none';
+  document.getElementById('nota-anonima').style.display = modalitaAnonima ? 'block' : 'none';
+  if (modalitaAnonima) { focoUid = null; inputRicerca.value = ''; pulisciTendina(); }
+  disegnaBersaglio();
+}
+document.getElementById('btn-modo-nomi').addEventListener('click', () => { modalitaAnonima = false; aggiornaModo(); });
+document.getElementById('btn-modo-anonima').addEventListener('click', () => { modalitaAnonima = true; aggiornaModo(); });
+document.getElementById('soglia-input').addEventListener('input', e => {
+  sogliaAttiva = Math.max(0, parseInt(e.target.value, 10) || 0);
+  disegnaBersaglio();
+});
+
+// ── Guardia admin + avvio ───────────────────────────────────────────────
+let resolved = false;
+onAuthStateChanged(auth, async user => {
+  if (resolved) return;
+  resolved = true;
+  if (!user || user.uid !== ADMIN_UID) { window.location.replace('index.html'); return; }
+
+  await caricaNaufraghi();
+  await caricaRisposteRifiuto();
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('main').style.display = 'block';
+  disegnaBersaglio();
+});
+</script>
+</body>
+</html>
