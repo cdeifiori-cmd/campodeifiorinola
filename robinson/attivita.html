@@ -101,9 +101,9 @@
   <div class="modal-box">
     <h3>➕ Nuova attività</h3>
     <div class="form-group"><label>Icona (emoji)</label><input id="f-icona" value="🧭"></div>
-    <div class="form-group"><label>Titolo</label><input id="f-titolo" placeholder="Titolo dell'attività"></div>
+    <div class="form-group"><label>Titolo <span id="hint-titolo" style="display:none;font-weight:400;font-style:italic;color:var(--muted);">(fisso per questo tipo)</span></label><input id="f-titolo" placeholder="Titolo dell'attività"></div>
     <div class="form-group"><label>Sottotitolo</label><input id="f-sottotitolo" placeholder="Sottotitolo"></div>
-    <div class="form-group"><label>Descrizione</label><textarea id="f-descrizione" placeholder="Breve descrizione"></textarea></div>
+    <div class="form-group"><label>Descrizione <span id="hint-descrizione" style="display:none;font-weight:400;font-style:italic;color:var(--muted);">(fissa: è la domanda che leggerà chi partecipa)</span></label><textarea id="f-descrizione" placeholder="Breve descrizione"></textarea></div>
     <div class="form-group"><label>Tipo</label>
       <select id="f-tipo">
         <option value="generica">Generica (con descrizione)</option>
@@ -257,9 +257,48 @@ async function caricaAttivita() {
   });
 }
 
+// ── Admin: precompilazione campi per il tipo Sociogramma di rifiuto ─────────
+// Titolo e Descrizione sono fissi (readonly) per questo tipo: la Descrizione è la
+// domanda che ogni ragazzo/a leggerà, non deve poter essere alterata per sbaglio —
+// stessa stringa esatta di DOMANDA_SOCIOGRAMMA_RIFIUTO (nessun doppione col testo
+// già mostrato in chiaro sulla card). Il Sottotitolo resta un default modificabile.
+const RIFIUTO_DEFAULT = {
+  titolo: 'Sociogramma di rifiuto',
+  sottotitolo: 'Le tensioni della ciurma',
+  descrizione: DOMANDA_SOCIOGRAMMA_RIFIUTO,
+};
+
+function aggiornaCampiPerTipo() {
+  const elTitolo = document.getElementById('f-titolo');
+  const elSottotitolo = document.getElementById('f-sottotitolo');
+  const elDescrizione = document.getElementById('f-descrizione');
+  const tipo = document.getElementById('f-tipo').value;
+
+  if (tipo === 'sociogramma_rifiuto') {
+    elTitolo.value = RIFIUTO_DEFAULT.titolo;
+    elTitolo.readOnly = true;
+    elDescrizione.value = RIFIUTO_DEFAULT.descrizione;
+    elDescrizione.readOnly = true;
+    // Sottotitolo: solo un default, non tocca un valore che l'admin ha già scritto.
+    if (!elSottotitolo.value.trim()) elSottotitolo.value = RIFIUTO_DEFAULT.sottotitolo;
+  } else {
+    // Si esce dal tipo rifiuto: sblocca e pulisce SOLO i valori imposti da noi, per
+    // non trascinare titolo/descrizione del rifiuto su un altro tipo (niente campo
+    // readonly con valore fantasma). Il Sottotitolo si pulisce solo se l'admin non
+    // l'ha mai toccato (è ancora esattamente il default che avevamo proposto).
+    if (elTitolo.readOnly) { elTitolo.value = ''; elTitolo.readOnly = false; }
+    if (elDescrizione.readOnly) { elDescrizione.value = ''; elDescrizione.readOnly = false; }
+    if (elSottotitolo.value === RIFIUTO_DEFAULT.sottotitolo) elSottotitolo.value = '';
+  }
+  document.getElementById('hint-titolo').style.display = elTitolo.readOnly ? '' : 'none';
+  document.getElementById('hint-descrizione').style.display = elDescrizione.readOnly ? '' : 'none';
+}
+document.getElementById('f-tipo').addEventListener('change', aggiornaCampiPerTipo);
+
 // ── Admin: crea nuova attività ───────────────────────────────────────────
 document.getElementById('btn-nuova-attivita').addEventListener('click', () => {
   document.getElementById('modal-nuova').classList.add('open');
+  aggiornaCampiPerTipo(); // stato pulito coerente col tipo già selezionato nella tendina
 });
 document.getElementById('btn-annulla-attivita').addEventListener('click', () => {
   document.getElementById('modal-nuova').classList.remove('open');
@@ -283,7 +322,10 @@ document.getElementById('btn-salva-attivita').addEventListener('click', async ()
       config: {},
     });
     document.getElementById('modal-nuova').classList.remove('open');
+    document.getElementById('f-titolo').readOnly = false;
+    document.getElementById('f-descrizione').readOnly = false;
     ['f-titolo','f-sottotitolo','f-descrizione'].forEach(id => document.getElementById(id).value = '');
+    aggiornaCampiPerTipo(); // ripristina i default fissi se il tipo selezionato è ancora il rifiuto
     await caricaAttivita();
   } catch (e) { alert('Errore: ' + e.message); }
 });
