@@ -13,6 +13,15 @@
   [headers.values]
     Cache-Control = "no-cache, no-store, must-revalidate"
 
+# attivita.html contiene il modal admin "Nuova attività" (tipi di attività creabili):
+# un service worker attivo site-wide (firebase-messaging-sw.js, scope '/') può servire
+# una copia obsoleta anche dopo hard refresh, che non garantisce di bypassarlo in tutti
+# i browser. Stesso trattamento già in uso per naufrago.html.
+[[headers]]
+  for = "/attivita.html"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+
 [[redirects]]
   from = "/"
   to   = "/index.html"
