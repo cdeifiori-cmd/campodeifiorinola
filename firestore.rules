@@ -418,6 +418,14 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // ── Sociogramma di rifiuto — item singolo, dati riservati alla vista educatore ──
+    match /robinson_sociogramma_rifiuto/{uid} {
+      allow get: if isAdmin() || isOwner(uid);
+      allow list: if isAdmin();
+      allow create, update: if isOwner(uid);
+      allow delete: if isAdmin();
+    }
+
     // ── Gestione: Magazzino & Lista spesa (NON deployare senza ok esplicito di Giacomo) ──
     // Accesso solo admin o persone abilitate dall'admin (PIN Robinson risolto a UID
     // stabile, vedi robinson/js/robinson-magazzino.js:puoAccedereGestione).
