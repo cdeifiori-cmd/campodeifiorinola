@@ -158,6 +158,31 @@
     .leadership-indicatore strong { color:var(--navy); }
     .leadership-indicatore.ha-marginali strong { color:#c8860a; }
 
+    /* ── Sociomatrice: tabella N×N delle scelte per domanda (D1-D4), sola lettura ── */
+    .sociomatrice-row { display:none; flex-direction:column; gap:var(--rc-sp-2); }
+    .socio-scroll-wrap { overflow:auto; max-width:100%; max-height:70vh; border:1.5px solid var(--carta-scura); border-radius:var(--rc-radius-sm); }
+    .socio-tabella { border-collapse:collapse; font-size:0.72rem; }
+    .socio-tabella th, .socio-tabella td { border:1px solid var(--carta-scura); text-align:center; padding:0; width:28px; min-width:28px; height:28px; background:#fff; }
+    .socio-tabella thead th { position:sticky; top:0; z-index:2; vertical-align:bottom; padding:3px 0 6px; background:#fff; }
+    .socio-th-testo { display:inline-block; writing-mode:vertical-rl; transform:rotate(180deg); font-family:'Lora',serif; font-weight:600; color:var(--navy); max-height:130px; white-space:nowrap; }
+    .socio-riga-nome { position:sticky; left:0; z-index:1; background:#fff; text-align:left !important; padding:2px 10px !important; font-weight:600; color:var(--navy); font-family:'Lora',serif; white-space:nowrap; height:auto; }
+    .socio-corner { position:sticky; left:0; top:0; z-index:3; background:#fff; text-align:left !important; padding:2px 10px !important; font-size:0.74rem; color:var(--navy); font-weight:700; white-space:nowrap; }
+    .socio-diag { background:repeating-linear-gradient(45deg, var(--carta-scura), var(--carta-scura) 3px, #fff 3px, #fff 6px); }
+    .socio-dot { display:inline-block; width:13px; height:13px; border-radius:50%; }
+    .socio-cella-attiva { position:relative; }
+    .socio-reciproca { box-shadow: inset 0 0 0 2.5px var(--navy); border-radius:3px; }
+    .socio-non-rispondente .socio-th-testo, th.socio-non-rispondente { opacity:0.65; font-style:italic; }
+    .socio-tot-riga th, .socio-tot-riga td { background:var(--oro-light); font-weight:700; }
+    .socio-tot-col { background:var(--oro-light); font-weight:700; }
+    @media print {
+      body.stampa-sociomatrice .admin-header, body.stampa-sociomatrice .azioni,
+      body.stampa-sociomatrice section.rc-sezione:not(#sezione-mappa) { display:none !important; }
+      body.stampa-sociomatrice #sezione-mappa > *:not(.sociomatrice-row) { display:none !important; }
+      body.stampa-sociomatrice .sociomatrice-row { display:flex !important; }
+      body.stampa-sociomatrice .socio-scroll-wrap { overflow:visible; max-height:none; }
+      body.stampa-sociomatrice .content { padding:0; max-width:none; }
+    }
+
     /* ── Andamento indice + azioni di chiusura rilevazione ── */
     .chart-wrap { background:#fff; border:var(--rc-bordo); border-radius:var(--rc-radius); box-shadow:var(--rc-ombra); padding:var(--rc-sp-3); }
     .chart-wrap h3 { font-family:'Playfair Display',serif; font-size:0.95rem; color:var(--navy); margin:0 0 12px; }
@@ -173,6 +198,7 @@
 <div class="admin-header">
   <h1>🧩 Dinamiche di gruppo — Vista Educatore</h1>
   <div style="display:flex;gap:14px;align-items:center;">
+    <a href="sociogramma-rifiuto-admin.html">🚫 Sociogramma di rifiuto</a>
     <a href="admin-classifica.html">📊 Statistiche</a>
     <a href="admin-isola.html">🏝️ Admin Isola</a>
     <a href="index.html">← Home</a>
@@ -214,6 +240,7 @@
           <div class="filtro-bar" id="vista-toggle-bar">
             <button class="filtro-btn active" data-vista="rete">🕸️ Rete</button>
             <button class="filtro-btn" data-vista="bersaglio">🎯 Bersaglio</button>
+            <button class="filtro-btn" data-vista="sociomatrice">📋 Sociomatrice</button>
           </div>
         </div>
 
@@ -275,8 +302,8 @@
       </div>
     </section>
 
-    <!-- ═══ Sezione 3 — Mappa (bersaglio/rete) + pannello Dettaglio naufrago ═══ -->
-    <section class="rc-sezione">
+    <!-- ═══ Sezione 3 — Mappa (bersaglio/rete/sociomatrice) + pannello Dettaglio naufrago ═══ -->
+    <section class="rc-sezione" id="sezione-mappa">
       <div class="graph-row" id="graph-row">
         <div class="graph-col" id="col-main">
           <h3 id="titolo-graph-main">Rilevazione</h3>
@@ -348,6 +375,33 @@
           <div id="bersaglio-info-body" class="vuoto">Seleziona un/una naufrago/a: passa il mouse o tocca un nodo per vedere i dettagli.</div>
         </div>
       </div>
+
+      <!-- ═══ Sociomatrice — tabella N×N delle scelte, sola lettura, solo admin ═══ -->
+      <div class="sociomatrice-row" id="sociomatrice-row" style="display:none;">
+        <div class="rc-card-riga">
+          <span class="rc-card-riga-label">Domanda</span>
+          <div class="filtro-bar" id="socio-domanda-bar">
+            <button class="filtro-btn active" data-campo="ciurma">🔥 D1 · Ciurma</button>
+            <button class="filtro-btn" data-campo="ponti">🌉 D2 · Ponti</button>
+            <button class="filtro-btn" data-campo="correnti">🌊 D3 · Correnti</button>
+            <button class="filtro-btn" data-campo="scogli">🪨 D4 · Scogli</button>
+          </div>
+        </div>
+        <div class="rc-card-riga">
+          <span class="rc-card-riga-label">Ordina</span>
+          <div class="filtro-bar" id="socio-ordina-bar">
+            <button class="filtro-btn active" data-ordina="alfabetico">🔤 Alfabetico</button>
+            <button class="filtro-btn" data-ordina="ricevute">🔝 Più scelti/e prima</button>
+          </div>
+          <button class="filtro-btn" id="btn-socio-csv">⬇️ Esporta CSV</button>
+          <button class="filtro-btn" id="btn-socio-stampa">🖨️ Stampa A4</button>
+        </div>
+        <h3 id="titolo-sociomatrice" style="font-family:'Playfair Display',serif; font-size:0.9rem; color:var(--navy); margin:4px 0;">📋 Sociomatrice</h3>
+        <div class="socio-scroll-wrap">
+          <table class="socio-tabella" id="socio-tabella"></table>
+        </div>
+        <div class="legenda" id="socio-legenda"></div>
+      </div>
     </section>
 
     <!-- ═══ Sezione 5 — Isolati / Mediatori / Leader positivi / Sottogruppi ═══ -->
@@ -393,10 +447,11 @@ import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/f
 import {
   collection, getDocs, query, orderBy, doc, getDoc, setDoc, addDoc, updateDoc, serverTimestamp
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-import { esc, fmtDateShort } from './js/robinson-utils.js';
+import { esc, fmtDateShort, caricaMappaUidCanonico, uidCanonico } from './js/robinson-utils.js';
 import {
   calcolaAggregati, trovaMediatori, calcolaDelta, generaFrase,
   calcolaFasceAnelli, trovaAnelloPerValore, calcolaLeadershipTrasversale,
+  insiemeEntrante, insiemeUscente,
 } from './js/robinson-sociogramma.js';
 
 const ATT_ID = new URLSearchParams(location.search).get('attId') || 'consiglio-isola';
@@ -404,8 +459,9 @@ const ATT_ID = new URLSearchParams(location.search).get('attId') || 'consiglio-i
 let naufraghiInfo = {}; // uid -> {nome, foto}
 let rilevazioni = [];   // [{id, numero, stato, data, sintesiPubblica}]
 let risposteCache = {}; // rilId -> [risposte]
+let mappaUidCanonico = {}; // originalUid -> authUid (vedi robinson-utils.js)
 let filtroAttivo = 'tutte';
-let vistaAttiva = 'rete'; // 'rete' | 'bersaglio'
+let vistaAttiva = 'rete'; // 'rete' | 'bersaglio' | 'sociomatrice'
 
 // ── Vista Bersaglio — costanti tunable ──────────────────────────────────────
 const RAGGIO_MODE = 'impatto'; // 'impatto' (posIn+negIn) | 'solo_positive' (solo posIn) — bersaglio classico
@@ -476,6 +532,11 @@ let modalitaBersaglio = 'classico'; // 'classico' | 'percorso'
 let stepPercorso = 0;               // indice 0..3 in STEP_PERCORSO
 let battutaPercorso = 'A';          // 'A' | 'B' | 'C' | 'D'
 
+// ── Sociomatrice — tabella N×N delle scelte, riusa STEP_PERCORSO per domande/colori ────────
+let campoSociomatrice = 'ciurma';    // 'ciurma' | 'ponti' | 'correnti' | 'scogli'
+let ordinaSociomatrice = 'alfabetico'; // 'alfabetico' | 'ricevute'
+let ultimaSociomatrice = null;       // ultimo stato renderizzato, per l'export CSV
+
 // Rete di frecce di UN SOLO campo, SEMPRE dalla fonte grezza (mai da buildEdges/edges
 // collassati): garantisce che nessuna coppia reciproca sparisca per i gap già documentati in
 // buildEdges() sotto filtro='tutte'. Un solo arco per coppia reciproca (doppia punta), altrimenti
@@ -536,13 +597,22 @@ function nominantiDifficili(risposte, uid) {
   return risposte.filter(r => (r.correnti || []).includes(uid) || (r.scogli || []).includes(uid)).map(r => r.userId);
 }
 
+// Deduplica per authUid reale: admin-pin.html copia il profilo naufrago su un nuovo
+// docId (authUid) quando crea il PIN, lasciando spesso vivo il vecchio docId. Senza
+// dedup la stessa persona comparirebbe due volte in tutte le liste/aggregati (Bersaglio,
+// In sintesi, Sociomatrice), spezzando le sue nomination ricevute su due nodi diversi.
 async function caricaNaufraghi() {
+  mappaUidCanonico = await caricaMappaUidCanonico();
   const snap = await getDocs(collection(db, 'robinson_naufraghi'));
+  const seenAuth = new Set();
   snap.forEach(d => {
-    if (d.id === ADMIN_UID) return;
+    const authUid = uidCanonico(mappaUidCanonico, d.id);
+    if (authUid === ADMIN_UID) return;
     const data = d.data();
     if (!data.nome) return;
-    naufraghiInfo[d.id] = { nome: data.nome, foto: data.fotoRobinson || data.fotoProfilo || '' };
+    if (seenAuth.has(authUid)) return;
+    seenAuth.add(authUid);
+    naufraghiInfo[authUid] = { nome: data.nome, foto: data.fotoRobinson || data.fotoProfilo || '' };
   });
 }
 
@@ -551,10 +621,28 @@ async function caricaRilevazioni() {
   rilevazioni = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 }
 
+// Canonicalizza userId (autore) e ogni uid nominato nei 4 campi PRIMA di calcolaAggregati/
+// insiemeEntrante/insiemeUscente, così le risposte storiche salvate sotto un docId ormai
+// sostituito vengono ricondotte al nodo corretto senza toccare robinson-sociogramma.js.
 async function caricaRisposte(rilId) {
   if (risposteCache[rilId]) return risposteCache[rilId];
   const snap = await getDocs(collection(db, 'attivita', ATT_ID, 'rilevazioni', rilId, 'risposte'));
-  const risposte = snap.docs.map(d => ({ userId: d.id, ...d.data() }));
+  const canon = arr => [...new Set((arr || []).map(u => uidCanonico(mappaUidCanonico, u)))];
+  const perCanonico = {};
+  snap.docs.forEach(d => {
+    const raw = d.data();
+    const userIdCanonico = uidCanonico(mappaUidCanonico, d.id);
+    const risposta = {
+      userId: userIdCanonico,
+      ciurma: canon(raw.ciurma), ponti: canon(raw.ponti),
+      correnti: canon(raw.correnti), scogli: canon(raw.scogli),
+    };
+    // Se due documenti collassano sullo stesso authUid (vecchio + nuovo docId hanno
+    // entrambi risposto), tiene quello il cui docId è già l'authUid corrente.
+    const esistente = perCanonico[userIdCanonico];
+    if (!esistente || d.id === userIdCanonico) perCanonico[userIdCanonico] = risposta;
+  });
+  const risposte = Object.values(perCanonico);
   risposteCache[rilId] = risposte;
   return risposte;
 }
@@ -1639,11 +1727,12 @@ let networkMain = null, networkCompare = null;
 // in vista Rete tutte e 5 restano disponibili come sempre.
 function aggiornaFiltriVisibili() {
   // La vista Rete usa il filtro per categoria dedicato (checkbox indipendenti, Obiettivo 2a),
-  // non il filtro a scelta singola condiviso col Bersaglio classico. Il Percorso a step ha i
-  // suoi controlli autonomi (stepper/battute): nessuno dei due filtri gli serve.
-  document.getElementById('filtro-bar').style.display = (vistaAttiva === 'rete' || modalitaBersaglio === 'percorso') ? 'none' : 'flex';
+  // non il filtro a scelta singola condiviso col Bersaglio classico. Il Percorso a step e la
+  // Sociomatrice hanno i loro controlli autonomi: nessuno dei due filtri gli serve.
+  const filtroBarAttivo = vistaAttiva === 'bersaglio' && modalitaBersaglio === 'classico';
+  document.getElementById('filtro-bar').style.display = filtroBarAttivo ? 'flex' : 'none';
   document.getElementById('rete-categorie-bar').style.display = vistaAttiva === 'rete' ? 'flex' : 'none';
-  if (vistaAttiva === 'rete' || modalitaBersaglio === 'percorso') return;
+  if (!filtroBarAttivo) return;
 
   const bottoni = document.querySelectorAll('#filtro-bar .filtro-btn');
   const { tutti } = categorieTema(bersaglioTema);
@@ -1693,6 +1782,108 @@ function renderLegendaBersaglio(tema) {
   document.getElementById('legenda-bersaglio').innerHTML = specifica + comune;
 }
 
+// ── Sociomatrice — tabella N×N delle scelte per domanda, sola lettura ───────────────────────
+// Riusa insiemeEntrante/insiemeUscente (fonte unica già in uso da Bersaglio e "In sintesi") e
+// STEP_PERCORSO per label/colori delle 4 domande: nessuna nuova query né parsing delle nomine.
+function ordinaUidSociomatrice(uids, risposte) {
+  const arr = [...uids];
+  if (ordinaSociomatrice === 'ricevute') {
+    arr.sort((a, b) => {
+      const diff = insiemeEntrante(risposte, b, campoSociomatrice).size - insiemeEntrante(risposte, a, campoSociomatrice).size;
+      return diff !== 0 ? diff : nomeVisualizzato(a).localeCompare(nomeVisualizzato(b), 'it');
+    });
+  } else {
+    arr.sort((a, b) => nomeVisualizzato(a).localeCompare(nomeVisualizzato(b), 'it'));
+  }
+  return arr;
+}
+
+function renderSociomatrice(risposte, ril) {
+  const info = STEP_PERCORSO.find(s => s.campo === campoSociomatrice);
+  const rispondenti = new Set(risposte.map(r => r.userId));
+  const uids = ordinaUidSociomatrice(calcolaUidCoinvolti(risposte), risposte);
+
+  const usciteMap = {}, entrateMap = {};
+  uids.forEach(u => {
+    usciteMap[u] = insiemeUscente(risposte, u, campoSociomatrice);
+    entrateMap[u] = insiemeEntrante(risposte, u, campoSociomatrice);
+  });
+
+  document.getElementById('titolo-sociomatrice').textContent =
+    `📋 Sociomatrice — ${info.emoji} ${info.titolo} — Rilevazione #${ril.numero}`;
+
+  let html = '<thead><tr>';
+  html += `<th class="socio-corner">${info.emoji} soggetto ↓ / oggetto →</th>`;
+  uids.forEach(colUid => {
+    const nome = nomeVisualizzato(colUid);
+    const nonRisp = !rispondenti.has(colUid);
+    html += `<th class="${nonRisp ? 'socio-non-rispondente' : ''}" title="${esc(nome)}${nonRisp ? ' (nominato/a, non ha ancora risposto)' : ''}"><span class="socio-th-testo">${esc(nome)}</span></th>`;
+  });
+  html += '<th class="socio-tot-col">Scelte fatte</th></tr></thead><tbody>';
+
+  uids.forEach(rigaUid => {
+    const nome = nomeVisualizzato(rigaUid);
+    const nonRisp = !rispondenti.has(rigaUid);
+    html += `<tr><th class="socio-riga-nome${nonRisp ? ' socio-non-rispondente' : ''}" title="${esc(nome)}">${esc(nome)}</th>`;
+    uids.forEach(colUid => {
+      if (rigaUid === colUid) {
+        html += '<td class="socio-diag" title="Auto-scelta non consentita"></td>';
+        return;
+      }
+      const scelto = usciteMap[rigaUid].has(colUid);
+      if (!scelto) { html += '<td></td>'; return; }
+      const reciproco = usciteMap[colUid].has(rigaUid);
+      html += `<td class="socio-cella-attiva${reciproco ? ' socio-reciproca' : ''}" title="${esc(nome)} → ${esc(nomeVisualizzato(colUid))}${reciproco ? ' (reciproca)' : ''}"><span class="socio-dot" style="background:${info.colore};"></span></td>`;
+    });
+    html += `<td class="socio-tot-col">${usciteMap[rigaUid].size}</td></tr>`;
+  });
+
+  html += '<tr class="socio-tot-riga"><th class="socio-riga-nome">Scelte ricevute</th>';
+  let totaleScelte = 0;
+  uids.forEach(colUid => { html += `<td>${entrateMap[colUid].size}</td>`; totaleScelte += usciteMap[colUid].size; });
+  html += `<td>${totaleScelte}</td></tr>`;
+  html += '</tbody>';
+
+  document.getElementById('socio-tabella').innerHTML = html;
+
+  document.getElementById('socio-legenda').innerHTML = `
+    <span><span class="socio-dot" style="background:${info.colore};"></span> ${esc(info.titolo)} — "${esc(info.domanda)}"</span>
+    <span><span class="socio-dot socio-reciproca" style="background:${info.colore};"></span> bordo marcato = scelta reciproca (A↔B)</span>
+    <span><span class="socio-dot" style="background:var(--carta-scura); border-radius:2px;"></span> diagonale barrata = auto-scelta, non consentita</span>
+    <span>nome in corsivo sbiadito = nominato/a ma non ha ancora risposto</span>
+    <span>Riga "Scelte fatte" = espansività (quanti/e ha scelto); colonna "Scelte ricevute" = status (quanti/e lo/la scelgono)</span>
+  `;
+
+  ultimaSociomatrice = { uids, campo: campoSociomatrice, info, usciteMap, entrateMap, ril };
+}
+
+function esportaSociomatriceCSV() {
+  const s = ultimaSociomatrice;
+  if (!s) return;
+  const righe = [];
+  righe.push(['', ...s.uids.map(u => nomeVisualizzato(u)), 'Scelte fatte']);
+  s.uids.forEach(rigaUid => {
+    const riga = [nomeVisualizzato(rigaUid)];
+    s.uids.forEach(colUid => {
+      riga.push(rigaUid === colUid ? '' : (s.usciteMap[rigaUid].has(colUid) ? '1' : ''));
+    });
+    riga.push(String(s.usciteMap[rigaUid].size));
+    righe.push(riga);
+  });
+  const rigaRicevute = ['Scelte ricevute', ...s.uids.map(u => String(s.entrateMap[u].size)), ''];
+  righe.push(rigaRicevute);
+  const csv = righe.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(';')).join('\r\n');
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `sociomatrice-${s.campo}-rilevazione${s.ril?.numero ?? ''}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
 async function renderTutto() {
   const rilId = document.getElementById('sel-rilevazione').value;
   const ril = rilevazioni.find(r => r.id === rilId);
@@ -1717,19 +1908,17 @@ async function renderTutto() {
   document.getElementById('bersaglio-ricerca-wrap').style.display = bersaglioClassico ? 'block' : 'none';
   aggiornaFiltriVisibili();
 
+  document.getElementById('graph-row').style.display = vistaAttiva === 'rete' ? 'flex' : 'none';
+  document.getElementById('bersaglio-row').style.display = vistaAttiva === 'bersaglio' ? 'flex' : 'none';
+  document.getElementById('sociomatrice-row').style.display = vistaAttiva === 'sociomatrice' ? 'flex' : 'none';
+  document.getElementById('legenda-rete').style.display = vistaAttiva === 'rete' ? 'flex' : 'none';
+  document.getElementById('blocco-confronto').style.display = vistaAttiva === 'rete' ? 'flex' : 'none';
+
   if (vistaAttiva === 'rete') {
-    document.getElementById('graph-row').style.display = 'flex';
-    document.getElementById('bersaglio-row').style.display = 'none';
-    document.getElementById('legenda-rete').style.display = 'flex';
     document.getElementById('legenda-bersaglio').style.display = 'none';
-    document.getElementById('blocco-confronto').style.display = 'flex';
     if (networkMain) networkMain.network.destroy();
     networkMain = disegnaGrafo('graph-main', risposte, aggregati);
-  } else {
-    document.getElementById('graph-row').style.display = 'none';
-    document.getElementById('bersaglio-row').style.display = 'flex';
-    document.getElementById('legenda-rete').style.display = 'none';
-    document.getElementById('blocco-confronto').style.display = 'none';
+  } else if (vistaAttiva === 'bersaglio') {
     document.getElementById('bersaglio-classico-wrap').style.display = bersaglioClassico ? 'block' : 'none';
     document.getElementById('bersaglio-percorso-wrap').style.display = bersaglioPercorso ? 'block' : 'none';
     // Il pannello Dettaglio naufrago è una funzione del Bersaglio classico (si popola al clic
@@ -1746,6 +1935,9 @@ async function renderTutto() {
       disegnaPercorso(risposte, uidsPercorso);
       aggiornaControlliPercorso();
     }
+  } else if (vistaAttiva === 'sociomatrice') {
+    document.getElementById('legenda-bersaglio').style.display = 'none';
+    renderSociomatrice(risposte, ril);
   }
 
   // Stat cards
@@ -1974,6 +2166,29 @@ document.querySelectorAll('#bersaglio-modalita-bar .filtro-btn').forEach(btn => 
     renderTutto();
   });
 });
+// Sociomatrice: selettore domanda (D1-D4) e ordinamento righe/colonne.
+document.querySelectorAll('#socio-domanda-bar .filtro-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#socio-domanda-bar .filtro-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    campoSociomatrice = btn.dataset.campo;
+    renderTutto();
+  });
+});
+document.querySelectorAll('#socio-ordina-bar .filtro-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#socio-ordina-bar .filtro-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    ordinaSociomatrice = btn.dataset.ordina;
+    renderTutto();
+  });
+});
+document.getElementById('btn-socio-csv').addEventListener('click', esportaSociomatriceCSV);
+document.getElementById('btn-socio-stampa').addEventListener('click', () => {
+  document.body.classList.add('stampa-sociomatrice');
+  window.print();
+});
+window.addEventListener('afterprint', () => document.body.classList.remove('stampa-sociomatrice'));
 // Salto libero fra i 4 step: sempre disponibile, in qualsiasi ordine; ogni cambio step riparte
 // dalla Battuta A (bersaglio vuoto) del nuovo step.
 document.querySelectorAll('#percorso-stepper .percorso-step-btn').forEach(btn => {

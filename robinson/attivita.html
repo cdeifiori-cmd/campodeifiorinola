@@ -104,6 +104,13 @@
     <div class="form-group"><label>Titolo</label><input id="f-titolo" placeholder="Titolo dell'attività"></div>
     <div class="form-group"><label>Sottotitolo</label><input id="f-sottotitolo" placeholder="Sottotitolo"></div>
     <div class="form-group"><label>Descrizione</label><textarea id="f-descrizione" placeholder="Breve descrizione"></textarea></div>
+    <div class="form-group"><label>Tipo</label>
+      <select id="f-tipo">
+        <option value="generica">Generica (con descrizione)</option>
+        <option value="questionario_campo">🧭 Bussola del gruppo (questionario)</option>
+        <option value="sociogramma_rifiuto">🚫 Sociogramma di rifiuto (item singolo)</option>
+      </select>
+    </div>
     <div class="form-group"><label>Stato</label>
       <select id="f-stato">
         <option value="proposta">Proposta</option>
@@ -154,6 +161,22 @@ function badgeLabel(stato) {
 }
 
 function azioneCard(att) {
+  // Bussola del gruppo: strumento diagnostico, il resoconto è SOLO admin (mai i naufraghi,
+  // nemmeno a rilevazione svolta). L'admin non compila, vede sempre le risposte raccolte finora.
+  if (att.tipo === 'questionario_campo') {
+    if (isAdmin) return `<a class="ca-btn" href="bussola-gruppo-admin.html?attId=${esc(att.id)}">📊 Vedi risposte</a>`;
+    if (att.stato === 'attiva') return `<a class="ca-btn" href="bussola-gruppo.html?attId=${esc(att.id)}">Partecipa</a>`;
+    if (att.stato === 'svolta') return `<span class="ca-btn" style="opacity:0.55;cursor:default;pointer-events:none;">Concluso</span>`;
+    return `<button class="ca-btn" data-toggle="${esc(att.id)}">Scopri di più</button>`;
+  }
+  // Sociogramma di rifiuto: strumento diagnostico riservato, il resoconto è SOLO admin
+  // (mai i naufraghi, nemmeno a rilevazione svolta) — stessa policy della Bussola del gruppo.
+  if (att.tipo === 'sociogramma_rifiuto') {
+    if (isAdmin) return `<a class="ca-btn" href="sociogramma-rifiuto-admin.html?attId=${esc(att.id)}">📊 Vedi risposte</a>`;
+    if (att.stato === 'attiva') return `<a class="ca-btn" href="sociogramma-rifiuto.html?attId=${esc(att.id)}">Partecipa</a>`;
+    if (att.stato === 'svolta') return `<span class="ca-btn" style="opacity:0.55;cursor:default;pointer-events:none;">Concluso</span>`;
+    return `<button class="ca-btn" data-toggle="${esc(att.id)}">Scopri di più</button>`;
+  }
   if (att.stato === 'attiva') {
     if (att.tipo === 'sociogramma') return `<a class="ca-btn" href="consiglio.html?attId=${esc(att.id)}">Partecipa</a>`;
     return `<button class="ca-btn" data-toggle="${esc(att.id)}">Partecipa</button>`;
@@ -240,7 +263,7 @@ document.getElementById('btn-salva-attivita').addEventListener('click', async ()
   if (!titolo) { alert('Inserisci un titolo'); return; }
   try {
     await addDoc(collection(db, 'attivita'), {
-      tipo: 'generica',
+      tipo: document.getElementById('f-tipo').value,
       titolo,
       sottotitolo: document.getElementById('f-sottotitolo').value.trim(),
       descrizione: document.getElementById('f-descrizione').value.trim(),

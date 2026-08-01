@@ -324,6 +324,75 @@ export function calcolaLeadershipTrasversale(risposte, cluster) {
   return risultato;
 }
 
+// ── Sociogramma di rifiuto — item singolo, isolato dalle metriche positive ──
+// Dataset separato (risposteRifiuto: [{ userId, rifiuti:[{uid,perche}] }]), mai
+// mescolato con insiemeEntrante/insiemeUscente: le metriche positive esistenti
+// (isolati, indice di coesione, leadership...) restano calcolate solo sul
+// dataset del Consiglio. Stessa forma di insiemeEntrante, per simmetria.
+export function insiemeRifiuto(risposteRifiuto, uid) {
+  const set = new Set();
+  risposteRifiuto.forEach(r => {
+    if (r.userId === uid) return; // niente autoscelte
+    (r.rifiuti || []).forEach(e => { if (e && e.uid === uid) set.add(r.userId); });
+  });
+  return set;
+}
+
+// Motivazioni ricevute da `uid`, come note discrete (mai aggregate): usare per il
+// dettaglio in vista educatore, mai per calcolare un punteggio o un riassunto pubblico.
+export function motiviRifiutoRicevuti(risposteRifiuto, uid) {
+  const note = [];
+  risposteRifiuto.forEach(r => {
+    if (r.userId === uid) return;
+    (r.rifiuti || []).forEach(e => { if (e && e.uid === uid && e.perche) note.push({ daUid: r.userId, perche: e.perche }); });
+  });
+  return note;
+}
+
+// ── Classificazione sociometrica (Coie & Dodge, 1982) ───────────────────────
+// LP = preferenze positive ricevute (tipicamente insiemeEntrante su 'ciurma'), LM =
+// rifiuti ricevuti (insiemeRifiuto). SP (preferenza sociale) = zLP - zLM, SI (impatto
+// sociale) = zLP + zLM, ciascuno poi standardizzato di nuovo. Soglie standard a 1
+// deviazione standard. Con gruppi piccoli/omogenei (deviazione standard ~0) gli z-score
+// collassano a 0 e la maggior parte finisce in "medio": comportamento atteso, non un bug.
+function media(arr) { return arr.length ? arr.reduce((s, x) => s + x, 0) / arr.length : 0; }
+function devStd(arr, m) {
+  if (arr.length < 2) return 0;
+  const varianza = arr.reduce((s, x) => s + (x - m) ** 2, 0) / arr.length;
+  return Math.sqrt(varianza);
+}
+function zScore(x, m, sd) { return sd > 0 ? (x - m) / sd : 0; }
+
+export function classificaSociometrica(uids, lpConte, lmConte) {
+  const lpArr = uids.map(u => lpConte[u] || 0);
+  const lmArr = uids.map(u => lmConte[u] || 0);
+  const mLp = media(lpArr), sdLp = devStd(lpArr, mLp);
+  const mLm = media(lmArr), sdLm = devStd(lmArr, mLm);
+
+  const zLp = {}, zLm = {}, sp = {}, si = {};
+  uids.forEach(u => {
+    zLp[u] = zScore(lpConte[u] || 0, mLp, sdLp);
+    zLm[u] = zScore(lmConte[u] || 0, mLm, sdLm);
+    sp[u] = zLp[u] - zLm[u];
+    si[u] = zLp[u] + zLm[u];
+  });
+  const mSp = media(uids.map(u => sp[u])), sdSp = devStd(uids.map(u => sp[u]), mSp);
+  const mSi = media(uids.map(u => si[u])), sdSi = devStd(uids.map(u => si[u]), mSi);
+
+  const risultato = {};
+  uids.forEach(u => {
+    const zSp = zScore(sp[u], mSp, sdSp);
+    const zSi = zScore(si[u], mSi, sdSi);
+    let categoria = 'medio';
+    if (zSp > 1 && zLp[u] > 0 && zLm[u] < 0) categoria = 'popolare';
+    else if (zSp < -1 && zLp[u] < 0 && zLm[u] > 0) categoria = 'rifiutato';
+    else if (zSi < -1 && zLp[u] < 0 && zLm[u] < 0) categoria = 'trascurato';
+    else if (zSi > 1 && zLp[u] > 0 && zLm[u] > 0) categoria = 'controverso';
+    risultato[u] = { categoria, lp: lpConte[u] || 0, lm: lmConte[u] || 0, zSp, zSi };
+  });
+  return risultato;
+}
+
 // ── Delta tra due rilevazioni consecutive (per timeline educatore) ─────────
 export function calcolaDelta(aggregatiPrec, aggregatiCorr) {
   if (!aggregatiPrec) return null;

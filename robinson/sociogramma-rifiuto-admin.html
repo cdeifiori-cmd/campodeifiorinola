@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🚫 Sociogramma di rifiuto — Vista Educatore</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
+  <meta name="theme-color" content="#1a3a5c">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/robinson.css">
+  <style>
+    :root {
+      --rc-sp-1: 6px; --rc-sp-2: 10px; --rc-sp-3: 16px; --rc-sp-4: 22px; --rc-sp-5: 30px;
+      --rc-radius: 12px;
+      --rc-radius-sm: 8px;
+      --rc-ombra: 0 2px 8px rgba(26,58,92,0.07);
+      --rc-bordo: 1.5px solid var(--carta-scura);
+    }
+    body { padding-bottom: 40px; background:var(--carta); }
+
+    .admin-header { background:var(--navy); color:#fff; padding:14px 16px 10px; position:sticky; top:0; z-index:200; display:flex; align-items:center; justify-content:space-between; flex-wrap: wrap; gap: 8px; }
+    .admin-header h1 { font-family:'Playfair Display',serif; font-size:1.15rem; margin:0; }
+    .admin-header a { color:var(--oro); font-size:0.8rem; text-decoration:none; }
+
+    .content { max-width: 980px; margin: 0 auto; padding: var(--rc-sp-3) var(--rc-sp-2) 60px; }
+
+    .riservatezza-banner { background:#fdecea; border:1.5px solid var(--rosso); color:#7a2015; border-radius:var(--rc-radius-sm); padding:10px 14px; font-size:0.8rem; margin-bottom:var(--rc-sp-3); line-height:1.5; }
+
+    .rc-sezione { margin-bottom: var(--rc-sp-4); }
+    .rc-sezione-titolo { font-family:'Playfair Display',serif; font-size:1.05rem; color:var(--navy); margin:0 0 var(--rc-sp-2); display:flex; align-items:center; gap:8px; }
+    .rc-sezione-sottotitolo { font-size:0.76rem; color:var(--muted); margin:-4px 0 var(--rc-sp-3); }
+    .rc-card { background:#fff; border:var(--rc-bordo); border-radius:var(--rc-radius); box-shadow:var(--rc-ombra); padding:var(--rc-sp-3); }
+    .rc-card-riga { display:flex; flex-wrap:wrap; align-items:center; gap:var(--rc-sp-3); }
+
+    .filtro-bar { display:flex; gap:6px; flex-wrap:wrap; }
+    .filtro-btn { padding:6px 14px; border-radius:20px; border:1.5px solid var(--navy); background:#fff; color:var(--navy); font-size:0.78rem; cursor:pointer; font-family:'Lora',serif; }
+    .filtro-btn.active { background:var(--navy); color:var(--oro); }
+
+    .legenda { display:flex; gap:var(--rc-sp-3); flex-wrap:wrap; font-size:0.72rem; color:var(--muted); margin-top:var(--rc-sp-2); }
+    .legenda-voce { display:flex; align-items:center; gap:4px; }
+    .legenda-pallino { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+
+    .loading-msg { text-align:center; color:var(--muted); padding:40px 0; font-style:italic; }
+    .stato-riga { font-size:0.78rem; color:var(--muted); margin-bottom:var(--rc-sp-2); }
+
+    .cat-badge { display:inline-block; font-size:0.68rem; font-weight:700; padding:2px 10px; border-radius:14px; white-space:nowrap; }
+    .cat-popolare { background:#d5f5e3; color:#1e8449; }
+    .cat-rifiutato { background:#fdecea; color:#a03020; }
+    .cat-trascurato { background:#eaecee; color:#5d6d7e; }
+    .cat-controverso { background:#fef5e7; color:#b7770d; }
+    .cat-medio { background:#f4f6f7; color:#7f8c8d; }
+
+    .agg-tabella { width:100%; border-collapse:collapse; font-size:0.84rem; }
+    .agg-tabella th, .agg-tabella td { border-bottom:1px solid var(--carta-scura); padding:8px 10px; text-align:left; }
+    .agg-tabella th { color:var(--navy); font-family:'Playfair Display',serif; font-weight:700; }
+    .agg-tabella td.num { text-align:center; font-weight:700; }
+    .agg-tabella tr.espansa td { border-bottom:none; }
+    .riga-nome { background:none; border:none; padding:0; font-family:'Lora',serif; font-size:0.84rem; color:var(--navy); font-weight:700; cursor:pointer; text-decoration:underline dotted; }
+    .dettaglio-riga td { padding: 0 10px 12px; }
+    .dettaglio-note { background:var(--post-bg); border-radius:8px; padding:10px 12px; }
+    .nota-item { font-size:0.8rem; padding:4px 0; border-top:1px dashed var(--carta-scura); }
+    .nota-item:first-child { border-top:none; }
+    .nota-quote { font-style:italic; color:var(--inchiostro); }
+    .nota-meta { color:var(--muted); font-size:0.72rem; margin-left:6px; }
+    .nota-vuota { color:var(--muted); font-style:italic; font-size:0.8rem; }
+
+    .vuoto { color:var(--muted); font-style:italic; font-size:0.85rem; text-align:center; padding:24px 0; }
+  </style>
+</head>
+<body>
+
+<div class="admin-header">
+  <h1>🚫 Sociogramma di rifiuto — Vista Educatore</h1>
+  <div style="display:flex;gap:14px;align-items:center;">
+    <a href="consiglio-admin.html">🧩 Dinamiche di gruppo</a>
+    <a href="attivita.html">🧭 Attività</a>
+    <a href="index.html">← Home</a>
+  </div>
+</div>
+
+<div class="content">
+  <div id="loading" class="loading-msg">⏳ Caricamento…</div>
+
+  <div id="main" style="display:none;">
+
+    <div class="riservatezza-banner">
+      🔒 Dati riservati alla Ciurma educativa: nomi, motivazioni e classificazione non compaiono mai nel resoconto pubblico, nella classifica del Villaggio né in nessuna vista naufrago.
+    </div>
+
+    <section class="rc-sezione">
+      <div class="stato-riga" id="stato-riga"></div>
+      <div class="rc-card">
+        <div class="rc-card-riga">
+          <span style="font-size:0.72rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.03em;min-width:64px;">Ordina</span>
+          <div class="filtro-bar" id="ordina-bar">
+            <button class="filtro-btn active" data-ordina="alfabetico">🔤 Alfabetico</button>
+            <button class="filtro-btn" data-ordina="rifiuti">🚫 Più rifiuti ricevuti</button>
+            <button class="filtro-btn" data-ordina="scelte">🌟 Più scelte ricevute</button>
+          </div>
+          <button class="filtro-btn" id="btn-csv">⬇️ Esporta CSV</button>
+        </div>
+        <div class="legenda">
+          <span class="legenda-voce"><span class="legenda-pallino" style="background:#1e8449;"></span> Popolare — molto scelto/a, poco rifiutato/a</span>
+          <span class="legenda-voce"><span class="legenda-pallino" style="background:#a03020;"></span> Rifiutato/a — poco scelto/a, molto rifiutato/a</span>
+          <span class="legenda-voce"><span class="legenda-pallino" style="background:#5d6d7e;"></span> Trascurato/a — poche nomine in entrambi i sensi</span>
+          <span class="legenda-voce"><span class="legenda-pallino" style="background:#b7770d;"></span> Controverso/a — molto scelto/a E molto rifiutato/a</span>
+          <span class="legenda-voce"><span class="legenda-pallino" style="background:#7f8c8d;"></span> Medio — nessun profilo estremo</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="rc-sezione">
+      <div class="rc-sezione-titolo">📋 Indice di rifiuto e classificazione sociometrica</div>
+      <div class="rc-sezione-sottotitolo">Schema Coie &amp; Dodge — incrocio tra scelte ricevute nel Consiglio dell'Isola (ciurma) e rifiuti ricevuti in questo item. Clicca un nome per vedere i "perché" ricevuti.</div>
+      <div id="tabella-wrap"></div>
+    </section>
+
+  </div>
+</div>
+
+<script type="module">
+import { db, auth, ADMIN_UID } from './js/robinson-firebase.js';
+import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { collection, getDocs, query, orderBy } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { esc, caricaMappaUidCanonico, uidCanonico } from './js/robinson-utils.js';
+import { insiemeEntrante, insiemeRifiuto, motiviRifiutoRicevuti, classificaSociometrica } from './js/robinson-sociogramma.js';
+
+// Attività del Consiglio dell'Isola: unica fonte delle scelte positive (ciurma) per
+// l'incrocio Coie&Dodge — stesso attId hardcoded usato in consiglio.html/consiglio-admin.html.
+const CONSIGLIO_ATT_ID = 'consiglio-isola';
+
+let naufraghiInfo = {}; // authUid -> {nome}
+let mappaUidCanonico = {};
+let risposteRifiuto = []; // [{ userId, rifiuti:[{uid,perche}], completatoIl }]
+let risposteConsiglio = []; // [{ userId, ciurma:[uid,...] }] — dalla rilevazione più recente
+let consiglioDisponibile = false;
+let ordinaAttivo = 'alfabetico'; // 'alfabetico' | 'rifiuti' | 'scelte'
+let espansi = new Set(); // uid con dettaglio note aperto
+
+function nomeDi(uid) { return naufraghiInfo[uid]?.nome || '⚠ Sconosciuto'; }
+
+// Deduplica per authUid reale: stessa logica già in uso in consiglio-admin.html/bussola-gruppo-admin.html.
+async function caricaNaufraghi() {
+  mappaUidCanonico = await caricaMappaUidCanonico();
+  const snap = await getDocs(collection(db, 'robinson_naufraghi'));
+  const seenAuth = new Set();
+  snap.forEach(d => {
+    const authUid = uidCanonico(mappaUidCanonico, d.id);
+    if (authUid === ADMIN_UID) return;
+    const data = d.data();
+    if (!data.nome) return;
+    if (seenAuth.has(authUid)) return;
+    seenAuth.add(authUid);
+    naufraghiInfo[authUid] = { nome: data.nome };
+  });
+}
+
+async function caricaRisposteRifiuto() {
+  const snap = await getDocs(collection(db, 'robinson_sociogramma_rifiuto'));
+  const canonEntry = e => (e && e.uid) ? { uid: uidCanonico(mappaUidCanonico, e.uid), perche: e.perche || '' } : null;
+  const perAutore = {};
+  snap.forEach(d => {
+    const raw = d.data();
+    const userId = uidCanonico(mappaUidCanonico, d.id);
+    const risposta = {
+      userId,
+      rifiuti: (raw.rifiuti || []).map(canonEntry).filter(Boolean),
+      completatoIl: raw.completatoIl,
+    };
+    const esistente = perAutore[userId];
+    const tNuovo = risposta.completatoIl?.toMillis ? risposta.completatoIl.toMillis() : 0;
+    const tVecchio = esistente?.completatoIl?.toMillis ? esistente.completatoIl.toMillis() : -1;
+    if (!esistente || tNuovo >= tVecchio) perAutore[userId] = risposta;
+  });
+  risposteRifiuto = Object.values(perAutore);
+}
+
+// Rilevazione più recente del Consiglio dell'Isola, solo per il campo 'ciurma' (D1, positivo
+// forte): stessa fonte usata da consiglio-admin.html per isolati/leadership. Se il Consiglio
+// non è mai stato svolto, la classificazione userà 0 scelte positive per tutti (nessun crash,
+// ma va segnalato in UI: senza dati positivi l'incrocio non è affidabile).
+async function caricaRisposteConsiglio() {
+  const rilSnap = await getDocs(query(collection(db, 'attivita', CONSIGLIO_ATT_ID, 'rilevazioni'), orderBy('numero', 'desc')));
+  if (rilSnap.empty) { consiglioDisponibile = false; risposteConsiglio = []; return; }
+  const rilId = rilSnap.docs[0].id;
+  const snap = await getDocs(collection(db, 'attivita', CONSIGLIO_ATT_ID, 'rilevazioni', rilId, 'risposte'));
+  const canon = arr => [...new Set((arr || []).map(u => uidCanonico(mappaUidCanonico, u)))];
+  const perAutore = {};
+  snap.docs.forEach(d => {
+    const userId = uidCanonico(mappaUidCanonico, d.id);
+    const esistente = perAutore[userId];
+    if (!esistente || d.id === userId) perAutore[userId] = { userId, ciurma: canon(d.data().ciurma) };
+  });
+  risposteConsiglio = Object.values(perAutore);
+  consiglioDisponibile = true;
+}
+
+function calcolaTutto() {
+  const uids = Object.keys(naufraghiInfo);
+  const lpConte = {}, lmConte = {}, note = {};
+  uids.forEach(uid => {
+    lpConte[uid] = insiemeEntrante(risposteConsiglio, uid, 'ciurma').size;
+    lmConte[uid] = insiemeRifiuto(risposteRifiuto, uid).size;
+    note[uid] = motiviRifiutoRicevuti(risposteRifiuto, uid);
+  });
+  const classificazione = classificaSociometrica(uids, lpConte, lmConte);
+  return { uids, lpConte, lmConte, note, classificazione };
+}
+
+function renderTabella() {
+  const { uids, lpConte, lmConte, note, classificazione } = calcolaTutto();
+  let ordinati = [...uids];
+  if (ordinaAttivo === 'alfabetico') ordinati.sort((a, b) => nomeDi(a).localeCompare(nomeDi(b), 'it'));
+  else if (ordinaAttivo === 'rifiuti') ordinati.sort((a, b) => (lmConte[b] - lmConte[a]) || nomeDi(a).localeCompare(nomeDi(b), 'it'));
+  else ordinati.sort((a, b) => (lpConte[b] - lpConte[a]) || nomeDi(a).localeCompare(nomeDi(b), 'it'));
+
+  const righe = ordinati.map(uid => {
+    const c = classificazione[uid];
+    const noteUid = note[uid];
+    const aperto = espansi.has(uid);
+    const dettaglio = aperto ? `
+      <tr class="dettaglio-riga">
+        <td colspan="4">
+          <div class="dettaglio-note">
+            ${noteUid.length
+              ? noteUid.map(n => `<div class="nota-item"><span class="nota-quote">"${esc(n.perche)}"</span><span class="nota-meta">— indicato/a da ${esc(nomeDi(n.daUid))}</span></div>`).join('')
+              : '<div class="nota-vuota">Nessuna motivazione ricevuta.</div>'}
+          </div>
+        </td>
+      </tr>` : '';
+    return `
+      <tr class="${aperto ? 'espansa' : ''}">
+        <td><button class="riga-nome" data-uid="${esc(uid)}">${esc(nomeDi(uid))}</button></td>
+        <td class="num">${lpConte[uid]}</td>
+        <td class="num">${lmConte[uid]}</td>
+        <td><span class="cat-badge cat-${c.categoria}">${etichettaCategoria(c.categoria)}</span></td>
+      </tr>
+      ${dettaglio}`;
+  }).join('');
+
+  const wrap = document.getElementById('tabella-wrap');
+  wrap.innerHTML = uids.length ? `
+    <table class="agg-tabella">
+      <thead><tr><th>Naufrago</th><th>🌟 Scelte ricevute</th><th>🚫 Rifiuti ricevuti</th><th>Categoria</th></tr></thead>
+      <tbody>${righe}</tbody>
+    </table>
+  ` : '<div class="vuoto">Nessun naufrago disponibile.</div>';
+
+  wrap.querySelectorAll('.riga-nome').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const uid = btn.dataset.uid;
+      if (espansi.has(uid)) espansi.delete(uid); else espansi.add(uid);
+      renderTabella();
+    });
+  });
+}
+
+function etichettaCategoria(cat) {
+  return { popolare: 'Popolare', rifiutato: 'Rifiutato/a', trascurato: 'Trascurato/a', controverso: 'Controverso/a', medio: 'Medio' }[cat] || cat;
+}
+
+function renderStato() {
+  const risposeCount = risposteRifiuto.length;
+  const totaleNaufraghi = Object.keys(naufraghiInfo).length;
+  const notaConsiglio = consiglioDisponibile
+    ? ''
+    : ' ⚠️ Nessuna rilevazione del Consiglio dell\'Isola trovata: le "scelte ricevute" sono a 0 per tutti, la classificazione non è affidabile finché non viene svolta almeno una rilevazione.';
+  document.getElementById('stato-riga').textContent =
+    `${risposeCount} su ${totaleNaufraghi} naufraghi hanno risposto.${notaConsiglio}`;
+}
+
+function esportaCSV() {
+  const { uids, lpConte, lmConte, note, classificazione } = calcolaTutto();
+  const righe = [['Naufrago', 'Scelte ricevute', 'Rifiuti ricevuti', 'Categoria', 'Perché ricevuti (indicato da)']];
+  uids.sort((a, b) => nomeDi(a).localeCompare(nomeDi(b), 'it')).forEach(uid => {
+    const perche = note[uid].map(n => `"${n.perche}" (${nomeDi(n.daUid)})`).join(' | ');
+    righe.push([nomeDi(uid), lpConte[uid], lmConte[uid], etichettaCategoria(classificazione[uid].categoria), perche]);
+  });
+  const csv = righe.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(';')).join('\r\n');
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'sociogramma-rifiuto.csv';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+document.querySelectorAll('#ordina-bar .filtro-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#ordina-bar .filtro-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    ordinaAttivo = btn.dataset.ordina;
+    renderTabella();
+  });
+});
+document.getElementById('btn-csv').addEventListener('click', esportaCSV);
+
+// ── Guardia admin + avvio ───────────────────────────────────────────────
+let resolved = false;
+onAuthStateChanged(auth, async user => {
+  if (resolved) return;
+  resolved = true;
+  if (!user || user.uid !== ADMIN_UID) { window.location.replace('index.html'); return; }
+
+  await caricaNaufraghi();
+  await Promise.all([caricaRisposteRifiuto(), caricaRisposteConsiglio()]);
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('main').style.display = 'block';
+  renderStato();
+  renderTabella();
+});
+</script>
+</body>
+</html>
