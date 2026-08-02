@@ -55,6 +55,10 @@
     .voce-cell { background: #fff; border-left: 4px solid var(--navy); border-radius: 4px 8px 8px 4px; padding: 8px 10px; box-shadow: 1px 1px 6px rgba(26,58,92,0.08); }
     .voce-cell.presa { opacity: 0.7; }
     .voce-top { display: flex; align-items: center; gap: 6px; }
+    .voce-ordine { display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; }
+    .ord-btn { width: 18px; height: 16px; border: none; background: var(--carta-scura); color: var(--navy); border-radius: 3px; font-size: 0.6rem; line-height: 1; padding: 0; cursor: pointer; }
+    .ord-btn:hover { background: var(--oro-light); }
+    .ord-btn:disabled { opacity: 0.3; cursor: default; }
     .voce-nome { flex: 1; min-width: 0; font-weight: 600; color: var(--navy); font-size: 0.84rem; }
     .voce-nome .origine-tag { font-size: 0.62rem; color: var(--muted); font-weight: 400; margin-left: 4px; }
     .voce-del { background: none; border: none; color: var(--rosso); cursor: pointer; font-size: 0.85rem; padding: 2px 4px; flex-shrink: 0; }
@@ -136,7 +140,7 @@ import { db } from './js/robinson-firebase.js';
 import { requireAuth } from './js/robinson-auth.js';
 import { setupNavAuth } from './js/robinson-nav.js';
 import { esc } from './js/robinson-utils.js';
-import { puoAccedereGestione, prodottiDaComprare, spostaCategoriaOrdine, fmtEuro, fmtDataBreve, quantitaSuggerita, attivaCercaProdotto } from './js/robinson-magazzino.js';
+import { puoAccedereGestione, prodottiDaComprare, spostaCategoriaOrdine, fmtEuro, fmtDataBreve, quantitaSuggerita, attivaCercaProdotto, comparaPerOrdine, normalizzaOrdineProdotti, prossimoOrdine, ordineVoce } from './js/robinson-magazzino.js';
 import {
   doc, getDoc, updateDoc, deleteDoc, addDoc, collection, getDocs, query, orderBy,
   serverTimestamp, writeBatch, increment
@@ -150,6 +154,7 @@ let currentUser = null;
 let lista = null;
 let voci = [];
 let categorie = [];
+let prodottiMap = new Map(); // id prodotto -> prodotto Magazzino (fonte di verità per `ordine`)
 const collassate = new Set(); // id categoria collassate (solo UI, non persistito)
 
 if (!listaId) {
@@ -160,6 +165,7 @@ if (!listaId) {
     const ok = await puoAccedereGestione(user);
     if (!ok) { window.location.replace('index.html'); return; }
     await caricaCategorie();
+    await caricaProdottiMap();
     await caricaTutto();
   });
 }
@@ -169,9 +175,71 @@ async function caricaCategorie() {
   categorie = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(c => c.attiva !== false);
 }
 
+async function caricaProdottiMap() {
+  const snap = await getDocs(collection(db, 'magazzino_prodotti'));
+  prodottiMap = new Map(snap.docs.map(d => [d.id, { id: d.id, ...d.data() }]));
+}
+
+// Ordinamento voci: legge l'`ordine` dal prodotto collegato (fonte unica) o
+// dalla voce stessa se manuale (vedi comparaPerOrdine/ordineVoce condivisi).
+function comparaVoci(a, b) {
+  return comparaPerOrdine(
+    { ordine: ordineVoce(a, prodottiMap), nome: a.nome },
+    { ordine: ordineVoce(b, prodottiMap), nome: b.nome }
+  );
+}
+
+// Normalizzazione lazy per una categoria: i prodotti collegati si
+// normalizzano sull'intera categoria del Magazzino (stessa fonte letta da
+// magazzino.html); le voci manuali (senza prodotto) sul proprio campo.
+async function normalizzaOrdiniCategoria(catId, vociCat) {
+  const prodottiCat = [...prodottiMap.values()].filter(p => p.categoria === catId && p.attivo !== false);
+  await normalizzaOrdineProdotti(prodottiCat);
+
+  if (vociCat.every(v => v.prodotto_id || v.ordine != null)) return;
+  const ordinati = [...vociCat].sort(comparaVoci);
+  const batch = writeBatch(db);
+  let scritto = false;
+  ordinati.forEach((v, i) => {
+    if (v.prodotto_id || v.ordine === i) return;
+    v.ordine = i;
+    scritto = true;
+    batch.update(doc(db, 'liste_spesa', listaId, 'voci', v.id), { ordine: i });
+  });
+  if (scritto) await batch.commit();
+}
+
 // Riordino colonne (helper condiviso col Magazzino, agisce sul campo `ordine`)
 async function spostaCategoria(i, delta) {
   if (await spostaCategoriaOrdine(categorie, i, delta)) { await caricaCategorie(); render(); }
+}
+
+// ── Riordino voci dentro la categoria (priorità di acquisto) ─────────────
+// Scambia l'`ordine` effettivo con l'adiacente: per una voce collegata a un
+// prodotto scrive sul prodotto in Magazzino (fonte unica), per una voce
+// manuale scrive sulla voce stessa. Aggiornamento ottimistico locale
+// immediato, poi persistenza in un unico writeBatch.
+function scriviOrdineLocale(v, val) {
+  if (v.prodotto_id) { const p = prodottiMap.get(v.prodotto_id); if (p) p.ordine = val; }
+  else v.ordine = val;
+}
+function scriviOrdineBatch(batch, v, val) {
+  if (v.prodotto_id) batch.update(doc(db, 'magazzino_prodotti', v.prodotto_id), { ordine: val });
+  else batch.update(doc(db, 'liste_spesa', listaId, 'voci', v.id), { ordine: val });
+}
+async function spostaVoce(catId, indice, delta) {
+  const vociCat = voci.filter(v => v.categoria === catId).sort(comparaVoci);
+  const j = indice + delta;
+  if (j < 0 || j >= vociCat.length) return;
+  const a = vociCat[indice], b = vociCat[j];
+  const oa = ordineVoce(a, prodottiMap), ob = ordineVoce(b, prodottiMap);
+  scriviOrdineLocale(a, ob);
+  scriviOrdineLocale(b, oa);
+  render();
+  const batch = writeBatch(db);
+  scriviOrdineBatch(batch, a, ob);
+  scriviOrdineBatch(batch, b, oa);
+  await batch.commit();
 }
 
 // ── Cerca prodotto (componente condiviso col Magazzino) ──────────────────────
@@ -196,6 +264,12 @@ async function caricaTutto() {
   lista = listaSnap.data();
   const vociSnap = await getDocs(collection(db, 'liste_spesa', listaId, 'voci'));
   voci = vociSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+  // Normalizzazione lazy dell'ordine, categoria per categoria (alla prima
+  // apertura di una lista con prodotti/voci privi di `ordine`).
+  const catIds = new Set(voci.map(v => v.categoria).filter(Boolean));
+  await Promise.all([...catIds].map(catId => normalizzaOrdiniCategoria(catId, voci.filter(v => v.categoria === catId))));
+
   render();
 }
 
@@ -224,9 +298,9 @@ function render() {
   grid.innerHTML = '';
 
   const catIds = new Set(categorie.map(c => c.id));
-  const senzaCategoria = voci.filter(v => !catIds.has(v.categoria));
+  const senzaCategoria = voci.filter(v => !catIds.has(v.categoria)).sort(comparaVoci);
 
-  categorie.forEach((c, i) => grid.appendChild(renderColonna(c, voci.filter(v => v.categoria === c.id), readonly, false, i)));
+  categorie.forEach((c, i) => grid.appendChild(renderColonna(c, voci.filter(v => v.categoria === c.id).sort(comparaVoci), readonly, false, i)));
   if (senzaCategoria.length) grid.appendChild(renderColonna({ id: null, nome: 'Senza categoria' }, senzaCategoria, readonly, true));
 }
 
@@ -263,7 +337,7 @@ function renderColonna(c, vociCat, readonly, sola = false, indice = -1) {
   if (!vociCat.length) {
     body.innerHTML = `<div class="mag-col-empty">Nessuna voce.</div>`;
   } else {
-    vociCat.forEach(v => body.appendChild(renderVoceCell(v, readonly)));
+    vociCat.forEach((v, idx) => body.appendChild(renderVoceCell(v, readonly, c.id, idx, vociCat.length)));
   }
   col.appendChild(body);
 
@@ -283,12 +357,16 @@ function calcolaImporto(v) {
   return Math.round(v.prezzo_unitario * v.quantita * 100) / 100;
 }
 
-function renderVoceCell(v, readonly) {
+function renderVoceCell(v, readonly, catId, indice, totale) {
   const cell = document.createElement('div');
   cell.className = 'voce-cell' + (v.acquistato ? ' presa' : '');
   cell.dataset.itemId = v.id;
   cell.innerHTML = `
     <div class="voce-top">
+      ${!readonly ? `<div class="voce-ordine">
+        <button class="ord-btn" data-act="su" title="Sposta su" ${indice === 0 ? 'disabled' : ''}>▲</button>
+        <button class="ord-btn" data-act="giu" title="Sposta giù" ${indice === totale - 1 ? 'disabled' : ''}>▼</button>
+      </div>` : ''}
       <div class="voce-nome">${esc(v.nome)}${v.origine === 'manuale' ? '<span class="origine-tag">· manuale</span>' : ''}</div>
       ${!readonly ? `<button class="voce-del" title="Elimina voce">🗑️</button>` : ''}
     </div>
@@ -310,6 +388,8 @@ function renderVoceCell(v, readonly) {
   };
 
   if (!readonly) {
+    cell.querySelector('[data-act=su]').addEventListener('click', e => { e.stopPropagation(); spostaVoce(catId, indice, -1); });
+    cell.querySelector('[data-act=giu]').addEventListener('click', e => { e.stopPropagation(); spostaVoce(catId, indice, 1); });
     cell.querySelector('.voce-del').addEventListener('click', async () => {
       if (!confirm(`Eliminare "${v.nome}" dalla lista?`)) return;
       await deleteDoc(doc(db, 'liste_spesa', listaId, 'voci', v.id));
@@ -377,12 +457,21 @@ async function aggiornaDaMagazzino() {
 async function chiudiLista() {
   if (!confirm('Chiudere la lista? Le quantità acquistate reintegreranno il magazzino.')) return;
   const daCaricare = voci.filter(v => v.acquistato && !v.consumo_diretto && v.prodotto_id && !v.caricato_a_magazzino && v.quantita);
+  const daCaricareIds = new Set(daCaricare.map(v => v.id));
 
   const batch = writeBatch(db);
   batch.update(doc(db, 'liste_spesa', listaId), { stato: 'chiusa', chiusa_il: serverTimestamp() });
   daCaricare.forEach(v => {
     batch.update(doc(db, 'magazzino_prodotti', v.prodotto_id), { quantita_attuale: increment(v.quantita), aggiornato_il: serverTimestamp() });
-    batch.update(doc(db, 'liste_spesa', listaId, 'voci', v.id), { caricato_a_magazzino: true });
+  });
+  // Congela l'`ordine` effettivo di ogni voce (priorità del giorno) insieme
+  // agli altri dati denormalizzati, così lo Storico resta corretto anche se
+  // in seguito il prodotto viene riordinato in Magazzino.
+  voci.forEach(v => {
+    const ord = ordineVoce(v, prodottiMap);
+    const campi = { ordine: ord === Infinity ? null : ord };
+    if (daCaricareIds.has(v.id)) campi.caricato_a_magazzino = true;
+    batch.update(doc(db, 'liste_spesa', listaId, 'voci', v.id), campi);
   });
   await batch.commit();
 
@@ -401,13 +490,18 @@ async function riapriLista() {
 
 // ── Crea prodotto a magazzino da una voce manuale ───────────────────────────
 async function creaProdottoDaVoce(v) {
+  const categoria = v.categoria || (categorie[0]?.id || null);
+  // L'`ordine` della voce (se presente) diventa l'ordine del prodotto, così
+  // la sua posizione in coda alla Lista spesa si mantiene nel Magazzino.
+  const prodottiCat = [...prodottiMap.values()].filter(p => p.categoria === categoria);
   const dati = {
-    nome: v.nome, categoria: v.categoria || (categorie[0]?.id || null), unita: v.unita || '',
+    nome: v.nome, categoria, unita: v.unita || '',
     quantita_attuale: 0, soglia_minima: 0, scorta_obiettivo: null,
-    prezzo_riferimento: v.prezzo_unitario ?? null, attivo: true,
+    prezzo_riferimento: v.prezzo_unitario ?? null, ordine: v.ordine ?? prossimoOrdine(prodottiCat), attivo: true,
     creato_da: currentUser.uid, creato_il: serverTimestamp()
   };
   const ref = await addDoc(collection(db, 'magazzino_prodotti'), dati);
+  prodottiMap.set(ref.id, { id: ref.id, ...dati });
   const aggiornamenti = { prodotto_id: ref.id };
 
   // Se la lista è già chiusa e la voce è acquistata (non consumo diretto), reintegra subito
@@ -444,8 +538,12 @@ document.getElementById('vm-salva').addEventListener('click', async () => {
   const prezzo_unitario = prezzoRaw === '' ? null : parseFloat(prezzoRaw);
   const prezzo = calcolaImporto({ prezzo_unitario, quantita });
 
+  // Append in coda alla categoria, tra le voci già presenti (prodotto o manuali).
+  const effettivi = voci.filter(v => v.categoria === categoria).map(v => ({ ordine: ordineVoce(v, prodottiMap) }));
+  const ordine = prossimoOrdine(effettivi);
+
   await addDoc(collection(db, 'liste_spesa', listaId, 'voci'), {
-    nome, categoria, origine: 'manuale', prodotto_id: null, quantita, unita, prezzo_unitario, prezzo,
+    nome, categoria, origine: 'manuale', prodotto_id: null, quantita, unita, prezzo_unitario, prezzo, ordine,
     acquistato: false, consumo_diretto: false, caricato_a_magazzino: false, data_lista: lista.data
   });
 

@@ -236,8 +236,12 @@ function renderPerTipologia() {
     if (!perCategoria[catKey]) perCategoria[catKey] = { totale: 0, prodotti: {} };
     perCategoria[catKey].totale += (v.prezzo || 0);
     const pKey = v.prodotto_id || v.nome;
-    perCategoria[catKey].prodotti[pKey] = perCategoria[catKey].prodotti[pKey] || { nome: v.nome, totale: 0 };
-    perCategoria[catKey].prodotti[pKey].totale += (v.prezzo || 0);
+    const voce = perCategoria[catKey].prodotti[pKey] = perCategoria[catKey].prodotti[pKey] || { nome: v.nome, totale: 0, ordine: null, ultimaData: 0 };
+    voce.totale += (v.prezzo || 0);
+    // L'`ordine` congelato alla chiusura della lista (priorità di quel
+    // giorno): tiene quello della voce più recente nel periodo.
+    const t = v.data_lista?.toMillis ? v.data_lista.toMillis() : 0;
+    if (v.ordine != null && t >= voce.ultimaData) { voce.ordine = v.ordine; voce.ultimaData = t; }
   });
 
   const body = document.getElementById('tp-body');
@@ -246,7 +250,11 @@ function renderPerTipologia() {
   body.innerHTML = '';
   chiavi.forEach(k => {
     const c = perCategoria[k];
-    const prodotti = Object.values(c.prodotti).sort((a, b) => b.totale - a.totale);
+    const prodotti = Object.values(c.prodotti).sort((a, b) => {
+      const oa = a.ordine ?? Infinity, ob = b.ordine ?? Infinity;
+      if (oa !== ob) return oa - ob;
+      return b.totale - a.totale;
+    });
     const el = document.createElement('div');
     el.className = 'cat-report';
     el.innerHTML = `<div class="cr-head"><span>${esc(catMap[k] || 'Senza categoria')}</span><span>${fmtEuro(c.totale)}</span></div>` +

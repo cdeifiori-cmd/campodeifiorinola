@@ -4,7 +4,7 @@
 // per il gate di accesso e per i calcoli usati in più pagine.
 import { db, ADMIN_UID } from './robinson-firebase.js';
 import { esc } from './robinson-utils.js';
-import { getDoc, doc, setDoc, getDocs, collection, updateDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { getDoc, doc, setDoc, getDocs, collection, updateDoc, writeBatch } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 // ── Gate di accesso alla cartella "Gestione" ────────────────────────────────
 // Ammessi: admin, oppure chi ha un documento in magazzino_autorizzati (chiave =
@@ -104,6 +104,60 @@ export async function spostaCategoriaOrdine(categorie, indice, delta) {
     updateDoc(doc(db, 'magazzino_categorie', b.id), { ordine: b.ordine })
   ]);
   return true;
+}
+
+// ── Ordinamento manuale prodotti (priorità di acquisto) ─────────────────────
+// Il campo `ordine` vive sul prodotto in Magazzino ed è relativo alla sua
+// categoria (non globale). Le voci della Lista spesa collegate a un prodotto
+// (prodotto_id) leggono lo stesso campo — unica fonte di verità in entrambe
+// le viste; le voci manuali (senza prodotto) portano un proprio `ordine`
+// finché non vengono promosse a prodotto (vedi lista-spesa-dettaglio.html).
+export function ordineDi(item) {
+  const o = item.ordine;
+  return (o == null) ? Infinity : o;
+}
+
+export function comparaPerOrdine(a, b) {
+  const oa = ordineDi(a), ob = ordineDi(b);
+  if (oa !== ob) return oa - ob;
+  return (a.nome || '').localeCompare(b.nome || '', 'it');
+}
+
+// Prossimo valore libero per un nuovo item in coda alla categoria (append).
+export function prossimoOrdine(itemsCat) {
+  if (!itemsCat.length) return 0;
+  const max = Math.max(...itemsCat.map(it => { const o = ordineDi(it); return o === Infinity ? -1 : o; }));
+  return max + 1;
+}
+
+// Normalizzazione lazy: se qualche prodotto della categoria non ha ancora un
+// `ordine`, assegna indici sequenziali (0,1,2…) secondo l'ordinamento
+// corrente (comparaPerOrdine, che ricade sul nome finché manca) e persiste
+// in un unico writeBatch. Va chiamata alla prima apertura di una categoria
+// (magazzino.html e lista-spesa-dettaglio.html, così la normalizzazione
+// riguarda sempre l'intera categoria del Magazzino, non solo i prodotti
+// presenti nella lista corrente).
+export async function normalizzaOrdineProdotti(prodottiCat) {
+  if (!prodottiCat.length || prodottiCat.every(p => p.ordine != null)) return false;
+  const ordinati = [...prodottiCat].sort(comparaPerOrdine);
+  const batch = writeBatch(db);
+  let scritto = false;
+  ordinati.forEach((p, i) => {
+    if (p.ordine === i) return;
+    p.ordine = i;
+    scritto = true;
+    batch.update(doc(db, 'magazzino_prodotti', p.id), { ordine: i });
+  });
+  if (scritto) await batch.commit();
+  return scritto;
+}
+
+// Ordine effettivo di una voce di Lista spesa: se collegata a un prodotto
+// legge il campo dal prodotto (fonte di verità unica); le voci manuali
+// portano un proprio `ordine`.
+export function ordineVoce(voce, prodottiMap) {
+  if (voce.prodotto_id) return prodottiMap.get(voce.prodotto_id)?.ordine ?? null;
+  return voce.ordine ?? null;
 }
 
 // ── Cerca prodotto (typeahead condiviso tra Magazzino e Lista spesa) ────────
