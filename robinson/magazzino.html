@@ -46,6 +46,8 @@
     .mag-col-empty { font-size: 0.75rem; color: var(--muted); font-style: italic; padding: 6px 2px; }
 
     .prod-cell { background: #fff; border-left: 4px solid var(--navy); border-radius: 4px 8px 8px 4px; padding: 8px 10px; cursor: pointer; box-shadow: 1px 1px 6px rgba(26,58,92,0.08); }
+    .prod-cell.presente:not(.sotto) { border-left-color: #1e8449; background: #2ecc71; }
+    .prod-cell.presente:not(.sotto) .prod-cell-meta { color: var(--navy); }
     .prod-cell.sotto { border-left-color: var(--rosso); background: #fdf1ef; }
     .prod-cell-top { display: flex; align-items: flex-start; gap: 6px; }
     .prod-cell-ordine { display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; }
@@ -316,8 +318,9 @@ function renderColonna(c, prodottiCat, indice, sola = false) {
 function renderProdCell(p, catId, indice, totale) {
   const cell = document.createElement('div');
   const sotto = sottoSoglia(p);
+  const presente = (p.quantita_attuale ?? 0) > 0;
   const modalita = modalitaProdotto(p);
-  cell.className = 'prod-cell' + (sotto ? ' sotto' : '');
+  cell.className = 'prod-cell' + (sotto ? ' sotto' : '') + (presente ? ' presente' : '');
   cell.dataset.itemId = p.id;
 
   const meta = modalita === 'soglia'

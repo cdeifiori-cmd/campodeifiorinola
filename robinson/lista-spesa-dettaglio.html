@@ -53,7 +53,7 @@
 
     /* Cella voce */
     .voce-cell { background: #fff; border-left: 4px solid var(--navy); border-radius: 4px 8px 8px 4px; padding: 8px 10px; box-shadow: 1px 1px 6px rgba(26,58,92,0.08); }
-    .voce-cell.presa { opacity: 0.7; }
+    .voce-cell.presa { border-left-color: #1e8449; background: #2ecc71; }
     .voce-top { display: flex; align-items: center; gap: 6px; }
     .voce-ordine { display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; }
     .ord-btn { width: 18px; height: 16px; border: none; background: var(--carta-scura); color: var(--navy); border-radius: 3px; font-size: 0.6rem; line-height: 1; padding: 0; cursor: pointer; }
@@ -63,12 +63,21 @@
     .voce-nome .origine-tag { font-size: 0.62rem; color: var(--muted); font-weight: 400; margin-left: 4px; }
     .voce-del { background: none; border: none; color: var(--rosso); cursor: pointer; font-size: 0.85rem; padding: 2px 4px; flex-shrink: 0; }
     .voce-fields { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; align-items: center; }
-    .voce-fields input[type=number] { width: 64px; padding: 5px 6px; border: 1.5px solid #c8b89a; border-radius: 6px; font-family: 'Lora', serif; font-size: 0.8rem; }
+    .voce-fields input[type=number] { width: 64px; padding: 5px 6px; border: 1.5px solid #c8b89a; border-radius: 6px; font-family: 'Lora', serif; font-size: 0.8rem; background: #fff; }
     .voce-fields .voce-unita { font-size: 0.72rem; color: var(--muted); }
     .voce-importo { font-weight: 700; color: var(--oro); margin-left: auto; font-size: 0.84rem; }
     .voce-checks { display: flex; gap: 10px; margin-top: 6px; flex-wrap: wrap; }
     .voce-checks label { display: flex; align-items: center; gap: 4px; font-size: 0.72rem; cursor: pointer; }
     .voce-crea-prod { font-size: 0.68rem; margin-top: 6px; background: none; border: 1px dashed var(--oro); color: var(--oro); border-radius: 6px; padding: 3px 8px; cursor: pointer; width: 100%; }
+
+    /* Sovrascritture di contrasto per lo stato "preso": i testi secondari
+       (muted/oro/rosso) non sono leggibili sul verde pieno, quindi passano
+       a var(--navy); i controlli mantengono uno sfondo chiaro per risaltare. */
+    .voce-cell.presa .origine-tag,
+    .voce-cell.presa .voce-unita,
+    .voce-cell.presa .voce-importo,
+    .voce-cell.presa .voce-del { color: var(--navy); }
+    .voce-cell.presa .voce-crea-prod { background: #fff; }
 
     .modal-box.wide { max-width: 420px; }
   </style>
@@ -411,7 +420,10 @@ function renderVoceCell(v, readonly, catId, indice, totale) {
       await ricalcolaTotale();
       render();
     });
-    cell.querySelector('.v-acquistato').addEventListener('change', e => salva({ acquistato: e.target.checked }));
+    cell.querySelector('.v-acquistato').addEventListener('change', e => {
+      cell.classList.toggle('presa', e.target.checked);
+      salva({ acquistato: e.target.checked });
+    });
     cell.querySelector('.v-consumo').addEventListener('change', e => salva({ consumo_diretto: e.target.checked }));
   }
   const btnCreaProd = cell.querySelector('.voce-crea-prod');
