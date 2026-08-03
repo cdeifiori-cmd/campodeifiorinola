@@ -29,6 +29,11 @@
     .riservatezza-banner { background:#fdecea; border:1.5px solid var(--rosso); color:#7a2015; border-radius:var(--rc-radius-sm); padding:10px 14px; font-size:0.8rem; margin-bottom:var(--rc-sp-3); line-height:1.5; }
     .riservatezza-banner b { display:block; margin-top:4px; }
 
+    .stato-riga { font-size:0.78rem; color:var(--muted); margin-bottom:var(--rc-sp-2); }
+    /* Soglia di copertura sotto la quale mostrare l'avviso di parzialità: parametrica, vedi
+       SOGLIA_COPERTURA_PARZIALE nello script. */
+    .parzialita-banner { background:#fef5e7; border:1.5px solid #f0b429; color:#7a5a05; border-radius:var(--rc-radius-sm); padding:10px 14px; font-size:0.8rem; margin-bottom:var(--rc-sp-3); line-height:1.5; }
+
     .loading-msg { text-align:center; color:var(--muted); padding:40px 0; font-style:italic; }
 
     .rc-card { background:#fff; border:var(--rc-bordo); border-radius:var(--rc-radius); box-shadow:var(--rc-ombra); padding:var(--rc-sp-3); margin-bottom: var(--rc-sp-3); }
@@ -51,10 +56,24 @@
 
     .nota-anonima { font-size:0.76rem; color:var(--muted); font-style:italic; margin-top:4px; }
 
-    .legenda { display:flex; gap:var(--rc-sp-3); flex-wrap:wrap; font-size:0.72rem; color:var(--muted); margin-top:var(--rc-sp-2); }
+    .legenda { display:flex; gap:var(--rc-sp-3); flex-wrap:wrap; font-size:0.72rem; color:var(--muted); margin-top:var(--rc-sp-2); align-items:center; }
     .legenda-voce { display:flex; align-items:center; gap:5px; }
-    .legenda-linea { width:22px; height:0; border-top:2px solid #8e44ad; }
+    .legenda-linea { width:22px; height:0; border-top:2px solid #8b2635; }
     .legenda-linea.reciproca { border-top-width:3px; }
+    .legenda-pallino { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+    .legenda-anello { width:13px; height:13px; border-radius:50%; border:2px dashed; flex-shrink:0; box-sizing:border-box; }
+
+    /* ── Modalità narrativa: Bersaglio classico / Percorso guidato (4 step) ── */
+    .percorso-stepper { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:var(--rc-sp-2); }
+    .percorso-step-btn { padding:6px 12px; border-radius:20px; border:1.5px solid var(--navy); background:#fff; color:var(--navy); font-size:0.74rem; cursor:pointer; font-family:'Lora',serif; }
+    .percorso-step-btn.percorso-step-attivo { background:var(--navy); color:var(--oro); font-weight:700; }
+    .percorso-nav-riga { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+    .percorso-didascalia { flex:1 1 260px; font-size:0.84rem; color:var(--navy); background:var(--post-bg); border-left:4px solid var(--navy); border-radius:6px; padding:8px 12px; line-height:1.5; }
+    .percorso-didascalia strong { font-family:'Playfair Display',serif; }
+    .percorso-nota-insieme { font-size:0.82rem; color:var(--navy); background:#fef5e7; border-left:4px solid #b7770d; border-radius:6px; padding:8px 12px; margin-top:8px; line-height:1.5; }
+    .filtro-btn { padding:6px 14px; border-radius:20px; border:1.5px solid var(--navy); background:#fff; color:var(--navy); font-size:0.78rem; cursor:pointer; font-family:'Lora',serif; }
+    .filtro-btn:disabled { opacity:0.4; cursor:default; }
+    .bers-rif-arco.perc-dim { opacity: 0.2; }
 
     .bersaglio-row { display:flex; gap:var(--rc-sp-3); flex-wrap:wrap; }
     .mappa-col { flex:1.7; min-width:300px; }
@@ -74,6 +93,13 @@
     #dettaglio-body .item-titolo { font-weight:600; margin-top:8px; font-size:0.8rem; color:var(--navy); }
     #dettaglio-body.vuoto { color:var(--muted); font-style:italic; font-size:0.85rem; text-align:center; padding:var(--rc-sp-4) var(--rc-sp-2); }
     .chip { display:inline-block; background:var(--carta-scura); border-radius:12px; padding:2px 9px; font-size:0.78rem; margin:2px 3px 2px 0; }
+
+    .cat-badge { display:inline-block; font-size:0.68rem; font-weight:700; padding:2px 10px; border-radius:14px; white-space:nowrap; }
+    .cat-popolare { background:#d5f5e3; color:#1e8449; }
+    .cat-rifiutato { background:#fdecea; color:#a03020; }
+    .cat-trascurato { background:#eaecee; color:#5d6d7e; }
+    .cat-controverso { background:#fef5e7; color:#b7770d; }
+    .cat-medio { background:#f4f6f7; color:#7f8c8d; }
 
     .vuoto { color:var(--muted); font-style:italic; font-size:0.85rem; text-align:center; padding:24px 0; }
   </style>
@@ -100,8 +126,15 @@
       <b>La modalità Anonima nasconde i nomi, ma non è un sostituto della riservatezza: in un gruppo che si conosce, la sola posizione può bastare a riconoscere qualcuno. Restringi comunque la visione a chi ha bisogno di vederla.</b>
     </div>
 
+    <div class="stato-riga" id="stato-riga"></div>
+    <div class="parzialita-banner" id="parzialita-banner" style="display:none;"></div>
+
     <div class="rc-card">
       <div class="controlli-riga">
+        <div class="toggle-modo" id="toggle-vista">
+          <button id="btn-vista-classico" class="active">🎯 Bersaglio classico</button>
+          <button id="btn-vista-percorso">🧭 Percorso guidato</button>
+        </div>
         <div class="toggle-modo">
           <button id="btn-modo-nomi" class="active">👁 Con nomi</button>
           <button id="btn-modo-anonima">🕶 Anonima</button>
@@ -120,10 +153,34 @@
       <div class="nota-anonima" id="nota-anonima" style="display:none;">
         In modalità Anonima la ricerca per nome non è disponibile: il filtro qui sopra agisce solo sul numero di rifiuti ricevuti, non risolve mai un'identità.
       </div>
+
+      <div id="percorso-riquadro" style="display:none;">
+        <div class="percorso-stepper" id="percorso-stepper">
+          <button class="percorso-step-btn" data-step="0">1 · 🎯 Chi sta al centro</button>
+          <button class="percorso-step-btn" data-step="1">2 · ↔ Reciprocità del rifiuto</button>
+          <button class="percorso-step-btn" data-step="2">3 · 🏷️ Categorie Coie &amp; Dodge</button>
+          <button class="percorso-step-btn" data-step="3">4 · 🔎 Sguardo d'insieme</button>
+        </div>
+        <div class="percorso-nav-riga">
+          <button class="filtro-btn" id="percorso-btn-prec">◀ Step precedente</button>
+          <div class="percorso-didascalia" id="percorso-didascalia"></div>
+          <button class="filtro-btn" id="percorso-btn-succ">Step successivo ▶</button>
+        </div>
+        <div id="percorso-zone"></div>
+      </div>
+
       <div class="legenda">
         <span class="legenda-voce"><span class="legenda-linea"></span> Rifiuto in un solo senso (X non sopporta Y)</span>
         <span class="legenda-voce"><span class="legenda-linea reciproca"></span> Rifiuto reciproco (X↔Y)</span>
         <span>Centro = più nomination di rifiuto ricevute · Bordo = zero ricevute</span>
+      </div>
+      <div class="legenda">
+        <span style="font-weight:700;">Bordo tratteggiato (Coie &amp; Dodge):</span>
+        <span class="legenda-voce"><span class="legenda-anello" style="border-color:#1e8449;"></span> Popolare</span>
+        <span class="legenda-voce"><span class="legenda-anello" style="border-color:#a03020;"></span> Rifiutato/a</span>
+        <span class="legenda-voce"><span class="legenda-anello" style="border-color:#b7770d;"></span> Controverso/a</span>
+        <span class="legenda-voce"><span class="legenda-anello" style="border-color:#5d6d7e;"></span> Trascurato/a</span>
+        <span class="legenda-voce"><span class="legenda-anello" style="border-color:#7f8c8d;"></span> Medio</span>
       </div>
     </div>
 
@@ -142,25 +199,60 @@
 <script type="module">
 import { db, auth, ADMIN_UID } from './js/robinson-firebase.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import { collection, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { collection, getDocs, query, orderBy } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { esc, caricaMappaUidCanonico, uidCanonico } from './js/robinson-utils.js';
-import { insiemeRifiuto, calcolaFasceAnelli, trovaAnelloPerValore } from './js/robinson-sociogramma.js';
+import { insiemeRifiuto, insiemeEntrante, classificaSociometrica, trovaAnelloPerValore } from './js/robinson-sociogramma.js';
 
 // Stessa grammatica visiva del Bersaglio del Consiglio (cerchi concentrici + frecce SVG accorciate
-// ai bordi dei nodi), ma versione autonoma e più semplice: un solo indicatore (rifiuti ricevuti),
-// nessun tema/cluster. Colore frecce volutamente distinto dalla palette del Consiglio.
+// ai bordi dei nodi + alone tratteggiato di profilo), parametrizzata su un solo indicatore
+// (rifiuti ricevuti) invece delle 4 domande del Consiglio. Colore frecce volutamente distinto
+// dalla palette del Consiglio (verde/giallo/arancio/rosso) e dal viola usato in precedenza.
 const RING_RADII = [70, 145, 220, 295]; // 0=centro (più rifiutato/a) .. 3=bordo (zero ricevute)
 const NODO_RAGGIO = 16;
 const FRECCIA_GAP = 5;
 const FRECCIA_MIN_SEGMENTO = 10;
-const COLORE_FRECCIA = '8e44ad'; // viola — distinto da blu/verde/giallo/arancio/rosso del Consiglio
+const COLORE_FRECCIA = '8b2635'; // bordeaux — distinto da verde/giallo/arancio/rosso del Consiglio
+
+// Fasce assolute dedicate al rifiuto (range più compresso di quello delle scelte, che invece usa
+// terzi proporzionali del massimo): 0 / 1 / 2 / 3+ come punto di partenza. Soglie parametriche,
+// facilmente modificabili qui — verificate sul dataset reale della sessione ciurma del 04/07/2026
+// (3/24 risposte, massimo osservato = 1): se in futuro i valori si schiacciano ancora di più,
+// accorpare le fasce centrali; se si allargano oltre 3+, aggiungere una fascia e un raggio.
+const FASCE_RIFIUTO = [
+  [3, Infinity], // ring0 — centro
+  [2, 2],        // ring1
+  [1, 1],        // ring2
+  [0, 0],        // ring3 — bordo
+];
+
+// Soglia di copertura sotto la quale la vista si dichiara esplicitamente esplorativa (banner di
+// parzialità): parametrica, facilmente modificabile.
+const SOGLIA_COPERTURA_PARZIALE = 0.5;
+
+// Attività del Consiglio dell'Isola: fonte delle scelte positive (ciurma) per l'incrocio Coie&Dodge,
+// stesso attId hardcoded e stessa logica di sociogramma-rifiuto-admin.html — non ricalcolare altrove.
+const CONSIGLIO_ATT_ID = 'consiglio-isola';
+
+const CATEGORIA_COLORE = { popolare: '#1e8449', rifiutato: '#a03020', trascurato: '#5d6d7e', controverso: '#b7770d', medio: '#7f8c8d' };
+const CATEGORIA_ETICHETTA = { popolare: 'Popolare', rifiutato: 'Rifiutato/a', trascurato: 'Trascurato/a', controverso: 'Controverso/a', medio: 'Medio' };
+
+const STEP_RIFIUTO = [
+  { numero: 1, titolo: 'Chi sta al centro', testo: 'I nodi più vicini al centro sono quelli che hanno ricevuto più rifiuti. Comincia sempre da qui: è l\'anello da leggere per primo.' },
+  { numero: 2, titolo: 'Le reciprocità del rifiuto', testo: 'Le frecce con doppia punta (↔) segnano un rifiuto reciproco: due naufraghi che si rifiutano a vicenda. Sono evidenziate più spesse, le altre frecce restano sullo sfondo.' },
+  { numero: 3, titolo: 'Le categorie Coie & Dodge', testo: 'Il bordo tratteggiato colorato incrocia le scelte ricevute nel Consiglio con i rifiuti ricevuti qui: stessa classificazione della vista Tabella. Incrocia posizione (quanto è rifiutato/a) e colore (che profilo ha).' },
+  { numero: 4, titolo: 'Sguardo d\'insieme', testo: 'Metti insieme posizione, reciprocità e categoria: quali situazioni meritano più attenzione? Con una copertura ancora parziale restano indicazioni da approfondire, non letture definitive sui singoli.' },
+];
 
 let naufraghiInfo = {}; // authUid -> {nome}
 let mappaUidCanonico = {};
 let risposteRifiuto = []; // [{ userId, rifiuti:[{uid,perche}] }]
+let risposteConsiglio = []; // [{ userId, ciurma:[uid,...] }] — dalla rilevazione più recente
+let consiglioDisponibile = false;
 let modalitaAnonima = false;
 let focoUid = null;
 let sogliaAttiva = 0;
+let modoPercorso = false;
+let stepRifiuto = 0;
 
 function nomeDi(uid) { return naufraghiInfo[uid]?.nome || '⚠ Sconosciuto'; }
 
@@ -193,6 +285,36 @@ async function caricaRisposteRifiuto() {
     if (!esistente || tNuovo >= tVecchio) perAutore[userId] = risposta;
   });
   risposteRifiuto = Object.values(perAutore);
+}
+
+// Rilevazione più recente del Consiglio dell'Isola (solo campo 'ciurma'/D1): stessa fonte e
+// stessa forma usate da sociogramma-rifiuto-admin.html per l'incrocio Coie&Dodge — nessun secondo
+// calcolo. Se il Consiglio non è mai stato svolto, lpConte resta a 0 per tutti (segnalato in UI).
+async function caricaRisposteConsiglio() {
+  const rilSnap = await getDocs(query(collection(db, 'attivita', CONSIGLIO_ATT_ID, 'rilevazioni'), orderBy('numero', 'desc')));
+  if (rilSnap.empty) { consiglioDisponibile = false; risposteConsiglio = []; return; }
+  const rilId = rilSnap.docs[0].id;
+  const snap = await getDocs(collection(db, 'attivita', CONSIGLIO_ATT_ID, 'rilevazioni', rilId, 'risposte'));
+  const canon = arr => [...new Set((arr || []).map(u => uidCanonico(mappaUidCanonico, u)))];
+  const perAutore = {};
+  snap.docs.forEach(d => {
+    const userId = uidCanonico(mappaUidCanonico, d.id);
+    const esistente = perAutore[userId];
+    if (!esistente || d.id === userId) perAutore[userId] = { userId, ciurma: canon(d.data().ciurma) };
+  });
+  risposteConsiglio = Object.values(perAutore);
+  consiglioDisponibile = true;
+}
+
+// Classificazione Coie & Dodge, riusata (non ricalcolata) dalla stessa funzione condivisa della
+// vista Tabella: LP = scelte ricevute nel Consiglio (ciurma), LM = rifiuti ricevuti qui.
+function calcolaClassificazione(uids) {
+  const lpConte = {}, lmConte = {};
+  uids.forEach(uid => {
+    lpConte[uid] = insiemeEntrante(risposteConsiglio, uid, 'ciurma').size;
+    lmConte[uid] = insiemeRifiuto(risposteRifiuto, uid).size;
+  });
+  return classificaSociometrica(uids, lpConte, lmConte);
 }
 
 // ── Geometria: stessa tecnica del Bersaglio del Consiglio (accorciamento frecce ai bordi
@@ -251,9 +373,10 @@ function costruisciArchi(uids) {
   return archi;
 }
 
-function etichettaFascia(fascia) {
+function etichettaFasciaRifiuto(fascia) {
   const [mn, mx] = fascia;
   if (mn > mx) return '—';
+  if (mx === Infinity) return `${mn}+`;
   return mn === mx ? String(mn) : `${mn}–${mx}`;
 }
 function etichettaAnelloSvg(cx, y, testo) {
@@ -263,6 +386,26 @@ function etichettaAnelloSvg(cx, y, testo) {
     <rect x="${(cx - w / 2).toFixed(1)}" y="${(y - h / 2).toFixed(1)}" width="${w.toFixed(1)}" height="${h}" rx="8" fill="#fdfaf3" stroke="#8a7699" stroke-width="1"></rect>
     <text x="${cx.toFixed(1)}" y="${(y + 3.5).toFixed(1)}" text-anchor="middle" font-family="Lora, serif" font-size="10" font-weight="700" fill="#1a3a5c">${esc(testo)}</text>
   </g>`;
+}
+
+// ── Copertura e parzialità del dato ──────────────────────────────────────
+function renderStato() {
+  const risposteCount = risposteRifiuto.length;
+  const totaleNaufraghi = Object.keys(naufraghiInfo).length;
+  const notaConsiglio = consiglioDisponibile
+    ? ''
+    : ' ⚠️ Nessuna rilevazione del Consiglio dell\'Isola trovata: le "scelte ricevute" sono a 0 per tutti, la classificazione Coie & Dodge non è affidabile finché non viene svolta almeno una rilevazione.';
+  document.getElementById('stato-riga').textContent =
+    `${risposteCount} su ${totaleNaufraghi} naufraghi hanno risposto.${notaConsiglio}`;
+
+  const copertura = totaleNaufraghi > 0 ? risposteCount / totaleNaufraghi : 0;
+  const banner = document.getElementById('parzialita-banner');
+  if (totaleNaufraghi > 0 && copertura < SOGLIA_COPERTURA_PARZIALE) {
+    banner.style.display = 'block';
+    banner.textContent = `⚠️ Copertura ancora bassa (${risposteCount} su ${totaleNaufraghi}): questa vista è esplorativa. Non abilita letture categoriali definitive sui singoli — usala per orientarti, non per etichettare.`;
+  } else {
+    banner.style.display = 'none';
+  }
 }
 
 // ── Render principale ────────────────────────────────────────────────────
@@ -275,10 +418,13 @@ function disegnaBersaglio() {
 
   const ricevute = {};
   uids.forEach(u => { ricevute[u] = insiemeRifiuto(risposteRifiuto, u).size; });
-  const maxRicevute = Math.max(0, ...uids.map(u => ricevute[u]));
-  const fasce = calcolaFasceAnelli(maxRicevute); // già robusto a maxRicevute=0 (gruppo tutto a zero)
   const anello = {};
-  uids.forEach(u => { anello[u] = trovaAnelloPerValore(ricevute[u], fasce); });
+  uids.forEach(u => { anello[u] = trovaAnelloPerValore(ricevute[u], FASCE_RIFIUTO); });
+  const classificazione = calcolaClassificazione(uids);
+
+  const mostraArchi = !modoPercorso || stepRifiuto >= 1;
+  const mostraCategorie = !modoPercorso || stepRifiuto >= 2;
+  const enfasiReciprocita = modoPercorso && stepRifiuto === 1;
 
   const { pos, CX, CY } = posizioni(uids, anello);
   posCorrente = pos;
@@ -291,11 +437,11 @@ function disegnaBersaglio() {
     const isCentro = r === raggioMinimo;
     return `<circle cx="${CX}" cy="${CY}" r="${r}" fill="#6c5a78" fill-opacity="0.08" stroke="#8a7699" stroke-width="${isCentro ? 2.5 : 1.4}"></circle>`;
   }).join('');
-  const etichetteSvg = RING_RADII.map((r, i) => etichettaAnelloSvg(CX, CY - r, etichettaFascia(fasce[i]))).join('');
+  const etichetteSvg = RING_RADII.map((r, i) => etichettaAnelloSvg(CX, CY - r, etichettaFasciaRifiuto(FASCE_RIFIUTO[i]))).join('');
 
   const sottoSoglia = u => modalitaAnonima && sogliaAttiva > 0 && ricevute[u] < sogliaAttiva;
 
-  const edgesSvg = archi.map(e => {
+  const edgesSvg = !mostraArchi ? '' : archi.map(e => {
     const p1n = pos[e.from], p2n = pos[e.to];
     if (!p1n || !p2n) return '';
     const { p1, p2 } = accorciaSegmento(p1n, p2n);
@@ -303,15 +449,22 @@ function disegnaBersaglio() {
       ? ` marker-start="url(#arrow-rifiuto)" marker-end="url(#arrow-rifiuto)"`
       : ` marker-end="url(#arrow-rifiuto)"`;
     const spessore = e.reciproco ? 2.6 : 1.6;
-    const dim = sottoSoglia(e.from) && sottoSoglia(e.to);
-    return `<line class="bers-rif-arco${dim ? ' dim' : ''}" data-from="${esc(e.from)}" data-to="${esc(e.to)}" x1="${p1.x.toFixed(1)}" y1="${p1.y.toFixed(1)}" x2="${p2.x.toFixed(1)}" y2="${p2.y.toFixed(1)}" stroke="#${COLORE_FRECCIA}" stroke-width="${spessore}" stroke-opacity="0.85"${marker}></line>`;
+    const dimSoglia = sottoSoglia(e.from) && sottoSoglia(e.to);
+    const dimPercorso = enfasiReciprocita && !e.reciproco;
+    const classi = ['bers-rif-arco', dimSoglia && 'dim', dimPercorso && 'perc-dim'].filter(Boolean).join(' ');
+    return `<line class="${classi}" data-from="${esc(e.from)}" data-to="${esc(e.to)}" x1="${p1.x.toFixed(1)}" y1="${p1.y.toFixed(1)}" x2="${p2.x.toFixed(1)}" y2="${p2.y.toFixed(1)}" stroke="#${COLORE_FRECCIA}" stroke-width="${spessore}" stroke-opacity="0.85"${marker}></line>`;
   }).join('');
 
   const nodesSvg = uids.map(u => {
     const p = pos[u];
     const dim = sottoSoglia(u);
     const etichetta = modalitaAnonima ? '' : `<text class="bers-rif-nome" x="${p.x.toFixed(1)}" y="${(p.y + 27).toFixed(1)}" text-anchor="middle" font-size="9">${esc(nomeDi(u))}</text>`;
+    const categoria = classificazione[u]?.categoria || 'medio';
+    const haloCategoria = mostraCategorie
+      ? `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="21" fill="none" stroke="${CATEGORIA_COLORE[categoria]}" stroke-width="2" stroke-dasharray="3,2"></circle>`
+      : '';
     return `<g class="bers-rif-nodo${dim ? ' dim' : ''}" data-uid="${esc(u)}">
+      ${haloCategoria}
       <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="16" fill="#1a3a5c" stroke="#0d1b2a" stroke-width="1.5"></circle>
       <text x="${p.x.toFixed(1)}" y="${(p.y + 3).toFixed(1)}" text-anchor="middle" font-weight="700" fill="#fff" font-size="10">${ricevute[u]}</text>
       ${etichetta}
@@ -338,10 +491,12 @@ function disegnaBersaglio() {
     const propria = risposteRifiuto.find(r => r.userId === uid);
     const uscenti = propria ? (propria.rifiuti || []).map(e => e.uid) : [];
     const reciproci = entranti.filter(u2 => uscenti.includes(u2));
+    const cat = classificazione[uid]?.categoria || 'medio';
     infoBody.className = '';
     infoBody.innerHTML = `
       <div class="item-titolo">${esc(nomeDi(uid))}</div>
       <div class="item">🎯 Rifiuti ricevuti: <strong>${ricevute[uid]}</strong></div>
+      <div class="item">Profilo (Coie &amp; Dodge): <span class="cat-badge cat-${cat}">${CATEGORIA_ETICHETTA[cat]}</span></div>
       ${reciproci.length ? `<div class="item-titolo">↔ Reciproci</div><div class="item">${reciproci.map(u2 => `<span class="chip">${esc(nomeDi(u2))}</span>`).join('')}</div>` : ''}
       <div class="item-titolo">⬅ Nominato/a da</div>
       <div class="item">${entranti.length ? entranti.map(u2 => `<span class="chip">${esc(nomeDi(u2))}</span>`).join('') : '<span class="vuoto" style="padding:0;">Nessuno/a</span>'}</div>
@@ -375,6 +530,29 @@ function disegnaBersaglio() {
   wrap.addEventListener('click', ev => { if (!ev.target.closest('.bers-rif-nodo')) applicaFoco(null); });
 
   if (focoUid && uids.includes(focoUid)) { applicaFoco(focoUid); mostraInfo(focoUid); }
+
+  renderZoneAttenzione(uids, classificazione, ricevute);
+}
+
+// ── Step 4 del Percorso guidato: sguardo d'insieme, con linguaggio non perentorio ──────────
+function renderZoneAttenzione(uids, classificazione, ricevute) {
+  const contenitore = document.getElementById('percorso-zone');
+  if (!contenitore) return;
+  if (!modoPercorso || stepRifiuto !== 3) { contenitore.innerHTML = ''; return; }
+
+  const daAttenzionare = uids.filter(u => {
+    const cat = classificazione[u]?.categoria;
+    return cat === 'rifiutato' || cat === 'controverso' || trovaAnelloPerValore(ricevute[u], FASCE_RIFIUTO) === 0;
+  });
+
+  if (!daAttenzionare.length) {
+    contenitore.innerHTML = '<div class="percorso-nota-insieme">Nessun naufrago in una categoria a rischio (Rifiutato/a o Controverso/a) né nell\'anello più interno, in questa rilevazione.</div>';
+    return;
+  }
+  const elenco = modalitaAnonima
+    ? `${daAttenzionare.length} naufraghi`
+    : daAttenzionare.map(u => esc(nomeDi(u))).join(', ');
+  contenitore.innerHTML = `<div class="percorso-nota-insieme">🔎 Da guardare con più attenzione: <strong>${elenco}</strong> (categoria Rifiutato/a o Controverso/a, oppure nell'anello più interno). Con una copertura ancora parziale, sono indicazioni da approfondire nel tempo — non conclusioni definitive sui singoli.</div>`;
 }
 
 // ── Ricerca per nome — SOLO in modalità "Con nomi" (vedi guardia nel toggle) ────────────────
@@ -450,6 +628,40 @@ document.getElementById('soglia-input').addEventListener('input', e => {
   disegnaBersaglio();
 });
 
+// ── Toggle Bersaglio classico / Percorso guidato (4 step) ───────────────────────────────
+// Nel classico l'encoding dei nodi (categoria) e le frecce sono sempre presenti (invariato).
+// Nel Percorso si costruisce progressivamente: posizione → frecce/reciprocità → categorie →
+// sguardo d'insieme, sullo stesso identico dataset (nessun nuovo calcolo, solo cosa si mostra).
+function aggiornaVista() {
+  document.getElementById('btn-vista-classico').classList.toggle('active', !modoPercorso);
+  document.getElementById('btn-vista-percorso').classList.toggle('active', modoPercorso);
+  document.getElementById('percorso-riquadro').style.display = modoPercorso ? 'block' : 'none';
+  if (modoPercorso) aggiornaStepper();
+  disegnaBersaglio();
+}
+function aggiornaStepper() {
+  document.querySelectorAll('#percorso-stepper .percorso-step-btn').forEach(b => {
+    b.classList.toggle('percorso-step-attivo', Number(b.dataset.step) === stepRifiuto);
+  });
+  const btnPrec = document.getElementById('percorso-btn-prec');
+  const btnSucc = document.getElementById('percorso-btn-succ');
+  btnPrec.disabled = stepRifiuto === 0;
+  btnSucc.disabled = stepRifiuto === STEP_RIFIUTO.length - 1;
+  const step = STEP_RIFIUTO[stepRifiuto];
+  document.getElementById('percorso-didascalia').innerHTML = `<strong>Step ${step.numero} — ${esc(step.titolo)}</strong><br>${esc(step.testo)}`;
+}
+document.getElementById('btn-vista-classico').addEventListener('click', () => { modoPercorso = false; aggiornaVista(); });
+document.getElementById('btn-vista-percorso').addEventListener('click', () => { modoPercorso = true; stepRifiuto = 0; aggiornaVista(); });
+document.querySelectorAll('#percorso-stepper .percorso-step-btn').forEach(btn => {
+  btn.addEventListener('click', () => { stepRifiuto = Number(btn.dataset.step); aggiornaStepper(); disegnaBersaglio(); });
+});
+document.getElementById('percorso-btn-prec').addEventListener('click', () => {
+  if (stepRifiuto > 0) { stepRifiuto--; aggiornaStepper(); disegnaBersaglio(); }
+});
+document.getElementById('percorso-btn-succ').addEventListener('click', () => {
+  if (stepRifiuto < STEP_RIFIUTO.length - 1) { stepRifiuto++; aggiornaStepper(); disegnaBersaglio(); }
+});
+
 // ── Guardia admin + avvio ───────────────────────────────────────────────
 let resolved = false;
 onAuthStateChanged(auth, async user => {
@@ -458,9 +670,10 @@ onAuthStateChanged(auth, async user => {
   if (!user || user.uid !== ADMIN_UID) { window.location.replace('index.html'); return; }
 
   await caricaNaufraghi();
-  await caricaRisposteRifiuto();
+  await Promise.all([caricaRisposteRifiuto(), caricaRisposteConsiglio()]);
   document.getElementById('loading').style.display = 'none';
   document.getElementById('main').style.display = 'block';
+  renderStato();
   disegnaBersaglio();
 });
 </script>
