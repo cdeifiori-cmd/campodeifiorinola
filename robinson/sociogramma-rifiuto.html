@@ -58,7 +58,7 @@
 
     .perche-box { margin-top: 14px; }
     .perche-label { display:block; font-size: 0.82rem; font-weight: 700; color: var(--navy); margin-bottom: 6px; }
-    .perche-box textarea { width: 100%; box-sizing: border-box; min-height: 70px; padding: 10px 12px; border: 1.5px solid #c8b89a; border-radius: 10px; font-family: 'Lora', serif; font-size: 0.9rem; resize: vertical; background:#fff; }
+    .perche-box textarea { width: 100%; box-sizing: border-box; min-height: 120px; padding: 10px 12px; border: 1.5px solid #c8b89a; border-radius: 10px; font-family: 'Lora', serif; font-size: 0.9rem; resize: vertical; background:#fff; overflow-y: hidden; }
 
     .step-nav { display:flex; gap:10px; justify-content:space-between; margin-top:18px; }
     .step-nav button { flex:1; }
@@ -235,7 +235,7 @@ function renderStep() {
     <button class="btn-salta ${attuale.uid ? '' : 'attiva'}" id="btn-salta">Non indico nessuna persona qui</button>
     <div class="perche-box" id="perche-box" style="display:${attuale.uid ? 'block' : 'none'};">
       <label class="perche-label" for="perche-inp">Perché?</label>
-      <textarea id="perche-inp" maxlength="300" placeholder="Racconta brevemente il motivo...">${esc(attuale.perche || '')}</textarea>
+      <textarea id="perche-inp" maxlength="1000" placeholder="Racconta brevemente il motivo...">${esc(attuale.perche || '')}</textarea>
     </div>
     <div id="errore-salvataggio" class="errore-salvataggio" style="display:none;"></div>
     <div class="step-nav">
@@ -275,9 +275,16 @@ function renderStep() {
     });
   }
 
+  function autoResizePerche() {
+    const ta = document.getElementById('perche-inp');
+    ta.style.height = 'auto';
+    ta.style.height = ta.scrollHeight + 'px';
+  }
+
   renderGrid();
   document.getElementById('search-inp').addEventListener('input', e => renderGrid(e.target.value));
-  document.getElementById('perche-inp').addEventListener('input', aggiornaAvanti);
+  document.getElementById('perche-inp').addEventListener('input', () => { aggiornaAvanti(); autoResizePerche(); });
+  autoResizePerche();
   document.getElementById('btn-salta').addEventListener('click', () => {
     uidScelto = null;
     renderGrid(document.getElementById('search-inp').value);
