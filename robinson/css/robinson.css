@@ -97,6 +97,8 @@ h1,h2,h3 { font-family: 'Playfair Display', serif; }
 .modal-overlay.open { display:flex; }
 .modal-box { background: var(--carta); border: 2px dashed var(--oro); border-radius: 12px; padding: 20px; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto; }
 .modal-title { font-family: 'Playfair Display', serif; font-size: 1.1rem; color: var(--navy); margin-bottom: 14px; }
+/* Scheda prodotto (robinson-prodotto-modal.js): stessa larghezza ovunque venga aperta (Magazzino, Lista spesa) */
+#modal-prodotto .modal-box { max-width: 460px; }
 
 /* Isola zone */
 .isola-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 12px; }

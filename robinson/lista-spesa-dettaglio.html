@@ -53,6 +53,7 @@
 
     /* Cella voce */
     .voce-cell { background: #fff; border-left: 4px solid var(--navy); border-radius: 4px 8px 8px 4px; padding: 8px 10px; box-shadow: 1px 1px 6px rgba(26,58,92,0.08); }
+    .voce-cell.linked { cursor: pointer; }
     .voce-cell.presa { border-left-color: #1e8449; background: #2ecc71; }
     .voce-top { display: flex; align-items: center; gap: 6px; }
     .voce-ordine { display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; }
@@ -150,6 +151,7 @@ import { requireAuth } from './js/robinson-auth.js';
 import { setupNavAuth } from './js/robinson-nav.js';
 import { esc } from './js/robinson-utils.js';
 import { puoAccedereGestione, prodottiDaComprare, spostaCategoriaOrdine, fmtEuro, fmtDataBreve, quantitaSuggerita, attivaCercaProdotto, comparaPerOrdine, normalizzaOrdineProdotti, prossimoOrdine, ordineVoce } from './js/robinson-magazzino.js';
+import { initModalProdotto } from './js/robinson-prodotto-modal.js';
 import {
   doc, getDoc, updateDoc, deleteDoc, addDoc, collection, getDocs, query, orderBy,
   serverTimestamp, writeBatch, increment
@@ -188,6 +190,17 @@ async function caricaProdottiMap() {
   const snap = await getDocs(collection(db, 'magazzino_prodotti'));
   prodottiMap = new Map(snap.docs.map(d => [d.id, { id: d.id, ...d.data() }]));
 }
+
+// ── Scheda prodotto (modal condiviso con il Magazzino) ──────────────────────
+// Apribile solo sulle voci collegate a un prodotto reale (prodotto_id): una
+// voce manuale non ha ancora un doc in magazzino_prodotti da mostrare/modificare
+// (per quella si usa "📦 Crea prodotto").
+const modalProdotto = initModalProdotto({
+  getCategorie: () => categorie,
+  getProdotti: () => [...prodottiMap.values()],
+  getCurrentUser: () => currentUser,
+  onChange: async () => { await caricaProdottiMap(); await caricaTutto(); }
+});
 
 // Ordinamento voci: legge l'`ordine` dal prodotto collegato (fonte unica) o
 // dalla voce stessa se manuale (vedi comparaPerOrdine/ordineVoce condivisi).
@@ -368,7 +381,7 @@ function calcolaImporto(v) {
 
 function renderVoceCell(v, readonly, catId, indice, totale) {
   const cell = document.createElement('div');
-  cell.className = 'voce-cell' + (v.acquistato ? ' presa' : '');
+  cell.className = 'voce-cell' + (v.acquistato ? ' presa' : '') + (v.prodotto_id ? ' linked' : '');
   cell.dataset.itemId = v.id;
   cell.innerHTML = `
     <div class="voce-top">
@@ -428,6 +441,15 @@ function renderVoceCell(v, readonly, catId, indice, totale) {
   }
   const btnCreaProd = cell.querySelector('.voce-crea-prod');
   if (btnCreaProd) btnCreaProd.addEventListener('click', () => creaProdottoDaVoce(v));
+
+  // Apre la stessa scheda prodotto del Magazzino, come per una cella prodotto
+  // lì: ignora i click sui controlli interattivi della voce (input, bottoni,
+  // checkbox) e resta senza effetto sulle voci manuali (nessun prodotto da mostrare).
+  cell.addEventListener('click', e => {
+    if (e.target.closest('input, button, label')) return;
+    const prodotto = v.prodotto_id && prodottiMap.get(v.prodotto_id);
+    if (prodotto) modalProdotto.apri(prodotto);
+  });
 
   return cell;
 }
