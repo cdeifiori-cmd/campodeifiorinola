@@ -118,7 +118,9 @@
         await loginConPin(pin);
         redirectAfterLogin();
       } catch (e) {
-        showError('PIN non valido. Riprova.');
+        showError(e.code === 'functions/resource-exhausted'
+          ? 'Troppi tentativi. Riprova tra qualche minuto.'
+          : 'PIN non valido. Riprova.');
       }
     });
 

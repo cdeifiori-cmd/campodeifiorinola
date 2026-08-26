@@ -1,19 +1,22 @@
-// js/ragazzi-pin.js — Gestione ragazzi: creazione/gestione account con PIN,
-// sullo stesso modello del sistema PIN di Robinson (robinson/admin-pin.html),
-// adattato al progetto campo-dei-fiori: un ragazzo ottiene un vero account
-// Firebase Auth (email sintetica + password derivata dal PIN), ma il PIN
-// stesso non viene mai salvato in campi leggibili pubblicamente (vedi
-// utenti_pin / utenti_pin_lookup in firestore.rules, a differenza di
-// robinson_pin_lookup che salva anche la password in chiaro).
+// js/ragazzi-pin.js — Gestione ragazzi: creazione/gestione account con PIN.
+//
+// Il login (loginConPin) NON passa più da email/password lato client: il
+// browser invia solo il PIN alla Cloud Function callable loginRagazzoConPin
+// (functions/pinLogin.js), che risolve il PIN, applica un rate limit,
+// verifica che il ragazzo sia attivo e restituisce un Custom Token — mai
+// credenziali. La password Firebase Auth dell'account resta un segreto
+// casuale, generato una sola volta alla creazione e mai più riutilizzato:
+// non esiste più nessuna formula "PIN → password" sufficiente ad accedere.
 import { db, auth } from './firebase-config.js';
 import {
   doc, getDoc, setDoc, deleteDoc, updateDoc, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { signInWithCustomToken } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-functions.js";
 
 const API_KEY = 'AIzaSyC18lzwqhYcW29TsEO6Oy4Bqvb2PMBUmAg';
 const EMAIL_SUFFIX = '.ragazzo@campodeifiori.org';
-const PASSWORD_PREFIX = 'CF';
+const FUNCTIONS_REGION = 'europe-west1';
 
 export const CLOUDINARY_URL = 'https://api.cloudinary.com/v1_1/dxqyprtzh/image/upload';
 export const CLOUDINARY_PRESET = 'campo_dei_fiori';
@@ -27,14 +30,24 @@ export function nomeToEmail(nome) {
     + EMAIL_SUFFIX;
 }
 
-function pinToPassword(pin) {
-  return PASSWORD_PREFIX + pin;
+// Password Firebase Auth casuale, indipendente dal PIN: serve solo a
+// soddisfare il requisito di accounts:signUp alla creazione dell'account.
+// Non viene mai salvata né riusata: dopo la creazione il login passa
+// esclusivamente dal Custom Token, quindi questa password resta un segreto
+// che nessuno (nemmeno l'admin) legge o conserva di nuovo.
+function randomPassword() {
+  const bytes = crypto.getRandomValues(new Uint8Array(24));
+  return Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
 }
 
+// PIN a 6 cifre di default (1.000.000 di combinazioni): l'esperienza resta
+// "inserisci PIN → entra", ma unito al rate limit server-side rende la forza
+// bruta molto più costosa rispetto a 4 cifre. Il login continua ad accettare
+// PIN da 4 a 6 cifre per compatibilità con eventuali PIN già esistenti.
 export function generaPin(pinInUso) {
   let pin, tentativi = 0;
   do {
-    pin = String(Math.floor(1000 + Math.random() * 9000));
+    pin = String(Math.floor(100000 + Math.random() * 900000));
     tentativi++;
   } while (pinInUso.has(pin) && tentativi < 200);
   return pin;
@@ -69,9 +82,8 @@ export async function creaRagazzo({ nome, comunitaId, fotoFile }, pinInUso) {
 
   const pin = generaPin(pinInUso);
   const email = nomeToEmail(nomeTrim);
-  const password = pinToPassword(pin);
 
-  const data = await identitytoolkit('signUp', { email, password, returnSecureToken: true });
+  const data = await identitytoolkit('signUp', { email, password: randomPassword(), returnSecureToken: true });
   const uid = data.localId;
 
   let fotoProfilo = '';
@@ -93,12 +105,14 @@ export async function creaRagazzo({ nome, comunitaId, fotoFile }, pinInUso) {
     uid, nome: nomeTrim, pin, email, comunitaId,
     createdAt: serverTimestamp(), lastLogin: null
   });
-  await setDoc(doc(db, 'utenti_pin_lookup', pin), { uid, email });
+  await setDoc(doc(db, 'utenti_pin_lookup', pin), { uid });
 
   return { uid, pin, email, fotoProfilo };
 }
 
 // ── Cambia il PIN di un ragazzo esistente ──────────────────────────────────
+// Nota: non tocca più la password Firebase Auth (il login non la usa più),
+// quindi è una semplice riscrittura delle mappature PIN → uid.
 export async function cambiaPinRagazzo(uid, nuovoPin, pinInUso) {
   if (!/^\d{4,6}$/.test(nuovoPin)) throw new Error('Il PIN deve essere di 4-6 cifre numeriche.');
   if (pinInUso.has(nuovoPin)) throw new Error('Questo PIN è già usato da un altro ragazzo.');
@@ -107,18 +121,9 @@ export async function cambiaPinRagazzo(uid, nuovoPin, pinInUso) {
   if (!pinSnap.exists()) throw new Error('Nessun PIN esistente per questo ragazzo.');
   const esistente = pinSnap.data();
   const vecchioPin = esistente.pin;
-  const email = esistente.email;
-
-  // Accedi come il ragazzo per ottenere un idToken valido, poi aggiorna la password
-  const signInData = await identitytoolkit('signInWithPassword', {
-    email, password: pinToPassword(vecchioPin), returnSecureToken: true
-  });
-  await identitytoolkit('update', {
-    idToken: signInData.idToken, password: pinToPassword(nuovoPin), returnSecureToken: false
-  });
 
   await setDoc(doc(db, 'utenti_pin', uid), { ...esistente, pin: nuovoPin }, { merge: true });
-  await setDoc(doc(db, 'utenti_pin_lookup', nuovoPin), { uid, email });
+  await setDoc(doc(db, 'utenti_pin_lookup', nuovoPin), { uid });
   if (vecchioPin && vecchioPin !== nuovoPin) {
     try { await deleteDoc(doc(db, 'utenti_pin_lookup', vecchioPin)); } catch (_) {}
   }
@@ -134,22 +139,24 @@ export async function cambiaFotoRagazzo(uid, file) {
 
 // ── Archivia / riattiva un ragazzo (mai cancellazione definitiva) ──────────
 // Lo stato 'archiviato' nasconde il ragazzo dagli elenchi pubblici (Ragazzi,
-// Comunità) ma preserva intatti profilo, diario, messaggi e — soprattutto —
-// il fascicolo personale/PPU in Firebase Storage, che nessun codice del sito
-// cancella mai in automatico e che resta comunque consultabile da Area
-// Documenti (vedi documenti.html).
+// Comunità), blocca il login PIN (verificato server-side da
+// loginRagazzoConPin) ma preserva intatti profilo, diario, messaggi e —
+// soprattutto — il fascicolo personale/PPU in Firebase Storage, che nessun
+// codice del sito cancella mai in automatico e che resta comunque
+// consultabile da Area Documenti (vedi documenti.html).
 export async function setStatoRagazzo(uid, stato) {
   await updateDoc(doc(db, 'utenti', uid), { stato });
 }
 
 // ── Login con PIN (usato da login.html) ────────────────────────────────────
+// Il client invia solo il PIN alla Cloud Function; riceve un Custom Token e
+// lo scambia con una sessione Firebase Auth vera e propria. Nessuna email,
+// nessuna password, nessuna lettura diretta di utenti_pin_lookup dal browser.
 export async function loginConPin(pin) {
-  const lookupSnap = await getDoc(doc(db, 'utenti_pin_lookup', pin));
-  if (!lookupSnap.exists()) throw new Error('PIN non valido.');
-  const { email } = lookupSnap.data();
-  const cred = await signInWithEmailAndPassword(auth, email, pinToPassword(pin));
-  try {
-    await updateDoc(doc(db, 'utenti_pin', cred.user.uid), { lastLogin: serverTimestamp() });
-  } catch (_) {}
-  return cred;
+  const functions = getFunctions(FUNCTIONS_REGION);
+  const chiamaLogin = httpsCallable(functions, 'loginRagazzoConPin');
+  const result = await chiamaLogin({ pin });
+  const { token } = result.data || {};
+  if (!token) throw new Error('PIN non valido.');
+  return signInWithCustomToken(auth, token);
 }

@@ -51,23 +51,29 @@ service cloud.firestore {
     }
 
     // ── PIN login ragazzi (Gestione ragazzi) ──────────────────
-    // Lettura riservata all'admin: contiene il PIN in chiaro di ogni ragazzo,
-    // un ragazzo loggato non deve poter leggere né il proprio né altrui PIN da
-    // qui (non gli serve: lo conosce già, l'ha digitato per accedere).
+    // Il login con PIN ora passa esclusivamente dalla Cloud Function
+    // loginRagazzoConPin (functions/pinLogin.js), che usa l'Admin SDK e
+    // quindi non è mai soggetta a queste regole. Nessun client — incluso un
+    // ragazzo già autenticato — ha più bisogno di leggere né scrivere
+    // direttamente utenti_pin o utenti_pin_lookup: entrambe sono riservate
+    // all'admin (per la UI di Gestione ragazzi). L'aggiornamento di
+    // lastLogin al login avviene ora dentro la Cloud Function stessa.
     match /utenti_pin/{uid} {
-      allow read: if isAdmin();
-      // Il ragazzo, dopo il login con PIN, può solo aggiornare il proprio
-      // lastLogin (scrittura di un solo campo, mai lettura): non può vedere né
-      // modificare il campo "pin" di questo o di qualunque altro documento.
-      allow update: if isAdmin() ||
-        (isOwner(uid) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastLogin']));
-      allow create, delete: if isAdmin();
+      allow read, write: if isAdmin();
     }
 
-    // Lookup pubblico (necessario per il login senza auth)
+    // Non più leggibile dal browser: la risoluzione PIN → uid avviene solo
+    // server-side (Admin SDK), quindi l'intera collezione non è più
+    // enumerabile da un client, autenticato o no.
     match /utenti_pin_lookup/{pin} {
-      allow read: if true;
-      allow write: if isAdmin();
+      allow read, write: if isAdmin();
+    }
+
+    // Contatori di rate limit del login PIN (IP con hash, mai in chiaro),
+    // scritti e letti solo da loginRagazzoConPin tramite Admin SDK: nessun
+    // client deve poter leggerli o, peggio, azzerarli da solo.
+    match /pin_login_rate/{ipHash} {
+      allow read, write: if isAdmin();
     }
 
     // ── Diario ───────────────────────────────────────────────

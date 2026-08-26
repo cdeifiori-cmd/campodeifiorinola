@@ -25,6 +25,9 @@ initializeApp();
 const db        = getFirestore();
 const messaging = getMessaging();
 
+// Login PIN ragazzi (Gestione ragazzi) — vedi functions/pinLogin.js
+exports.loginRagazzoConPin = require('./pinLogin').loginRagazzoConPin;
+
 // ─── Helper: token di un singolo utente ──────────────────────────────────
 
 async function getTokensForUid(uid) {
