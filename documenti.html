@@ -329,11 +329,10 @@
       { id:'Sanitaria',                                 emoji:'🏥', short:'Sanitaria' },
       { id:'Familiare',                                 emoji:'👪', short:'Familiare' },
       { id:'Scolastica-Formativa',                      emoji:'📚', short:'Scolastica' },
-      { id:'Educativa',                                 emoji:'🎯', short:'Educativa' },
+      { id:'PPU', label:'PPU – Progressione Personale Unitaria', emoji:'🌱', short:'PPU' },
       { id:'Psicologica',                               emoji:'🧠', short:'Psicologica' },
       { id:'Relazioni e Comunicazioni Istituzionali',   emoji:'🏛️', short:'Relazioni' },
       { id:'Amministrativa',                            emoji:'📊', short:'Amminist.' },
-      { id:'Autonomia e Progetto di Vita',              emoji:'🌱', short:'Autonomia' },
       { id:'Varie ed Eventuali',                        emoji:'📌', short:'Varie' },
     ];
 
@@ -547,8 +546,8 @@
         const storagePath = `documenti/${community.id}/${ragazzo.id}/${area.id}`;
         const card = mkEl('div', 'nav-card',
           `<div class="nav-card-icon">${area.emoji}</div>
-           <div class="nav-card-label">${area.id}</div>`);
-        card.onclick = () => go(area.short, () => showFolder(storagePath, area.id));
+           <div class="nav-card-label">${area.label || area.id}</div>`);
+        card.onclick = () => go(area.short, () => showFolder(storagePath, area.label || area.id));
         document.getElementById('area-grid').appendChild(card);
       });
     }
