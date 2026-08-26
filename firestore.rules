@@ -51,9 +51,14 @@ service cloud.firestore {
     }
 
     // ── PIN login ragazzi (Gestione ragazzi) ──────────────────
+    // Lettura riservata all'admin: contiene il PIN in chiaro di ogni ragazzo,
+    // un ragazzo loggato non deve poter leggere né il proprio né altrui PIN da
+    // qui (non gli serve: lo conosce già, l'ha digitato per accedere).
     match /utenti_pin/{uid} {
-      allow read: if request.auth != null;
-      // Il ragazzo, dopo il login con PIN, può solo aggiornare il proprio lastLogin
+      allow read: if isAdmin();
+      // Il ragazzo, dopo il login con PIN, può solo aggiornare il proprio
+      // lastLogin (scrittura di un solo campo, mai lettura): non può vedere né
+      // modificare il campo "pin" di questo o di qualunque altro documento.
       allow update: if isAdmin() ||
         (isOwner(uid) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastLogin']));
       allow create, delete: if isAdmin();

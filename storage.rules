@@ -26,42 +26,95 @@ service firebase.storage {
         && firestore.exists(staffRef(request.auth.uid));
     }
 
-    // Qualunque coordinatrice (per Documenti Generali / Segreteria)
-    function isAnyCoordinatrice() {
-      return request.auth != null
-        && firestore.exists(staffRef(request.auth.uid))
-        && firestore.get(staffRef(request.auth.uid)).data.ruolo.matches('.*Coordinatrice.*');
+    function staffRuolo() {
+      return firestore.get(staffRef(request.auth.uid)).data.get('ruolo', '');
     }
 
-    // Coordinatrice: può accedere se comunitaId è nel suo array (o uguale alla stringa)
-    function isCoordinatriceForComunita(comunitaId) {
-      let staffData = firestore.get(staffRef(request.auth.uid)).data;
-      return request.auth != null
-        && firestore.exists(staffRef(request.auth.uid))
-        && staffData.ruolo.matches('.*Coordinatrice.*')
-        && (
-          // Array (nuovo formato): usa operatore "in"
-          (staffData.comunitaId is list && comunitaId in staffData.comunitaId)
-          // Stringa (vecchio formato, backward compat)
-          || staffData.comunitaId == comunitaId
-        );
+    function staffAccessoDocumenti() {
+      return firestore.get(staffRef(request.auth.uid)).data.get('accessoDocumenti', false) == true;
+    }
+
+    function staffComunita() {
+      return firestore.get(staffRef(request.auth.uid)).data.get('comunitaId', null);
+    }
+
+    // Coordinatore/Coordinatrice o Responsabile, qualunque sia la comunità —
+    // stesso criterio (case-insensitive, sottostringa) usato lato client da
+    // documenti.html: ruolo.toLowerCase().includes('coordinat'/'responsabil').
+    // In precedenza qui si controllava solo '.*Coordinatrice.*' (case-sensitive,
+    // non riconosceva affatto "Responsabile"): i responsabili funzionavano solo
+    // perché il catch-all sottostante concedeva comunque accesso a chiunque loggato.
+    function isCoordOrResponsabile() {
+      return isStaff() && staffRuolo().lower().matches('.*(coordinat|responsabil).*');
+    }
+
+    // Coordinatore/Responsabile ristretto alla comunità specifica
+    // (comunitaId sul doc staff può essere stringa singola o array)
+    function isCoordOrResponsabileForComunita(comunitaId) {
+      let c = staffComunita();
+      return isCoordOrResponsabile()
+        && ((c is list && comunitaId in c) || c == comunitaId);
+    }
+
+    // Staff con accesso esplicito (flag accessoDocumenti === true), ristretto
+    // alla comunità di appartenenza — stesso flag controllato da documenti.html,
+    // ma qui verificato solo sul doc "staff" (mai su "utenti"/"amici": un
+    // ragazzo o un amico non deve mai poter ottenere accesso a Documenti tramite
+    // questo flag, anche se in futuro venisse impostato per errore su quei doc).
+    function isStaffAccessoDocumentiForComunita(comunitaId) {
+      let c = staffComunita();
+      return isStaff() && staffAccessoDocumenti()
+        && ((c is list && comunitaId in c) || c == comunitaId);
+    }
+
+    function canAccessDocumentiComunita(comunitaId) {
+      return isSuperUser()
+        || isCoordOrResponsabileForComunita(comunitaId)
+        || isStaffAccessoDocumentiForComunita(comunitaId);
+    }
+
+    // Documenti Generali/Segreteria non è legato a una comunità: qui basta il
+    // ruolo (o il flag) senza scoping — stesso "canWrite" che il client usa per
+    // TUTTA l'Area Documenti, Generali incluso (in precedenza la regola era
+    // "qualsiasi membro dello staff", più permissiva di quanto l'interfaccia
+    // stessa consenta).
+    function canAccessDocumentiGenerali() {
+      return isSuperUser() || isCoordOrResponsabile() || (isStaff() && staffAccessoDocumenti());
     }
 
     // ── Documenti Generali / Segreteria ──────────────────────────
-    // Accessibili a superuser e a qualsiasi membro dello staff autenticato
+    // documenti.html mostra il bottone "Elimina" solo all'admin (canDel =
+    // isAdmin, sia qui che per le comunità sotto): read/create/update sono
+    // concessi anche a coordinatore/responsabile/accessoDocumenti, ma delete
+    // resta riservato al super user — distinzione fatta qui a livello di
+    // regola, non solo nascondendo il bottone in UI.
     match /documenti/documenti-generali/{file} {
-      allow read, write: if isSuperUser() || isStaff();
+      allow read, create, update: if canAccessDocumentiGenerali();
+      allow delete: if isSuperUser();
     }
 
-    // ── Area Documenti per comunità ───────────────────────────────
+    // ── Area Documenti per comunità (fascicoli, PPU inclusa) ──────
     // Struttura: documenti/{comunitaId}/{uid}/{area}/{...sottocartelle}/{file}
+    // Nessun ragazzo autenticato via PIN (o via qualunque altro account "utenti")
+    // rientra in nessuna delle funzioni sopra: un ragazzo non ha un doc in
+    // "staff", quindi qui non ottiene mai accesso, nemmeno al proprio fascicolo.
+    // Stessa distinzione delete-solo-admin di Documenti Generali (vedi sopra).
     match /documenti/{comunitaId}/{allPaths=**} {
-      allow read, write: if isSuperUser() || isCoordinatriceForComunita(comunitaId);
+      allow read, create, update: if canAccessDocumentiComunita(comunitaId);
+      allow delete: if isSuperUser();
     }
 
     // ── Tutto il resto (foto profilo, audio, media) ───────────────
-    match /{allPaths=**} {
-      allow read, write: if request.auth != null;
+    // Verifica del 2026-08-26: nessun codice client (sito principale o Robinson)
+    // usa oggi l'SDK di Firebase Storage al di fuori di documenti/** — foto e
+    // audio passano tutti da Cloudinary. Questa regola resta comunque per non
+    // rompere eventuali percorsi non tracciati in questo repository, ma esclude
+    // ESPLICITAMENTE il prefisso "documenti": le regole di Storage sono un OR
+    // fra tutti i match che corrispondono allo stesso path, quindi senza questa
+    // esclusione un catch-all "chiunque loggato" riaprirebbe l'accesso che le
+    // regole sopra intendono restringere (è esattamente il bug corretto qui).
+    match /{prefix}/{allPaths=**} {
+      allow read, write: if prefix != 'documenti' && request.auth != null;
     }
   }
 }
