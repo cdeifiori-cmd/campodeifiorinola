@@ -8,6 +8,7 @@
 // casuale, generato una sola volta alla creazione e mai più riutilizzato:
 // non esiste più nessuna formula "PIN → password" sufficiente ad accedere.
 import { db, auth } from './firebase-config.js';
+import { getApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import {
   doc, getDoc, setDoc, deleteDoc, updateDoc, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -153,7 +154,7 @@ export async function setStatoRagazzo(uid, stato) {
 // lo scambia con una sessione Firebase Auth vera e propria. Nessuna email,
 // nessuna password, nessuna lettura diretta di utenti_pin_lookup dal browser.
 export async function loginConPin(pin) {
-  const functions = getFunctions(FUNCTIONS_REGION);
+  const functions = getFunctions(getApp(), FUNCTIONS_REGION);
   const chiamaLogin = httpsCallable(functions, 'loginRagazzoConPin');
   const result = await chiamaLogin({ pin });
   const { token } = result.data || {};
