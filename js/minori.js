@@ -33,11 +33,12 @@ async function loadMinori() {
       where('comunitaId', '==', comunitaId)
     ));
     list.innerHTML = '';
-    if (snap.empty) {
+    const docsAttivi = snap.docs.filter(d => d.data().stato !== 'archiviato');
+    if (!docsAttivi.length) {
       list.innerHTML = '<p class="empty-msg">Nessun ragazzo/a in questa comunità.</p>';
       return;
     }
-    snap.forEach(docSnap => {
+    docsAttivi.forEach(docSnap => {
       const d = docSnap.data();
       const avatar = d.fotoProfilo
         ? `<div class="avatar"><img src="${d.fotoProfilo}" alt="${d.nome}"></div>`

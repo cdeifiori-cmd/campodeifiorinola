@@ -10,23 +10,51 @@
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+  <style>
+    .login-tabs { display: flex; border-radius: 20px; overflow: hidden; border: 1.5px solid var(--verde); margin-bottom: 1.25rem; }
+    .login-tab {
+      flex: 1; background: #fff; color: var(--verde); border: none; padding: 8px 6px;
+      font-family: 'Nunito', sans-serif; font-size: 0.85rem; font-weight: 700; cursor: pointer;
+    }
+    .login-tab.active { background: var(--verde); color: #fff; }
+    .pin-input {
+      width: 100%; padding: 14px; border: 1.5px solid #d0c9c0; border-radius: var(--radius-sm);
+      font-size: 1.5rem; letter-spacing: 8px; font-family: monospace; text-align: center; outline: none;
+    }
+    .pin-input:focus { border-color: var(--verde); }
+  </style>
   <div class="login-wrap">
     <div class="login-box">
       <div class="logo">🌸</div>
       <h1>Campo dei Fiori</h1>
 
+      <div class="login-tabs">
+        <button class="login-tab active" id="tab-email">Staff</button>
+        <button class="login-tab" id="tab-pin">Ragazzi (PIN)</button>
+      </div>
+
       <div id="login-error" class="login-error hidden"></div>
 
-      <div class="form-group">
-        <label for="email">Email</label>
-        <input type="email" id="email" placeholder="la-tua@email.it" autocomplete="email">
-      </div>
-      <div class="form-group">
-        <label for="password">Password</label>
-        <input type="password" id="password" placeholder="••••••••" autocomplete="current-password">
+      <div id="panel-email">
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" placeholder="la-tua@email.it" autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" placeholder="••••••••" autocomplete="current-password">
+        </div>
+        <button class="btn-primary" style="width:100%;margin-top:0.5rem" id="btn-login">Entra</button>
       </div>
 
-      <button class="btn-primary" style="width:100%;margin-top:0.5rem" id="btn-login">Entra</button>
+      <div id="panel-pin" class="hidden">
+        <div class="form-group">
+          <label for="pin">PIN</label>
+          <input type="tel" class="pin-input" id="pin" placeholder="0000" maxlength="6" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
+        </div>
+        <button class="btn-primary" style="width:100%;margin-top:0.5rem" id="btn-login-pin">Entra</button>
+      </div>
+
       <p class="text-center mt-2" style="font-size:0.8rem;color:#7a6558">
         <a href="index.html" style="color:#5a8a4a">← Torna alla home</a>
       </p>
@@ -35,6 +63,7 @@
 
   <script type="module">
     import { login, onAuthChange } from './js/auth.js';
+    import { loginConPin } from './js/ragazzi-pin.js';
 
     function redirectAfterLogin() {
       window.location.href = 'index.html';
@@ -45,23 +74,56 @@
       if (user) setTimeout(() => redirectAfterLogin(), 100);
     });
 
+    const errEl = document.getElementById('login-error');
+    function showError(msg) { errEl.textContent = msg; errEl.classList.remove('hidden'); }
+    function hideError() { errEl.classList.add('hidden'); }
+
+    document.getElementById('tab-email').addEventListener('click', () => {
+      document.getElementById('tab-email').classList.add('active');
+      document.getElementById('tab-pin').classList.remove('active');
+      document.getElementById('panel-email').classList.remove('hidden');
+      document.getElementById('panel-pin').classList.add('hidden');
+      hideError();
+    });
+    document.getElementById('tab-pin').addEventListener('click', () => {
+      document.getElementById('tab-pin').classList.add('active');
+      document.getElementById('tab-email').classList.remove('active');
+      document.getElementById('panel-pin').classList.remove('hidden');
+      document.getElementById('panel-email').classList.add('hidden');
+      hideError();
+    });
+
     document.getElementById('btn-login').addEventListener('click', async () => {
       const email = document.getElementById('email').value.trim();
       const password = document.getElementById('password').value;
-      const errEl = document.getElementById('login-error');
-      errEl.classList.add('hidden');
-      if (!email || !password) { errEl.textContent = 'Inserisci email e password.'; errEl.classList.remove('hidden'); return; }
+      hideError();
+      if (!email || !password) { showError('Inserisci email e password.'); return; }
       try {
         await login(email, password);
         redirectAfterLogin();
       } catch (e) {
-        errEl.textContent = 'Credenziali non valide. Riprova.';
-        errEl.classList.remove('hidden');
+        showError('Credenziali non valide. Riprova.');
       }
     });
 
     document.getElementById('password').addEventListener('keydown', e => {
       if (e.key === 'Enter') document.getElementById('btn-login').click();
+    });
+
+    document.getElementById('btn-login-pin').addEventListener('click', async () => {
+      const pin = document.getElementById('pin').value.trim();
+      hideError();
+      if (!/^\d{4,6}$/.test(pin)) { showError('Inserisci un PIN valido (4-6 cifre).'); return; }
+      try {
+        await loginConPin(pin);
+        redirectAfterLogin();
+      } catch (e) {
+        showError('PIN non valido. Riprova.');
+      }
+    });
+
+    document.getElementById('pin').addEventListener('keydown', e => {
+      if (e.key === 'Enter') document.getElementById('btn-login-pin').click();
     });
   </script>
 </body>

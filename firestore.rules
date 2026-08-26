@@ -50,6 +50,21 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // ── PIN login ragazzi (Gestione ragazzi) ──────────────────
+    match /utenti_pin/{uid} {
+      allow read: if request.auth != null;
+      // Il ragazzo, dopo il login con PIN, può solo aggiornare il proprio lastLogin
+      allow update: if isAdmin() ||
+        (isOwner(uid) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastLogin']));
+      allow create, delete: if isAdmin();
+    }
+
+    // Lookup pubblico (necessario per il login senza auth)
+    match /utenti_pin_lookup/{pin} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     // ── Diario ───────────────────────────────────────────────
     match /diario/{postId} {
       allow read: if true;

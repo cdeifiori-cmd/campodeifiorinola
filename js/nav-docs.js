@@ -52,6 +52,11 @@ export function setupDocumentiNav() {
           el.style.display = '';
         });
       }
+      if (isAdmin) {
+        document.querySelectorAll('.nav-gestione-link').forEach(el => {
+          el.style.display = '';
+        });
+      }
     } finally {
       clearTimeout(timer);
       showNav();

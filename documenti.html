@@ -289,6 +289,7 @@
     <a href="amici.html"    class="nav-item"><span class="nav-icon">🤝</span>Amici</a>
     <a href="documenti.html" class="nav-item active nav-doc-link"><span class="nav-icon">📁</span>Documenti</a>
     <a href="giornale.html" class="nav-item"><span class="nav-icon">📰</span>Giornale</a>
+    <a href="gestione-ragazzi.html" class="nav-item nav-gestione-link" style="display:none"><span class="nav-icon">👥</span>Ragazzi</a>
   </nav>
 
   <script type="module">
@@ -526,11 +527,13 @@
           <div class="person-grid" id="person-grid"></div>`;
 
         list.forEach(r => {
+          const archLabel = r.stato === 'archiviato' ? ' <span style="opacity:.6;font-weight:400">(archiviato)</span>' : '';
           const card = mkEl('div', 'person-card',
             `<div class="person-foto">${r.fotoProfilo
               ? `<img src="${r.fotoProfilo}" alt="${r.nome||''}" loading="lazy">`
               : '🧒'}</div>
-             <div class="person-nome">${r.nome||'—'}</div>`);
+             <div class="person-nome">${r.nome||'—'}${archLabel}</div>`);
+          if (r.stato === 'archiviato') card.style.opacity = '0.7';
           card.onclick = () => go(r.nome||r.id, () => showAreas(community, r));
           document.getElementById('person-grid').appendChild(card);
         });

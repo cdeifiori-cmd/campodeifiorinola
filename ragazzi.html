@@ -208,7 +208,7 @@
         snap.forEach(d => {
           const data = { id: d.id, ...d.data() };
           tutti.push(data);
-          if (!ESCLUDI.includes(data.comunitaId)) ragazzi.push(data);
+          if (!ESCLUDI.includes(data.comunitaId) && data.stato !== 'archiviato') ragazzi.push(data);
         });
         const badges = computeBadges(tutti);
         ragazzi.sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'it'));
