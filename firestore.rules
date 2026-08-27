@@ -51,22 +51,23 @@ service cloud.firestore {
     }
 
     // ── PIN login ragazzi (Gestione ragazzi) ──────────────────
-    // Il login con PIN ora passa esclusivamente dalla Cloud Function
-    // loginRagazzoConPin (functions/pinLogin.js), che usa l'Admin SDK e
-    // quindi non è mai soggetta a queste regole. Nessun client — incluso un
-    // ragazzo già autenticato — ha più bisogno di leggere né scrivere
-    // direttamente utenti_pin o utenti_pin_lookup: entrambe sono riservate
-    // all'admin (per la UI di Gestione ragazzi). L'aggiornamento di
-    // lastLogin al login avviene ora dentro la Cloud Function stessa.
+    // Modello Robinson (robinson_pin / robinson_pin_lookup): il login con
+    // PIN torna a essere client-side, senza Cloud Function. utenti_pin
+    // contiene il PIN in chiaro e resta riservato all'admin — un ragazzo non
+    // ne ha bisogno per accedere (lo conosce già, l'ha digitato).
     match /utenti_pin/{uid} {
       allow read, write: if isAdmin();
     }
 
-    // Non più leggibile dal browser: la risoluzione PIN → uid avviene solo
-    // server-side (Admin SDK), quindi l'intera collezione non è più
-    // enumerabile da un client, autenticato o no.
+    // Lookup pubblico, necessario per il login senza autenticazione previa
+    // (come robinson_pin_lookup). A differenza di Robinson, qui NON viene
+    // mai salvata la password: solo { uid, email }. La password si
+    // ricostruisce lato client con la stessa formula nota sia in creazione
+    // sia in login (vedi js/ragazzi-pin.js), quindi non deve mai comparire
+    // in un documento leggibile pubblicamente.
     match /utenti_pin_lookup/{pin} {
-      allow read, write: if isAdmin();
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
     // Contatori di rate limit del login PIN (IP con hash, mai in chiaro),
@@ -74,6 +75,53 @@ service cloud.firestore {
     // client deve poter leggerli o, peggio, azzerarli da solo.
     match /pin_login_rate/{ipHash} {
       allow read, write: if isAdmin();
+    }
+
+    // ── PPU: Scheda A "Come mi vedo" ───────────────────────────
+    // Stessa logica autorizzativa già usata per documenti/** in
+    // storage.rules (admin, coordinatore/responsabile per comunità, staff
+    // con accessoDocumenti per comunità) — qui riscritta con get()/exists()
+    // dirette perché siamo già dentro le regole di Firestore (senza il
+    // prefisso "firestore." richiesto invece da storage.rules). Un ragazzo
+    // autenticato via PIN non ha mai un doc in "staff", quindi non rientra
+    // in nessuna di queste funzioni.
+    function staffDocPPU() {
+      return get(/databases/$(database)/documents/staff/$(request.auth.uid));
+    }
+    function isStaffMemberPPU() {
+      return request.auth != null && exists(/databases/$(database)/documents/staff/$(request.auth.uid));
+    }
+    function staffComunitaMatchPPU(comunitaId) {
+      let c = staffDocPPU().data.get('comunitaId', null);
+      return (c is list && comunitaId in c) || c == comunitaId;
+    }
+    function isCoordOrResponsabilePPU(comunitaId) {
+      return isStaffMemberPPU()
+        && staffDocPPU().data.get('ruolo', '').lower().matches('.*(coordinat|responsabil).*')
+        && staffComunitaMatchPPU(comunitaId);
+    }
+    function isStaffAccessoDocumentiPPU(comunitaId) {
+      return isStaffMemberPPU()
+        && staffDocPPU().data.get('accessoDocumenti', false) == true
+        && staffComunitaMatchPPU(comunitaId);
+    }
+    function canAccessPPU(comunitaId) {
+      return isAdmin() || isCoordOrResponsabilePPU(comunitaId) || isStaffAccessoDocumentiPPU(comunitaId);
+    }
+
+    match /ppu_schede_a/{schedaId} {
+      allow read: if canAccessPPU(resource.data.comunitaId);
+      allow create: if canAccessPPU(request.resource.data.comunitaId)
+        && request.resource.data.createdBy == request.auth.uid;
+      // comunitaId/minorId/createdBy/createdAt sono immutabili dopo la
+      // creazione: nessun client può riattribuire chi/quando ha creato la
+      // scheda né spostarla su un altro ragazzo o comunità.
+      allow update: if canAccessPPU(resource.data.comunitaId)
+        && request.resource.data.comunitaId == resource.data.comunitaId
+        && request.resource.data.minorId == resource.data.minorId
+        && request.resource.data.createdBy == resource.data.createdBy
+        && request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if isAdmin();
     }
 
     // ── Diario ───────────────────────────────────────────────
