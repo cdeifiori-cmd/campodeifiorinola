@@ -304,6 +304,7 @@
       from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
     import { setupNavAuth }       from './js/nav-auth.js';
     import { setupDocumentiNav }  from './js/nav-docs.js';
+    import { montaElenco as montaElencoPPU } from './js/ppu-scheda-a.js';
 
     const firebaseConfig = {
       apiKey:            "AIzaSyC18lzwqhYcW29TsEO6Oy4Bqvb2PMBUmAg",
@@ -342,6 +343,7 @@
     let isAdmin = false, isCoord = false;
     let myComunita = [];  // array: supporta coordinatrici/responsabili con più comunità
     let canWrite = false;  // admin, coordinatrice, responsabile
+    let currentUid = null;
 
     /* ── Navigation stack ─────────────────────────────────────────── */
     // Each entry: { label: string, render: () => void }
@@ -551,9 +553,34 @@
         const card = mkEl('div', 'nav-card',
           `<div class="nav-card-icon">${area.emoji}</div>
            <div class="nav-card-label">${area.label || area.id}</div>`);
-        card.onclick = () => go(area.short, () => showFolder(storagePath, area.label || area.id));
+        card.onclick = area.id === 'Educativa'
+          ? () => go(area.short, () => showPPUHome(community, ragazzo, storagePath, area.label || area.id))
+          : () => go(area.short, () => showFolder(storagePath, area.label || area.id));
         document.getElementById('area-grid').appendChild(card);
       });
+    }
+
+    /* ── LEVEL 2.5 – PPU: schede di autovalutazione o documenti caricati ── */
+    function showPPUHome(community, ragazzo, storagePath, label) {
+      main.innerHTML = `
+        <div class="section-title muted">🌱 ${label}</div>
+        <div class="card-grid" id="ppu-home-grid"></div>`;
+
+      const cardSchede = mkEl('div', 'nav-card',
+        `<div class="nav-card-icon">🧭</div>
+         <div class="nav-card-label">Come mi vedo</div>
+         <div style="font-size:0.62rem;color:#999;font-weight:700;margin-top:-3px;">Scheda PPU</div>`);
+      cardSchede.onclick = () => go('Come mi vedo', () => montaElencoPPU(main, {
+        db, ragazzo, community, canWrite, currentUid, go
+      }));
+
+      const cardDocs = mkEl('div', 'nav-card',
+        `<div class="nav-card-icon">📁</div>
+         <div class="nav-card-label">Documenti PPU</div>
+         <div style="font-size:0.62rem;color:#999;font-weight:700;margin-top:-3px;">File e documenti</div>`);
+      cardDocs.onclick = () => go('Documenti', () => showFolder(storagePath, label));
+
+      document.getElementById('ppu-home-grid').append(cardSchede, cardDocs);
     }
 
     /* ── LEVEL 3+ – Contenuto cartella ──────────────────────────── */
@@ -766,6 +793,7 @@
       if (!user) { showAccessDenied(); return; }
 
       isAdmin = user.uid === ADMIN_UID;
+      currentUid = user.uid;
 
       if (!isAdmin) {
         for (const coll of ['utenti', 'staff', 'amici']) {
