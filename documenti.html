@@ -304,7 +304,8 @@
       from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
     import { setupNavAuth }       from './js/nav-auth.js';
     import { setupDocumentiNav }  from './js/nav-docs.js';
-    import { montaElenco as montaElencoPPU } from './js/ppu-scheda-a.js';
+    import { montaElenco as montaElencoPPU }  from './js/ppu-scheda-a.js';
+    import { montaElenco as montaElencoPPUB } from './js/ppu-scheda-b.js';
 
     const firebaseConfig = {
       apiKey:            "AIzaSyC18lzwqhYcW29TsEO6Oy4Bqvb2PMBUmAg",
@@ -566,11 +567,19 @@
         <div class="section-title muted">🌱 ${label}</div>
         <div class="card-grid" id="ppu-home-grid"></div>`;
 
-      const cardSchede = mkEl('div', 'nav-card',
+      const cardSchedaA = mkEl('div', 'nav-card',
         `<div class="nav-card-icon">🧭</div>
-         <div class="nav-card-label">Come mi vedo</div>
-         <div style="font-size:0.62rem;color:#999;font-weight:700;margin-top:-3px;">Scheda PPU</div>`);
-      cardSchede.onclick = () => go('Come mi vedo', () => montaElencoPPU(main, {
+         <div class="nav-card-label">Scheda A — Come mi vedo</div>
+         <div style="font-size:0.62rem;color:#999;font-weight:700;margin-top:-3px;">Caratteristiche e funzionamento percepito</div>`);
+      cardSchedaA.onclick = () => go('Come mi vedo', () => montaElencoPPU(main, {
+        db, ragazzo, community, canWrite, currentUid, go
+      }));
+
+      const cardSchedaB = mkEl('div', 'nav-card',
+        `<div class="nav-card-icon">👥</div>
+         <div class="nav-card-label">Scheda B — Come penso che mi vedano gli altri</div>
+         <div style="font-size:0.62rem;color:#999;font-weight:700;margin-top:-3px;">Immagine riflessa: come penso di essere visto</div>`);
+      cardSchedaB.onclick = () => go('Come penso che mi vedano gli altri', () => montaElencoPPUB(main, {
         db, ragazzo, community, canWrite, currentUid, go
       }));
 
@@ -580,7 +589,7 @@
          <div style="font-size:0.62rem;color:#999;font-weight:700;margin-top:-3px;">File e documenti</div>`);
       cardDocs.onclick = () => go('Documenti', () => showFolder(storagePath, label));
 
-      document.getElementById('ppu-home-grid').append(cardSchede, cardDocs);
+      document.getElementById('ppu-home-grid').append(cardSchedaA, cardSchedaB, cardDocs);
     }
 
     /* ── LEVEL 3+ – Contenuto cartella ──────────────────────────── */
