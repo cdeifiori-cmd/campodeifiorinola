@@ -13,6 +13,15 @@
       "fields": [
         { "fieldPath": "timestamp", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "ppu_schede_a",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "minorId", "order": "ASCENDING" },
+        { "fieldPath": "comunitaId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []
