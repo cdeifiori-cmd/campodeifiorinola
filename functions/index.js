@@ -28,6 +28,9 @@ const messaging = getMessaging();
 // Login PIN ragazzi (Gestione ragazzi) — vedi functions/pinLogin.js
 exports.loginRagazzoConPin = require('./pinLogin').loginRagazzoConPin;
 
+// Creazione ragazzo lato Console (Milestone E) — vedi functions/creaRagazzoAdmin.js
+exports.creaRagazzoAdmin = require('./creaRagazzoAdmin').creaRagazzoAdmin;
+
 // ─── Helper: token di un singolo utente ──────────────────────────────────
 
 async function getTokensForUid(uid) {

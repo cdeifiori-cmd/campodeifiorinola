@@ -283,3 +283,134 @@ stessa transazione.
 `targetId: uid`, `before: {comunitaId}`, `after: {comunitaId}`, `causale` (campo extra,
 ammesso: la regola usa `hasAll`, non `hasOnly`). Vincoli invariati dalla Milestone C
 (`actorUid == auth.uid`, `ts == request.time`, append-only).
+
+---
+
+## MILESTONE E — creazione ragazzo · After Us · PIN · foto
+
+> **IMPLEMENTAZIONE LOCALE COMPLETA — ATTIVAZIONE IN PRODUZIONE ANCORA BLOCCATA da B2/B3.**
+> Tutto verde in emulatore; il nuovo flusso NON è attivo in produzione finché non si esegue:
+> **B2** `firebase deploy --only functions` · **B3** IAM `roles/iam.serviceAccountTokenCreator`
+> sulla SA runtime delle Functions (serve solo a `createCustomToken` di `loginRagazzoConPin`
+> in produzione; NON a `creaRagazzoAdmin`; NON in emulatore). B4 (migrazione PIN legacy)
+> resta rimandata. *Il nuovo login NON è dichiarato attivo in produzione.*
+
+### `creaRagazzoAdmin` (callable — `functions/creaRagazzoAdmin.js`)
+
+Verifica `request.auth` + admin canonico (legacy UID OR `staff/{uid}.admin===true`, Admin SDK).
+Valida `nome` (≤200), `comunitaId` (deve esistere in `comunita`; After Us non è speciale
+oltre a questo), `pin` (`/^\d{4,6}$/`), `causale` (1..500).
+
+**Auth**: UID generato server-side (`r_` + 14 byte hex). Email sintetica **deterministica
+e univoca** (`slug(nome).<uid-10>.ragazzo@campodeifiori.org` — il segmento UID esclude
+collisioni). **Password**: `crypto.randomBytes(32)` — usata SOLO per `createUser`,
+**mai restituita, mai salvata (né `utenti` né `utenti_pin`), mai in audit, mai loggata**.
+Il ragazzo non la conosce, l'admin nemmeno: login PIN → callable → custom token.
+
+**Unicità PIN — riserva deterministica**: transazione Admin SDK che verifica
+contemporaneamente `pin_reservations/{pin}` **+** query `utenti_pin where pin==` **+**
+`utenti_pin_lookup/{pin}` (legacy) e, se libero, crea `pin_reservations/{pin} = {uid, createdAt}`
+(doc-id = PIN, permanente). `Transaction.get(Query)` è supportato dall'Admin SDK → due
+creazioni simultanee con lo stesso PIN: una sola riesce, l'altra `already-exists` (verificato).
+
+**Ordine + compensazione** (Auth e Firestore non atomici):
+1. transazione riserva PIN → se occupato: `already-exists` (nessun Auth, niente da pulire);
+2. `createUser({uid,email,password})` → se fallisce: **rilascia la reservation** (solo se
+   `.uid === uid`, ownership-checked) e termina;
+3. batch Firestore: `utenti/{uid}` + `utenti_pin/{uid}` (**niente password, niente
+   `utenti_pin_lookup`**) + `utenti/{uid}/appartenenze/{autoId}` (APERTA, `al:null`,
+   **niente `legacyBaseline`**) + `admin_audit` (`action:'USER_CREATED'`, `before:{}`,
+   `after:{comunitaId,stato}`, **niente pin/password**). Se il batch fallisce:
+   `deleteUser(uid)` **+** rilascia reservation; se anche la compensazione fallisce →
+   errore amministrativo esplicito che nomina l'orfano `uid`.
+
+**Limite compensazione**: se la rete cade dopo `createUser` e prima che la compensazione
+completi, può restare un orfano; l'errore lo dichiara e nomina l'`uid`.
+
+Ritorna `{ uid, comunitaId, stato }` — **niente pin, niente password**.
+
+### PIN — modello e recuperabilità (transitoria)
+
+| | NUOVI (`creaRagazzoAdmin`) | LEGACY (`js/ragazzi-pin.js:creaRagazzo`) |
+|---|---|---|
+| `utenti_pin/{uid}.pin` | ✅ chiaro, **admin-only** (transitorio: futura UX mostra/copia/cambia PIN) | ✅ |
+| `utenti_pin_lookup/{pin}` | ❌ **non creato** | ✅ (serve al fallback login legacy fino a B4) |
+| `pin_reservations/{pin}` | ✅ privato (`allow read,write: if false`) | ❌ |
+| password Firebase | random, non persistita | `"CF"+pin` (derivabile) |
+| login | callable-only (custom token) | callable (via query `utenti_pin`) **o** fallback legacy |
+
+### `loginRagazzoConPin` — modifiche (`functions/pinLogin.js`)
+
+Risoluzione PIN → UID: (1) query `utenti_pin where pin==input`; (2) fallback transitorio
+`utenti_pin_lookup/{pin}`. Il **client non interroga più `utenti_pin_lookup`**. Invariati:
+rate limit per IP, verifica `stato:'archiviato'`, custom token. **Errore uniforme**: PIN
+inesistente **e** ragazzo archiviato → **stesso** codice `permission-denied` e messaggio
+`"PIN non valido."` (prima `not-found`; cambiato per non collidere con il `functions/not-found`
+di "callable non deployata").
+
+### Login client callable-first — `js/pin-login.js` (usato da `login.html`)
+
+`loginRagazzoPin(pin)`: `httpsCallable('loginRagazzoConPin')` → `signInWithCustomToken`.
+**Policy di fallback al percorso legacy (`loginConPin`) — ESATTA:**
+- **Fallback SÌ** solo per condizioni tecniche di rollout: `error.code` ∈
+  `{functions/not-found, functions/unavailable, functions/unimplemented}` **oppure** un
+  errore con `code` che NON inizia per `functions/` (trasporto: rete/CORS/DNS).
+- **Fallback NO** — verdetti applicativi (preservano rate-limit e uniformità):
+  `functions/permission-denied` → "PIN non valido."; `functions/resource-exhausted` →
+  "Troppi tentativi…"; `functions/invalid-argument` → "PIN non valido.".
+- **Fallback NO** — errori tecnici non di rollout (`functions/internal`,
+  `functions/deadline-exceeded`, `functions/cancelled`, `functions/aborted`, …) →
+  "Accesso non riuscito. Riprova." (nessun bypass del rate limit).
+
+Motivo: senza questa distinzione un aggressore forzerebbe un errore per far scattare
+il fallback legacy e bypassare il rate limiting.
+
+### After Us / appartenenza iniziale / foto
+
+- After Us = destinazione come le altre; selezionabile solo se `comunita/after-us` esiste.
+  Creazione diretta in After Us = stessa callable con `comunitaId:'after-us'`.
+- Appartenenza iniziale **APERTA** (`al:null`, `causale` dall'admin, default "Prima
+  assegnazione"), **nessun** `legacyBaseline`.
+- Foto **opzionale**, gestita DOPO la creazione: validazione client `image/*` + ≤ 5 MB +
+  preview; upload Cloudinary (preset unsigned — **limite noto**: la validazione client non
+  lo rende sicuro); poi `updateDoc(utenti/{uid}, { fotoProfilo })` (solo quel campo). Se
+  l'upload fallisce → ragazzo **creato correttamente** + "Foto non caricata", nessun
+  rollback dell'identità.
+
+### Security Rules
+
+- **NUOVA** `match /pin_reservations/{pin} { allow read, write: if false; }` — nessun
+  client (admin incluso); solo Admin SDK.
+- `utenti` / `utenti_pin` / `utenti_pin_lookup`: **rules invariate**. La creazione passa
+  da Admin SDK (bypassa le Rules); le aperture client legacy restano come **debito legacy**
+  (servono ancora a `js/ragazzi-pin.js:creaRagazzo` e al fallback login). Da restringere
+  nella milestone di migrazione B4, non ora.
+
+### Test (emulatore firestore+auth+storage+**functions**, JDK 21)
+
+- Rules **135** (114 Milestone D + **21** `pin-reservations.test.mjs`).
+- Storage **24** (invariati).
+- **Functions/Auth** (`test/functions/`, client SDK + Admin SDK, `--test-concurrency=1`)
+  **24**: autorizzazione · validazione · unicità PIN (utenti_pin / utenti_pin_lookup /
+  pin_reservations) · SUCCESS STATE (account + documenti + appartenenza + audit, **nessun
+  segreto** in risposta/Firestore/audit) · compensazione (reservation collision → nessun
+  Auth; Firestore-fallisce-dopo-Auth → `deleteUser` + reservation rilasciata + niente
+  `utenti`/audit) · concorrenza PIN · login PIN (nuovo modello, compat legacy via lookup,
+  errori uniformi, formato, nessun PIN nel messaggio, rate limiting).
+- **Totale 135 + 24 + 24 = 183, tutti verdi** (3 run consecutivi).
+
+### Fault injection prod-inerte
+
+`creaRagazzoAdmin` onora `request.data.__testFailAfterAuth === true` **solo** se
+`GCLOUD_PROJECT` inizia con `demo-` (emulatore). In produzione (`campo-dei-fiori`)
+è ignorato. Serve al solo test di compensazione.
+
+### Azioni ancora necessarie per la produzione
+
+1. **B2** `firebase deploy --only functions`. Dopo: `creaRagazzoAdmin` pienamente
+   funzionale in produzione.
+2. **B3** grant IAM `roles/iam.serviceAccountTokenCreator` sulla SA runtime
+   (`campo-dei-fiori@appspot.gserviceaccount.com` Gen1, o la SA della funzione Gen2).
+   Senza B3 la callable `loginRagazzoConPin` fallisce a runtime su `createCustomToken`;
+   il client cade sul fallback legacy (che copre i ragazzi legacy, **non** i nuovi).
+3. **B4** migrazione PIN legacy → eliminazione `utenti_pin_lookup` pubblico (milestone dedicata).

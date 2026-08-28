@@ -236,6 +236,15 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
+    // ── Riserve PIN (Milestone E) ────────────────────────────────
+    // Marker deterministico di unicità del PIN: doc-id = PIN, { uid, createdAt }.
+    // Scritto/letto SOLO dalla callable creaRagazzoAdmin tramite Admin SDK, che
+    // bypassa queste regole. Nessun client (admin incluso) deve poterlo leggere,
+    // enumerare, creare o cancellare: un PIN riservato non deve mai trapelare.
+    match /pin_reservations/{pin} {
+      allow read, write: if false;
+    }
+
     // ── PPU: Scheda A "Come mi vedo" ───────────────────────────
     // Stessa logica autorizzativa già usata per documenti/** in
     // storage.rules (admin, coordinatore/responsabile per comunità, staff

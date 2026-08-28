@@ -8,6 +8,7 @@ import {
   fetchUtenti, fetchComunita, fetchPinStatus, COMUNITA_AFTER_US,
 } from './console-data.js';
 import { transferUtente, CAUSALE_MAX, AFTER_US_ID } from './console-transfer.js';
+import { creaRagazzo, generaPinCandidato, validaPin } from './console-crea-ragazzo.js';
 import {
   esc, el, SPINNER, emptyMsg, errorMsg, badge, avatar, fmtDateTime, missing,
   toolbar, setCount, sectionHead, byNome, confirmModal,
@@ -80,9 +81,16 @@ export async function renderRagazzi(container, mode = 'ordinarie') {
   const list = el('div', 'cadmin-list');
 
   container.innerHTML = sectionHead(title, sub);
+
+  const nuovoBtn = el('button', 'cperm-btn', '➕ Nuovo ragazzo');
+  nuovoBtn.style.margin = '0 0 10px';
+  nuovoBtn.addEventListener('click', () =>
+    apriModaleNuovoRagazzo({ comunita, container, isAfterUs, afterUsExists }));
+  container.appendChild(nuovoBtn);
+
   if (!isAfterUs && !afterUsExists) {
     container.insertAdjacentHTML('beforeend',
-      `<div class="cadmin-note">⚠️ Il documento canonico <code>comunita/after-us</code> non esiste: il trasferimento verso After Us è disabilitato finché non viene creato.</div>`);
+      `<div class="cadmin-note">⚠️ Il documento canonico <code>comunita/after-us</code> non esiste: trasferimento e inserimento diretto in After Us disabilitati finché non viene creato.</div>`);
   }
   container.appendChild(bar);
   container.appendChild(list);
@@ -206,4 +214,106 @@ async function apriModaleTrasferimento(r, { comNome, comunita, container, afterU
     const isAfterUsSection = curId === COMUNITA_AFTER_US;
     renderRagazzi(container, isAfterUsSection ? 'afterus' : 'ordinarie');
   }
+}
+
+// ── + NUOVO RAGAZZO (Milestone E — creazione server-side) ─────────────────
+async function apriModaleNuovoRagazzo({ comunita, container, isAfterUs, afterUsExists }) {
+  const opts = comunita
+    .map((c) => ({ id: c.id, label: c.nomeComunita || c.id, isAfterUs: c.id === AFTER_US_ID }))
+    .sort((a, b) => (a.isAfterUs === b.isAfterUs ? a.label.localeCompare(b.label, 'it') : (a.isAfterUs ? 1 : -1)));
+
+  let inNome, selCom, inPin, inPin2, btnGen, chkShow, inFoto, fotoPrev, inCausale;
+
+  const ok = await confirmModal({
+    title: '➕ Nuovo ragazzo',
+    confirmLabel: 'Crea',
+    build(b) {
+      b.innerHTML = `
+        <label class="cmodal-label">Nome
+          <input class="cmodal-input" id="nr-nome" type="text" maxlength="200" autocomplete="off">
+        </label>
+        <label class="cmodal-label">Comunità
+          <select class="cmodal-input" id="nr-com"></select>
+        </label>
+        <label class="cmodal-label">PIN (4–6 cifre)
+          <span style="display:flex;gap:6px;align-items:center">
+            <input class="cmodal-input" id="nr-pin" type="text" inputmode="numeric" maxlength="6" style="flex:1" autocomplete="off">
+            <button type="button" class="cperm-btn" id="nr-gen">🎲 Genera</button>
+          </span>
+        </label>
+        <label class="cmodal-label">Conferma PIN
+          <input class="cmodal-input" id="nr-pin2" type="password" inputmode="numeric" maxlength="6" autocomplete="off">
+        </label>
+        <label style="font-size:0.78rem;color:#666;display:flex;gap:6px;align-items:center;margin-top:6px">
+          <input type="checkbox" id="nr-show"> mostra PIN
+        </label>
+        <label class="cmodal-label">Foto (opzionale, immagine ≤ 5 MB)
+          <input class="cmodal-input" id="nr-foto" type="file" accept="image/*">
+        </label>
+        <div id="nr-foto-prev" style="margin-top:6px"></div>
+        <label class="cmodal-label">Causale (amministrativa, obbligatoria — no dati sensibili)
+          <textarea class="cmodal-input" id="nr-causale" rows="2" maxlength="500"
+            placeholder="es. Prima assegnazione">Prima assegnazione</textarea>
+        </label>`;
+      inNome = b.querySelector('#nr-nome');
+      selCom = b.querySelector('#nr-com');
+      inPin = b.querySelector('#nr-pin');
+      inPin2 = b.querySelector('#nr-pin2');
+      btnGen = b.querySelector('#nr-gen');
+      chkShow = b.querySelector('#nr-show');
+      inFoto = b.querySelector('#nr-foto');
+      fotoPrev = b.querySelector('#nr-foto-prev');
+      inCausale = b.querySelector('#nr-causale');
+
+      selCom.innerHTML = '<option value="">— scegli —</option>' + opts.map((o) => {
+        const disabled = o.isAfterUs && !afterUsExists;
+        return `<option value="${esc(o.id)}"${disabled ? ' disabled' : ''}>${o.isAfterUs ? '🌟 ' : ''}${esc(o.label)}${disabled ? ' (documento mancante)' : ''}</option>`;
+      }).join('');
+      if (isAfterUs && afterUsExists) selCom.value = AFTER_US_ID;
+
+      btnGen.addEventListener('click', () => {
+        const p = generaPinCandidato();
+        inPin.value = p; inPin2.value = p;
+      });
+      chkShow.addEventListener('change', () => {
+        inPin.type = inPin2.type = chkShow.checked ? 'text' : 'password';
+      });
+      inPin.type = 'password';
+      inFoto.addEventListener('change', () => {
+        fotoPrev.innerHTML = '';
+        const f = inFoto.files[0];
+        if (!f) return;
+        if (!/^image\//.test(f.type)) { fotoPrev.innerHTML = '<span style="color:#b03a2e;font-size:0.78rem">Non è un\'immagine</span>'; return; }
+        if (f.size > 5 * 1024 * 1024) { fotoPrev.innerHTML = '<span style="color:#b03a2e;font-size:0.78rem">Troppo grande (max 5 MB)</span>'; return; }
+        const img = new Image();
+        img.style.cssText = 'max-width:80px;max-height:80px;border-radius:8px;object-fit:cover';
+        img.src = URL.createObjectURL(f);
+        fotoPrev.appendChild(img);
+      });
+    },
+    async onConfirm() {
+      const nome = inNome.value.trim();
+      const comunitaId = selCom.value;
+      const pin = inPin.value.trim();
+      const pin2 = inPin2.value.trim();
+      const causale = inCausale.value.trim();
+      const fotoFile = inFoto.files[0] || null;
+
+      if (!nome) throw new Error('Il nome è obbligatorio.');
+      if (!comunitaId) throw new Error('Seleziona una comunità.');
+      if (!validaPin(pin)) throw new Error('Il PIN deve essere di 4–6 cifre.');
+      if (pin !== pin2) throw new Error('I due PIN non coincidono.');
+      if (!causale) throw new Error('La causale è obbligatoria.');
+
+      const res = await creaRagazzo({ nome, comunitaId, pin, causale, fotoFile });
+      if (res.fotoErrore) {
+        // creazione riuscita, foto no: si informa senza bloccare
+        window.alert(`Ragazzo creato correttamente (PIN: ${pin}). Foto non caricata: ${res.fotoErrore}`);
+      } else {
+        window.alert(`Ragazzo creato correttamente. PIN: ${pin}${res.fotoCaricata ? ' · foto caricata' : ''}`);
+      }
+    },
+  });
+
+  if (ok) renderRagazzi(container, isAfterUs ? 'afterus' : 'ordinarie');
 }

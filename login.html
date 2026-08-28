@@ -63,7 +63,7 @@
 
   <script type="module">
     import { login, onAuthChange } from './js/auth.js';
-    import { loginConPin } from './js/ragazzi-pin.js';
+    import { loginRagazzoPin } from './js/pin-login.js';
 
     function redirectAfterLogin() {
       window.location.href = 'index.html';
@@ -115,12 +115,10 @@
       hideError();
       if (!/^\d{4,6}$/.test(pin)) { showError('Inserisci un PIN valido (4-6 cifre).'); return; }
       try {
-        await loginConPin(pin);
+        await loginRagazzoPin(pin);
         redirectAfterLogin();
       } catch (e) {
-        showError(e.message === 'Questo profilo non è più attivo.'
-          ? e.message
-          : 'PIN non valido. Riprova.');
+        showError(e && e.message ? e.message : 'PIN non valido. Riprova.');
       }
     });
 

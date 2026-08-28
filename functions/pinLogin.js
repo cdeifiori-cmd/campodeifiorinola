@@ -8,6 +8,19 @@
  *
  * Il client scambia il token con signInWithCustomToken(): la sessione che ne
  * risulta è una normale sessione Firebase Auth, identica a qualunque altra.
+ *
+ * Milestone E — risoluzione PIN → UID:
+ *   1) query server-side su `utenti_pin` dove pin == input  (nuovi + legacy);
+ *   2) fallback TRANSITORIO a `utenti_pin_lookup/{pin}` per i ragazzi legacy
+ *      il cui pin non fosse presente in `utenti_pin`.
+ * Il client NON interroga mai `utenti_pin_lookup` nel nuovo percorso.
+ *
+ * Codici di errore verso il client (usati dalla policy di fallback lato client):
+ *   - invalid-argument   : PIN mal formato (formato non 4-6 cifre)
+ *   - resource-exhausted : rate limit per IP
+ *   - permission-denied  : verdetto applicativo UNIFORME per "PIN non valido"
+ *                          (inesistente | ragazzo archiviato) — il client NON
+ *                          deve MAI fare fallback legacy su questi codici.
  */
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
@@ -90,16 +103,25 @@ exports.loginRagazzoConPin = onCall({ region: REGION }, async (request) => {
   const delay = Math.min((count - 1) * 250, MAX_DELAY_MS);
   if (delay > 0) await sleep(delay);
 
-  // ── Risoluzione PIN (solo l'Admin SDK vede questa collezione) ──────────
-  const lookupSnap = await db.collection('utenti_pin_lookup').doc(pin).get();
-  if (!lookupSnap.exists || !lookupSnap.data()?.uid) {
-    throw new HttpsError('not-found', MSG_PIN_INVALIDO);
+  // ── Risoluzione PIN (solo l'Admin SDK vede queste collezioni) ─────────
+  let uid = null;
+  const pinQ = await db.collection('utenti_pin').where('pin', '==', pin).limit(1).get();
+  if (!pinQ.empty) {
+    uid = pinQ.docs[0].id;
+  } else {
+    // fallback transitorio: ragazzi legacy con pin solo in utenti_pin_lookup
+    const lookupSnap = await db.collection('utenti_pin_lookup').doc(pin).get();
+    if (lookupSnap.exists && lookupSnap.data()?.uid) uid = lookupSnap.data().uid;
   }
-  const { uid } = lookupSnap.data();
+  if (!uid) {
+    throw new HttpsError('permission-denied', MSG_PIN_INVALIDO);
+  }
 
   const utenteSnap = await db.collection('utenti').doc(uid).get();
   if (!utenteSnap.exists || utenteSnap.data().stato === 'archiviato') {
-    throw new HttpsError('not-found', MSG_PIN_INVALIDO);
+    // Stesso codice e stesso messaggio: il client non distingue
+    // "PIN inesistente" da "ragazzo archiviato".
+    throw new HttpsError('permission-denied', MSG_PIN_INVALIDO);
   }
 
   // ── Login riuscito ───────────────────────────────────────────────────
