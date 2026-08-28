@@ -120,7 +120,7 @@ Applicata in modo coerente in: `firestore.rules` (`canAccessPPU`), `storage.rule
 | File | Modifica |
 |---|---|
 | `firestore.rules` | helper PPU riscritti tri-state (`staffDocumentiPolicyPPU`); `canAccessPPU = isAdmin() OR (policy AND scope)`. `admin_audit` create: vincoli `actorUid == request.auth.uid`, `ts == request.time`, chiavi minime presenti/tipate, `before`/`after` mappe. |
-| `storage.rules` | helper staff riscritti tri-state (`staffDocumentiPolicy`, sentinel `.get('accessoDocumenti','ABSENT')`); `canAccessDocumentiComunita = isSuperUser() OR (policy AND scope)`; `canAccessDocumentiGenerali = isSuperUser() OR policy`. `isAdmin()`/`isSuperUser()` **invariati** (solo UID legacy + Massimo). |
+| `storage.rules` | helper staff riscritti tri-state (`staffDocumentiPolicy`, con `'accessoDocumenti' in staffData()` per distinguere "campo assente"); `canAccessDocumentiComunita = isSuperUser() OR (policy AND scope)`; `canAccessDocumentiGenerali = isSuperUser() OR policy`. `isAdmin()`/`isSuperUser()` **invariati** (solo UID legacy + Massimo). |
 | `documenti.html` | +3 righe nel gate: `if (data.accessoDocumenti === false) break;` (il `false` nega anche a coord/resp). |
 | `js/nav-docs.js` | +3 righe: `if (coll==='staff' && data.accessoDocumenti === false) break;` |
 | `js/console/console-data.js` | `classifyDocumenti`: campo `effettivo` (era `effettivoOggi`) = esito tri-state; `NEGATO_ESPLICITO` ora `effettivo:false`. |
