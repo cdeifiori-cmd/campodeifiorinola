@@ -19,7 +19,14 @@
       "*.py",
       "*.csv",
       "node_modules/**",
-      ".git/**"
+      ".git/**",
+      "**/*.md",
+      "test/**",
+      ".gitignore",
+      "**/*.cjs",
+      "update-daniele-foto.js",
+      "AGENTS.md",
+      "CLAUDE.md"
     ]
   },
   "emulators": {
