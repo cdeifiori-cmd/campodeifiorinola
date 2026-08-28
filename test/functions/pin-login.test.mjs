@@ -67,6 +67,15 @@ describe('loginRagazzoConPin — errori uniformi (§9)', () => {
     const e = await fails(call(c, 'loginRagazzoConPin', { pin: '000111' }), 'functions/permission-denied');
     assert.equal(e.message, 'PIN non valido.');
   });
+  test('sola pin_reservations (RESERVED, nessun utenti_pin/utenti) -> NON autentica', async () => {
+    // Il login usa utenti_pin come fonte credenziale e NON si fida di
+    // pin_reservations: una reservation incoerente non deve loggare nessuno.
+    await adminSdk.db.collection('pin_reservations').doc('770077')
+      .set({ uid: 'r_ghost', status: 'RESERVED', createdAt: new Date() });
+    const c = getClient();
+    const e = await fails(call(c, 'loginRagazzoConPin', { pin: '770077' }), 'functions/permission-denied');
+    assert.equal(e.message, 'PIN non valido.');
+  });
   test('ragazzo archiviato -> STESSO codice/messaggio', async () => {
     const { pin, uid } = await creaNuovo('223344');
     await adminSdk.db.collection('utenti').doc(uid).update({ stato: 'archiviato' });

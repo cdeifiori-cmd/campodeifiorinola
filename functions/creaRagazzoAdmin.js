@@ -17,13 +17,26 @@
  *
  * ATOMICITÀ: Auth e Firestore non condividono una transazione. Strategia:
  *  1) transazione: verifica PIN libero (pin_reservations + utenti_pin + lookup
- *     legacy) e crea pin_reservations/{pin} = { uid, createdAt };
+ *     legacy) e crea pin_reservations/{pin} = { uid, createdAt, status:'RESERVED' };
  *  2) admin.auth().createUser({ uid, email, password: random });
  *     se fallisce -> rilascia la reservation (solo se .uid === uid) e termina;
  *  3) batch Firestore: utenti/{uid} + utenti_pin/{uid} + appartenenza aperta +
- *     admin_audit(USER_CREATED); se fallisce -> deleteUser(uid) + rilascia
- *     reservation. Se anche la compensazione fallisce -> errore amministrativo
- *     esplicito che nomina l'orfano (uid), senza dati sensibili.
+ *     admin_audit(USER_CREATED) + pin_reservations/{pin}.status = 'ACTIVE'
+ *     (nello STESSO batch che crea il profilo -> la transizione RESERVED->ACTIVE
+ *     è atomica con la creazione del profilo); se fallisce -> deleteUser(uid) +
+ *     rilascia reservation. Se anche la compensazione fallisce -> errore
+ *     amministrativo esplicito che nomina l'orfano (uid), senza dati sensibili.
+ *
+ * LIMITE DELLA COMPENSAZIONE catch: il blocco catch protegge solo gli errori
+ * *gestiti* (eccezioni). Se il processo Function viene ucciso tra due operazioni
+ * esterne (es. dopo createUser, prima del batch) nessun catch scatta e resta uno
+ * stato parziale: reservation RESERVED + account Auth senza profilo. Per QUESTI
+ * casi serve la riconciliazione fuori banda — vedi functions/pinReconcile.js.
+ *
+ * STATO reservation:
+ *   RESERVED : PIN prenotato, creazione in corso o interrotta.
+ *   ACTIVE   : profilo creato; scritto nello stesso batch del profilo.
+ * pin_reservations resta `allow read, write: if false` per OGNI client.
  */
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
@@ -32,15 +45,20 @@ const crypto = require('crypto');
 
 const REGION = 'europe-west1';
 const LEGACY_ADMIN_UID = 'mCSgNMVEphVIIf4HX0bkcKq2ZKv2';
-const PIN_RE = /^\d{4,6}$/;            // formato reale accettato dall'app (4-6 cifre)
+// Formato PIN reale dell'app ragazzi: 4-6 cifre (generatore = 6 cifre).
+// Evidenze: js/ragazzi-pin.js (generaPin -> 6 cifre; cambiaPinRagazzo /^\d{4,6}$/),
+// login.html (maxlength="6", /^\d{4,6}$/), gestione-ragazzi.html (maxlength="6"),
+// robinson/login.html (MIN_PIN=4, MAX_PIN=6). NON restringere a 4 senza decisione.
+const PIN_RE = /^\d{4,6}$/;
 const NOME_MAX = 200;
 const CAUSALE_MAX = 500;
 
-function slug(s) {
-  return String(s || '')
-    .toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
-    .replace(/[^a-z0-9]+/g, '.').replace(/\.+/g, '.').replace(/^\.|\.$/g, '')
-    .slice(0, 40) || 'ragazzo';
+// Dominio email sintetica. Il local-part è l'UID e SOLO l'UID: deterministico per
+// quell'account, indipendente dal nome, non contiene il PIN, non collide (l'UID
+// sono 14 byte casuali). Serve solo a soddisfare il requisito "email" di Auth.
+const EMAIL_DOMAIN = 'campodeifiori.org';
+function syntheticEmail(uid) {
+  return `${uid}.ragazzo@${EMAIL_DOMAIN}`;
 }
 
 async function assertAdmin(db, auth) {
@@ -80,7 +98,7 @@ exports.creaRagazzoAdmin = onCall({ region: REGION }, async (request) => {
 
   // ── UID e credenziali generati server-side ───────────────────────────────
   const uid = 'r_' + crypto.randomBytes(14).toString('hex');           // 30 char, valido come Auth UID
-  const email = `${slug(nome)}.${uid.slice(-10)}.ragazzo@campodeifiori.org`;
+  const email = syntheticEmail(uid);                                    // deterministica dall'UID, senza nome/PIN
   const password = crypto.randomBytes(32).toString('base64url');       // segreto interno, mai persistito
 
   // ── (1) Riserva PIN in transazione ──────────────────────────────────────
@@ -93,9 +111,10 @@ exports.creaRagazzoAdmin = onCall({ region: REGION }, async (request) => {
         tx.get(db.collection('utenti_pin').where('pin', '==', pin).limit(1)),
       ]);
       if (resSnap.exists || lookupSnap.exists || !pinQ.empty) {
+        // Nessun valore di PIN nel messaggio d'errore.
         throw new HttpsError('already-exists', 'Questo PIN è già in uso. Sceglierne un altro.');
       }
-      tx.set(pinRef, { uid, createdAt: FieldValue.serverTimestamp() });
+      tx.set(pinRef, { uid, status: 'RESERVED', createdAt: FieldValue.serverTimestamp() });
     });
   } catch (e) {
     if (e instanceof HttpsError) throw e;
@@ -148,6 +167,13 @@ exports.creaRagazzoAdmin = onCall({ region: REGION }, async (request) => {
       before: {},
       after: { comunitaId, stato: 'attivo' },
     }); // NB: nessun pin, nessuna password
+    // Transizione RESERVED -> ACTIVE nello STESSO batch del profilo: o vengono
+    // scritti insieme, o niente. Una reservation ACTIVE implica quindi profilo
+    // presente.
+    batch.update(pinRef, {
+      status: 'ACTIVE',
+      activatedAt: FieldValue.serverTimestamp(),
+    });
     await batch.commit();
   } catch (e) {
     // Compensazione: elimina l'account Auth e rilascia la reservation.
@@ -166,10 +192,16 @@ exports.creaRagazzoAdmin = onCall({ region: REGION }, async (request) => {
   return { uid, comunitaId, stato: 'attivo' };
 });
 
+// Rilascia la reservation SOLO se (a) è di questa creazione (uid combacia) e
+// (b) NON è ancora ACTIVE. Se è ACTIVE la creazione è di fatto riuscita e il
+// PIN non va mai liberato dalla compensazione.
 async function releaseReservation(db, pin, uid) {
   const ref = db.collection('pin_reservations').doc(pin);
   await db.runTransaction(async (tx) => {
     const s = await tx.get(ref);
-    if (s.exists && s.data() && s.data().uid === uid) tx.delete(ref); // solo se è NOSTRA
+    if (!s.exists || !s.data()) return;
+    if (s.data().uid !== uid) return;          // appartiene a un'altra creazione
+    if (s.data().status === 'ACTIVE') return;  // creazione già completata: non toccare
+    tx.delete(ref);
   });
 }

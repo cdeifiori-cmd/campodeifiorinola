@@ -414,3 +414,80 @@ il fallback legacy e bypassare il rate limiting.
    Senza B3 la callable `loginRagazzoConPin` fallisce a runtime su `createCustomToken`;
    il client cade sul fallback legacy (che copre i ragazzi legacy, **non** i nuovi).
 3. **B4** migrazione PIN legacy → eliminazione `utenti_pin_lookup` pubblico (milestone dedicata).
+
+---
+
+## Patch E.1 — Hardening recovery pre-produzione (commit `fix(console): harden pin creation recovery`)
+
+Nessun deploy, nessun IAM, nessuna azione su Firebase reale. Solo `functions/` + test.
+
+### Formato PIN — verifica
+
+Formato **canonico reale = 4–6 cifre** (generatore a 6). Evidenze: `js/ragazzi-pin.js`
+(`generaPin` → `100000..999999`; `cambiaPinRagazzo` `/^\d{4,6}$/`), `login.html`
+(`maxlength="6"`, `/^\d{4,6}$/`), `gestione-ragazzi.html` (`maxlength="6"`),
+`robinson/login.html` (`MIN_PIN=4`, `MAX_PIN=6`), `robinson/admin-pin.html` (`/^\d{4,6}$/`).
+→ `/^\d{4,6}$/` **confermato invariato** in `creaRagazzoAdmin`, `pinLogin`, client. `0000`
+è formalmente valido (nessun divieto legacy) e mai auto-generato. Restringere a 4 cifre
+richiederebbe una decisione esplicita e toccherebbe il legacy: **non fatto**.
+
+### `pin_reservations/{pin}` — lifecycle RESERVED → ACTIVE
+
+Forma: `{ uid, status, createdAt, activatedAt? }`. `RESERVED` alla prenotazione (transazione);
+`ACTIVE` scritto **nello stesso `batch` Firestore** che crea profilo+utenti_pin+appartenenza+audit
+→ transizione atomica col profilo. `allow read, write: if false` per ogni client, invariato.
+`releaseReservation` (compensazione) ora rifiuta di cancellare se `status === 'ACTIVE'` **o**
+se `uid` non combacia.
+
+### Riconciliazione fuori banda — `functions/pinReconcile.js` (NON callable)
+
+Helper server-side a dependency injection `{db, auth}`, da invocare manualmente. La
+compensazione `catch` copre solo gli errori gestiti; un kill del processo fra `createUser`
+e il `batch` non fa scattare alcun `catch` → serve questa riconciliazione.
+
+- `classifyPinState(deps, pin)` — sola lettura. Stati:
+  `NOT_FOUND` · `HEALTHY` (ACTIVE + Auth + utenti + utenti_pin coerenti) ·
+  `ORPHAN_RESERVATION` (RESERVED, no Auth, no utenti → recuperabile) ·
+  `INCOMPLETE_AUTH` (RESERVED + Auth, no utenti) ·
+  `RESERVED_STALE` (RESERVED ma Auth+utenti presenti → revisione manuale) ·
+  `INCONSISTENT_ACTIVE` (ACTIVE ma stato rotto) · `INCONSISTENT` ·
+  `LEGACY` (no reservation, `utenti_pin` + `utenti_pin_lookup`) ·
+  `INCONSISTENT_NO_RESERVATION` (no reservation, `utenti_pin` senza lookup —
+  **limite dichiarato**: non distinguibile con certezza da legacy con lookup cancellato;
+  nessuna euristica applicata).
+- `reconcileAll(deps, {limit})` — diagnosi aggregata `{scanned, byState, items}`, sola lettura.
+- `cleanupOrphanReservation(deps, pin, expectedUid)` — cancella **una** reservation e
+  **solo** se: `expectedUid` presente **e** `reservation.uid === expectedUid` **e**
+  `status !== 'ACTIVE'` **e** stato classificato `ORPHAN_RESERVATION`. Non tocca **mai**
+  Auth né `utenti`. Esiti: `DELETED | DENIED | SKIPPED | NOOP`.
+
+### Email sintetica
+
+Era `${slug(nome)}.${uid.slice(-10)}.ragazzo@…` (dipendeva dal nome). Ora
+**`${uid}.ragazzo@campodeifiori.org`**: deterministica dall'UID, indipendente dal nome,
+senza PIN, senza collisioni (UID = 14 byte random). `slug()` rimosso.
+
+### Login e reservation
+
+`loginRagazzoConPin` **non** consulta `pin_reservations`: fonte credenziale = `utenti_pin`
+(poi fallback `utenti_pin_lookup`). Una reservation incoerente da sola **non autentica**
+(test dedicato: `pin_reservations` RESERVED senza `utenti_pin`/`utenti` → `permission-denied`).
+
+### PIN nei log — scansione statica
+
+`creaRagazzoAdmin.js`, `pinLogin.js`, `pinReconcile.js`, `js/pin-login.js`,
+`js/console/console-crea-ragazzo.js`: **nessun** `console.*`/`logger.*`, nessun
+`JSON.stringify` dell'input, nessun valore di PIN in messaggi `HttpsError`, audit o
+risposta callable. (`functions/index.js` ha `console.log` preesistenti FCM/Benvenuto, fuori
+scope, senza PIN.)
+
+### Test — Patch E.1
+
+- Rules **135** (invariati) · Storage **24** (invariati).
+- **Functions/Auth 41** (era 24): + `pin-reconcile.test.mjs` (**14**: stati di crash,
+  ownership/`ACTIVE`/non-orfano → nessuna cancellazione, orfana vera → `DELETED` con
+  Auth/utenti intatti, `LEGACY` vs `INCONSISTENT_NO_RESERVATION`, `reconcileAll`) ·
+  + `crea-ragazzo`: reservation finale `ACTIVE`, email deterministica dall'UID senza
+  nome/PIN, PIN validi `0000`/`1234`/`12345`/`123456` accettati, `already-exists` senza
+  PIN nel messaggio · + `pin-login`: sola reservation non autentica.
+- **Totale 135 + 24 + 41 = 200, tutti verdi (3 run consecutivi).**

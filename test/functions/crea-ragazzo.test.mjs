@@ -72,9 +72,17 @@ describe('creaRagazzoAdmin — validazione', () => {
   test('nome vuoto -> invalid-argument', async () => {
     await fails(call(c, 'creaRagazzoAdmin', okInput({ nome: '   ' })), 'functions/invalid-argument');
   });
+  // Formato PIN CANONICO dell'app = 4-6 cifre (evidenze in report Patch E.1):
+  // generatore a 6 cifre, /^\d{4,6}$/ in login.html / ragazzi-pin.js / robinson.
   test('PIN formato invalido -> invalid-argument', async () => {
-    for (const bad of ['12', 'abcd', '1234567', '']) {
+    for (const bad of ['12', '123', 'abcd', '12a4', '1234567', '']) {
       await fails(call(c, 'creaRagazzoAdmin', okInput({ pin: bad })), 'functions/invalid-argument');
+    }
+  });
+  test('PIN validi secondo la policy reale (4-6 cifre, 0000 incluso) -> SUCCESS', async () => {
+    for (const good of ['0000', '1234', '12345', '123456']) {
+      const res = await call(c, 'creaRagazzoAdmin', okInput({ pin: good }));
+      assert.ok(res.data.uid, `PIN ${good} dovrebbe essere accettato`);
     }
   });
   test('causale vuota -> invalid-argument', async () => {
@@ -86,9 +94,10 @@ describe('creaRagazzoAdmin — unicità PIN', () => {
   let c;
   beforeEach(async () => { c = await signInAs(LEGACY_ADMIN_UID); });
 
-  test('PIN già in utenti_pin -> already-exists', async () => {
+  test('PIN già in utenti_pin -> already-exists (senza il PIN nel messaggio)', async () => {
     await adminSdk.db.collection('utenti_pin').doc('u_legacy').set({ uid: 'u_legacy', pin: '111222' });
-    await fails(call(c, 'creaRagazzoAdmin', okInput({ pin: '111222' })), 'functions/already-exists');
+    const e = await fails(call(c, 'creaRagazzoAdmin', okInput({ pin: '111222' })), 'functions/already-exists');
+    assert.ok(!String(e.message).includes('111222'), 'il messaggio non deve contenere il PIN');
   });
   test('PIN già in utenti_pin_lookup -> already-exists', async () => {
     await adminSdk.db.collection('utenti_pin_lookup').doc('222333').set({ uid: 'u_legacy2' });
@@ -126,9 +135,16 @@ describe('creaRagazzoAdmin — SUCCESS STATE', () => {
     assert.equal(up.pin, pin);
     assert.ok(!('password' in up));
 
-    // pin_reservations/{pin}
+    // pin_reservations/{pin} — dopo una creazione riuscita deve essere ACTIVE
     const pr = (await adminSdk.db.collection('pin_reservations').doc(pin).get()).data();
     assert.equal(pr.uid, uid);
+    assert.equal(pr.status, 'ACTIVE');
+    assert.ok(pr.activatedAt, 'activatedAt impostato alla transizione RESERVED->ACTIVE');
+
+    // email sintetica: deterministica dall'UID, senza nome, senza PIN
+    assert.equal(authUser.email, `${uid}.ragazzo@campodeifiori.org`);
+    assert.match(authUser.email, /^r_[0-9a-f]{28}\.ragazzo@campodeifiori\.org$/);
+    assert.ok(!authUser.email.includes(pin), 'la email non contiene il PIN');
 
     // NIENTE utenti_pin_lookup
     assert.equal((await adminSdk.db.collection('utenti_pin_lookup').doc(pin).get()).exists, false);
@@ -200,5 +216,26 @@ describe('creaRagazzoAdmin — concorrenza PIN', () => {
     assert.equal((await adminSdk.db.collection('pin_reservations').doc('909090').get()).exists, true);
     const users = (await adminSdk.auth.listUsers(1000)).users.filter((u) => u.uid.startsWith('r_'));
     assert.equal(users.length, 1, 'un solo account Auth ragazzo');
+  });
+});
+
+describe('creaRagazzoAdmin — email sintetica', () => {
+  test('deterministica dall\'UID, indipendente dal nome, senza PIN, senza collisioni', async () => {
+    const c = await signInAs(LEGACY_ADMIN_UID);
+    const r1 = await call(c, 'creaRagazzoAdmin', okInput({ nome: 'Mario Rossi', pin: '414141' }));
+    const r2 = await call(c, 'creaRagazzoAdmin', okInput({ nome: 'Mario Rossi', pin: '424242' }));
+
+    const u1 = await adminSdk.auth.getUser(r1.data.uid);
+    const u2 = await adminSdk.auth.getUser(r2.data.uid);
+
+    // forma canonica: <uid>.ragazzo@campodeifiori.org
+    assert.equal(u1.email, `${r1.data.uid}.ragazzo@campodeifiori.org`);
+    assert.equal(u2.email, `${r2.data.uid}.ragazzo@campodeifiori.org`);
+    // stesso nome -> email DIVERSE (dipende solo dall'UID, non dal nome)
+    assert.notEqual(u1.email, u2.email);
+    // nessun PIN nella email
+    assert.ok(!u1.email.includes('414141') && !u2.email.includes('424242'));
+    // il local-part NON contiene lo slug del nome
+    assert.ok(!u1.email.includes('mario') && !u1.email.includes('rossi'));
   });
 });
