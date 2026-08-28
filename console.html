@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Console Admin – Campo dei Fiori</title>
+  <meta name="theme-color" content="#e07b39">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    [hidden] { display: none !important; }
+    body { background: #f5f5f5; padding-bottom: 40px; }
+
+    /* ── Header ─────────────────────────────────────────────── */
+    .cadmin-header {
+      background: #e07b39; color: #fff;
+      display: flex; align-items: center; gap: 10px;
+      padding: 0 1rem; height: 56px;
+      position: sticky; top: 0; z-index: 200;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    }
+    .cadmin-header .back-btn {
+      background: rgba(0,0,0,0.2); border: none; color: #fff;
+      border-radius: 50%; width: 34px; height: 34px; font-size: 1.1rem;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      text-decoration: none; flex-shrink: 0;
+    }
+    .cadmin-header h1 { font-size: 1.05rem; font-weight: 800; flex: 1; }
+    .cadmin-header .who { font-size: 0.72rem; opacity: 0.9; text-align: right; line-height: 1.3; }
+    .cadmin-header .btn-logout {
+      background: rgba(255,255,255,0.22); border: none; color: #fff;
+      border-radius: 20px; padding: 6px 12px; font-family: 'Nunito', sans-serif;
+      font-weight: 700; font-size: 0.78rem; cursor: pointer; white-space: nowrap;
+    }
+    .cadmin-header .btn-logout:hover { background: rgba(255,255,255,0.38); }
+
+    /* ── Tab nav ────────────────────────────────────────────── */
+    .cadmin-tabs {
+      position: sticky; top: 56px; z-index: 150;
+      background: #fff4ec; border-bottom: 1px solid #ffd9c0;
+      display: flex; gap: 2px; padding: 6px 8px;
+      overflow-x: auto; -webkit-overflow-scrolling: touch;
+    }
+    .cadmin-tab {
+      background: none; border: none; cursor: pointer;
+      font-family: 'Nunito', sans-serif; font-weight: 800;
+      font-size: 0.8rem; color: #a86a3d;
+      padding: 8px 14px; border-radius: 18px; white-space: nowrap;
+      transition: background 0.12s, color 0.12s;
+    }
+    .cadmin-tab:hover { background: rgba(224,123,57,0.12); }
+    .cadmin-tab.active { background: #e07b39; color: #fff; }
+
+    /* ── Layout ─────────────────────────────────────────────── */
+    .cadmin-wrap { max-width: 900px; margin: 0 auto; padding: 14px 12px 40px; }
+
+    .cadmin-section-head { margin: 4px 2px 12px; }
+    .cadmin-section-head h2 { font-size: 1.1rem; font-weight: 800; color: #333; }
+    .cadmin-section-head p { font-size: 0.8rem; color: #888; margin-top: 2px; }
+
+    .cadmin-toolbar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; align-items: center; }
+    .cadmin-toolbar input[type=search], .cadmin-toolbar select {
+      border: 1.5px solid #d0c9c0; border-radius: 20px; padding: 7px 13px;
+      font-family: 'Nunito', sans-serif; font-size: 0.85rem; background: #fff; outline: none;
+    }
+    .cadmin-toolbar input[type=search] { min-width: 190px; flex: 1; }
+    .cadmin-toolbar input[type=search]:focus, .cadmin-toolbar select:focus { border-color: #e07b39; }
+    .cadmin-count { font-size: 0.78rem; color: #888; margin-left: auto; }
+
+    /* ── Rows / cards ──────────────────────────────────────── */
+    .cadmin-list { display: flex; flex-direction: column; gap: 8px; }
+    .cadmin-row {
+      background: #fff; border-radius: 12px; padding: 11px 13px;
+      display: flex; align-items: center; gap: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+    .cadmin-avatar {
+      width: 46px; height: 46px; border-radius: 50%; flex-shrink: 0;
+      background: #e8f4e0; display: flex; align-items: center; justify-content: center;
+      font-size: 1.35rem; overflow: hidden;
+    }
+    .cadmin-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .cadmin-info { flex: 1; min-width: 0; }
+    .cadmin-name { font-size: 0.92rem; font-weight: 800; color: #222; }
+    .cadmin-meta { font-size: 0.74rem; color: #777; margin-top: 2px; line-height: 1.5; word-break: break-word; }
+    .cadmin-meta b { color: #555; font-weight: 700; }
+
+    /* ── Badges ────────────────────────────────────────────── */
+    .cbadge {
+      display: inline-block; border-radius: 20px; padding: 1px 9px;
+      font-size: 0.68rem; font-weight: 800; letter-spacing: 0.02em; white-space: nowrap;
+    }
+    .cbadge.grey   { background: #ececec; color: #666; }
+    .cbadge.green  { background: #d9f0d3; color: #2f7d32; }
+    .cbadge.orange { background: #fde4cf; color: #b0581e; }
+    .cbadge.red    { background: #fadbd8; color: #b03a2e; }
+    .cbadge.blue   { background: #d6e6fb; color: #1f5fa8; }
+    .cbadge.amber  { background: #fdf1c9; color: #8a6d1a; }
+
+    /* ── Comunità cards ────────────────────────────────────── */
+    .cadmin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    @media (min-width: 640px) { .cadmin-grid { grid-template-columns: repeat(3, 1fr); } }
+    .ccom-card {
+      background: #fff; border-radius: 12px; overflow: hidden;
+      box-shadow: 0 1px 5px rgba(0,0,0,0.07); border-top: 3px solid #e07b39;
+    }
+    .ccom-thumb {
+      width: 100%; aspect-ratio: 16/9; background: #fdebd0;
+      display: flex; align-items: center; justify-content: center; font-size: 2rem;
+    }
+    .ccom-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .ccom-body { padding: 10px 12px 12px; }
+    .ccom-body h3 { font-size: 0.92rem; font-weight: 800; color: #333; }
+    .ccom-body .ccom-id { font-size: 0.68rem; color: #aaa; font-family: monospace; margin-top: 1px; }
+    .ccom-body .ccom-nums { font-size: 0.78rem; color: #666; margin-top: 6px; line-height: 1.6; }
+
+    /* ── Permessi legend ───────────────────────────────────── */
+    .cperm-legend {
+      background: #fff; border-radius: 12px; padding: 12px 14px; margin-bottom: 14px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06); font-size: 0.78rem; color: #555; line-height: 1.7;
+    }
+    .cperm-legend b { color: #333; }
+    .cperm-group-title {
+      font-size: 0.74rem; font-weight: 900; color: #999; text-transform: uppercase;
+      letter-spacing: 0.06em; margin: 16px 2px 6px;
+    }
+
+    /* ── Access denied ─────────────────────────────────────── */
+    .cadmin-denied {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      min-height: calc(100vh - 120px); gap: 10px; text-align: center; padding: 2rem;
+    }
+    .cadmin-denied .ad-icon { font-size: 3rem; }
+    .cadmin-denied strong { font-size: 1.05rem; color: #333; }
+    .cadmin-denied p { color: #888; font-size: 0.86rem; max-width: 320px; }
+    .cadmin-denied a { color: #e07b39; font-weight: 700; text-decoration: none; margin-top: 6px; }
+
+    .cadmin-note {
+      background: #fff8ef; border: 1px solid #ffe0c2; border-radius: 10px;
+      padding: 9px 12px; font-size: 0.76rem; color: #8a5a2b; margin-bottom: 12px; line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="cadmin-header">
+    <a class="back-btn" href="index.html" title="Torna al sito">←</a>
+    <h1>🛠️ Console Admin</h1>
+    <div class="who" id="cadmin-who"></div>
+    <button class="btn-logout" id="cadmin-logout" hidden>Esci</button>
+  </header>
+
+  <nav class="cadmin-tabs" id="cadmin-tabs" hidden>
+    <button class="cadmin-tab" data-section="ragazzi">👦 Ragazzi</button>
+    <button class="cadmin-tab" data-section="comunita">🏘️ Comunità</button>
+    <button class="cadmin-tab" data-section="afterus">🌟 After Us</button>
+    <button class="cadmin-tab" data-section="operatori">🧑‍🏫 Operatori</button>
+    <button class="cadmin-tab" data-section="permessi">🔐 Permessi</button>
+  </nav>
+
+  <div class="cadmin-wrap">
+    <main id="cadmin-main"><div class="spinner"></div></main>
+  </div>
+
+  <script type="module" src="js/console/console-main.js"></script>
+</body>
+</html>
