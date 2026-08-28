@@ -61,25 +61,33 @@
     </div>
   </div>
 
+  <!--
+    Due <script type="module"> INDIPENDENTI e volutamente separati:
+
+      A) LOGIN STAFF (email/password) + tab + onAuthChange + redirect.
+         Dipende SOLO da ./js/auth.js. Nessun riferimento a pin-login.js.
+      B) LOGIN PIN (ragazzi). Carica ./js/pin-login.js SOLO con import()
+         dinamico al primo click sul pulsante PIN.
+
+    Un errore di parsing, di import o a runtime nello script B NON può in
+    alcun modo impedire allo script A di registrare il pulsante "Entra",
+    chiamare login(email,password), mostrare l'errore auth o fare redirect.
+    (Regressione del 28/08: erano nello stesso module script e un import
+    fragile di pin-login.js abortiva l'intero blocco, "Entra" incluso.)
+  -->
   <script type="module">
+    // ── SCRIPT A — LOGIN STAFF (email/password) ──────────────────────────
     import { login, onAuthChange } from './js/auth.js';
-    // NB: il login PIN è caricato con import() dinamico SOLO al primo uso
-    // (vedi handler #btn-login-pin). Un errore di caricamento di pin-login.js
-    // NON deve mai impedire il login email/password, onAuthChange o il redirect.
-
-    function redirectAfterLogin() {
-      window.location.href = 'index.html';
-    }
-
-    // If already logged in, redirect (setTimeout ensures returnUrl is read after URL is fully parsed)
-    onAuthChange(user => {
-      if (user) setTimeout(() => redirectAfterLogin(), 100);
-    });
 
     const errEl = document.getElementById('login-error');
-    function showError(msg) { errEl.textContent = msg; errEl.classList.remove('hidden'); }
-    function hideError() { errEl.classList.add('hidden'); }
+    const showError = (msg) => { errEl.textContent = msg; errEl.classList.remove('hidden'); };
+    const hideError = () => { errEl.classList.add('hidden'); };
+    const goHome = () => { window.location.href = 'index.html'; };
 
+    // Se già loggato, vai avanti.
+    onAuthChange(user => { if (user) setTimeout(goHome, 100); });
+
+    // Tab email/PIN (gestite qui: non devono dipendere dallo script B).
     document.getElementById('tab-email').addEventListener('click', () => {
       document.getElementById('tab-email').classList.add('active');
       document.getElementById('tab-pin').classList.remove('active');
@@ -102,15 +110,21 @@
       if (!email || !password) { showError('Inserisci email e password.'); return; }
       try {
         await login(email, password);
-        redirectAfterLogin();
+        goHome();
       } catch (e) {
         showError('Credenziali non valide. Riprova.');
       }
     });
-
     document.getElementById('password').addEventListener('keydown', e => {
       if (e.key === 'Enter') document.getElementById('btn-login').click();
     });
+  </script>
+
+  <script type="module">
+    // ── SCRIPT B — LOGIN PIN (ragazzi) — isolato dallo script A ──────────
+    const errEl = document.getElementById('login-error');
+    const showError = (msg) => { errEl.textContent = msg; errEl.classList.remove('hidden'); };
+    const hideError = () => { errEl.classList.add('hidden'); };
 
     document.getElementById('btn-login-pin').addEventListener('click', async () => {
       const pin = document.getElementById('pin').value.trim();
@@ -125,12 +139,11 @@
       }
       try {
         await loginRagazzoPin(pin);
-        redirectAfterLogin();
+        window.location.href = 'index.html';
       } catch (e) {
         showError(e && e.message ? e.message : 'PIN non valido. Riprova.');
       }
     });
-
     document.getElementById('pin').addEventListener('keydown', e => {
       if (e.key === 'Enter') document.getElementById('btn-login-pin').click();
     });
