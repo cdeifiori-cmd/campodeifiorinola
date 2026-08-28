@@ -1,24 +1,26 @@
 // js/console/console-ragazzi.js
-// Sezioni "Ragazzi" (comunità ordinarie) e "After Us" — SOLO lettura.
-// Nessuna azione: niente crea/cambia PIN, archivia, trasferisci, cambia foto.
+// Sezioni "Ragazzi" (comunità ordinarie) e "After Us".
+// Milestone D: aggiunta l'azione TRASFERISCI (comunità→comunità,
+// comunità→After Us, After Us→comunità: stessa operazione, transazione atomica
+// in console-transfer.js). Nessun'altra azione (niente PIN/foto/archivia/crea).
 
 import {
   fetchUtenti, fetchComunita, fetchPinStatus, COMUNITA_AFTER_US,
 } from './console-data.js';
+import { transferUtente, CAUSALE_MAX, AFTER_US_ID } from './console-transfer.js';
 import {
   esc, el, SPINNER, emptyMsg, errorMsg, badge, avatar, fmtDateTime, missing,
-  toolbar, setCount, sectionHead, byNome,
+  toolbar, setCount, sectionHead, byNome, confirmModal,
 } from './console-ui.js';
 
 // mode: 'ordinarie' | 'afterus'
 export async function renderRagazzi(container, mode = 'ordinarie') {
   const isAfterUs = mode === 'afterus';
-  container.innerHTML = sectionHead(
-    isAfterUs ? '🌟 After Us' : '👦 Ragazzi',
-    isAfterUs
-      ? 'Persone attualmente in After Us (utenti.comunitaId === "after-us"). Sola lettura.'
-      : 'Utenti assegnati alle comunità ordinarie. Sola lettura.'
-  ) + SPINNER;
+  const title = isAfterUs ? '🌟 After Us' : '👦 Ragazzi';
+  const sub = isAfterUs
+    ? 'Persone attualmente in After Us (utenti.comunitaId === "after-us"). Azione: Trasferisci verso una comunità ordinaria.'
+    : 'Utenti assegnati alle comunità ordinarie. Azione: Trasferisci (anche verso After Us).';
+  container.innerHTML = sectionHead(title, sub) + SPINNER;
 
   let utenti, comunita, pin;
   try {
@@ -32,36 +34,30 @@ export async function renderRagazzi(container, mode = 'ordinarie') {
   }
 
   const comNome = new Map(comunita.map((c) => [c.id, c.nomeComunita || c.id]));
+  const afterUsExists = comunita.some((c) => c.id === COMUNITA_AFTER_US);
   const ordinarieIds = new Set(comunita.map((c) => c.id).filter((id) => id !== COMUNITA_AFTER_US));
 
-  // Selezione righe
   let righe = utenti.filter((u) => {
     const cid = typeof u.comunitaId === 'string' ? u.comunitaId : null;
     if (isAfterUs) return cid === COMUNITA_AFTER_US;
-    // ordinarie: comunitaId presente e riconosciuto come comunità non-After-Us
     return cid && ordinarieIds.has(cid);
   }).map((u) => ({ ...u }));
-
   righe.sort(byNome);
 
-  // Stati distinti presenti (per il filtro)
   const statiPresenti = Array.from(
     new Set(righe.map((r) => (typeof r.stato === 'string' && r.stato.trim() ? r.stato.trim() : '(non impostato)')))
   ).sort();
 
-  // Stato filtri
-  let fSearch = '';
-  let fComunita = '';
-  let fStato = '';
-
+  let fSearch = '', fComunita = '', fStato = '';
   const selects = [];
   if (!isAfterUs) {
-    const comOpts = [{ value: '', label: 'Tutte le comunità' }].concat(
-      comunita.filter((c) => c.id !== COMUNITA_AFTER_US)
-        .map((c) => ({ value: c.id, label: c.nomeComunita || c.id }))
-    );
     selects.push({
-      label: 'Comunità', options: comOpts, value: fComunita,
+      label: 'Comunità',
+      options: [{ value: '', label: 'Tutte le comunità' }].concat(
+        comunita.filter((c) => c.id !== COMUNITA_AFTER_US)
+          .map((c) => ({ value: c.id, label: c.nomeComunita || c.id }))
+      ),
+      value: fComunita,
       onChange: (v) => { fComunita = v; paint(); },
     });
   }
@@ -81,15 +77,13 @@ export async function renderRagazzi(container, mode = 'ordinarie') {
     searchPlaceholder: 'Cerca ragazzo per nome…',
     selects,
   });
-
   const list = el('div', 'cadmin-list');
 
-  container.innerHTML = sectionHead(
-    isAfterUs ? '🌟 After Us' : '👦 Ragazzi',
-    isAfterUs
-      ? 'Persone attualmente in After Us (utenti.comunitaId === "after-us"). Sola lettura.'
-      : 'Utenti assegnati alle comunità ordinarie. Sola lettura.'
-  );
+  container.innerHTML = sectionHead(title, sub);
+  if (!isAfterUs && !afterUsExists) {
+    container.insertAdjacentHTML('beforeend',
+      `<div class="cadmin-note">⚠️ Il documento canonico <code>comunita/after-us</code> non esiste: il trasferimento verso After Us è disabilitato finché non viene creato.</div>`);
+  }
   container.appendChild(bar);
   container.appendChild(list);
 
@@ -104,36 +98,33 @@ export async function renderRagazzi(container, mode = 'ordinarie') {
       return true;
     });
     setCount(`${filtrate.length} / ${righe.length}`);
-
     if (!filtrate.length) {
       list.innerHTML = emptyMsg(righe.length ? 'Nessun risultato con questi filtri.' : 'Nessun ragazzo trovato.');
       return;
     }
     list.innerHTML = '';
-    for (const r of filtrate) list.appendChild(riga(r, comNome, pin));
+    for (const r of filtrate) {
+      list.appendChild(riga(r, { comNome, comunita, pin, container, isAfterUs, afterUsExists }));
+    }
   }
-
   paint();
 }
 
-function riga(r, comNome, pin) {
+function riga(r, ctx) {
+  const { comNome, comunita, pin, container, afterUsExists } = ctx;
   const row = el('div', 'cadmin-row');
 
   const nome = (typeof r.nome === 'string' && r.nome.trim()) ? r.nome.trim() : null;
   const comId = typeof r.comunitaId === 'string' ? r.comunitaId : null;
   const comLabel = comId ? (comNome.get(comId) || `${comId} (comunità non trovata)`) : null;
   const stato = (typeof r.stato === 'string' && r.stato.trim()) ? r.stato.trim() : null;
-
   const statoBadge = stato
     ? badge(stato, stato === 'archiviato' ? 'grey' : stato === 'attivo' ? 'green' : 'amber')
     : badge('stato non impostato', 'amber');
 
   const p = pin[r.id];
-  let pinBadge;
-  if (!p) pinBadge = badge('PIN: n/d', 'grey');
-  else if (p.configurato) pinBadge = badge('PIN configurato', 'green');
-  else pinBadge = badge('nessun PIN', 'grey');
-
+  const pinBadge = !p ? badge('PIN: n/d', 'grey')
+    : p.configurato ? badge('PIN configurato', 'green') : badge('nessun PIN', 'grey');
   const ultimo = p && p.lastLogin ? fmtDateTime(p.lastLogin) : null;
 
   row.innerHTML =
@@ -146,6 +137,73 @@ function riga(r, comNome, pin) {
          <b>Ultimo accesso PIN:</b> ${ultimo ? esc(ultimo) : '<span style="color:#999">mai / non disponibile</span>'}
          &nbsp;·&nbsp; <b>UID:</b> <span style="font-family:monospace">${esc(r.id)}</span>
        </div>
+       <div class="cperm-actions"></div>
      </div>`;
+
+  const actions = row.querySelector('.cperm-actions');
+  const btn = el('button', 'cperm-btn');
+  btn.textContent = '↔ Trasferisci';
+  btn.addEventListener('click', () => apriModaleTrasferimento(r, { comNome, comunita, container, afterUsExists }));
+  actions.appendChild(btn);
   return row;
+}
+
+async function apriModaleTrasferimento(r, { comNome, comunita, container, afterUsExists }) {
+  const nome = r.nome || r.id;
+  const curId = typeof r.comunitaId === 'string' ? r.comunitaId : null;
+  const curLabel = curId ? (comNome.get(curId) || curId) : '(nessuna)';
+
+  // Destinazioni: tutte le comunità della collezione, esclusa quella corrente.
+  const dest = comunita
+    .filter((c) => c.id !== curId)
+    .map((c) => ({ id: c.id, label: c.nomeComunita || c.id, isAfterUs: c.id === AFTER_US_ID }))
+    .sort((a, b) => (a.isAfterUs === b.isAfterUs ? a.label.localeCompare(b.label, 'it') : (a.isAfterUs ? 1 : -1)));
+
+  let selDest, txtCausale, riepilogo;
+
+  const ok = await confirmModal({
+    title: `↔ Trasferisci ${nome}`,
+    confirmLabel: 'Trasferisci',
+    build(bodyEl) {
+      bodyEl.innerHTML = `
+        <p class="cmodal-row"><b>Ragazzo:</b> ${esc(nome)}</p>
+        <p class="cmodal-row"><b>Comunità attuale:</b> ${esc(curLabel)}</p>
+        <label class="cmodal-label">Destinazione
+          <select class="cmodal-input" id="cm-dest"></select>
+        </label>
+        <label class="cmodal-label">Causale (amministrativa, obbligatoria — no dati sensibili)
+          <textarea class="cmodal-input" id="cm-causale" rows="3" maxlength="${CAUSALE_MAX}"
+            placeholder="es. trasferimento struttura, passaggio maggiore età, riorganizzazione accoglienza"></textarea>
+        </label>
+        <div class="cmodal-summary" id="cm-summary"></div>`;
+      selDest = bodyEl.querySelector('#cm-dest');
+      txtCausale = bodyEl.querySelector('#cm-causale');
+      riepilogo = bodyEl.querySelector('#cm-summary');
+      selDest.innerHTML = '<option value="">— scegli —</option>' + dest.map((d) => {
+        const disabled = d.isAfterUs && !afterUsExists;
+        return `<option value="${esc(d.id)}"${disabled ? ' disabled' : ''}>${d.isAfterUs ? '🌟 ' : ''}${esc(d.label)}${disabled ? ' (documento mancante)' : ''}</option>`;
+      }).join('');
+      const upd = () => {
+        const d = dest.find((x) => x.id === selDest.value);
+        riepilogo.textContent = d
+          ? `Stai trasferendo ${nome} da ${curLabel} a ${d.label}${d.isAfterUs ? ' (After Us)' : ''}.`
+          : '';
+      };
+      selDest.addEventListener('change', upd);
+      upd();
+    },
+    async onConfirm() {
+      const destinazioneId = selDest.value;
+      const causale = txtCausale.value.trim();
+      if (!destinazioneId) throw new Error('Seleziona una comunità di destinazione.');
+      if (!causale) throw new Error('La causale è obbligatoria.');
+      await transferUtente(r.id, destinazioneId, causale);
+    },
+  });
+
+  if (ok) {
+    // Ricarica la sezione corrente (Ragazzi o After Us) per riflettere lo spostamento.
+    const isAfterUsSection = curId === COMUNITA_AFTER_US;
+    renderRagazzi(container, isAfterUsSection ? 'afterus' : 'ordinarie');
+  }
 }

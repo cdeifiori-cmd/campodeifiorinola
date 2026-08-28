@@ -107,3 +107,60 @@ export function sectionHead(title, subtitle) {
 export function byNome(a, b) {
   return String(a.nome || a.id || '').localeCompare(String(b.nome || b.id || ''), 'it');
 }
+
+/**
+ * Modale semplice con conferma. Ritorna una Promise che si risolve con `true`
+ * (confermato, `onConfirm` completato senza errori) o `false` (annullato).
+ *
+ * opts = {
+ *   title: string,
+ *   build: (body: HTMLElement) => void,   // popola il corpo; può salvare riferimenti a input
+ *   confirmLabel?: string,
+ *   confirmKind?: 'primary'|'danger',
+ *   onConfirm: () => Promise<void>|void,  // se lancia, l'errore è mostrato e la modale resta aperta
+ * }
+ */
+export function confirmModal(opts) {
+  return new Promise((resolve) => {
+    const overlay = el('div', 'cmodal-overlay');
+    overlay.innerHTML = `
+      <div class="cmodal-box" role="dialog" aria-modal="true">
+        <div class="cmodal-title"></div>
+        <div class="cmodal-body"></div>
+        <div class="cmodal-error" hidden></div>
+        <div class="cmodal-actions">
+          <button class="cmodal-btn cancel" type="button">Annulla</button>
+          <button class="cmodal-btn confirm" type="button"></button>
+        </div>
+      </div>`;
+    overlay.querySelector('.cmodal-title').textContent = opts.title || '';
+    const body = overlay.querySelector('.cmodal-body');
+    const errBox = overlay.querySelector('.cmodal-error');
+    const btnCancel = overlay.querySelector('.cmodal-btn.cancel');
+    const btnConfirm = overlay.querySelector('.cmodal-btn.confirm');
+    btnConfirm.textContent = opts.confirmLabel || 'Conferma';
+    if (opts.confirmKind === 'danger') btnConfirm.classList.add('danger');
+
+    try { opts.build?.(body); } catch (e) { body.textContent = 'Errore: ' + e.message; }
+
+    const close = (val) => { document.removeEventListener('keydown', onKey); overlay.remove(); resolve(val); };
+    const onKey = (e) => { if (e.key === 'Escape') close(false); };
+    document.addEventListener('keydown', onKey);
+    overlay.addEventListener('mousedown', (e) => { if (e.target === overlay) close(false); });
+    btnCancel.addEventListener('click', () => close(false));
+    btnConfirm.addEventListener('click', async () => {
+      errBox.hidden = true;
+      btnConfirm.disabled = true; btnCancel.disabled = true;
+      try {
+        await opts.onConfirm?.();
+        close(true);
+      } catch (e) {
+        errBox.textContent = e && e.message ? e.message : String(e);
+        errBox.hidden = false;
+        btnConfirm.disabled = false; btnCancel.disabled = false;
+      }
+    });
+
+    document.body.appendChild(overlay);
+  });
+}

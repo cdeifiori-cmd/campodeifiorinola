@@ -171,3 +171,115 @@ Tri-state invariato (assente→ruolo, true→sì, false→no che prevale, admin�
 
 - Audit non crittograficamente non-falsificabile (vedi sopra): integrità forte →
   scrittura server-side in una milestone futura.
+
+---
+
+## MILESTONE D — trasferimenti · After Us · storico appartenenze
+
+**Ambito:** gestione dell'appartenenza di un ragazzo ESISTENTE (trasferimento
+comunità↔comunità, ↔After Us) + storico append-only + audit atomico. Nessun
+nuovo utente/account/PIN, nessuna modifica a foto/operatori/PPU/Storage.
+
+### Modello
+
+- Identità = `utenti/{uid}` — **UID invariato**, documento mai ricreato.
+- `utenti.comunitaId` = comunità corrente. After Us = `comunitaId === 'after-us'`.
+- Destinazioni lette dalla collezione **`comunita`** (nessun hardcoding). Se
+  `comunita/after-us` non esiste, il trasferimento verso After Us è **bloccato**
+  con messaggio esplicito (nessun documento inventato).
+
+### Schema appartenenze — `utenti/{uid}/appartenenze/{autoId}`
+
+| campo | tipo | note |
+|---|---|---|
+| `comunitaId` | string non vuota | comunità del periodo |
+| `dal` | timestamp | `== request.time` alla creazione |
+| `al` | timestamp \| null | `null` = aperto; una volta chiuso non si riapre |
+| `causale` | string 1..500 | amministrativa (no dati sensibili) |
+| `actorUid` | string | `== request.auth.uid` |
+| `createdAt` | timestamp | `== request.time` alla creazione |
+| `legacyBaseline` | bool (solo baseline) | `true` sui record baseline legacy |
+
+**Vincoli CREATE (solo admin):** `actorUid == auth.uid`; `dal == createdAt == request.time`;
+`comunitaId` stringa non vuota; `causale` stringa 1..500. Due sole forme di chiavi:
+(a) record **aperto** `{comunitaId, dal, al, causale, actorUid, createdAt}` con `al == null`;
+(b) **baseline legacy** = (a) + `legacyBaseline: true` e `al == request.time` (chiuso alla nascita).
+Chiavi extra → DENY.
+
+**Vincoli CLOSE = update ONE-WAY (solo admin):** unico campo modificato `al`;
+`resource.data.al == null` (deve essere aperto); `request.resource.data.al == request.time`
+(niente timestamp arbitrari); tutti gli altri campi immutabili. ⇒ record già chiuso
+non aggiornabile; `al:null` per riaprire fallisce.
+
+**DELETE:** vietato a chiunque. **READ:** solo admin (NON allargato in D).
+
+### Strategia utenti legacy senza storico
+
+Molti ragazzi hanno `utenti.comunitaId` ma nessun record `appartenenze` (lo storico
+non è mai stato popolato). Nessuna migrazione massiva. Al **primo trasferimento**:
+
+1. si crea un record **baseline CHIUSO** per la comunità precedente:
+   `comunitaId = <precedente>`, `legacyBaseline: true`, `dal == al == request.time`
+   (⇒ **durata nulla**), `causale` esplicita («baseline legacy … data d'ingresso non
+   nota»). **La data d'ingresso reale NON è nota e NON viene inventata**: il record
+   registra soltanto che il ragazzo *era* in quella comunità prima dell'introduzione
+   dello storico. Il flag `legacyBaseline` + durata nulla + causale lo rendono
+   inequivocabile (non è un periodo reale).
+2. si apre il nuovo record per la destinazione.
+
+Se il ragazzo legacy non ha nemmeno `utenti.comunitaId` (nessuna comunità
+precedente), non si crea baseline: si apre solo il nuovo record.
+
+Dal secondo trasferimento in poi c'è sempre un record aperto → si chiude quello
+e se ne apre uno nuovo (nessun baseline).
+
+### Funzione dedicata `transferUtente(uid, destinazioneId, causale)`
+
+`js/console/console-transfer.js`. NON esiste `updateUtente(uid, data)` generico.
+Passi: valida input → verifica `comunita/{destinazioneId}` esiste (blocco After Us
+se manca) → verifica `utenti/{uid}` esiste → rifiuta destinazione == corrente →
+query appartenenze aperte (rifiuta se >1) → **transazione**.
+
+### Transazione (atomicità + concorrenza)
+
+`runTransaction`: rilegge `utenti/{uid}.comunitaId` (deve essere == valore pre-letto)
+e l'eventuale appartenenza aperta (deve essere ancora `al == null`); poi
+chiude/baseline + apre nuovo + `utenti.comunitaId` + `admin_audit`. Se una parte
+è negata dalle Rules → **l'intera transazione è respinta, nessuna scrittura resta**
+(verificato: staff non-admin / actorUid falsificato → `utenti.comunitaId` invariato).
+
+**Concorrenza:** due admin che trasferiscono lo stesso ragazzo → la ri-lettura in
+transazione fa fallire il secondo (nessun doppio record aperto, nessuna doppia
+chiusura, `comunitaId` coerente). **Limite dichiarato:** le Firestore Rules da sole
+**non possono** garantire "al più un'appartenenza aperta" (non contano/non
+interrogano documenti fratelli). La garanzia viene dalla transazione lato
+applicazione (ri-lettura), non dalle Rules. Le Rules garantiscono forma del
+create + chiusura one-way + no delete.
+
+### `utenti_pin.comunitaId` — NON sincronizzato (scelta documentata)
+
+Ricognizione del codebase: `utenti_pin.comunitaId` è scritto **solo** alla
+creazione del ragazzo (`js/ragazzi-pin.js:creaRagazzo`) e **non è letto da nessuna
+parte** — né dal login PIN (`loginConPin` usa `utenti_pin_lookup` + `utenti.stato`),
+né dalla Cloud Function `pinLogin.js` (legge `utenti_pin_lookup`, scrive solo
+`lastLogin`), né da `gestione-ragazzi.html` / Console (usano `utenti.comunitaId`).
+È dato **write-only ridondante**. Il trasferimento quindi **non lo tocca**: lasciarlo
+stale non ha effetti funzionali. Se una milestone futura rendesse `utenti_pin`
+autoritativo per qualcosa, `transferUtente` andrà esteso per includerlo nella
+stessa transazione.
+
+### Storage / PPU
+
+- **Storage:** nessun file spostato/copiato/rinominato/cancellato. I documenti
+  restano sotto `documenti/{comunitaOriginaria}/{uid}/…` (contesto storico).
+- **PPU:** `ppu_schede_a/b.comunitaId` **immutabile**, invariato. Dopo il
+  trasferimento: l'admin continua a vedere tutto; la scheda storica resta associata
+  alla comunità in cui fu creata. Un eventuale accesso storico per la comunità
+  attuale è **una milestone separata** (non affrontato qui).
+
+### Audit
+
+`admin_audit/{autoId}` con `action: 'USER_COMMUNITY_TRANSFER'`, `targetType: 'utente'`,
+`targetId: uid`, `before: {comunitaId}`, `after: {comunitaId}`, `causale` (campo extra,
+ammesso: la regola usa `hasAll`, non `hasOnly`). Vincoli invariati dalla Milestone C
+(`actorUid == auth.uid`, `ts == request.time`, append-only).

@@ -144,6 +144,47 @@
     .cperm-btn.deny:not(.current):hover   { border-color: #e0897f; }
     .cperm-btn.legacy:not(.current):hover { border-color: #d9c377; }
 
+    /* ── Modale ─────────────────────────────────────────────── */
+    .cmodal-overlay {
+      position: fixed; inset: 0; z-index: 500;
+      background: rgba(0,0,0,0.45);
+      display: flex; align-items: center; justify-content: center; padding: 16px;
+    }
+    .cmodal-box {
+      background: #fff; border-radius: 14px; width: 100%; max-width: 440px;
+      box-shadow: 0 12px 48px rgba(0,0,0,0.28); padding: 18px 18px 16px;
+      max-height: 90vh; overflow-y: auto;
+    }
+    .cmodal-title { font-size: 1rem; font-weight: 800; color: #333; margin-bottom: 12px; }
+    .cmodal-body { font-size: 0.86rem; color: #444; }
+    .cmodal-row { margin: 4px 0; }
+    .cmodal-label { display: block; font-size: 0.78rem; font-weight: 800; color: #666; margin-top: 12px; }
+    .cmodal-input {
+      width: 100%; margin-top: 4px; border: 1.5px solid #d0c9c0; border-radius: 10px;
+      padding: 8px 11px; font-family: 'Nunito', sans-serif; font-size: 0.88rem;
+      background: #fff; outline: none; resize: vertical;
+    }
+    .cmodal-input:focus { border-color: #e07b39; }
+    .cmodal-summary {
+      margin-top: 12px; background: #fff4ec; border: 1px solid #ffd9c0; border-radius: 10px;
+      padding: 9px 12px; font-size: 0.82rem; font-weight: 700; color: #8a5a2b; min-height: 1.2em;
+    }
+    .cmodal-error {
+      margin-top: 10px; background: #fadbd8; border: 1px solid #e0897f; border-radius: 10px;
+      padding: 8px 11px; font-size: 0.8rem; color: #b03a2e;
+    }
+    .cmodal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 14px; }
+    .cmodal-btn {
+      border: 1.5px solid #d0c9c0; background: #fff; border-radius: 20px;
+      padding: 7px 16px; font-family: 'Nunito', sans-serif; font-size: 0.82rem;
+      font-weight: 800; cursor: pointer;
+    }
+    .cmodal-btn:hover:not(:disabled) { background: #f5f5f5; }
+    .cmodal-btn:disabled { opacity: 0.6; cursor: default; }
+    .cmodal-btn.confirm { background: #e07b39; border-color: #e07b39; color: #fff; }
+    .cmodal-btn.confirm:hover:not(:disabled) { background: #c96a28; }
+    .cmodal-btn.confirm.danger { background: #c0392b; border-color: #c0392b; }
+
     /* ── Access denied ─────────────────────────────────────── */
     .cadmin-denied {
       display: flex; flex-direction: column; align-items: center; justify-content: center;

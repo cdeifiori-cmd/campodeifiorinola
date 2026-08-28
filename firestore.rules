@@ -86,24 +86,68 @@ service cloud.firestore {
         allow write: if isLoggedIn() && request.auth.uid == reazId;
       }
 
-      // ── Storico appartenenze alle comunità (decisione §18.6) ──────────────
-      // Dato AMMINISTRATIVO append-only: il ragazzo proprietario NON scrive.
-      //   create : solo admin
-      //   update : solo admin e SOLO il campo 'al' (chiusura appartenenza);
-      //            comunitaId/dal/actorUid/createdAt/causale immutabili
-      //   delete : vietato a chiunque
-      // read placeholder Milestone A = solo admin; verrà allargato in
-      // Milestone D/G ai coordinatori/responsabili della comunità attuale.
+      // ── Storico appartenenze alle comunità (Milestone D) ─────────────────
+      // Dato AMMINISTRATIVO append-only. read: solo admin (NON allargato in D;
+      // un eventuale accesso storico per la comunità attuale è milestone a sé).
+      //
+      // CREATE (solo admin), due forme:
+      //  (a) record APERTO normale:
+      //      chiavi = {comunitaId, dal, al, causale, actorUid, createdAt}
+      //      actorUid == auth.uid ; dal == createdAt == request.time ; al == null
+      //  (b) BASELINE legacy (ragazzo con utenti.comunitaId ma senza storico):
+      //      chiavi = {..sopra.., legacyBaseline}
+      //      legacyBaseline == true ; al == request.time (chiuso alla nascita)
+      //      dal == request.time  => dal == al: durata NULLA. NON è un periodo
+      //      reale: la data d'ingresso non è nota e NON viene inventata; il
+      //      record registra solo che il ragazzo era in quella comunità prima
+      //      dell'introduzione dello storico.
+      //  In entrambe: comunitaId stringa non vuota; causale stringa 1..500.
+      //
+      // UPDATE (solo admin) = CHIUSURA ONE-WAY:
+      //   unico campo modificato: 'al'
+      //   il record deve essere APERTO (resource.data.al == null)
+      //   nuovo 'al' == request.time (no timestamp arbitrari)
+      //   tutti gli altri campi immutabili
+      //   -> un record già chiuso non è più aggiornabile; 'al:null' per
+      //      riaprire fallisce (request.resource.data.al != request.time)
+      //
+      // DELETE: vietato a chiunque.
       match /appartenenze/{appId} {
-        allow read:   if isAdmin();
-        allow create: if isAdmin();
+        allow read: if isAdmin();
+
+        allow create: if isAdmin()
+          && request.resource.data.actorUid == request.auth.uid
+          && request.resource.data.dal == request.time
+          && request.resource.data.createdAt == request.time
+          && request.resource.data.comunitaId is string
+          && request.resource.data.comunitaId.size() > 0
+          && request.resource.data.causale is string
+          && request.resource.data.causale.size() > 0
+          && request.resource.data.causale.size() <= 500
+          && (
+            (
+              request.resource.data.keys().hasOnly(
+                ['comunitaId', 'dal', 'al', 'causale', 'actorUid', 'createdAt'])
+              && request.resource.data.al == null
+            )
+            || (
+              request.resource.data.keys().hasOnly(
+                ['comunitaId', 'dal', 'al', 'causale', 'actorUid', 'createdAt', 'legacyBaseline'])
+              && request.resource.data.legacyBaseline == true
+              && request.resource.data.al == request.time
+            )
+          );
+
         allow update: if isAdmin()
-                      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['al'])
-                      && request.resource.data.comunitaId == resource.data.comunitaId
-                      && request.resource.data.dal        == resource.data.dal
-                      && request.resource.data.actorUid   == resource.data.actorUid
-                      && request.resource.data.createdAt  == resource.data.createdAt
-                      && request.resource.data.causale    == resource.data.causale;
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['al'])
+          && resource.data.al == null
+          && request.resource.data.al == request.time
+          && request.resource.data.comunitaId == resource.data.comunitaId
+          && request.resource.data.dal        == resource.data.dal
+          && request.resource.data.actorUid   == resource.data.actorUid
+          && request.resource.data.createdAt  == resource.data.createdAt
+          && request.resource.data.causale    == resource.data.causale;
+
         allow delete: if false;
       }
     }
