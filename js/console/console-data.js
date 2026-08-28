@@ -83,21 +83,23 @@ export function isRuoloAccessoLegacy(ruolo) {
 }
 
 /**
- * Classifica il permesso Documenti di un doc staff, in modo tri-state-ready
- * per la Milestone C. NON modifica nulla.
+ * Classifica il permesso Documenti di un doc staff secondo la semantica
+ * TRI-STATE DEFINITIVA (Milestone C). NON modifica nulla.
+ *
+ *   admin  -> accesso globale
+ *   altrimenti:  campo accessoDocumenti presente ? (=== true) : ruolo legacy
  *
  * state:
  *   'ADMIN'            -> admin === true
- *   'ESPLICITO'        -> accessoDocumenti === true
- *   'NEGATO_ESPLICITO' -> accessoDocumenti === false MA il ruolo darebbe accesso legacy
- *                         (oggi le regole live IGNORANO il false e concedono via ruolo;
- *                          in Milestone C il false negherà esplicitamente)
- *   'LEGACY_RUOLO'     -> accessoDocumenti assente, ruolo coordinat/responsabil
- *   'NESSUNO'          -> nessuna delle precedenti
+ *   'ESPLICITO'        -> accessoDocumenti === true         (prevale sul ruolo)
+ *   'NEGATO_ESPLICITO' -> accessoDocumenti === false e il ruolo darebbe accesso legacy
+ *                         (il false prevale: NIENTE accesso)
+ *   'LEGACY_RUOLO'     -> accessoDocumenti assente, ruolo coordinat/responsabil -> accesso
+ *   'NESSUNO'          -> nessun accesso
  *
  * accessoDocumentiRaw: true | false | undefined (undefined = campo assente)
- * effettivoOggi: bool — accesso concesso dalle regole ATTUALMENTE in produzione
- *                (admin OR accessoDocumenti===true OR ruolo legacy)
+ * effettivo: bool — esito della semantica tri-state (== quello che applicano
+ *            Firestore Rules e Storage Rules dopo la Milestone C).
  */
 export function classifyDocumenti(staffData) {
   const d = staffData || {};
@@ -112,7 +114,7 @@ export function classifyDocumenti(staffData) {
   else if (raw === false) state = ruoloLegacy ? 'NEGATO_ESPLICITO' : 'NESSUNO';
   else state = ruoloLegacy ? 'LEGACY_RUOLO' : 'NESSUNO';
 
-  const effettivoOggi = admin || raw === true || ruoloLegacy;
+  const effettivo = admin || (has ? raw === true : ruoloLegacy);
 
-  return { state, accessoDocumentiRaw: raw, ruoloLegacy, effettivoOggi };
+  return { state, accessoDocumentiRaw: raw, ruoloLegacy, effettivo };
 }

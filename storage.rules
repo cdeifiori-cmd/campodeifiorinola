@@ -26,60 +26,49 @@ service firebase.storage {
         && firestore.exists(staffRef(request.auth.uid));
     }
 
-    function staffRuolo() {
-      return firestore.get(staffRef(request.auth.uid)).data.get('ruolo', '');
-    }
-
-    function staffAccessoDocumenti() {
-      return firestore.get(staffRef(request.auth.uid)).data.get('accessoDocumenti', false) == true;
+    function staffData() {
+      return firestore.get(staffRef(request.auth.uid)).data;
     }
 
     function staffComunita() {
       return firestore.get(staffRef(request.auth.uid)).data.get('comunitaId', null);
     }
 
-    // Coordinatore/Coordinatrice o Responsabile, qualunque sia la comunità —
-    // stesso criterio (case-insensitive, sottostringa) usato lato client da
-    // documenti.html: ruolo.toLowerCase().includes('coordinat'/'responsabil').
-    // In precedenza qui si controllava solo '.*Coordinatrice.*' (case-sensitive,
-    // non riconosceva affatto "Responsabile"): i responsabili funzionavano solo
-    // perché il catch-all sottostante concedeva comunque accesso a chiunque loggato.
-    function isCoordOrResponsabile() {
-      return isStaff() && staffRuolo().lower().matches('.*(coordinat|responsabil).*');
+    // ── Semantica TRI-STATE del permesso Documenti (Milestone C) ────────────
+    // Allineata a firestore.rules (canAccessPPU) e a documenti.html / nav-docs.js:
+    //   accessoDocumenti === true   -> accesso concesso (PREVALE sul ruolo)
+    //   accessoDocumenti === false  -> accesso negato   (PREVALE sul ruolo)
+    //   campo assente               -> fallback legacy: ruolo coordinat/responsabil
+    // Formula: campo presente ? (=== true) : ruoloLegacy
+    // Criterio ruolo: sottostringa case-insensitive coordinat/responsabil,
+    // identico a documenti.html (ruolo.toLowerCase().includes(...)).
+    function staffRuoloLegacy() {
+      return isStaff() && staffData().get('ruolo', '').lower().matches('.*(coordinat|responsabil).*');
+    }
+    function staffDocumentiPolicy() {
+      return isStaff()
+        && (
+          ('accessoDocumenti' in staffData())
+            ? (staffData().accessoDocumenti == true)
+            : staffRuoloLegacy()
+        );
     }
 
-    // Coordinatore/Responsabile ristretto alla comunità specifica
-    // (comunitaId sul doc staff può essere stringa singola o array)
-    function isCoordOrResponsabileForComunita(comunitaId) {
+    function comunitaInScope(comunitaId) {
       let c = staffComunita();
-      return isCoordOrResponsabile()
-        && ((c is list && comunitaId in c) || c == comunitaId);
-    }
-
-    // Staff con accesso esplicito (flag accessoDocumenti === true), ristretto
-    // alla comunità di appartenenza — stesso flag controllato da documenti.html,
-    // ma qui verificato solo sul doc "staff" (mai su "utenti"/"amici": un
-    // ragazzo o un amico non deve mai poter ottenere accesso a Documenti tramite
-    // questo flag, anche se in futuro venisse impostato per errore su quei doc).
-    function isStaffAccessoDocumentiForComunita(comunitaId) {
-      let c = staffComunita();
-      return isStaff() && staffAccessoDocumenti()
-        && ((c is list && comunitaId in c) || c == comunitaId);
+      return (c is list && comunitaId in c) || c == comunitaId;
     }
 
     function canAccessDocumentiComunita(comunitaId) {
       return isSuperUser()
-        || isCoordOrResponsabileForComunita(comunitaId)
-        || isStaffAccessoDocumentiForComunita(comunitaId);
+        || (staffDocumentiPolicy() && comunitaInScope(comunitaId));
     }
 
-    // Documenti Generali/Segreteria non è legato a una comunità: qui basta il
-    // ruolo (o il flag) senza scoping — stesso "canWrite" che il client usa per
-    // TUTTA l'Area Documenti, Generali incluso (in precedenza la regola era
-    // "qualsiasi membro dello staff", più permissiva di quanto l'interfaccia
-    // stessa consenta).
+    // Documenti Generali/Segreteria non è legato a una comunità: nessuno scoping,
+    // ma stessa politica tri-state (in precedenza il ruolo concedeva comunque
+    // l'accesso anche con accessoDocumenti === false).
     function canAccessDocumentiGenerali() {
-      return isSuperUser() || isCoordOrResponsabile() || (isStaff() && staffAccessoDocumenti());
+      return isSuperUser() || staffDocumentiPolicy();
     }
 
     // ── Documenti Generali / Segreteria ──────────────────────────

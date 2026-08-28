@@ -129,6 +129,20 @@
       font-size: 0.74rem; font-weight: 900; color: #999; text-transform: uppercase;
       letter-spacing: 0.06em; margin: 16px 2px 6px;
     }
+    .cperm-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+    .cperm-btn {
+      border: 1.5px solid #d0c9c0; background: #fff; border-radius: 16px;
+      padding: 4px 11px; font-family: 'Nunito', sans-serif; font-size: 0.74rem;
+      font-weight: 800; cursor: pointer; transition: background 0.12s, border-color 0.12s;
+    }
+    .cperm-btn:hover:not(:disabled) { background: #f6f6f6; }
+    .cperm-btn:disabled { cursor: default; opacity: 0.9; }
+    .cperm-btn.grant.current  { background: #d9f0d3; border-color: #7fbf72; color: #2f7d32; }
+    .cperm-btn.deny.current   { background: #fadbd8; border-color: #e0897f; color: #b03a2e; }
+    .cperm-btn.legacy.current { background: #fdf1c9; border-color: #d9c377; color: #8a6d1a; }
+    .cperm-btn.grant:not(.current):hover  { border-color: #7fbf72; }
+    .cperm-btn.deny:not(.current):hover   { border-color: #e0897f; }
+    .cperm-btn.legacy:not(.current):hover { border-color: #d9c377; }
 
     /* ── Access denied ─────────────────────────────────────── */
     .cadmin-denied {

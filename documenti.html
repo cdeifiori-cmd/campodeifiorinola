@@ -812,6 +812,9 @@
             const data = snap.data();
             // Accesso per ruolo (solo staff)
             if (coll === 'staff') {
+              // Tri-state (Milestone C): accessoDocumenti === false NEGA l'accesso,
+              // anche a coordinatore/responsabile. Campo assente => fallback ruolo.
+              if (data.accessoDocumenti === false) break;
               const ruolo = (data.ruolo || '').toLowerCase();
               if (ruolo.includes('coordinat') || ruolo.includes('responsabil')) {
                 isCoord = true;

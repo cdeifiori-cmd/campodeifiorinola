@@ -135,13 +135,33 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // ── Audit log operazioni amministrative (decisione §18.7 / §AUDIT LOG) ──
-    // Append-only assoluto: nessun update/delete, nemmeno per l'admin.
-    //   create/read : solo admin
-    //   update/delete : vietati a chiunque
+    // ── Audit log operazioni amministrative (decisione §18.7 / Milestone C) ──
+    // Append-only: nessun update/delete, nemmeno per l'admin.
+    //   read   : solo admin
+    //   create : solo admin, con vincoli di integrità minimi:
+    //            - actorUid DEVE coincidere con request.auth.uid (no spoofing)
+    //            - ts DEVE essere request.time (serverTimestamp() lato client)
+    //            - campi minimi presenti e tipati
+    //            - before/after devono essere mappe
+    // NOTA: questo NON è un audit crittograficamente non-falsificabile. update
+    // e delete sono vietati dalle regole, ma un admin compromesso potrebbe
+    // comunque creare voci arbitrarie (purché ben formate). L'integrità forte
+    // richiederà una scrittura server-side (Admin SDK) in una milestone futura.
     match /admin_audit/{auditId} {
-      allow read:           if isAdmin();
-      allow create:         if isAdmin();
+      allow read: if isAdmin();
+      allow create: if isAdmin()
+        && request.resource.data.actorUid == request.auth.uid
+        && request.resource.data.ts == request.time
+        && request.resource.data.keys().hasAll(
+             ['ts', 'actorUid', 'action', 'targetType', 'targetId', 'before', 'after'])
+        && request.resource.data.action is string
+        && request.resource.data.action.size() >= 3
+        && request.resource.data.action.size() <= 64
+        && request.resource.data.targetType is string
+        && request.resource.data.targetId is string
+        && request.resource.data.targetId.size() > 0
+        && request.resource.data.before is map
+        && request.resource.data.after is map;
       allow update, delete: if false;
     }
 
@@ -190,18 +210,25 @@ service cloud.firestore {
       let c = staffDocPPU().data.get('comunitaId', null);
       return (c is list && comunitaId in c) || c == comunitaId;
     }
-    function isCoordOrResponsabilePPU(comunitaId) {
-      return isStaffMemberPPU()
-        && staffDocPPU().data.get('ruolo', '').lower().matches('.*(coordinat|responsabil).*')
-        && staffComunitaMatchPPU(comunitaId);
+    // ── Semantica TRI-STATE del permesso Documenti (Milestone C) ────────────
+    //   accessoDocumenti === true   -> accesso concesso (PREVALE sul ruolo)
+    //   accessoDocumenti === false  -> accesso negato   (PREVALE sul ruolo)
+    //   campo assente               -> fallback legacy: ruolo coordinat/responsabil
+    // Formula: campo presente ? (=== true) : ruoloLegacy
+    function staffRuoloLegacyPPU() {
+      return staffDocPPU().data.get('ruolo', '').lower().matches('.*(coordinat|responsabil).*');
     }
-    function isStaffAccessoDocumentiPPU(comunitaId) {
+    function staffDocumentiPolicyPPU() {
       return isStaffMemberPPU()
-        && staffDocPPU().data.get('accessoDocumenti', false) == true
-        && staffComunitaMatchPPU(comunitaId);
+        && (
+          ('accessoDocumenti' in staffDocPPU().data)
+            ? (staffDocPPU().data.accessoDocumenti == true)
+            : staffRuoloLegacyPPU()
+        );
     }
     function canAccessPPU(comunitaId) {
-      return isAdmin() || isCoordOrResponsabilePPU(comunitaId) || isStaffAccessoDocumentiPPU(comunitaId);
+      return isAdmin()
+        || (staffDocumentiPolicyPPU() && staffComunitaMatchPPU(comunitaId));
     }
 
     match /ppu_schede_a/{schedaId} {

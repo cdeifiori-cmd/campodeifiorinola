@@ -5,7 +5,7 @@
   "description": "Seed script per Campo dei Fiori",
   "scripts": {
     "seed": "node seed.js",
-    "test:rules": "firebase emulators:exec --only firestore,auth --project demo-campo-dei-fiori-test \"node --test test/rules/utenti.test.mjs test/rules/staff-amici.test.mjs test/rules/appartenenze.test.mjs test/rules/admin-audit.test.mjs test/rules/documenti-ppu.test.mjs\""
+    "test:rules": "firebase emulators:exec --only firestore,auth,storage --project demo-campo-dei-fiori-test \"node --test test/rules/utenti.test.mjs test/rules/staff-amici.test.mjs test/rules/appartenenze.test.mjs test/rules/admin-audit.test.mjs test/rules/documenti-ppu.test.mjs && node --test test/rules/storage-documenti.test.mjs\""
   },
   "dependencies": {
     "firebase-admin": "^12.0.0"

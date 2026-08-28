@@ -41,6 +41,9 @@ export function setupDocumentiNav() {
             const snap = await getDoc(doc(db, coll, user.uid));
             if (!snap.exists()) continue;
             const data = snap.data();
+            // Tri-state (Milestone C): accessoDocumenti === false NEGA l'accesso
+            // sullo staff, anche a coordinatore/responsabile.
+            if (coll === 'staff' && data.accessoDocumenti === false) { break; }
             if (coll === 'staff' && isRuoloConAccesso(data.ruolo)) { hasAccess = true; break; }
             if (data.accessoDocumenti === true)                     { hasAccess = true; break; }
           } catch (_) {}

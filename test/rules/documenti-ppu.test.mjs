@@ -13,12 +13,12 @@
 import { test, before, after, beforeEach, describe } from 'node:test';
 import { assertFails, assertSucceeds } from '@firebase/rules-unit-testing';
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
-import { getTestEnv, seedIdentities, UIDS } from './helpers.mjs';
+import { getTestEnv, seedIdentities, seedTriState, UIDS } from './helpers.mjs';
 
 let env;
 before(async () => { env = await getTestEnv('documenti-ppu'); });
 after(async () => { await env.cleanup(); });
-beforeEach(async () => { await env.clearFirestore(); await seedIdentities(env); });
+beforeEach(async () => { await env.clearFirestore(); await seedIdentities(env); await seedTriState(env); });
 
 const SCHEDA_ITACA = 'scheda_itaca_a';
 const SCHEDA_FORTAPASC = 'scheda_fortapasc_a';
@@ -77,6 +77,65 @@ describe('ppu_schede_a — lettura per scope', () => {
     const db = env.authenticatedContext(UIDS.ragazzo).firestore();
     await assertFails(getDoc(rForta(db)));
     await assertFails(getDoc(rItaca(db)));
+  });
+});
+
+describe('ppu_schede_a — TRI-STATE (Milestone C §11) su lettura scheda Itaca', () => {
+  const read = (uid) => getDoc(rItaca(env.authenticatedContext(uid).firestore()));
+
+  test('coordinatore SENZA campo accessoDocumenti -> ALLOW (legacy)', async () => {
+    await assertSucceeds(read(UIDS.staffCoord));
+  });
+  test('coordinatore con accessoDocumenti === true -> ALLOW', async () => {
+    await assertSucceeds(read(UIDS.coordTrue));
+  });
+  test('coordinatore con accessoDocumenti === false -> DENY (il false prevale sul ruolo)', async () => {
+    await assertFails(read(UIDS.coordFalse));
+  });
+  test('educatore SENZA campo -> DENY', async () => {
+    await assertFails(read(UIDS.staffPlain));
+  });
+  test('educatore con accessoDocumenti === true -> ALLOW', async () => {
+    await assertSucceeds(read(UIDS.staffDocs));
+  });
+  test('educatore con accessoDocumenti === false -> DENY', async () => {
+    await assertFails(read(UIDS.eduFalse));
+  });
+});
+
+describe('ppu_schede_a — SCOPE comunità (§11)', () => {
+  const readItaca = (uid) => getDoc(rItaca(env.authenticatedContext(uid).firestore()));
+  const readForta = (uid) => getDoc(rForta(env.authenticatedContext(uid).firestore()));
+
+  test('staff Itaca (true) -> Itaca ALLOW, Fortapasc DENY', async () => {
+    await assertSucceeds(readItaca(UIDS.staffDocs));
+    await assertFails(readForta(UIDS.staffDocs));
+  });
+  test('staff comunitaId array [Itaca, Fortapasc] (true) -> entrambe ALLOW', async () => {
+    await assertSucceeds(readItaca(UIDS.multiTrue));
+    await assertSucceeds(readForta(UIDS.multiTrue));
+  });
+  test('staff con accessoDocumenti true ma comunitaId ASSENTE -> DENY su entrambe', async () => {
+    await assertFails(readItaca(UIDS.noComunita));
+    await assertFails(readForta(UIDS.noComunita));
+  });
+});
+
+describe('ppu_schede_a — TRI-STATE su create/update', () => {
+  test('coordinatore con false NON può creare una scheda nella propria comunità', async () => {
+    const db = env.authenticatedContext(UIDS.coordFalse).firestore();
+    await assertFails(setDoc(doc(db, 'ppu_schede_a', 'nuova_x'), {
+      comunitaId: 'itaca', minorId: UIDS.ragazzo2, createdBy: UIDS.coordFalse,
+      createdAt: CREATED_AT, stato: 'bozza',
+    }));
+  });
+  test('coordinatore con true PUÒ aggiornare un campo di contenuto in scope', async () => {
+    const db = env.authenticatedContext(UIDS.coordTrue).firestore();
+    await assertSucceeds(updateDoc(rItaca(db), { stato: 'completata' }));
+  });
+  test('coordinatore con false NON può aggiornare (nemmeno un campo di contenuto)', async () => {
+    const db = env.authenticatedContext(UIDS.coordFalse).firestore();
+    await assertFails(updateDoc(rItaca(db), { stato: 'completata' }));
   });
 });
 

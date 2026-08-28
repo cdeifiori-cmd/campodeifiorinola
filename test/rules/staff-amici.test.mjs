@@ -74,6 +74,22 @@ describe('staff/{uid} — l\'admin conserva pieni poteri (serve alla Console, Mi
     const db = env.authenticatedContext(UIDS.staffCoord).firestore();
     await assertFails(updateDoc(doc(db, 'staff', UIDS.staffPlain), { fotoProfilo: 'x.jpg' }));
   });
+
+  // §11: le Rules seguono la policy amministrativa (admin può editare staff, anche
+  // update misto). La restrizione "solo accessoDocumenti" è garantita a livello di
+  // FUNZIONE Console (console-permessi.js: la sola chiave scritta è accessoDocumenti;
+  // verifica statica nel report). Qui si conferma solo che le Rules non regrediscono.
+  test('§11 — admin può fare un update misto accessoDocumenti + admin (policy amministrativa)', async () => {
+    const db = env.authenticatedContext(UIDS.legacyAdmin).firestore();
+    await assertSucceeds(updateDoc(doc(db, 'staff', UIDS.staffPlain),
+      { accessoDocumenti: true, admin: true }));
+  });
+
+  test('§11 — staff NON-admin non può modificare il PROPRIO accessoDocumenti', async () => {
+    const db = env.authenticatedContext(UIDS.staffPlain).firestore();
+    await assertFails(updateDoc(doc(db, 'staff', UIDS.staffPlain), { accessoDocumenti: true }));
+    await assertFails(updateDoc(doc(db, 'staff', UIDS.staffPlain), { accessoDocumenti: false }));
+  });
 });
 
 describe('amici/{uid} — protezione equivalente', () => {

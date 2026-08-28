@@ -92,3 +92,68 @@ Writer analizzati: `js/auth.js` (`numeroAccessi`), `js/nav-auth.js` (`primoAcces
 - `js/profilo.js` (11 KB) risulta **non importato da nessuna pagina servita**: la pagina profilo reale è `profilo.html` (self-contained). I suoi writer sono comunque un sottoinsieme di quelli di `profilo.html`.
 - Pagine-utility non collegate alla navigazione (`add-giuseppe.html`, `admin-update-foto.html`) non sono state analizzate a fondo: dopo il fix funzioneranno solo se eseguite da admin o dal proprietario. Da rivedere se servono ancora.
 - `robinson/**`: `robinson/naufrago.html` e `robinson/js/robinson-modal-profilo.js` scrivono `fotoProfilo` su `utenti/{uid}` (proprietario) — coperto dalla whitelist, nessuna regressione. Nessun file Robinson modificato.
+
+---
+
+## MILESTONE C — registro delle modifiche
+
+**Ambito:** semantica TRI-STATE definitiva del permesso Documenti + azione Console (solo `accessoDocumenti`) + audit atomico. Nessuna modifica a PPU storiche, contenuti, schema; nessun Robinson; nessun deploy.
+
+### Semantica tri-state (definitiva)
+
+```
+accesso Documenti/PPU =
+  admin
+  OR ( 'accessoDocumenti' presente sul doc staff
+         ? accessoDocumenti === true          // true/false PREVALGONO sul ruolo
+         : ruolo ~ /coordinat|responsabil/ )  // campo assente => fallback legacy
+  , ristretto allo scope comunità (staff.comunitaId string|array; assente => nessuno scope => DENY)
+```
+
+Applicata in modo coerente in: `firestore.rules` (`canAccessPPU`), `storage.rules`
+(`canAccessDocumentiComunita` / `canAccessDocumentiGenerali`), `documenti.html`
+(gate `onAuthStateChanged`), `js/nav-docs.js` (visibilità link), Console
+(`classifyDocumenti` → campo `effettivo`).
+
+### File
+
+| File | Modifica |
+|---|---|
+| `firestore.rules` | helper PPU riscritti tri-state (`staffDocumentiPolicyPPU`); `canAccessPPU = isAdmin() OR (policy AND scope)`. `admin_audit` create: vincoli `actorUid == request.auth.uid`, `ts == request.time`, chiavi minime presenti/tipate, `before`/`after` mappe. |
+| `storage.rules` | helper staff riscritti tri-state (`staffDocumentiPolicy`, sentinel `.get('accessoDocumenti','ABSENT')`); `canAccessDocumentiComunita = isSuperUser() OR (policy AND scope)`; `canAccessDocumentiGenerali = isSuperUser() OR policy`. `isAdmin()`/`isSuperUser()` **invariati** (solo UID legacy + Massimo). |
+| `documenti.html` | +3 righe nel gate: `if (data.accessoDocumenti === false) break;` (il `false` nega anche a coord/resp). |
+| `js/nav-docs.js` | +3 righe: `if (coll==='staff' && data.accessoDocumenti === false) break;` |
+| `js/console/console-data.js` | `classifyDocumenti`: campo `effettivo` (era `effettivoOggi`) = esito tri-state; `NEGATO_ESPLICITO` ora `effettivo:false`. |
+| `js/console/console-operatori.js` | `renderPermessi`: legenda aggiornata + per operatore i pulsanti **Concedi / Nega / Legacy** (conferma `window.confirm`, poi re-render). |
+| `js/console/console-permessi.js` | **NUOVO.** `setAccessoDocumenti(uid, true|false|'legacy')` — unica funzione di scrittura. `writeBatch` atomico: `staff/{uid}.accessoDocumenti` (SOLO questo campo; `deleteField()` per 'legacy') + `admin_audit/{autoId}`. No-op guard se lo stato non cambia. |
+| `console.html` | CSS pulsanti `.cperm-btn`. |
+| `firebase.json` | emulatore `storage` (9199); `singleProjectMode: false` (necessario al cross-service `firestore.get` dello Storage emulator). |
+| `package.json` | `test:rules`: aggiunge `storage` a `--only` e una seconda invocazione `node --test` dedicata alla suite Storage. |
+| `test/rules/helpers.mjs` | config `storage` in `initializeTestEnvironment`; `getTestEnv(suite,{baseProject})`; `seedTriState()` (matrice coord/edu × assente/true/false, array, no-comunità). |
+| `test/rules/documenti-ppu.test.mjs` | +matrice tri-state + scope + create/update. |
+| `test/rules/admin-audit.test.mjs` | +vincoli integrità (actorUid, ts, campi, tipi). |
+| `test/rules/staff-amici.test.mjs` | +§11 (admin update misto; staff non-admin non tocca il proprio `accessoDocumenti`). |
+| `test/rules/storage-documenti.test.mjs` | **NUOVO.** Storage tri-state + scope + Generali + super-user. |
+
+### Audit — schema e limiti
+
+`admin_audit/{autoId}` = `{ ts: serverTimestamp(), actorUid, action, targetType:'staff', targetId, before:{accessoDocumenti}, after:{accessoDocumenti} }`.
+`before`/`after` usano `null` per rappresentare "campo assente" (Firestore non memorizza `undefined`).
+`action` ∈ `DOCUMENTI_ACCESS_GRANTED` | `DOCUMENTI_ACCESS_DENIED` | `DOCUMENTI_ACCESS_RESET_LEGACY`.
+
+> **Questo audit NON è crittograficamente non-falsificabile.** `update`/`delete` sono
+> vietati dalle Rules e il `create` è vincolato (actorUid == auth.uid, ts == request.time,
+> forma minima), ma un admin compromesso può comunque creare voci arbitrarie ben formate.
+> L'integrità forte richiederà una scrittura server-side (Admin SDK) in una milestone futura.
+
+### Note / gap noti (da riprendere)
+
+- `storage.rules` `isAdmin()` è ancora solo UID legacy: un admin "nuovo modello"
+  (`staff.admin === true`) **non** è super-user in Storage e accede solo via
+  ruolo/flag + scope. Stesso limite in `documenti.html` (`isAdmin = uid === ADMIN_UID`).
+  Coerente con la decisione §18.3 ("non rimuovere ancora gli hardcoding"): da
+  rivedere in una milestone dedicata.
+- `documenti.html`: bug preesistente (fuori scope §13) — uno staff con
+  `accessoDocumenti === true` ma senza ruolo coord/resp ottiene `canWrite` ma
+  `myComunita` resta `[]` (nessuna comunità navigabile). Non introdotto da questa
+  milestone; da correggere quando si toccherà la navigazione di `documenti.html`.
