@@ -4,7 +4,11 @@
 // `creaRagazzoAdmin` (Admin SDK). Qui si fanno SOLO: la chiamata callable e,
 // separatamente e in modo non bloccante, l'upload foto opzionale su Cloudinary.
 
-import { app, db } from '../firebase-config.js';
+// Da firebase-config.js importiamo SOLO `db` (sempre esportato). L'istanza
+// dell'app la recuperiamo con getApp() per non rompere il modulo se un browser
+// serve un firebase-config.js disallineato (cache) privo di `export { app }`.
+import { db } from '../firebase-config.js';
+import { getApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getFunctions, httpsCallable, connectFunctionsEmulator }
   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-functions.js';
 import { doc, updateDoc }
@@ -20,7 +24,7 @@ const CLOUDINARY_URL = 'https://api.cloudinary.com/v1_1/dxqyprtzh/image/upload';
 const CLOUDINARY_PRESET = 'campo_dei_fiori';
 export const FOTO_MAX_BYTES = 5 * 1024 * 1024; // 5 MB
 
-const functions = getFunctions(app, FUNCTIONS_REGION);
+const functions = getFunctions(getApp(), FUNCTIONS_REGION);
 // In ambiente di test locale l'host emulator viene passato via variabile globale.
 try {
   const h = typeof window !== 'undefined' && window.__FUNCTIONS_EMULATOR_HOST__;

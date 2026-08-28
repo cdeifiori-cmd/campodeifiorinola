@@ -23,7 +23,13 @@
 // NON fanno fallback (errori tecnici non di rollout): functions/internal,
 //   functions/deadline-exceeded, functions/cancelled, functions/aborted…
 
-import { app, auth } from './firebase-config.js';
+// Da firebase-config.js importiamo SOLO `auth` (sempre esportato). L'istanza
+// dell'app la recuperiamo con getApp(): firebase-config.js esegue comunque
+// initializeApp() al load, quindi l'app di default esiste. Così pin-login.js
+// non si rompe se un browser sta servendo un firebase-config.js disallineato
+// (cache) privo di `export { app }`.
+import { auth } from './firebase-config.js';
+import { getApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getFunctions, httpsCallable, connectFunctionsEmulator }
   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-functions.js';
 import { signInWithCustomToken }
@@ -31,7 +37,7 @@ import { signInWithCustomToken }
 import { loginConPin } from './ragazzi-pin.js';
 
 const FUNCTIONS_REGION = 'europe-west1';
-const functions = getFunctions(app, FUNCTIONS_REGION);
+const functions = getFunctions(getApp(), FUNCTIONS_REGION);
 
 try {
   const h = typeof window !== 'undefined' && window.__FUNCTIONS_EMULATOR_HOST__;

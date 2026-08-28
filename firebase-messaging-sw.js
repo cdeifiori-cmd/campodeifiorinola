@@ -68,7 +68,10 @@ self.addEventListener('message', event => {
 });
 
 // ── Caching (ex service-worker.js) ───────────────────────────────────────
-const CACHE_NAME = 'campo-dei-fiori-v2';
+// v3: forza lo svuotamento della cache v2 (poteva contenere asset disallineati
+// — es. js/firebase-config.js senza `export { app }` — che rompevano login.html).
+// L'handler 'activate' qui sotto elimina ogni cache con nome != CACHE_NAME.
+const CACHE_NAME = 'campo-dei-fiori-v3';
 const ASSETS_TO_PRECACHE = [
   '/',
   '/index.html',

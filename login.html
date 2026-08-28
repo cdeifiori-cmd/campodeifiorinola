@@ -63,7 +63,9 @@
 
   <script type="module">
     import { login, onAuthChange } from './js/auth.js';
-    import { loginRagazzoPin } from './js/pin-login.js';
+    // NB: il login PIN è caricato con import() dinamico SOLO al primo uso
+    // (vedi handler #btn-login-pin). Un errore di caricamento di pin-login.js
+    // NON deve mai impedire il login email/password, onAuthChange o il redirect.
 
     function redirectAfterLogin() {
       window.location.href = 'index.html';
@@ -114,6 +116,13 @@
       const pin = document.getElementById('pin').value.trim();
       hideError();
       if (!/^\d{4,6}$/.test(pin)) { showError('Inserisci un PIN valido (4-6 cifre).'); return; }
+      let loginRagazzoPin;
+      try {
+        ({ loginRagazzoPin } = await import('./js/pin-login.js'));
+      } catch (e) {
+        showError('Login con PIN momentaneamente non disponibile. Riprova tra poco.');
+        return;
+      }
       try {
         await loginRagazzoPin(pin);
         redirectAfterLogin();
