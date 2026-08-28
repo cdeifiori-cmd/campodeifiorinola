@@ -801,32 +801,43 @@
     onAuthStateChanged(auth, async user => {
       if (!user) { showAccessDenied(); return; }
 
+      // ADMIN canonico: legacy ADMIN_UID OR staff/{uid}.admin === true.
+      // Il controllo client resta UX; le Security Rules sono la protezione reale.
       isAdmin = user.uid === ADMIN_UID;
       currentUid = user.uid;
 
-      if (!isAdmin) {
-        for (const coll of ['utenti', 'staff', 'amici']) {
-          try {
-            const snap = await getDoc(doc(db, coll, user.uid));
-            if (!snap.exists()) continue;
-            const data = snap.data();
-            // Accesso per ruolo (solo staff)
-            if (coll === 'staff') {
-              // Tri-state (Milestone C): accessoDocumenti === false NEGA l'accesso,
-              // anche a coordinatore/responsabile. Campo assente => fallback ruolo.
-              if (data.accessoDocumenti === false) break;
-              const ruolo = (data.ruolo || '').toLowerCase();
-              if (ruolo.includes('coordinat') || ruolo.includes('responsabil')) {
-                isCoord = true;
-                const rawCom = data.comunitaId;
-                myComunita = Array.isArray(rawCom) ? rawCom : (rawCom ? [rawCom] : []);
-              }
+      for (const coll of ['utenti', 'staff', 'amici']) {
+        try {
+          const snap = await getDoc(doc(db, coll, user.uid));
+          if (!snap.exists()) continue;
+          const data = snap.data();
+
+          if (coll === 'staff') {
+            if (data.admin === true) { isAdmin = true; break; }
+            // Tri-state: accessoDocumenti === false NEGA l'accesso, anche a
+            // coordinatore/responsabile. Campo presente => vale il booleano;
+            // campo assente => fallback sul ruolo legacy.
+            if (data.accessoDocumenti === false) break;
+            const ruolo = (data.ruolo || '').toLowerCase();
+            const ruoloLegacy = ruolo.includes('coordinat') || ruolo.includes('responsabil');
+            const grant = Object.prototype.hasOwnProperty.call(data, 'accessoDocumenti')
+              ? (data.accessoDocumenti === true)
+              : ruoloLegacy;
+            if (grant) {
+              isCoord = true;
+              // Scope comunità dalle SOLE comunità dell'operatore (mai globale
+              // per il solo accessoDocumenti): string -> [string], array -> array,
+              // assente -> [] (nessuna comunità navigabile).
+              const rawCom = data.comunitaId;
+              myComunita = Array.isArray(rawCom) ? rawCom : (rawCom ? [rawCom] : []);
             }
-            // Accesso speciale esplicito
-            if (data.accessoDocumenti === true) isCoord = true;
-            if (isCoord) break;
-          } catch (_) {}
-        }
+            break; // doc "staff" trovato: decisione presa
+          }
+
+          // utenti / amici: comportamento legacy invariato (solo === true concede)
+          if (data.accessoDocumenti === true) isCoord = true;
+          if (isCoord) break;
+        } catch (_) {}
       }
 
       canWrite = isAdmin || isCoord;

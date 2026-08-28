@@ -136,7 +136,7 @@ export async function renderPermessi(container) {
 
   const groups = new Map();
   for (const s of staff) {
-    const cls = classifyDocumenti(s);
+    const cls = classifyDocumenti(s, s.id);
     if (!groups.has(cls.state)) groups.set(cls.state, []);
     groups.get(cls.state).push({ s, cls });
   }

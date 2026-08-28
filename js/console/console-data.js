@@ -14,6 +14,7 @@
 //   NON viene mai letta utenti_pin_lookup.
 
 import { db } from '../firebase-config.js';
+import { LEGACY_ADMIN_UID } from './console-auth.js';
 import { collection, getDocs, query, orderBy }
   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
@@ -100,10 +101,14 @@ export function isRuoloAccessoLegacy(ruolo) {
  * accessoDocumentiRaw: true | false | undefined (undefined = campo assente)
  * effettivo: bool — esito della semantica tri-state (== quello che applicano
  *            Firestore Rules e Storage Rules dopo la Milestone C).
+ *
+ * @param {object} staffData  dati del documento staff
+ * @param {string} [uid]      id del documento staff: se coincide con il
+ *                            legacy ADMIN_UID è comunque ADMIN (accesso globale)
  */
-export function classifyDocumenti(staffData) {
+export function classifyDocumenti(staffData, uid) {
   const d = staffData || {};
-  const admin = d.admin === true;
+  const admin = d.admin === true || uid === LEGACY_ADMIN_UID;
   const has = Object.prototype.hasOwnProperty.call(d, 'accessoDocumenti');
   const raw = has ? d.accessoDocumenti : undefined;
   const ruoloLegacy = isRuoloAccessoLegacy(d.ruolo);

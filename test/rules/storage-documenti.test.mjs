@@ -120,17 +120,27 @@ describe('Storage documenti/documenti-generali/** — TRI-STATE senza scope', ()
   });
 });
 
-describe('Storage documenti/** — super-user e admin "nuovo modello"', () => {
+describe('Storage documenti/** — ADMIN canonico (legacy UID OR staff.admin===true)', () => {
   test('legacy admin: upload in qualsiasi comunità e in Generali', async () => {
     await assertSucceeds(uploadAs(UIDS.legacyAdmin, freshPath('itaca')));
     await assertSucceeds(uploadAs(UIDS.legacyAdmin, freshPath('fortapasc')));
     await assertSucceeds(uploadAs(UIDS.legacyAdmin, genPath()));
   });
-  // NOTA (documentata nel report): storage.rules isAdmin() è ancora solo UID legacy;
-  // un admin "nuovo modello" (staff.admin===true) NON è super-user in Storage e
-  // accede solo via ruolo/flag+scope. staffAdmin qui è coordinatore di Itaca.
-  test('admin nuovo modello: Itaca ALLOW (via ruolo), Fortapasc DENY (scope)', async () => {
+  test('§1 — staff.admin===true (con ruolo/comunità): accesso GLOBALE (Itaca, Fortapasc, Generali)', async () => {
     await assertSucceeds(uploadAs(UIDS.staffAdmin, freshPath('itaca')));
-    await assertFails(uploadAs(UIDS.staffAdmin, freshPath('fortapasc')));
+    await assertSucceeds(uploadAs(UIDS.staffAdmin, freshPath('fortapasc')));
+    await assertSucceeds(uploadAs(UIDS.staffAdmin, genPath()));
+  });
+  test('§1 — staff.admin===true PURO (nessun ruolo/flag/comunitaId): accesso GLOBALE', async () => {
+    await assertSucceeds(uploadAs(UIDS.staffAdminPure, freshPath('itaca')));
+    await assertSucceeds(uploadAs(UIDS.staffAdminPure, freshPath('fortapasc')));
+    await assertSucceeds(uploadAs(UIDS.staffAdminPure, genPath()));
+  });
+  test('§1 — admin===true SOLO in "utenti" (nessun doc staff): NON admin -> DENY', async () => {
+    await assertFails(uploadAs(UIDS.utenteAdminFinto, freshPath('itaca')));
+    await assertFails(uploadAs(UIDS.utenteAdminFinto, genPath()));
+  });
+  test('§1 — staff non-admin fuori scope -> DENY', async () => {
+    await assertFails(uploadAs(UIDS.staffDocs, freshPath('fortapasc')));
   });
 });

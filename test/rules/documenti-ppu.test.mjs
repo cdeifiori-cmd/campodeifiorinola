@@ -139,6 +139,26 @@ describe('ppu_schede_a — TRI-STATE su create/update', () => {
   });
 });
 
+describe('ppu_schede_a — ADMIN canonico (patch chiusura §1/§7)', () => {
+  const read = (uid, r) => getDoc(r(env.authenticatedContext(uid).firestore()));
+
+  test('staff.admin===true PURO (no ruolo/flag/comunitaId) -> lettura GLOBALE ALLOW', async () => {
+    await assertSucceeds(read(UIDS.staffAdminPure, rItaca));
+    await assertSucceeds(read(UIDS.staffAdminPure, rForta));
+  });
+  test('staff.admin===true (con ruolo/comunità Itaca) -> lettura GLOBALE ALLOW', async () => {
+    await assertSucceeds(read(UIDS.staffAdmin, rItaca));
+    await assertSucceeds(read(UIDS.staffAdmin, rForta));
+  });
+  test('admin===true SOLO in "utenti" (nessun doc staff) -> NON admin -> DENY', async () => {
+    await assertFails(read(UIDS.utenteAdminFinto, rItaca));
+    await assertFails(read(UIDS.utenteAdminFinto, rForta));
+  });
+  test('staff non-admin (educatore, campo assente) -> normale tri-state -> DENY', async () => {
+    await assertFails(read(UIDS.staffPlain, rItaca));
+  });
+});
+
 describe('ppu_schede_a — PPU storica immutabile (§12.13)', () => {
   test('la coordinatrice di Itaca può aggiornare un campo di contenuto della scheda in scope', async () => {
     const db = env.authenticatedContext(UIDS.staffCoord).firestore();

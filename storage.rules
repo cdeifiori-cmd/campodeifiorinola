@@ -2,9 +2,20 @@ rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
 
+    // ADMIN canonico (allineato a firestore.rules / documenti.html / Console):
+    //   legacy ADMIN_UID  OR  staff/{uid}.admin === true
+    // null/existence-safe: firestore.exists() prima di firestore.get(), e
+    // .data.get('admin', false) restituisce false se il campo manca.
+    // Un utente con admin=true SOLO in "utenti" (nessun doc "staff") NON è admin.
     function isAdmin() {
       return request.auth != null
-        && request.auth.uid == 'mCSgNMVEphVIIf4HX0bkcKq2ZKv2';
+        && (
+          request.auth.uid == 'mCSgNMVEphVIIf4HX0bkcKq2ZKv2'
+          || (
+            firestore.exists(/databases/(default)/documents/staff/$(request.auth.uid))
+            && firestore.get(/databases/(default)/documents/staff/$(request.auth.uid)).data.get('admin', false) == true
+          )
+        );
     }
 
     function isMassimo() {

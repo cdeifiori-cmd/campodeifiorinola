@@ -146,14 +146,28 @@ Applicata in modo coerente in: `firestore.rules` (`canAccessPPU`), `storage.rule
 > forma minima), ma un admin compromesso può comunque creare voci arbitrarie ben formate.
 > L'integrità forte richiederà una scrittura server-side (Admin SDK) in una milestone futura.
 
+### Patch di chiusura Milestone C (fix `align admin access and document scopes`)
+
+Corrette due incoerenze emerse nel report:
+
+1. **ADMIN canonico ovunque.** `isAdmin() = legacy ADMIN_UID OR staff/{uid}.admin === true`
+   ora è coerente in `firestore.rules` (già dalla Milestone A), **`storage.rules`**
+   (nuovo: `firestore.exists` + `.data.get('admin', false)`), **`documenti.html`**
+   (gate: `data.admin === true` sul doc staff), **`js/nav-docs.js`** (stesso check;
+   il link Documenti compare anche per `staff.admin`), **Console**
+   (`classifyDocumenti(staffData, uid)` marca ADMIN anche il legacy UID). Il
+   fallback legacy resta. Un `admin === true` presente **solo** in `utenti`
+   (nessun doc `staff`) **NON** è admin.
+2. **Scope comunità per `accessoDocumenti === true`.** In `documenti.html`,
+   quando l'accesso è concesso (esplicito `true` **o** fallback ruolo), `myComunita`
+   è ricavato da `staff.comunitaId` (string → `[string]`, array → array, assente →
+   `[]`). Un educatore con `accessoDocumenti:true` + `comunitaId:'itaca'` vede
+   Itaca; con `['itaca','fortapasc']` vede entrambe; senza `comunitaId` non ha
+   comunità navigabili. **Nessuno scope globale** per il solo `accessoDocumenti:true`.
+
+Tri-state invariato (assente→ruolo, true→sì, false→no che prevale, admin→globale).
+
 ### Note / gap noti (da riprendere)
 
-- `storage.rules` `isAdmin()` è ancora solo UID legacy: un admin "nuovo modello"
-  (`staff.admin === true`) **non** è super-user in Storage e accede solo via
-  ruolo/flag + scope. Stesso limite in `documenti.html` (`isAdmin = uid === ADMIN_UID`).
-  Coerente con la decisione §18.3 ("non rimuovere ancora gli hardcoding"): da
-  rivedere in una milestone dedicata.
-- `documenti.html`: bug preesistente (fuori scope §13) — uno staff con
-  `accessoDocumenti === true` ma senza ruolo coord/resp ottiene `canWrite` ma
-  `myComunita` resta `[]` (nessuna comunità navigabile). Non introdotto da questa
-  milestone; da correggere quando si toccherà la navigazione di `documenti.html`.
+- Audit non crittograficamente non-falsificabile (vedi sopra): integrità forte →
+  scrittura server-side in una milestone futura.

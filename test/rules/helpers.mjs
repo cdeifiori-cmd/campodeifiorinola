@@ -139,6 +139,10 @@ export const UIDS = {
   eduFalse:    'staff_edu_false_itaca',      // educatore + accessoDocumenti === false
   multiTrue:   'staff_multi_true',           // accessoDocumenti === true, comunitaId ['itaca','fortapasc']
   noComunita:  'staff_true_no_comunita',     // accessoDocumenti === true, comunitaId ASSENTE
+
+  // ── Admin canonico (patch di chiusura Milestone C) ─────────────────────
+  staffAdminPure: 'staff_admin_puro',        // staff.admin === true, NESSUN ruolo/flag/comunitaId
+  utenteAdminFinto: 'utente_finto_admin',    // admin === true SOLO in "utenti" (nessun doc staff) -> NON admin
 };
 
 // Semina i doc staff della matrice tri-state (regole disattivate).
@@ -165,6 +169,13 @@ export async function seedTriState(env) {
     await setDoc(doc(db, 'staff', UIDS.noComunita), {
       nome: 'True senza comunità', ruolo: 'educatore',
       accessoDocumenti: true,
+    });
+    // admin "nuovo modello" PURO: nessun ruolo, nessun accessoDocumenti,
+    // nessun comunitaId -> deve avere accesso GLOBALE via admin.
+    await setDoc(doc(db, 'staff', UIDS.staffAdminPure), { nome: 'Admin puro', admin: true });
+    // admin=true SOLO in "utenti" (nessun doc "staff") -> NON deve essere admin.
+    await setDoc(doc(db, 'utenti', UIDS.utenteAdminFinto), {
+      nome: 'Finto Admin', comunitaId: 'itaca', admin: true,
     });
   });
 }

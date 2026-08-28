@@ -32,8 +32,9 @@ export function setupDocumentiNav() {
     try {
       if (!user) return;
 
-      const isAdmin   = user.uid === ADMIN_UID;
-      let   hasAccess = isAdmin;
+      // ADMIN canonico: legacy ADMIN_UID OR staff/{uid}.admin === true.
+      let isAdmin   = user.uid === ADMIN_UID;
+      let hasAccess = isAdmin;
 
       if (!hasAccess) {
         for (const coll of ['utenti', 'staff', 'amici']) {
@@ -41,8 +42,10 @@ export function setupDocumentiNav() {
             const snap = await getDoc(doc(db, coll, user.uid));
             if (!snap.exists()) continue;
             const data = snap.data();
-            // Tri-state (Milestone C): accessoDocumenti === false NEGA l'accesso
-            // sullo staff, anche a coordinatore/responsabile.
+            // staff.admin === true -> admin (accesso globale, come il legacy UID)
+            if (coll === 'staff' && data.admin === true) { isAdmin = true; hasAccess = true; break; }
+            // Tri-state: accessoDocumenti === false NEGA l'accesso sullo staff,
+            // anche a coordinatore/responsabile.
             if (coll === 'staff' && data.accessoDocumenti === false) { break; }
             if (coll === 'staff' && isRuoloConAccesso(data.ruolo)) { hasAccess = true; break; }
             if (data.accessoDocumenti === true)                     { hasAccess = true; break; }
