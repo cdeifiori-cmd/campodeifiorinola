@@ -124,6 +124,24 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // ── PPU: Scheda B "Come penso che mi vedano gli altri" ────
+    // Stessa logica autorizzativa della Scheda A (riusa gli helper
+    // canAccessPPU / staffDocPPU / … definiti sopra): admin,
+    // coordinatore/responsabile per comunità, staff con accessoDocumenti
+    // per comunità. Cambia solo il nome della collezione.
+    match /ppu_schede_b/{schedaId} {
+      allow read: if canAccessPPU(resource.data.comunitaId);
+      allow create: if canAccessPPU(request.resource.data.comunitaId)
+        && request.resource.data.createdBy == request.auth.uid;
+      // comunitaId/minorId/createdBy/createdAt immutabili dopo la creazione.
+      allow update: if canAccessPPU(resource.data.comunitaId)
+        && request.resource.data.comunitaId == resource.data.comunitaId
+        && request.resource.data.minorId == resource.data.minorId
+        && request.resource.data.createdBy == resource.data.createdBy
+        && request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if isAdmin();
+    }
+
     // ── Diario ───────────────────────────────────────────────
     match /diario/{postId} {
       allow read: if true;

@@ -30,59 +30,248 @@ export const SCALA = [
 ];
 
 // ── Le 6 aree × 3 indicatori ciascuna (indicator_id stabili) ────────────
+// Ogni domanda è una scena di vita concreta; `opzioni` contiene i QUATTRO
+// testi di risposta propri di quella scena. La chiave dell'opzione
+// ('NO' | '1' | '2' | '3') è ciò che il software registra: il ragazzo/la
+// ragazza legge invece quattro possibilità diverse per ogni domanda. La
+// progressione metrica resta invariata: 'NO' = non riesco/non saprei
+// collocarmi; 1 = maggiore difficoltà / più bisogno di accompagnamento;
+// 2 = situazione intermedia; 3 = maggiore autonomia / capacità
+// generalmente acquisita. Le parole visibili possono cambiare: il
+// significato metrico sottostante no.
 export const AREE_PPU = [
   {
     id: 'self', nome: 'IO CON ME STESSO', colore: '#5a8a4a', emoji: '🧭',
     notaLabel: 'Se vuoi raccontare qualcosa o fare un esempio…',
     domande: [
-      { id: 'self_01', testo: 'Quando provo emozioni forti, riesco a capire cosa sto provando e a comunicarlo?' },
-      { id: 'self_02', testo: 'Quando mi arrabbio, sono deluso o qualcosa non va come vorrei, riesco a gestire la mia reazione?' },
-      { id: 'self_03', testo: 'Quando sono in difficoltà, riesco a chiedere aiuto?' },
+      {
+        // costrutto: riconoscere le proprie emozioni forti e comunicarle
+        id: 'self_01',
+        testo: 'Ti è successo qualcosa che ti ha fatto stare male o arrabbiare parecchio. Qualcuno se ne accorge e ti chiede cos’hai. Cosa ti assomiglia di più?',
+        opzioni: {
+          'NO': 'Su questo non so ancora bene come funziono.',
+          '1':  'Faccio fatica a capire io cosa provo, e taglio corto con un "niente".',
+          '2':  'Capisco cosa sento, ma lo dico solo a poche persone.',
+          '3':  'Capisco cosa provo e, se voglio, riesco a spiegarlo.',
+        },
+      },
+      {
+        // costrutto: gestire la propria reazione (rabbia / delusione / provocazione)
+        id: 'self_02',
+        testo: 'Qualcuno ti prende in giro o ti provoca davanti agli altri, apposta per farti reagire. Cosa ti assomiglia di più?',
+        opzioni: {
+          'NO': 'Cambia troppo a seconda di chi ho davanti: non saprei.',
+          '1':  'Faccio fatica a fermarmi: rispondo o reagisco d’istinto.',
+          '2':  'A volte lascio perdere, a volte ci casco e poi me ne pento.',
+          '3':  'Anche quando sono furioso/a, in genere decido io come reagire.',
+        },
+      },
+      {
+        // costrutto: chiedere aiuto quando si è in difficoltà
+        id: 'self_03',
+        testo: 'Sei bloccato/a su qualcosa che da solo/a non riesci a sbrogliare — una materia in cui stai andando sotto, un problema che ti pesa. Cosa ti assomiglia di più?',
+        opzioni: {
+          'NO': 'Non saprei: dipende da quanto è grosso il problema.',
+          '1':  'Tengo tutto per me, anche quando sono davvero in difficoltà.',
+          '2':  'Chiedo aiuto solo quando la cosa è già diventata grande.',
+          '3':  'Se da solo/a non ci arrivo, di solito chiedo aiuto per tempo.',
+        },
+      },
     ]
   },
   {
     id: 'others', nome: 'IO E GLI ALTRI', colore: '#3b6ea5', emoji: '🤝',
     notaLabel: 'Se vuoi raccontare qualcosa sui tuoi rapporti con gli altri…',
     domande: [
-      { id: 'others_01', testo: 'Riesco a entrare in relazione e a stare con gli altri ragazzi e con gli adulti?' },
-      { id: 'others_02', testo: 'Quando dobbiamo fare qualcosa insieme, riesco a collaborare?' },
-      { id: 'others_03', testo: 'Quando litigo o non sono d’accordo con qualcuno, riesco ad affrontare la situazione senza rompere la relazione?' },
+      {
+        // costrutto: entrare in relazione e stare con coetanei e adulti
+        id: 'others_01',
+        testo: 'Primo giorno in un posto nuovo — una classe, una squadra, un gruppo — dove non conosci quasi nessuno, ragazzi e adulti. Cosa ti assomiglia di più?',
+        opzioni: {
+          'NO': 'In un gruppo nuovo con me cambia ogni volta: non saprei.',
+          '1':  'Resto in disparte: fare il primo passo mi mette a disagio.',
+          '2':  'Con qualcuno riesco a parlare, con altri o con gli adulti faccio fatica.',
+          '3':  'Riesco a inserirmi, sia con i ragazzi sia con gli adulti.',
+        },
+      },
+      {
+        // costrutto: collaborare in un compito comune (NON "proteggere il più debole")
+        id: 'others_02',
+        testo: 'State facendo qualcosa in squadra — un gioco online, una partita, un lavoro di gruppo. Uno continua a sbagliare e qualcuno si innervosisce, ma per farcela dovete comunque collaborare. Cosa ti assomiglia di più?',
+        opzioni: {
+          'NO': 'In squadra con me cambia da volta a volta: non saprei.',
+          '1':  'O prendo in mano tutto io, o mollo e lascio fare agli altri.',
+          '2':  'Collaboro, ma quando gli altri sbagliano mi innervosisco.',
+          '3':  'Faccio la mia parte e provo a tenere insieme la squadra.',
+        },
+      },
+      {
+        // costrutto: affrontare un conflitto senza rompere la relazione
+        id: 'others_03',
+        testo: 'Litighi sul serio con un amico/a o con una persona a cui tieni. Restate male tutti e due. Cosa ti assomiglia di più nei giorni dopo?',
+        opzioni: {
+          'NO': 'Con chi ho litigato conta parecchio: non saprei dire.',
+          '1':  'Di solito il rapporto si rompe, o resta il gelo a lungo.',
+          '2':  'Prima o poi ci riparliamo, ma di solito fa il primo passo l’altro/a.',
+          '3':  'Quasi sempre cerco il chiarimento e rimetto a posto le cose.',
+        },
+      },
     ]
   },
   {
     id: 'environment', nome: 'IO E L’AMBIENTE', colore: '#e07b39', emoji: '🏡',
     notaLabel: 'Se vuoi fare un esempio…',
     domande: [
-      { id: 'environment_01', testo: 'Riesco a rispettare e prendermi cura delle mie cose, degli spazi e delle cose che usiamo tutti?' },
-      { id: 'environment_02', testo: 'Quando mi viene affidato un piccolo incarico, riesco a portarlo avanti?' },
-      { id: 'environment_03', testo: 'Riesco a prendermi cura di qualcosa che non riguarda soltanto me?' },
+      {
+        // costrutto: rispetto e cura delle proprie cose e degli spazi/oggetti comuni
+        id: 'environment_01',
+        testo: 'Hai usato la cucina o la stanza comune con gli altri. Hai finito e devi decidere come lasciarla. Cosa ti assomiglia di più?',
+        opzioni: {
+          'NO': 'Non ci ho mai fatto davvero caso.',
+          '1':  'La lascio com’è e vado, anche se non è in ordine.',
+          '2':  'La sistemo, ma di solito solo se qualcuno me lo fa notare.',
+          '3':  'Lascio in ordine anche quando nessuno mi guarda.',
+        },
+      },
+      {
+        // costrutto: portare a termine un incarico affidato
+        id: 'environment_02',
+        testo: 'Ti hanno affidato una cosa da fare entro oggi — un turno, andare a prendere qualcosa per il gruppo, una piccola responsabilità. Contano su di te. Cosa ti assomiglia di più?',
+        opzioni: {
+          'NO': 'Non saprei: dipende da che compito è.',
+          '1':  'Parto, ma spesso lo lascio a metà o me ne dimentico.',
+          '2':  'Lo finisco, ma se qualcuno mi segue o me lo ricorda.',
+          '3':  'Se prendo un incarico, di norma lo finisco da solo/a.',
+        },
+      },
+      {
+        // costrutto: prendersi cura di qualcosa che non riguarda soltanto sé, anche senza un ordine
+        id: 'environment_03',
+        testo: 'Arrivi al campetto o allo spazio comune dove stai con gli altri e lo trovi pieno di bottiglie e cartacce lasciate in giro. Nessuno ti ha detto di sistemare e non sei stato/a tu a sporcare. Cosa ti assomiglia di più?',
+        opzioni: {
+          'NO': 'Su questo non saprei cosa farei.',
+          '1':  'Lascio stare: se non l’ho sporcato io, non tocca a me.',
+          '2':  'Se qualcuno inizia a raccogliere do una mano, da solo/a no.',
+          '3':  'Lo raccolgo lo stesso: è un posto di tutti.',
+        },
+      },
     ]
   },
   {
     id: 'future', nome: 'IO E IL FUTURO', colore: '#8558a5', emoji: '🌱',
     notaLabel: 'Una cosa che vorrei per il mio futuro…',
     domande: [
-      { id: 'future_01', testo: 'Riesco a immaginare qualcosa che vorrei fare, raggiungere o diventare?' },
-      { id: 'future_02', testo: 'Quando devo scegliere, riesco a decidere pensando anche a cosa potrebbe succedere dopo?' },
-      { id: 'future_03', testo: 'Quando decido di fare qualcosa o prendo un impegno, riesco a portarlo avanti?' },
+      {
+        // costrutto: immaginare qualcosa che si vorrebbe fare, raggiungere o diventare
+        id: 'future_01',
+        testo: 'Un adulto ti chiede cosa vorresti fare o diventare più avanti — che lavoro, che vita. Cosa ti assomiglia di più?',
+        opzioni: {
+          'NO': 'Sul mio futuro non so ancora bene cosa penso.',
+          '1':  'Preferisco non pensarci: non mi viene in mente niente.',
+          '2':  'Ho qualche desiderio, ma vago, e non so se sia possibile.',
+          '3':  'Ho un’idea abbastanza chiara, anche se può cambiare.',
+        },
+      },
+      {
+        // costrutto: decidere pensando anche a cosa potrebbe succedere dopo
+        id: 'future_02',
+        testo: 'Ti ritrovi con 30 euro in mano. Puoi spenderli subito in qualcosa che ti va adesso, oppure tenerli per una cosa che ti interessa di più ma che arriva più avanti. Cosa ti assomiglia di più quando decidi?',
+        opzioni: {
+          'NO': 'Non saprei: dipende da cosa c’è da scegliere.',
+          '1':  'Decido sul momento, per quello che mi va adesso.',
+          '2':  'Ci penso, ma spesso quando ho già deciso.',
+          '3':  'Prima peso cosa succede dopo, poi scelgo.',
+        },
+      },
+      {
+        // costrutto: portare avanti nel tempo un impegno preso (perseveranza)
+        id: 'future_03',
+        testo: 'Hai iniziato una cosa che volevi portare avanti — allenarti, recuperare a scuola, imparare qualcosa. Dopo un po’ diventa faticosa e noiosa. Cosa ti assomiglia di più?',
+        opzioni: {
+          'NO': 'Non saprei: dipende da quanto ci tengo.',
+          '1':  'Mollo appena passa la voglia iniziale.',
+          '2':  'Vado avanti a tratti: quando si fa dura rischio di lasciare.',
+          '3':  'Vado avanti anche quando è faticoso, magari cambiando metodo.',
+        },
+      },
     ]
   },
   {
     id: 'expression', nome: 'ESPRESSIONE E CREATIVITÀ', colore: '#d9634f', emoji: '🎨',
     notaLabel: 'Una cosa che mi piace o in cui mi sento bravo…',
     domande: [
-      { id: 'expression_01', testo: 'Riesco a riconoscere cosa mi piace, cosa mi interessa e in cosa mi sento capace?' },
-      { id: 'expression_02', testo: 'Riesco a trovare un modo per esprimere quello che penso, provo o mi interessa?' },
-      { id: 'expression_03', testo: 'Riesco a provare attività o esperienze nuove, anche quando non so già se sarò capace?' },
+      {
+        // costrutto: riconoscere cosa piace, cosa interessa e in cosa ci si sente capaci
+        id: 'expression_01',
+        testo: 'Devi scegliere un’attività per i prossimi mesi e un educatore ti chiede in cosa ti senti bravo/a e cosa ti piace davvero. Cosa ti assomiglia di più?',
+        opzioni: {
+          'NO': 'Su questo non so ancora bene come sono fatto/a.',
+          '1':  'Faccio fatica: non so cosa mi piace né in cosa sono capace.',
+          '2':  'Qualcosa che mi piace so dirlo, ma non con sicurezza.',
+          '3':  'So abbastanza bene cosa mi interessa e cosa mi riesce.',
+        },
+      },
+      {
+        // costrutto: trovare un modo per esprimere ciò che si pensa, si prova o interessa
+        id: 'expression_02',
+        testo: 'Hai qualcosa in testa che vorresti far uscire — un’idea, una cosa che ti gira dentro, qualcosa che ti appassiona. Cosa ti assomiglia di più?',
+        opzioni: {
+          'NO': 'Non saprei: dipende da cosa ho da dire.',
+          '1':  'Faccio molta fatica a farlo uscire: di solito resta dentro.',
+          '2':  'Ci riesco, ma solo con certe persone o in certi momenti.',
+          '3':  'Trovo un modo mio per dirlo, a parole o in altro modo.',
+        },
+      },
+      {
+        // costrutto: provare attività o esperienze nuove anche senza sapere se si sarà capaci
+        id: 'expression_03',
+        testo: 'Ti propongono di provare una cosa che non hai mai fatto. Non sai se sarai capace e potresti fare una figuraccia davanti agli altri. Cosa ti assomiglia di più?',
+        opzioni: {
+          'NO': 'Davanti a una cosa nuova non saprei cosa farei.',
+          '1':  'Se rischio la figuraccia, preferisco non provare.',
+          '2':  'Provo più facilmente se qualcuno è con me o mi sento sicuro/a.',
+          '3':  'La curiosità di solito vince sulla paura: provo.',
+        },
+      },
     ]
   },
   {
     id: 'wellbeing', nome: 'BENESSERE E CURA', colore: '#3ba7c9', emoji: '🌤️',
     notaLabel: 'Quando non sto bene, quello che mi aiuta di più è…',
     domande: [
-      { id: 'wellbeing_01', testo: 'Riesco a prendermi cura di me e delle mie necessità quotidiane?' },
-      { id: 'wellbeing_02', testo: 'Riesco a capire quando sono stanco, stressato, agitato o comunque non sto bene?' },
-      { id: 'wellbeing_03', testo: 'Quando non sto bene, riesco a fare qualcosa che mi aiuta o a rivolgermi a qualcuno?' },
+      {
+        // costrutto: prendersi cura di sé e delle proprie necessità quotidiane
+        id: 'wellbeing_01',
+        testo: 'Pensa a come tieni sonno, telefono la sera, pasti, doccia — le cose di base per stare in piedi. Cosa ti assomiglia di più?',
+        opzioni: {
+          'NO': 'Cambia da periodo a periodo: non saprei.',
+          '1':  'Faccio fatica: dormo poco col telefono, salto i pasti.',
+          '2':  'Me ne occupo, ma di solito se qualcuno me lo ricorda.',
+          '3':  'Mi gestisco da solo/a con sonno, pasti e cura di me.',
+        },
+      },
+      {
+        // costrutto: accorgersi di quando si è stanchi, stressati, agitati o non si sta bene
+        id: 'wellbeing_02',
+        testo: 'Hai avuto giorni pesanti — scuola, tensioni, poco sonno. Il corpo e l’umore ti mandano segnali: nervoso/a, mal di testa, scatti. Cosa ti assomiglia di più?',
+        opzioni: {
+          'NO': 'Non saprei dire se di solito me ne accorgo.',
+          '1':  'Me ne accorgo solo quando esplodo o crollo.',
+          '2':  'Me ne accorgo, ma quando il malessere è già forte.',
+          '3':  'Capisco abbastanza presto quando sono sotto stress.',
+        },
+      },
+      {
+        // costrutto: quando non si sta bene, fare qualcosa che aiuta o rivolgersi a qualcuno
+        id: 'wellbeing_03',
+        testo: 'Sei in un momento no: giù, agitato/a, o è successo qualcosa che ti pesa. Potresti fare qualcosa che ti aiuta o parlarne con qualcuno. Cosa ti assomiglia di più?',
+        opzioni: {
+          'NO': 'Nei momenti no non saprei cosa faccio.',
+          '1':  'Di solito resto lì fermo/a, senza fare né dire niente.',
+          '2':  'Ogni tanto reagisco o ne parlo, ma se qualcuno se ne accorge prima.',
+          '3':  'Faccio qualcosa che mi tira su, o ne parlo con chi mi fido.',
+        },
+      },
     ]
   },
 ];
@@ -375,13 +564,17 @@ export async function montaEditor(main, ctx) {
         <div style="background:${area.colore}18;border-left:4px solid ${area.colore};border-radius:0 10px 10px 0;padding:8px 12px;margin-bottom:8px;">
           <div style="font-weight:800;color:${area.colore};font-size:0.9rem;">${area.emoji} ${esc(area.nome)}</div>
         </div>
-        ${area.domande.map((d, i) => `
+        ${area.domande.map((d, i) => {
+          const v = scheda.risposte?.[d.id];
+          const testoOpt = d.opzioni?.[String(v)] ?? descScala(v);
+          return `
           <div style="padding:6px 12px;">
             <div style="font-size:0.82rem;color:#333;font-weight:600;">${i+1}. ${esc(d.testo)}</div>
-            <div style="font-size:0.82rem;color:${SCALA.find(o=>o.value===scheda.risposte?.[d.id])?.colore || '#999'};font-weight:700;margin-top:2px;">
-              ${labelScala(scheda.risposte?.[d.id])} — ${esc(descScala(scheda.risposte?.[d.id]))}
+            <div style="font-size:0.82rem;color:${SCALA.find(o=>o.value===v)?.colore || '#999'};font-weight:700;margin-top:2px;">
+              ${v === undefined ? '— nessuna risposta —' : `${labelScala(v)} — ${esc(testoOpt)}`}
             </div>
-          </div>`).join('')}
+          </div>`;
+        }).join('')}
         ${scheda.areaNotes?.[area.id] ? `<div style="padding:6px 12px;font-size:0.8rem;color:#666;font-style:italic;">“${esc(scheda.areaNotes[area.id])}”</div>` : ''}
       </div>`).join('');
 
@@ -520,17 +713,21 @@ export async function montaEditor(main, ctx) {
         </div>`;
     }
 
-    function renderScalaButtons(indicatorId, valoreAttuale) {
+    // Ogni domanda ha i suoi quattro testi di risposta (domanda.opzioni).
+    // `data-val` resta 'NO'|'1'|'2'|'3': è l'unico valore che viene salvato.
+    // `opt.desc` è solo fallback se una domanda non avesse `opzioni`.
+    function renderScalaButtons(domanda, valoreAttuale) {
       return `
-        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-top:8px;">
+        <div style="display:grid;grid-template-columns:1fr;gap:6px;margin-top:8px;">
           ${SCALA.map(opt => {
             const selezionato = valoreAttuale === opt.value;
-            return `<button type="button" class="ppu-scala-btn" data-ind="${esc(indicatorId)}" data-val="${esc(String(opt.value))}"
-              style="text-align:left;padding:9px 11px;border-radius:10px;cursor:pointer;font-family:'Nunito',sans-serif;
+            const testoOpt = domanda.opzioni?.[String(opt.value)] ?? opt.desc;
+            return `<button type="button" class="ppu-scala-btn" data-ind="${esc(domanda.id)}" data-val="${esc(String(opt.value))}"
+              style="display:flex;gap:9px;align-items:flex-start;text-align:left;padding:10px 11px;border-radius:10px;cursor:pointer;font-family:'Nunito',sans-serif;min-height:44px;
                      border:2px solid ${selezionato ? opt.colore : '#e5e5e5'};
                      background:${selezionato ? opt.colore + '22' : '#fff'};">
-              <div style="font-weight:800;font-size:0.85rem;color:${opt.colore};">${opt.label}</div>
-              <div style="font-size:0.72rem;color:#555;line-height:1.25;">${esc(opt.desc)}</div>
+              <span style="flex:0 0 auto;font-weight:800;font-size:0.85rem;color:${opt.colore};width:1.6em;">${opt.label}</span>
+              <span style="font-size:0.8rem;color:#333;line-height:1.3;">${esc(testoOpt)}</span>
             </button>`;
           }).join('')}
         </div>`;
@@ -546,7 +743,7 @@ export async function montaEditor(main, ctx) {
           ${area.domande.map((d, i) => `
             <div style="background:#fff;border-radius:12px;box-shadow:0 1px 5px rgba(0,0,0,0.07);padding:14px;margin-bottom:12px;">
               <div style="font-size:0.88rem;font-weight:700;color:#333;line-height:1.4;">${i+1}. ${esc(d.testo)}</div>
-              ${renderScalaButtons(d.id, scheda.risposte?.[d.id])}
+              ${renderScalaButtons(d, scheda.risposte?.[d.id])}
             </div>`).join('')}
           <div style="margin-top:6px;">
             <label style="font-size:0.76rem;color:#888;font-weight:700;display:block;margin-bottom:4px;">${esc(area.notaLabel)} <span style="font-weight:400;">(facoltativo)</span></label>

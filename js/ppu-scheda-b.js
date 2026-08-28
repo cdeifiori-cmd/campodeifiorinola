@@ -46,13 +46,17 @@ const AUTOSAVE_DEBOUNCE_MS = 1000;
 // N/O NON è 0: è l'assenza di una risposta numerica. Il valore è la
 // stringa 'NO' quando scelto esplicitamente; la chiave dell'indicatore è
 // del tutto assente dalla mappa "risposte" finché non si risponde.
-// value/label/colore sono gli stessi della Scheda A (parità metrica); solo
-// `desc` è riformulato dal punto di vista "come penso che mi vedano".
+// value/label/colore sono IDENTICI alla Scheda A (parità metrica): NON
+// cambiano. `desc` è solo testo di fallback, mostrato unicamente se una
+// domanda non avesse le sue `opzioni`; oggi tutte le 18 domande le hanno,
+// quindi questi testi non compaiono mai a schermo. Sono tenuti neutri e
+// coerenti con l'impostazione narrativa, senza incidere sul significato
+// metrico di NO/1/2/3.
 export const SCALA = [
-  { value: 'NO', label: 'N/O', desc: 'Non saprei dire come mi vedrebbero su questo', colore: '#8a8a8a' },
-  { value: 1,    label: '1',   desc: 'Penso che mi vedrebbero ancora in difficoltà', colore: '#c0392b' },
-  { value: 2,    label: '2',   desc: 'Penso che mi vedrebbero a volte in difficoltà', colore: '#d9822b' },
-  { value: 3,    label: '3',   desc: 'Penso che mi vedrebbero capace di cavarmela', colore: '#3a8a4a' },
+  { value: 'NO', label: 'N/O', desc: 'Non saprei dire', colore: '#8a8a8a' },
+  { value: 1,    label: '1',   desc: 'Pensano che io abbia bisogno di molto aiuto', colore: '#c0392b' },
+  { value: 2,    label: '2',   desc: 'Pensano che a volte io abbia bisogno di aiuto', colore: '#d9822b' },
+  { value: 3,    label: '3',   desc: 'Pensano che generalmente me la cavi da solo/a', colore: '#3a8a4a' },
 ];
 
 // ── Testo introduttivo mostrato all'inizio della scheda ────────────────
@@ -71,11 +75,13 @@ export const TESTO_INTRO = {
 // ── Le 6 aree × 3 indicatori ciascuna ──────────────────────────────────
 // indicator_id IDENTICI a quelli della Scheda A (self_01…wellbeing_03) e
 // nello STESSO ordine di area. Ogni domanda B è la versione SPECULARE
-// della domanda A con lo stesso id: misura lo STESSO identico costrutto,
-// cambia solo il punto di vista ("come mi vedo" → "come penso che mi
-// vedano gli altri"). La scala di risposta è quella comune della Scheda A
-// (N/O · 1 · 2 · 3), mostrata uguale per ogni domanda. Il costrutto A di
-// riferimento è riportato in commento sopra ogni domanda.
+// della domanda A con lo stesso id: STESSA scena, STESSO costrutto, cambia
+// solo il punto di osservazione ("come mi comporto" → "cosa penso direbbero
+// di me le persone che mi conoscono"). Le alternative B sono la voce diretta
+// di chi ti conosce ("Di solito tu…", "Quando succede…"): stesso significato
+// metrico della Scheda A, tono di seconda persona. `opzioni` contiene i
+// QUATTRO testi propri di ogni scena; la chiave ('NO'|'1'|'2'|'3') è l'unico
+// valore registrato.
 export const AREE_PPU = [
   {
     id: 'self', nome: 'IO CON ME STESSO', colore: '#5a8a4a', emoji: '🧭',
@@ -84,17 +90,35 @@ export const AREE_PPU = [
       {
         // A self_01 — riconoscere le proprie emozioni forti e comunicarle
         id: 'self_01',
-        testo: 'Quando provo un’emozione forte (rabbia, tristezza, paura), come penso che le persone che mi conoscono mi vedano nel capire cosa provo e nel comunicarlo?',
+        testo: 'Sei giù o arrabbiato/a per qualcosa e qualcuno se ne accorge. Se le persone che ti conoscono fossero lì, cosa pensi direbbero di come vivi quel momento?',
+        opzioni: {
+          'NO': 'Non saprei: quando sto così con me cambia troppo.',
+          '1':  '"Quando stai male non riesci a dire cosa hai, nemmeno a te stesso/a."',
+          '2':  '"Capisci cosa provi, ma lo dici solo a chi ti fidi davvero."',
+          '3':  '"Di solito capisci cosa senti e, se vuoi, lo dici."',
+        },
       },
       {
-        // A self_02 — gestire la propria reazione quando si è arrabbiati o delusi
+        // A self_02 — gestire la propria reazione (rabbia / delusione / provocazione)
         id: 'self_02',
-        testo: 'Quando mi arrabbio, sono deluso o qualcosa non va come vorrei, come penso che le persone che mi conoscono mi vedano nel gestire la mia reazione?',
+        testo: 'Ti provocano davanti agli altri per farti reagire. Chi ti conosce bene, vedendoti in quel momento, cosa pensi direbbe di come reagisci?',
+        opzioni: {
+          'NO': 'Con me dipende da chi c’è: non saprei dire.',
+          '1':  '"Se ti provocano davanti agli altri, parti subito."',
+          '2':  '"A volte lasci correre, a volte ci caschi e poi te ne penti."',
+          '3':  '"Anche quando sei furioso/a, quasi sempre decidi tu come rispondere."',
+        },
       },
       {
         // A self_03 — chiedere aiuto quando si è in difficoltà
         id: 'self_03',
-        testo: 'Quando sono in difficoltà, come penso che le persone che mi conoscono mi vedano nel chiedere aiuto?',
+        testo: 'Sei in difficoltà con qualcosa e potresti chiedere aiuto. Se le persone che ti conoscono fossero lì, cosa pensi direbbero di quanto chiedi aiuto?',
+        opzioni: {
+          'NO': 'Non saprei: dipende da quanto è grosso il problema.',
+          '1':  '"Anche quando sei in difficoltà tieni tutto per te, non chiedi aiuto."',
+          '2':  '"Chiedi aiuto solo all’ultimo, o solo a una persona di cui ti fidi."',
+          '3':  '"Quando serve, chiedi aiuto senza aspettare troppo."',
+        },
       },
     ],
   },
@@ -105,17 +129,35 @@ export const AREE_PPU = [
       {
         // A others_01 — entrare in relazione e stare con coetanei e adulti
         id: 'others_01',
-        testo: 'Come penso che le persone che mi conoscono mi vedano nell’entrare in relazione e stare con gli altri ragazzi e con gli adulti?',
+        testo: 'Sei il primo giorno in un gruppo nuovo dove non conosci nessuno. Se le persone che ti conoscono fossero lì, cosa pensi direbbero di come stai con gli altri?',
+        opzioni: {
+          'NO': 'In un gruppo nuovo con me cambia ogni volta: non saprei.',
+          '1':  '"In un posto nuovo resti per conto tuo, fai fatica ad avvicinarti."',
+          '2':  '"Con qualcuno leghi subito, con altri o con gli adulti fai più fatica."',
+          '3':  '"Di solito ti inserisci e parli con tutti, ragazzi e adulti."',
+        },
       },
       {
-        // A others_02 — collaborare quando si fa qualcosa insieme
+        // A others_02 — collaborare in un compito comune (NON "proteggere il più debole")
         id: 'others_02',
-        testo: 'Quando bisogna fare qualcosa insieme, come penso che le persone che mi conoscono mi vedano nel collaborare?',
+        testo: 'State giocando in squadra: uno continua a sbagliare e qualcuno si innervosisce, ma dovete collaborare per farcela. Se le persone che ti conoscono fossero lì, cosa pensi direbbero di come stai nella squadra?',
+        opzioni: {
+          'NO': 'Nei gruppi con me cambia parecchio: non saprei.',
+          '1':  '"Nei giochi di squadra o fai tutto tu o ti sfili."',
+          '2':  '"Collabori, ma quando gli altri sbagliano ti innervosisci."',
+          '3':  '"Fai la tua parte e cerchi di tenere insieme la squadra."',
+        },
       },
       {
-        // A others_03 — affrontare un conflitto/disaccordo senza rompere la relazione
+        // A others_03 — affrontare un conflitto senza rompere la relazione
         id: 'others_03',
-        testo: 'Quando litigo o non sono d’accordo con qualcuno, come penso che le persone che mi conoscono mi vedano nell’affrontare la situazione senza rompere la relazione?',
+        testo: 'Hai litigato forte con una persona a cui tieni. Chi ti conosce, guardandoti in un litigio così, cosa pensi direbbe di come lo gestisci?',
+        opzioni: {
+          'NO': 'Dipende da con chi ho litigato: non saprei cosa direbbero.',
+          '1':  '"Quando litighi forte, quel rapporto spesso si chiude."',
+          '2':  '"Alla fine chiarisci, ma di solito muove prima l’altro/a."',
+          '3':  '"Litighi, ma poi chiarisci senza rompere il rapporto."',
+        },
       },
     ],
   },
@@ -126,17 +168,35 @@ export const AREE_PPU = [
       {
         // A environment_01 — rispetto e cura delle proprie cose e degli spazi/oggetti comuni
         id: 'environment_01',
-        testo: 'Come penso che le persone che mi conoscono mi vedano nel rispettare e avere cura delle mie cose, degli spazi e delle cose che usiamo tutti?',
+        testo: 'Hai usato uno spazio comune e poi lo lasci. Se le persone che ti conoscono fossero lì, cosa pensi direbbero di come tratti le cose di tutti?',
+        opzioni: {
+          'NO': 'Non è una cosa su cui mi guardano di solito: non saprei.',
+          '1':  '"Lasci le cose come capita, non ci fai caso."',
+          '2':  '"Le sistemi, ma soprattutto se qualcuno te lo dice."',
+          '3':  '"Hai cura degli spazi comuni anche quando nessuno controlla."',
+        },
       },
       {
-        // A environment_02 — portare avanti un piccolo incarico affidato
+        // A environment_02 — portare a termine un incarico affidato
         id: 'environment_02',
-        testo: 'Quando mi viene affidato un piccolo incarico, come penso che le persone che mi conoscono mi vedano nel portarlo avanti?',
+        testo: 'Ti hanno affidato un compito con una scadenza. Se le persone che ti conoscono fossero lì, cosa pensi direbbero di quanto sei affidabile?',
+        opzioni: {
+          'NO': 'Con me dipende dal compito: non saprei dire.',
+          '1':  '"Se ti affidano una cosa, spesso la lasci a metà."',
+          '2':  '"La finisci, ma vai seguito/a o te lo devono ricordare."',
+          '3':  '"Se prendi un impegno, di solito lo porti fino in fondo."',
+        },
       },
       {
-        // A environment_03 — prendersi cura di qualcosa che non riguarda soltanto sé
+        // A environment_03 — prendersi cura di qualcosa che non riguarda soltanto sé, anche senza un ordine
         id: 'environment_03',
-        testo: 'Come penso che le persone che mi conoscono mi vedano nel prendermi cura di qualcosa che non riguarda soltanto me (una persona, un animale, un progetto, uno spazio comune)?',
+        testo: 'Arrivi in uno spazio comune e lo trovi pieno di cose lasciate in giro, ma non sei stato/a tu. Chi ti conosce, vedendoti lì, cosa pensi direbbe di come tratti quello che è di tutti?',
+        opzioni: {
+          'NO': 'Non ci ho mai fatto caso davvero: non so cosa direbbero.',
+          '1':  '"Se non l’hai sporcato tu, lasci stare."',
+          '2':  '"Dai una mano se qualcuno comincia, da solo/a di rado."',
+          '3':  '"Ci pensi lo stesso, anche se non tocca a te."',
+        },
       },
     ],
   },
@@ -147,17 +207,35 @@ export const AREE_PPU = [
       {
         // A future_01 — immaginare qualcosa che si vorrebbe fare, raggiungere o diventare
         id: 'future_01',
-        testo: 'Come penso che le persone che mi conoscono mi vedano nell’immaginare qualcosa che vorrei fare, raggiungere o diventare?',
+        testo: 'Ti chiedono cosa vorresti fare o diventare da grande. Se chi ti conosce ti sentisse rispondere, cosa pensi direbbe del tuo modo di guardare al futuro?',
+        opzioni: {
+          'NO': 'Del mio futuro non saprei cosa direbbero.',
+          '1':  '"Del futuro preferisci non parlarne, non sai cosa vuoi."',
+          '2':  '"Qualche idea ce l’hai, ma è ancora tutto vago."',
+          '3':  '"Hai un’idea abbastanza precisa di dove vuoi arrivare."',
+        },
       },
       {
         // A future_02 — decidere pensando anche a cosa potrebbe succedere dopo
         id: 'future_02',
-        testo: 'Quando devo fare una scelta, come penso che le persone che mi conoscono mi vedano nel decidere tenendo conto di cosa potrebbe succedere dopo?',
+        testo: 'Devi scegliere tra qualcosa che ti va adesso e qualcosa che conta di più più avanti — per esempio 30 euro da spendere o da tenere. Se le persone che ti conoscono fossero lì, cosa pensi direbbero di come decidi?',
+        opzioni: {
+          'NO': 'Dipende da cosa c’è da scegliere: non saprei.',
+          '1':  '"Decidi sul momento, non pensi a cosa viene dopo."',
+          '2':  '"Ci pensi, ma di solito quando hai già deciso."',
+          '3':  '"Prima pesi cosa succede dopo, poi scegli."',
+        },
       },
       {
-        // A future_03 — portare avanti nel tempo un impegno preso
+        // A future_03 — portare avanti nel tempo un impegno preso (perseveranza)
         id: 'future_03',
-        testo: 'Quando prendo un impegno o decido di fare qualcosa, come penso che le persone che mi conoscono mi vedano nel portarlo avanti nel tempo?',
+        testo: 'Hai iniziato una cosa che dopo un po’ stanca e annoia. Se le persone che ti conoscono fossero lì, cosa pensi direbbero di quanto porti a termine quello che inizi?',
+        opzioni: {
+          'NO': 'Non saprei: dipende da quanto ci tengo alla cosa.',
+          '1':  '"Quando passa l’entusiasmo iniziale, di solito molli."',
+          '2':  '"Vai a fasi: quando si fa dura rischi di lasciare."',
+          '3':  '"Anche quando è faticoso, di solito arrivi in fondo."',
+        },
       },
     ],
   },
@@ -168,17 +246,35 @@ export const AREE_PPU = [
       {
         // A expression_01 — riconoscere cosa piace, cosa interessa e in cosa ci si sente capaci
         id: 'expression_01',
-        testo: 'Come penso che le persone che mi conoscono mi vedano nel riconoscere cosa mi piace, cosa mi interessa e in cosa mi sento capace?',
+        testo: 'Ti chiedono cosa ti piace e in cosa sei bravo/a. Se le persone che ti conoscono fossero lì, cosa pensi direbbero di quanto ti conosci su questo?',
+        opzioni: {
+          'NO': 'Forse non lo saprebbero bene neanche loro: non saprei.',
+          '1':  '"Fai fatica a dire cosa ti piace o in cosa sei bravo/a."',
+          '2':  '"Qualcosa sai dirlo, ma solo per alcune cose."',
+          '3':  '"Sai bene cosa ti interessa e cosa ti riesce."',
+        },
       },
       {
         // A expression_02 — trovare un modo per esprimere ciò che si pensa, si prova o interessa
         id: 'expression_02',
-        testo: 'Come penso che le persone che mi conoscono mi vedano nel trovare un modo per esprimere quello che penso, provo o mi interessa?',
+        testo: 'Hai qualcosa dentro che vorresti far uscire. Se le persone che ti conoscono fossero lì, cosa pensi direbbero di quanto riesci a esprimerti?',
+        opzioni: {
+          'NO': 'È una cosa che vedono poco di me: non saprei.',
+          '1':  '"Quello che hai dentro resta lì, fai fatica a dirlo."',
+          '2':  '"Ti esprimi, ma solo con alcune persone o in certi momenti."',
+          '3':  '"Hai modi tuoi per dire quello che pensi e senti."',
+        },
       },
       {
         // A expression_03 — provare attività o esperienze nuove anche senza sapere se si sarà capaci
         id: 'expression_03',
-        testo: 'Come penso che le persone che mi conoscono mi vedano nel provare attività o esperienze nuove, anche senza sapere già se sarò capace?',
+        testo: 'Sei davanti a una cosa nuova, con il rischio di sbagliare davanti agli altri. Se le persone che ti conoscono fossero lì, cosa pensi direbbero di te?',
+        opzioni: {
+          'NO': 'Davanti a una cosa nuova non saprei cosa si aspettano da me.',
+          '1':  '"Se pensi di poter fare brutta figura, di solito non provi."',
+          '2':  '"Provi, soprattutto se ti senti sostenuto/a o abbastanza sicuro/a."',
+          '3':  '"Anche se non sai come andrà, di solito parti e provi."',
+        },
       },
     ],
   },
@@ -189,17 +285,35 @@ export const AREE_PPU = [
       {
         // A wellbeing_01 — prendersi cura di sé e delle proprie necessità quotidiane
         id: 'wellbeing_01',
-        testo: 'Come penso che le persone che mi conoscono mi vedano nel prendermi cura di me e delle mie necessità quotidiane (igiene, alimentazione, sonno, salute)?',
+        testo: 'Pensa a come tieni sonno, telefono la sera, pasti, cura di te. Se le persone che ti conoscono fossero lì, cosa pensi direbbero?',
+        opzioni: {
+          'NO': 'Forse non lo sanno bene neanche loro: non saprei.',
+          '1':  '"Non ti regoli: dormi poco, salti i pasti, telefono fino a tardi."',
+          '2':  '"Ti prendi cura di te, ma vai ricordato/a."',
+          '3':  '"Di solito ti gestisci da solo/a con sonno, pasti e cura di te."',
+        },
       },
       {
         // A wellbeing_02 — accorgersi di quando si è stanchi, stressati, agitati o non si sta bene
         id: 'wellbeing_02',
-        testo: 'Come penso che le persone che mi conoscono mi vedano nell’accorgermi quando sono stanco, stressato, agitato o comunque non sto bene?',
+        testo: 'Sei sotto pressione e il corpo e l’umore ti mandano segnali. Se le persone che ti conoscono fossero lì, cosa pensi direbbero di quanto ti accorgi quando non stai bene?',
+        opzioni: {
+          'NO': 'Non saprei se se ne accorgerebbero.',
+          '1':  '"Non ti accorgi di stare male finché non esplodi o crolli."',
+          '2':  '"Te ne accorgi, ma quando sei già messo/a male."',
+          '3':  '"Di solito capisci presto quando sei stanco/a o sotto stress."',
+        },
       },
       {
         // A wellbeing_03 — quando non si sta bene, fare qualcosa che aiuta o rivolgersi a qualcuno
         id: 'wellbeing_03',
-        testo: 'Quando non sto bene, come penso che le persone che mi conoscono mi vedano nel fare qualcosa che mi aiuta o nel rivolgermi a qualcuno?',
+        testo: 'Stai male e potresti reagire facendo qualcosa o parlandone. Chi ti conosce, in una giornata così, cosa pensi direbbe di come la affronti?',
+        opzioni: {
+          'NO': 'Nei momenti no con me cambia: non saprei cosa direbbero.',
+          '1':  '"Quando stai male resti lì, non fai niente e non ne parli."',
+          '2':  '"A volte reagisci o ne parli, ma se qualcuno se ne accorge prima."',
+          '3':  '"Di solito fai qualcosa che ti aiuta o ne parli con qualcuno."',
+        },
       },
     ],
   },
@@ -480,11 +594,12 @@ export async function montaEditor(main, ctx) {
         ${area.domande.map((d, i) => {
           const v = scheda.risposte?.[d.id];
           const risposto = v !== undefined;
+          const testoOpt = d.opzioni?.[String(v)] ?? descScala(v);
           return `
           <div style="padding:6px 12px;">
             <div style="font-size:0.82rem;color:#333;font-weight:600;">${i+1}. ${esc(d.testo)}</div>
             <div style="font-size:0.82rem;color:${risposto ? coloreScala(v) : '#999'};font-weight:700;margin-top:2px;">
-              ${risposto ? `${esc(labelScala(v))} — ${esc(descScala(v))}` : '— nessuna risposta —'}
+              ${risposto ? `${esc(labelScala(v))} — ${esc(testoOpt)}` : '— nessuna risposta —'}
             </div>
           </div>`;
         }).join('')}
@@ -638,19 +753,22 @@ export async function montaEditor(main, ctx) {
         </div>`;
     }
 
-    // Scala di risposta — identica alla Scheda A: N/O · 1 · 2 · 3, uguale
-    // per ogni domanda. `data-val` = 'NO' oppure '1'/'2'/'3'.
-    function renderScalaButtons(indicatorId, valoreAttuale) {
+    // Scala di risposta — valori identici alla Scheda A (N/O · 1 · 2 · 3),
+    // ma con i QUATTRO testi propri di ogni domanda (domanda.opzioni).
+    // `data-val` resta 'NO'|'1'|'2'|'3': è l'unico valore che viene salvato.
+    // `opt.desc` è solo fallback se una domanda non avesse `opzioni`.
+    function renderScalaButtons(domanda, valoreAttuale) {
       return `
-        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-top:8px;">
+        <div style="display:grid;grid-template-columns:1fr;gap:6px;margin-top:8px;">
           ${SCALA.map(opt => {
             const selezionato = valoreAttuale === opt.value;
-            return `<button type="button" class="ppub-scala-btn" data-ind="${esc(indicatorId)}" data-val="${esc(String(opt.value))}"
-              style="text-align:left;padding:9px 11px;border-radius:10px;cursor:pointer;font-family:'Nunito',sans-serif;
+            const testoOpt = domanda.opzioni?.[String(opt.value)] ?? opt.desc;
+            return `<button type="button" class="ppub-scala-btn" data-ind="${esc(domanda.id)}" data-val="${esc(String(opt.value))}"
+              style="display:flex;gap:9px;align-items:flex-start;text-align:left;padding:10px 11px;border-radius:10px;cursor:pointer;font-family:'Nunito',sans-serif;min-height:44px;
                      border:2px solid ${selezionato ? opt.colore : '#e5e5e5'};
                      background:${selezionato ? opt.colore + '22' : '#fff'};">
-              <div style="font-weight:800;font-size:0.85rem;color:${opt.colore};">${opt.label}</div>
-              <div style="font-size:0.72rem;color:#555;line-height:1.25;">${esc(opt.desc)}</div>
+              <span style="flex:0 0 auto;font-weight:800;font-size:0.85rem;color:${opt.colore};width:1.6em;">${opt.label}</span>
+              <span style="font-size:0.8rem;color:#333;line-height:1.3;">${esc(testoOpt)}</span>
             </button>`;
           }).join('')}
         </div>`;
@@ -666,7 +784,7 @@ export async function montaEditor(main, ctx) {
           ${area.domande.map((d, i) => `
             <div style="background:#fff;border-radius:12px;box-shadow:0 1px 5px rgba(0,0,0,0.07);padding:14px;margin-bottom:12px;">
               <div style="font-size:0.88rem;font-weight:700;color:#333;line-height:1.4;">${i+1}. ${esc(d.testo)}</div>
-              ${renderScalaButtons(d.id, scheda.risposte?.[d.id])}
+              ${renderScalaButtons(d, scheda.risposte?.[d.id])}
             </div>`).join('')}
           <div style="margin-top:6px;background:#f4f6f8;border:1px solid #e2e6ea;border-radius:10px;padding:10px 12px;">
             <label style="font-size:0.72rem;color:#8a94a0;font-weight:800;letter-spacing:0.03em;text-transform:uppercase;display:block;margin-bottom:4px;">
