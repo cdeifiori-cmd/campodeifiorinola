@@ -110,3 +110,38 @@ export async function creaRagazzo(input) {
 
   return { uid, comunitaId: resComunita, fotoCaricata, fotoErrore };
 }
+
+/**
+ * Assegna il PRIMO PIN a un ragazzo GIÀ esistente in utenti/{uid}.
+ * Passa dalla callable server-side `assegnaPinRagazzoAdmin` (Admin SDK):
+ * NON scrive Firestore dal client, NON usa Identity Toolkit, NON crea
+ * utenti_pin_lookup, NON conosce/gestisce password Firebase.
+ *
+ * @param {string} uid  document id del ragazzo in `utenti`
+ * @param {string} pin  4–6 cifre
+ * @returns {Promise<{uid:string, comunitaId:(string|null), authCreated:boolean}>}
+ */
+export async function assegnaPin(uid, pin) {
+  const u = String(uid || '').trim();
+  const p = String(pin || '').trim();
+  if (!u) throw new Error('uid mancante.');
+  if (!validaPin(p)) throw new Error('Il PIN deve essere di 4–6 cifre.');
+
+  try {
+    const call = httpsCallable(functions, 'assegnaPinRagazzoAdmin');
+    const res = await call({ uid: u, pin: p });
+    return {
+      uid: res.data?.uid || u,
+      comunitaId: res.data?.comunitaId ?? null,
+      authCreated: !!res.data?.authCreated,
+    };
+  } catch (e) {
+    const code = e?.code || '';
+    if (code === 'functions/already-exists') throw new Error('Questo PIN è già in uso. Genera o scegli un altro PIN.');
+    if (code === 'functions/permission-denied') throw new Error('Operazione riservata agli amministratori.');
+    if (code === 'functions/unauthenticated') throw new Error('Sessione non autenticata.');
+    if (code === 'functions/invalid-argument') throw new Error(e.message || 'Dati non validi.');
+    if (code === 'functions/failed-precondition') throw new Error(e.message || 'Operazione non consentita per questo ragazzo.');
+    throw new Error(e?.message || 'Assegnazione PIN non riuscita.');
+  }
+}

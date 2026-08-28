@@ -31,6 +31,9 @@ exports.loginRagazzoConPin = require('./pinLogin').loginRagazzoConPin;
 // Creazione ragazzo lato Console (Milestone E) — vedi functions/creaRagazzoAdmin.js
 exports.creaRagazzoAdmin = require('./creaRagazzoAdmin').creaRagazzoAdmin;
 
+// Primo PIN per un ragazzo già esistente — vedi functions/assegnaPinRagazzoAdmin.js
+exports.assegnaPinRagazzoAdmin = require('./assegnaPinRagazzoAdmin').assegnaPinRagazzoAdmin;
+
 // ─── Helper: token di un singolo utente ──────────────────────────────────
 
 async function getTokensForUid(uid) {

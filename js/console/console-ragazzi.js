@@ -8,7 +8,7 @@ import {
   fetchUtenti, fetchComunita, fetchPinStatus, COMUNITA_AFTER_US,
 } from './console-data.js';
 import { transferUtente, CAUSALE_MAX, AFTER_US_ID } from './console-transfer.js';
-import { creaRagazzo, generaPinCandidato, validaPin } from './console-crea-ragazzo.js';
+import { creaRagazzo, assegnaPin, generaPinCandidato, validaPin } from './console-crea-ragazzo.js';
 import {
   esc, el, SPINNER, emptyMsg, errorMsg, badge, avatar, fmtDateTime, missing,
   toolbar, setCount, sectionHead, byNome, confirmModal,
@@ -119,7 +119,7 @@ export async function renderRagazzi(container, mode = 'ordinarie') {
 }
 
 function riga(r, ctx) {
-  const { comNome, comunita, pin, container, afterUsExists } = ctx;
+  const { comNome, comunita, pin, container, isAfterUs, afterUsExists } = ctx;
   const row = el('div', 'cadmin-row');
 
   const nome = (typeof r.nome === 'string' && r.nome.trim()) ? r.nome.trim() : null;
@@ -131,9 +131,12 @@ function riga(r, ctx) {
     : badge('stato non impostato', 'amber');
 
   const p = pin[r.id];
+  const haPin = !!(p && p.configurato);
   const pinBadge = !p ? badge('PIN: n/d', 'grey')
     : p.configurato ? badge('PIN configurato', 'green') : badge('nessun PIN', 'grey');
   const ultimo = p && p.lastLogin ? fmtDateTime(p.lastLogin) : null;
+  const stato0 = (typeof r.stato === 'string' && r.stato.trim()) ? r.stato.trim() : null;
+  const archiviato = stato0 === 'archiviato';
 
   row.innerHTML =
     avatar(r.fotoProfilo, '🧒', nome || '') +
@@ -153,7 +156,68 @@ function riga(r, ctx) {
   btn.textContent = '↔ Trasferisci';
   btn.addEventListener('click', () => apriModaleTrasferimento(r, { comNome, comunita, container, afterUsExists }));
   actions.appendChild(btn);
+
+  // PIN: solo assegnazione del PRIMO PIN, via callable server-side.
+  // Il cambio PIN sicuro nel nuovo modello non è ancora implementato: per chi
+  // ha già un PIN non si offre alcun cambio (niente flusso legacy).
+  if (!haPin && !archiviato) {
+    const btnPin = el('button', 'cperm-btn', '🔑 Assegna PIN');
+    btnPin.addEventListener('click', () => apriModaleAssegnaPin(r, { container, isAfterUs }));
+    actions.appendChild(btnPin);
+  }
   return row;
+}
+
+async function apriModaleAssegnaPin(r, { container, isAfterUs }) {
+  const nome = (typeof r.nome === 'string' && r.nome.trim()) ? r.nome.trim() : r.id;
+  let inPin, inPin2, btnGen, chkShow;
+
+  const ok = await confirmModal({
+    title: `🔑 Assegna PIN a ${nome}`,
+    confirmLabel: 'Assegna PIN',
+    build(b) {
+      b.innerHTML = `
+        <p class="cmodal-row">Assegna il <b>primo PIN</b> a un ragazzo già esistente.
+        Nessun duplicato, nessuna password Firebase gestita dal browser.</p>
+        <p class="cmodal-row"><b>UID:</b> <span style="font-family:monospace">${esc(r.id)}</span></p>
+        <label class="cmodal-label">PIN (4–6 cifre)
+          <span style="display:flex;gap:6px;align-items:center">
+            <input class="cmodal-input" id="ap-pin" type="password" inputmode="numeric" maxlength="6" style="flex:1" autocomplete="off">
+            <button type="button" class="cperm-btn" id="ap-gen">🎲 Genera</button>
+          </span>
+        </label>
+        <label class="cmodal-label">Conferma PIN
+          <input class="cmodal-input" id="ap-pin2" type="password" inputmode="numeric" maxlength="6" autocomplete="off">
+        </label>
+        <label style="font-size:0.78rem;color:#666;display:flex;gap:6px;align-items:center;margin-top:6px">
+          <input type="checkbox" id="ap-show"> mostra PIN
+        </label>`;
+      inPin = b.querySelector('#ap-pin');
+      inPin2 = b.querySelector('#ap-pin2');
+      btnGen = b.querySelector('#ap-gen');
+      chkShow = b.querySelector('#ap-show');
+      btnGen.addEventListener('click', () => {
+        const g = generaPinCandidato();
+        inPin.value = g; inPin2.value = g;
+      });
+      chkShow.addEventListener('change', () => {
+        inPin.type = inPin2.type = chkShow.checked ? 'text' : 'password';
+      });
+    },
+    async onConfirm() {
+      const pin = inPin.value.trim();
+      const pin2 = inPin2.value.trim();
+      if (!validaPin(pin)) throw new Error('Il PIN deve essere di 4–6 cifre.');
+      if (pin !== pin2) throw new Error('I due PIN non coincidono.');
+      const res = await assegnaPin(r.id, pin);
+      window.alert(
+        `PIN assegnato a ${nome}. PIN: ${pin}` +
+        (res.authCreated ? '\n(account di accesso creato)' : '')
+      );
+    },
+  });
+
+  if (ok) renderRagazzi(container, isAfterUs ? 'afterus' : 'ordinarie');
 }
 
 async function apriModaleTrasferimento(r, { comNome, comunita, container, afterUsExists }) {
