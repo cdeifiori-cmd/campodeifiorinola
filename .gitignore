@@ -3,3 +3,11 @@ node_modules/
 .env
 *.env
 .firebase-service-account.json
+
+# Firebase Emulator (test Security Rules — Milestone A Console Admin)
+firebase-debug.log
+firestore-debug.log
+database-debug.log
+ui-debug.log
+pubsub-debug.log
+firebase-export-*/

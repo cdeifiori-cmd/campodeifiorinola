@@ -2,8 +2,23 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // ── Riconoscimento amministratore ───────────────────────────────────────
+    // Milestone A Console Admin (decisione §18.3 / §8):
+    //   isAdmin() = UID legacy hardcoded  OR  staff/{uid}.admin === true
+    // Il UID legacy resta come fallback di retrocompatibilità: NON va ancora
+    // rimosso dagli altri file. Il ramo staff.admin è null-safe:
+    //   - exists() evita il get() su un documento inesistente;
+    //   - .data.get('admin', false) restituisce false se il campo manca.
+    // Un ragazzo (doc solo in "utenti") non ha un doc "staff": non può quindi
+    // diventare admin nemmeno impostandosi "admin: true" sul proprio doc utenti.
     function isAdmin() {
-      return request.auth != null && request.auth.uid == 'mCSgNMVEphVIIf4HX0bkcKq2ZKv2';
+      return request.auth != null && (
+        request.auth.uid == 'mCSgNMVEphVIIf4HX0bkcKq2ZKv2'
+        || (
+          exists(/databases/$(database)/documents/staff/$(request.auth.uid))
+          && get(/databases/$(database)/documents/staff/$(request.auth.uid)).data.get('admin', false) == true
+        )
+      );
     }
 
     function isOwner(uid) {
@@ -14,13 +29,55 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    // ── Self-service whitelist (fix R1 / D1, decisione §18.3) ────────────────
+    // Un utente autenticato può aggiornare SOLO questi campi sul PROPRIO
+    // documento di identità (utenti/staff/amici). Ogni campo che determina
+    // privilegi, ruolo, appartenenza o autorizzazioni resta scrivibile solo
+    // dall'admin. Gli elenchi sono ricavati dai writer client-side realmente
+    // presenti nel codice (js/auth.js, js/nav-auth.js, js/notifiche.js,
+    // profilo.html) — vedi AUDIT-CONSOLE-ADMIN.md §Milestone A.
+    //
+    //  - numeroAccessi : js/auth.js (increment al login, sul proprio doc)
+    //  - primoAccesso  : js/nav-auth.js (una tantum, solo su "utenti")
+    //  - fcmTokens/fcmToken : js/notifiche.js (token push, sul proprio doc)
+    //  - fotoProfilo/fotoCover/miPresento/updatedAt/audioUrl : profilo.html
+    //    (editor del proprio profilo, guardato da isOwner lato client)
+    //  - interazioni   : profilo.html incrInt() — SOLO contatore cosmetico,
+    //    mostrato ai soli admin; il client lo incrementa sul PROPRIO doc
+    //    (utenti/staff, mai amici). Le scritture cross-utente di "interazioni"
+    //    oggi falliscono già in silenzio e restano vietate: qui NON si
+    //    introduce alcuna clausola cross-utente per questo campo.
+    function utenteSelfServiceFields() {
+      return ['numeroAccessi', 'primoAccesso', 'fcmTokens', 'fcmToken',
+              'fotoProfilo', 'fotoCover', 'miPresento', 'updatedAt',
+              'audioUrl', 'interazioni'];
+    }
+    function staffSelfServiceFields() {
+      return ['numeroAccessi', 'fcmTokens', 'fcmToken',
+              'fotoProfilo', 'fotoCover', 'miPresento', 'updatedAt',
+              'audioUrl', 'interazioni'];
+    }
+    function amicoSelfServiceFields() {
+      return ['fcmTokens', 'fcmToken',
+              'fotoProfilo', 'fotoCover', 'miPresento', 'updatedAt', 'audioUrl'];
+    }
+    function isSelfServiceUpdate(allowed) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(allowed);
+    }
+
     // ── Utenti ──────────────────────────────────────────────
     match /utenti/{uid} {
       allow read: if true;
       allow create: if isOwner(uid) || isAdmin();
-      allow update: if isOwner(uid) || isAdmin()
-                    // Qualsiasi utente loggato può aggiornare solo il campo reazioniPresento
-                    || (isLoggedIn() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reazioniPresento']));
+      // Fix R1/D1: il proprietario NON può più modificare campi di sistema
+      // (accessoDocumenti, comunitaId, stato, admin, ruolo, permissions,
+      // email, nome, …). Solo la whitelist self-service, oppure l'admin.
+      allow update: if isAdmin()
+                    || (isOwner(uid) && isSelfServiceUpdate(utenteSelfServiceFields()))
+                    // Qualsiasi utente loggato può aggiornare solo il campo
+                    // reazioniPresento (reazioni alla "Mi Presento" altrui) —
+                    // comportamento invariato rispetto alle regole precedenti.
+                    || (isLoggedIn() && isSelfServiceUpdate(['reazioniPresento']));
       allow delete: if isAdmin();
 
       // Reazioni su "Mi Presento": ogni utente gestisce solo la propria
@@ -28,19 +85,47 @@ service cloud.firestore {
         allow read: if true;
         allow write: if isLoggedIn() && request.auth.uid == reazId;
       }
+
+      // ── Storico appartenenze alle comunità (decisione §18.6) ──────────────
+      // Dato AMMINISTRATIVO append-only: il ragazzo proprietario NON scrive.
+      //   create : solo admin
+      //   update : solo admin e SOLO il campo 'al' (chiusura appartenenza);
+      //            comunitaId/dal/actorUid/createdAt/causale immutabili
+      //   delete : vietato a chiunque
+      // read placeholder Milestone A = solo admin; verrà allargato in
+      // Milestone D/G ai coordinatori/responsabili della comunità attuale.
+      match /appartenenze/{appId} {
+        allow read:   if isAdmin();
+        allow create: if isAdmin();
+        allow update: if isAdmin()
+                      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['al'])
+                      && request.resource.data.comunitaId == resource.data.comunitaId
+                      && request.resource.data.dal        == resource.data.dal
+                      && request.resource.data.actorUid   == resource.data.actorUid
+                      && request.resource.data.createdAt  == resource.data.createdAt
+                      && request.resource.data.causale    == resource.data.causale;
+        allow delete: if false;
+      }
     }
 
     // ── Staff ────────────────────────────────────────────────
     match /staff/{uid} {
       allow read: if true;
-      allow update: if isOwner(uid) || isAdmin();
+      // Fix R1 (decisione §18.3): uno staff NON può auto-attribuirsi/modificare
+      // admin, accessoDocumenti, ruolo, comunitaId, permissions, email, nome.
+      // Solo la whitelist self-service (foto/miPresento/FCM/accessi/interazioni)
+      // oppure l'admin.
+      allow update: if isAdmin()
+                    || (isOwner(uid) && isSelfServiceUpdate(staffSelfServiceFields()));
       allow create, delete: if isAdmin();
     }
 
     // ── Amici ────────────────────────────────────────────────
     match /amici/{uid} {
       allow read: if true;
-      allow update: if isOwner(uid) || isAdmin();
+      // Fix R1 (decisione §18.3): stessa protezione dei campi di sistema.
+      allow update: if isAdmin()
+                    || (isOwner(uid) && isSelfServiceUpdate(amicoSelfServiceFields()));
       allow create, delete: if isAdmin();
     }
 
@@ -48,6 +133,16 @@ service cloud.firestore {
     match /comunita/{docId} {
       allow read: if true;
       allow write: if isAdmin();
+    }
+
+    // ── Audit log operazioni amministrative (decisione §18.7 / §AUDIT LOG) ──
+    // Append-only assoluto: nessun update/delete, nemmeno per l'admin.
+    //   create/read : solo admin
+    //   update/delete : vietati a chiunque
+    match /admin_audit/{auditId} {
+      allow read:           if isAdmin();
+      allow create:         if isAdmin();
+      allow update, delete: if false;
     }
 
     // ── PIN login ragazzi (Gestione ragazzi) ──────────────────
