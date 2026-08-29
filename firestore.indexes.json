@@ -35,6 +35,15 @@
         { "fieldPath": "comunitaId", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "ppu_schede_c",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "minorId", "order": "ASCENDING" },
+        { "fieldPath": "comunitaId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

@@ -27,6 +27,14 @@
       "update-daniele-foto.js",
       "AGENTS.md",
       "CLAUDE.md"
+    ],
+    "headers": [
+      {
+        "source": "**/*.html",
+        "headers": [
+          { "key": "Cache-Control", "value": "no-cache" }
+        ]
+      }
     ]
   },
   "emulators": {

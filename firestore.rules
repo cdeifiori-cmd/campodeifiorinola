@@ -317,6 +317,28 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // ── PPU: Scheda C "Le persone intorno a me" ──────────────
+    // Strumento sociometrico (due sociogrammi interattivi). Stessa identica
+    // logica autorizzativa delle Schede A e B (riusa canAccessPPU /
+    // staffDocPPU / … definiti sopra): admin, coordinatore/responsabile per
+    // comunità, staff con accessoDocumenti per comunità. Un ragazzo
+    // autenticato via PIN non ha un doc "staff" e non rientra in nessuna di
+    // queste funzioni. Cambia solo il nome della collezione.
+    match /ppu_schede_c/{schedaId} {
+      allow read: if canAccessPPU(resource.data.comunitaId);
+      allow create: if canAccessPPU(request.resource.data.comunitaId)
+        && request.resource.data.createdBy == request.auth.uid;
+      // comunitaId/minorId/createdBy/createdAt immutabili dopo la creazione:
+      // ogni Scheda C è una fotografia storicizzata e non può essere
+      // riattribuita a un altro ragazzo/comunità né a un altro autore.
+      allow update: if canAccessPPU(resource.data.comunitaId)
+        && request.resource.data.comunitaId == resource.data.comunitaId
+        && request.resource.data.minorId == resource.data.minorId
+        && request.resource.data.createdBy == resource.data.createdBy
+        && request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if isAdmin();
+    }
+
     // ── Diario ───────────────────────────────────────────────
     match /diario/{postId} {
       allow read: if true;
