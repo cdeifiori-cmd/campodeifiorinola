@@ -34,7 +34,7 @@ import {
   raggruppaFontiPerMomento, elencaMomenti, descriviMancanti,
   ricostruisciFonte, messaggioErroreGenerazione,
   renderVistaHTML, renderFontiPannelloHTML, formatDataD,
-  escHtml, ETICHETTE_STATO_D,
+  escHtml, ETICHETTE_STATO_D, prossimoStatoToggleFonti,
   costruisciRiletturaDaValori, validaRiletturaEquipe, riletturaSignificativa,
 } from './ppu-scheda-d-model.js';
 
@@ -84,6 +84,7 @@ function iniettaStile() {
   .ppud-fonti-btn{margin-top:10px;background:#fff;border:1.5px solid #cfc9bd;color:#5a5648;font-weight:700;font-size:.82rem;border-radius:8px;padding:7px 12px;cursor:pointer;min-height:40px}
   .ppud-fonti-btn[aria-expanded="true"]{background:#efece4}
   .ppud-fonti-pan{margin-top:8px;display:grid;gap:8px}
+  .ppud-fonti-pan[hidden]{display:none}
   .ppud-fonte{border:1px solid #e4e0d6;border-radius:8px;padding:8px 12px;background:#fcfbf8;font-size:.86rem}
   .ppud-fonte-cap{font-weight:800;color:#5a5648;margin-bottom:4px}
   .ppud-fonte>div{display:flex;gap:8px;margin:2px 0;flex-wrap:wrap}
@@ -506,17 +507,18 @@ function wireFonti(main, d, db) {
     const pan = main.querySelector(`[data-ppud-fonti-pan="${chiave}"]`);
     if (!pan) return;
     btn.addEventListener('click', async () => {
-      const aperto = btn.getAttribute('aria-expanded') === 'true';
-      if (aperto) {
-        btn.setAttribute('aria-expanded', 'false');
-        pan.hidden = true;
-        btn.textContent = 'Mostra elementi di origine';
-        return;
-      }
-      btn.setAttribute('aria-expanded', 'true');
-      pan.hidden = false;
-      btn.textContent = 'Nascondi elementi di origine';
-      if (pan.dataset.caricato) return;
+      // Vero toggle bidirezionale: lo stato dipende solo da aria-expanded.
+      // In chiusura basta `pan.hidden = true` (la regola .ppud-fonti-pan[hidden]
+      // ora vince su display:grid). In riapertura, se i dati sono già in
+      // memoria (dataset.caricato) non si rilegge nulla.
+      const s = prossimoStatoToggleFonti({
+        apertoOra: btn.getAttribute('aria-expanded') === 'true',
+        giaCaricato: pan.dataset.caricato === '1',
+      });
+      btn.setAttribute('aria-expanded', s.ariaExpanded);
+      btn.textContent = s.etichetta;
+      pan.hidden = s.hidden;
+      if (!s.deveCaricare) return;
 
       pan.innerHTML = '<div class="ppud-fonte">Caricamento…</div>';
       const src = await caricaFontiCongelate();

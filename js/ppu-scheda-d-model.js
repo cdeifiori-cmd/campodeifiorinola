@@ -802,6 +802,26 @@ function bottoneFonti(chiave, fonti) {
     + `<div class="ppud-fonti-pan" data-ppud-fonti-pan="${escHtml(chiave)}" hidden></div>`;
 }
 
+// ── Toggle "Mostra / Nascondi elementi di origine": vero toggle bidirezionale ──
+// Stato derivato SOLO da aria-expanded del bottone. Nessun accesso a Firestore
+// o all'AI: `giaCaricato` indica che il pannello ha già i dati in memoria, per
+// cui alla riapertura si riusano senza rileggere nulla.
+export const ETICHETTE_TOGGLE_FONTI = {
+  chiuso: 'Mostra elementi di origine',
+  aperto: 'Nascondi elementi di origine',
+};
+
+export function prossimoStatoToggleFonti({ apertoOra = false, giaCaricato = false } = {}) {
+  const aperto = !apertoOra;
+  return {
+    aperto,
+    hidden: !aperto,
+    ariaExpanded: aperto ? 'true' : 'false',
+    etichetta: aperto ? ETICHETTE_TOGGLE_FONTI.aperto : ETICHETTE_TOGGLE_FONTI.chiuso,
+    deveCaricare: aperto && !giaCaricato,
+  };
+}
+
 // Blocco HTML per un singolo elemento di origine ricostruito.
 export function renderFonteHTML(f) {
   if (!f || typeof f !== 'object') return '';
