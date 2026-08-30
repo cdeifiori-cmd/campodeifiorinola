@@ -307,6 +307,7 @@
     import { montaElenco as montaElencoPPU }  from './js/ppu-scheda-a.js';
     import { montaElenco as montaElencoPPUB } from './js/ppu-scheda-b.js';
     import { montaElenco as montaElencoPPUC } from './js/ppu-scheda-c.js';
+    import { montaElenco as montaElencoPPUD } from './js/ppu-scheda-d.js';
 
     const firebaseConfig = {
       apiKey:            "AIzaSyC18lzwqhYcW29TsEO6Oy4Bqvb2PMBUmAg",
@@ -592,13 +593,21 @@
         db, ragazzo, community, canWrite, currentUid, go
       }));
 
+      const cardSchedaD = mkEl('div', 'nav-card',
+        `<div class="nav-card-icon">🧩</div>
+         <div class="nav-card-label">Scheda D — Sintesi educativa integrata</div>
+         <div style="font-size:0.62rem;color:#999;font-weight:700;margin-top:-3px;">Sintesi AI dall'incrocio di A, B e C, per la rilettura dell'équipe</div>`);
+      cardSchedaD.onclick = () => go('Sintesi educativa integrata', () => montaElencoPPUD(main, {
+        db, ragazzo, community, canWrite, currentUid, go
+      }));
+
       const cardDocs = mkEl('div', 'nav-card',
         `<div class="nav-card-icon">📁</div>
          <div class="nav-card-label">Documenti PPU</div>
          <div style="font-size:0.62rem;color:#999;font-weight:700;margin-top:-3px;">File e documenti</div>`);
       cardDocs.onclick = () => go('Documenti', () => showFolder(storagePath, label));
 
-      document.getElementById('ppu-home-grid').append(cardSchedaA, cardSchedaB, cardSchedaC, cardDocs);
+      document.getElementById('ppu-home-grid').append(cardSchedaA, cardSchedaB, cardSchedaC, cardSchedaD, cardDocs);
     }
 
     /* ── LEVEL 3+ – Contenuto cartella ──────────────────────────── */

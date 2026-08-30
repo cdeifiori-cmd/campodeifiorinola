@@ -34,6 +34,9 @@ exports.creaRagazzoAdmin = require('./creaRagazzoAdmin').creaRagazzoAdmin;
 // Primo PIN per un ragazzo già esistente — vedi functions/assegnaPinRagazzoAdmin.js
 exports.assegnaPinRagazzoAdmin = require('./assegnaPinRagazzoAdmin').assegnaPinRagazzoAdmin;
 
+// PPU — Scheda D "Sintesi educativa integrata AI" — vedi functions/schedaD.js
+exports.generaSchedaDPPU = require('./schedaD').generaSchedaDPPU;
+
 // ─── Helper: token di un singolo utente ──────────────────────────────────
 
 async function getTokensForUid(uid) {

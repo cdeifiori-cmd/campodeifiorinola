@@ -22,6 +22,8 @@
       ".git/**",
       "**/*.md",
       "test/**",
+      "tests/**",
+      "preview-*.html",
       ".gitignore",
       "**/*.cjs",
       "update-daniele-foto.js",

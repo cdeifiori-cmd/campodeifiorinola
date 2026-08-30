@@ -339,6 +339,87 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // ── PPU: Scheda D "Sintesi educativa integrata AI" ───────
+    // Creata ESCLUSIVAMENTE dalla Cloud Function generaSchedaDPPU tramite
+    // Admin SDK (che bypassa queste regole). Dal client:
+    //   read   → stesso perimetro di A/B/C: canAccessPPU per la comunità;
+    //   create → MAI (allow create: if false);
+    //   update → solo la rilettura d'équipe e la transizione di stato, e solo
+    //            finché la D non è VALIDATA. Il contenuto prodotto dalla
+    //            Function (contenutoAI, fonti, sorgenti, metadati…) resta
+    //            immutabile perché l'update accetta SOLO i 5 campi mutabili
+    //            (hasOnly): qualsiasi altra chiave modificata → deny;
+    //   delete → solo admin e solo su D NON ancora VALIDATA (una D validata è
+    //            la fotografia educativa del momento e non si cancella dal
+    //            client). Vedi report Passo 3, sezione F.
+    function statoSchedaDPersistito(s) {
+      return s == 'GENERATA' || s == 'IN_RILETTURA' || s == 'VALIDATA';
+    }
+    // Transizioni ammesse (la sorgente VALIDATA è già esclusa a monte
+    // dall'update con resource.data.stato != 'VALIDATA'):
+    //   GENERATA     → GENERATA | IN_RILETTURA | VALIDATA
+    //   IN_RILETTURA → IN_RILETTURA | VALIDATA
+    // NON_GENERABILE / DA_GENERARE / qualsiasi valore arbitrario → negati.
+    function transizioneStatoSchedaD(vecchio, nuovo) {
+      return statoSchedaDPersistito(nuovo) && (
+        (vecchio == 'GENERATA'     && (nuovo == 'GENERATA' || nuovo == 'IN_RILETTURA' || nuovo == 'VALIDATA')) ||
+        (vecchio == 'IN_RILETTURA' && (nuovo == 'IN_RILETTURA' || nuovo == 'VALIDATA'))
+      );
+    }
+    // Chi valida deve essere l'utente corrente; quando NON si valida,
+    // validatedBy/validatedAt restano null. Nessun controllo temporale
+    // fragile: solo tipo timestamp + identità.
+    function validatoreSchedaDCoerente() {
+      return request.resource.data.stato == 'VALIDATA'
+        ? (request.resource.data.validatedBy == request.auth.uid
+           && request.resource.data.validatedAt is timestamp)
+        : (request.resource.data.validatedBy == null
+           && request.resource.data.validatedAt == null);
+    }
+    // Forma minima del blocco `rilettura` quando viene scritto: oggetto con
+    // riletturaBy (lista che DEVE includere l'utente corrente) e riletturaAt
+    // (timestamp). Le chiavi dinamiche di `ipotesi` e l'enum di `valutazione`
+    // NON sono validabili qui (map a chiavi arbitrarie): sono demandate
+    // all'applicazione — vedi report Passo 3, sezione I.
+    function riletturaSchedaDValida() {
+      return request.resource.data.rilettura is map
+        && request.resource.data.rilettura.riletturaBy is list
+        && (request.auth.uid in request.resource.data.rilettura.riletturaBy)
+        && request.resource.data.rilettura.riletturaAt is timestamp
+        && (!('ipotesi' in request.resource.data.rilettura)
+            || request.resource.data.rilettura.ipotesi is map)
+        && (!('osservazioniGenerali' in request.resource.data.rilettura)
+            || request.resource.data.rilettura.osservazioniGenerali is string);
+    }
+    function modificaSchedaDConsentita() {
+      let cambi = request.resource.data.diff(resource.data).affectedKeys();
+      return cambi.hasOnly(['stato', 'rilettura', 'validatedAt', 'validatedBy', 'updatedAt'])
+        && ( !('rilettura' in cambi) || riletturaSchedaDValida() );
+    }
+
+    match /ppu_schede_d/{schedaId} {
+      allow read: if canAccessPPU(resource.data.comunitaId);
+
+      // La creazione avviene solo lato server (Cloud Function / Admin SDK).
+      allow create: if false;
+
+      allow update: if canAccessPPU(resource.data.comunitaId)
+        && resource.data.stato != 'VALIDATA'
+        && modificaSchedaDConsentita()
+        && transizioneStatoSchedaD(resource.data.stato, request.resource.data.stato)
+        && validatoreSchedaDCoerente();
+
+      // Una D VALIDATA è congelata: nemmeno l'admin la cancella dal client.
+      allow delete: if isAdmin() && resource.data.stato != 'VALIDATA';
+    }
+
+    // Lock anti-doppia-generazione: usato SOLO dalla Cloud Function tramite
+    // Admin SDK (che bypassa le regole). Nessun accesso client, in nessuna
+    // operazione.
+    match /ppu_schede_d_locks/{lockId} {
+      allow read, write: if false;
+    }
+
     // ── Diario ───────────────────────────────────────────────
     match /diario/{postId} {
       allow read: if true;
