@@ -266,7 +266,16 @@ export async function montaElenco(main, ctx) {
     }
     try {
       const fns = getFunctions(getApp(), FUNCTIONS_REGION);
-      const call = httpsCallable(fns, 'generaSchedaDPPU');
+      // Il timeout di default del Web SDK è 70 s; la generazione (fino a 2
+      // chiamate al modello) supera regolarmente i 2 minuti. 330 s tiene il
+      // client appena sopra il `timeoutSeconds: 300` della Function, così è il
+      // server a governare la scadenza e il client riceve la sua risposta
+      // strutturata invece di abortire prima.
+      const call = httpsCallable(
+        fns,
+        'generaSchedaDPPU',
+        { timeout: 330000 }
+      );
       const res = await call({
         minorId: ragazzo.id,
         comunitaId: community.id,

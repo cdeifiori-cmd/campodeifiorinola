@@ -623,6 +623,8 @@ export function messaggioErroreGenerazione(err) {
       return 'Una generazione per questo momento è già in corso. Attendi qualche istante e riprova.';
     case 'unavailable':
       return 'Il servizio di generazione non è al momento disponibile. Riprova più tardi.';
+    case 'deadline-exceeded':
+      return 'La generazione sta richiedendo più tempo del previsto e potrebbe essere ancora in corso. Ricarica la pagina tra un minuto per verificare se la sintesi è stata creata, prima di rigenerare.';
     case 'invalid-argument':
       return msg || 'I dati inviati non sono validi.';
     case 'internal':
