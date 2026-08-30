@@ -81,6 +81,14 @@ function iniettaStile() {
   .ppud-vuoto{color:#b7b2a8}
   .ppud-ai{margin-top:12px;background:#f4f1fa;border-left:3px solid #8b6db5;border-radius:0 8px 8px 0;padding:10px 14px}
   .ppud-ai-tag{font-size:.72rem;font-weight:800;letter-spacing:.03em;text-transform:uppercase;color:#7659a0;margin-bottom:8px}
+  .ppud-chiavi>h2{text-transform:none;letter-spacing:0;font-size:1.12rem;color:#3a2f52;border-bottom:2px solid #e2ddec}
+  .ppud-chiavi-sub{font-size:.86rem;color:#6a6478;margin:0 0 14px}
+  .ppud-chiave{background:#f6f4fb;border:1px solid #e2ddec;border-left:3px solid #8b6db5;border-radius:0 10px 10px 0;padding:12px 16px;margin-bottom:14px}
+  .ppud-chiave-ambito{font-size:.74rem;font-weight:800;letter-spacing:.03em;text-transform:uppercase;color:#7659a0;margin-bottom:8px}
+  .ppud-chiave-lente{font-weight:800;color:#3a2f52;margin:0 0 2px}
+  .ppud-chiave-teoria{font-size:.86rem;color:#6a6478;margin:0 0 4px}
+  .ppud-chiave-lista{margin:2px 0 0;padding-left:18px}
+  .ppud-chiave-lista li{margin:2px 0}
   .ppud-fonti-btn{margin-top:10px;background:#fff;border:1.5px solid #cfc9bd;color:#5a5648;font-weight:700;font-size:.82rem;border-radius:8px;padding:7px 12px;cursor:pointer;min-height:40px}
   .ppud-fonti-btn[aria-expanded="true"]{background:#efece4}
   .ppud-fonti-pan{margin-top:8px;display:grid;gap:8px}
@@ -498,6 +506,7 @@ function wireFonti(main, d, db) {
     const [tipo, idxS] = String(chiave).split(':');
     const idx = parseInt(idxS, 10);
     if (tipo === 'pilastro') return (c.pilastri && c.pilastri[idx] && c.pilastri[idx].fonti) || [];
+    if (tipo === 'chiave') return (c.chiaviPsicoPedagogiche && c.chiaviPsicoPedagogiche[idx] && c.chiaviPsicoPedagogiche[idx].fonti) || [];
     const lt = c.letturaTrasversale || {};
     return (lt[tipo] && lt[tipo][idx] && lt[tipo][idx].fonti) || [];
   }

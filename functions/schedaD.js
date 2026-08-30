@@ -32,17 +32,27 @@ const ANTHROPIC_API_KEY = defineSecret('ANTHROPIC_API_KEY');
 // `claude-sonnet-5` è un id API valido; nel documento D si salva comunque il
 // `response.model` effettivamente restituito dal provider.
 const MODELLO_AI = process.env.PPU_MODELLO_AI || 'claude-sonnet-5';
-const MAX_OUTPUT_TOKENS = 8000;
+// Passo 6C: 8000 → 12000. NON è un target ma headroom: `max_tokens` su Sonnet 5
+// è il tetto COMBINATO thinking+testo, e una Scheda D v2 completa non entrava in
+// 8000 quando il thinking adattivo ne consumava una quota. La verbosità è
+// ridotta dai limiti di lunghezza nel SYSTEM_PROMPT + `effort: 'medium'`.
+const MAX_OUTPUT_TOKENS = Number(process.env.PPU_MAX_OUTPUT_TOKENS) || 12000;
+// Passo 6C: effort di ragionamento. Default 'medium' — la Scheda D è una sintesi
+// strutturata con schema esplicito, non un compito agentico: 'high' (default del
+// modello) spende troppo thinking dentro lo stesso budget di max_tokens.
+const EFFORT = process.env.PPU_EFFORT || 'medium';
 
 // Corpo della request alla Messages API di Anthropic.
 // NOTA (claude-sonnet-5): NON si inviano parametri di sampling
 // (`temperature`, `top_p`, `top_k`). Sonnet 5 rifiuta con HTTP 400 valori di
-// sampling non-default; per la Scheda D non c'è alcuna necessità metodologica
-// di impostarli manualmente → si usa il comportamento predefinito del modello.
+// sampling non-default. `thinking` NON si invia: Sonnet 5 usa thinking adattivo
+// di default e `budget_tokens` è rifiutato (400); il ragionamento si governa
+// con `output_config.effort`.
 function costruisciRequestAnthropic({ system, messages }) {
   return {
     model: MODELLO_AI,
     max_tokens: MAX_OUTPUT_TOKENS,
+    output_config: { effort: EFFORT },
     system,
     messages,
   };
@@ -68,7 +78,9 @@ async function chiamaModelloAnthropic({ system, messages }) {
     .filter((b) => b && b.type === 'text')
     .map((b) => b.text)
     .join('');
-  return { text, model: (resp && resp.model) || MODELLO_AI };
+  // `stopReason` serve al core per distinguere il troncamento (max_tokens) dagli
+  // errori strutturali e scegliere la strategia di retry.
+  return { text, model: (resp && resp.model) || MODELLO_AI, stopReason: resp && resp.stop_reason };
 }
 
 exports.generaSchedaDPPU = onCall(
@@ -114,3 +126,5 @@ exports.generaSchedaDPPU = onCall(
 exports._chiamaModelloAnthropic = chiamaModelloAnthropic;
 exports._costruisciRequestAnthropic = costruisciRequestAnthropic;
 exports._MODELLO_AI = MODELLO_AI;
+exports._MAX_OUTPUT_TOKENS = MAX_OUTPUT_TOKENS;
+exports._EFFORT = EFFORT;

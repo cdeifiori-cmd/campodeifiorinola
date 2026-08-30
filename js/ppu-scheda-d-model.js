@@ -193,7 +193,26 @@ export const CAMPI_PAYLOAD_AMMESSI = {
 // Versione del prompt/di questo schema di output: da salvare in ogni D
 // generata per poter confrontare in futuro sintesi prodotte con prompt
 // diversi.
-export const PROMPT_VERSION = 1;
+//   v1 → sintesi A/B/C (Passi 1–5)
+//   v2 → aggiunge `contenutoAI.chiaviPsicoPedagogiche` (Passo 6)
+//   v3 → (Passo 6C · FASE 6) blocco epistemico dati insufficienti + concisione.
+//   v4 → (Passo 6C · FASE 7) contratto delle fonti inequivocabile (FONTI
+//        CITABILI, pilastro sempre canonico), retry fonti più preciso.
+// La RESA resta compatibile con v1, v2, v3 e v4 (nessun ramo dipende dal
+// numero): i documenti legacy si aprono senza il blocco chiavi o con esso.
+export const PROMPT_VERSION = 4;
+
+// Passo 6 — chiavi psico-pedagogiche: array di 0..MAX_CHIAVI_PP elementi.
+// Passo 6C: max 4 → 3 (evita output enciclopedici e chiavi riempitive).
+export const MAX_CHIAVI_PP = 3;
+export const AMBITI_CHIAVE = ['pilastro', 'trasversale'];
+// Passo 6C — tetti d'array per le chiavi (min, max). Allineato a
+// functions/schedaDCore.js::LIMITI_ARRAY_CHIAVE.
+export const LIMITI_ARRAY_CHIAVE = {
+  lettureAlternative: [0, 2],
+  elementiDaOsservare: [1, 3],
+  domandeEquipe: [1, 3],
+};
 
 // Nota metodologica: testo FISSO, aggiunto dal codice (non dal modello) in
 // coda alla sintesi generale di ogni Scheda D.
@@ -404,6 +423,54 @@ function validaListaFonti(fonti, path, minimo = 0) {
   return e;
 }
 
+// Passo 6 — validazione STRUTTURALE di `chiaviPsicoPedagogiche` (stessa
+// semantica del core server-side functions/schedaDCore.js). Verifica SOLO forma,
+// campi, enum, limiti e struttura delle fonti: MAI la correttezza teorica o la
+// pertinenza educativa. Campo opzionale (assente = nessuna chiave / D legacy v1).
+export function validaChiaviPsicoPedagogiche(json) {
+  const e = [];
+  if (!json || typeof json !== 'object') return e;
+  if (!('chiaviPsicoPedagogiche' in json) || json.chiaviPsicoPedagogiche == null) return e;
+  const arr = json.chiaviPsicoPedagogiche;
+  if (!Array.isArray(arr)) { e.push('chiaviPsicoPedagogiche deve essere un array.'); return e; }
+  if (arr.length > MAX_CHIAVI_PP) {
+    e.push(`chiaviPsicoPedagogiche: al massimo ${MAX_CHIAVI_PP} elementi (ricevuti ${arr.length}).`);
+  }
+  arr.forEach((k, i) => {
+    const P = `chiaviPsicoPedagogiche[${i}]`;
+    if (!k || typeof k !== 'object' || Array.isArray(k)) { e.push(`${P} non è un oggetto.`); return; }
+    if (!AMBITI_CHIAVE.includes(k.ambito)) {
+      e.push(`${P}.ambito "${k.ambito}" non valido (atteso "pilastro" o "trasversale").`);
+    }
+    if (k.ambito === 'pilastro') {
+      if (!PILASTRI_ID.includes(k.pilastro)) e.push(`${P}.pilastro "${k.pilastro}" non valido per ambito "pilastro".`);
+    } else if (k.ambito === 'trasversale') {
+      if (k.pilastro != null && k.pilastro !== '') e.push(`${P}.pilastro deve essere null per ambito "trasversale".`);
+    }
+    for (const campo of ['configurazioneOsservata', 'questioneEducativa', 'pertinenzaNelCaso', 'limitiDellaLettura']) {
+      if (!isNonEmptyStr(k[campo])) e.push(`${P}.${campo} mancante o vuoto.`);
+    }
+    const rt = k.riferimentoTeorico;
+    if (!rt || typeof rt !== 'object' || Array.isArray(rt)) {
+      e.push(`${P}.riferimentoTeorico mancante o non è un oggetto.`);
+    } else {
+      for (const campo of ['autore', 'teoria', 'concetto', 'spiegazione']) {
+        if (!isNonEmptyStr(rt[campo])) e.push(`${P}.riferimentoTeorico.${campo} mancante o vuoto.`);
+      }
+    }
+    for (const campo of ['lettureAlternative', 'elementiDaOsservare', 'domandeEquipe']) {
+      const [minimo, massimo] = LIMITI_ARRAY_CHIAVE[campo];
+      const a = k[campo];
+      if (!Array.isArray(a)) { e.push(`${P}.${campo} deve essere un array.`); continue; }
+      if (a.length < minimo) e.push(`${P}.${campo} deve contenere almeno ${minimo} elemento/i.`);
+      if (a.length > massimo) e.push(`${P}.${campo}: al massimo ${massimo} elementi (ricevuti ${a.length}).`);
+      a.forEach((s, j) => { if (!isNonEmptyStr(s)) e.push(`${P}.${campo}[${j}] deve essere una stringa non vuota.`); });
+    }
+    e.push(...validaListaFonti(k.fonti, `${P}.fonti`, 1));
+  });
+  return e;
+}
+
 export function validaOutputAI(json) {
   if (!json || typeof json !== 'object' || Array.isArray(json)) {
     return ["L'output AI non è un oggetto JSON."];
@@ -461,6 +528,7 @@ export function validaOutputAI(json) {
     }
   }
 
+  e.push(...validaChiaviPsicoPedagogiche(json));
   return e;
 }
 
@@ -734,8 +802,16 @@ export const TITOLI_D = {
   sintesi: 'SINTESI DEL PROFILO EMERSO',
   trasversale: 'ELEMENTI PER IL CONFRONTO DELL’ÉQUIPE EDUCATIVA',
   letturaAI: 'LETTURA EDUCATIVA POSSIBILE',
+  chiaviPP: 'Chiavi psico-pedagogiche per la riflessione dell’équipe',
   rilettura: 'RILETTURA DELL’ÉQUIPE EDUCATIVA',
 };
+// Passo 6 — sotto-blocchi di una chiave psico-pedagogica, nell'ordine di resa.
+const CAMPI_CHIAVE_PP = [
+  ['configurazioneOsservata', 'CONFIGURAZIONE EMERSA'],
+  ['questioneEducativa', 'QUESTIONE EDUCATIVA'],
+];
+const SOTTOTITOLO_CHIAVI_PP =
+  'Riferimenti teorici selezionati in relazione ai dati emersi. Sono lenti di lettura da discutere e verificare, non spiegazioni del ragazzo.';
 export const ETICHETTE_STATO_D = {
   GENERATA: 'Generata',
   IN_RILETTURA: 'In rilettura',
@@ -904,6 +980,24 @@ export function elencaElementiRilettura(contenutoAI) {
       });
     });
   }
+  // Passo 6 — ogni chiave psico-pedagogica è rileggibile NEL SUO COMPLESSO
+  // (una sola valutazione + una osservazione libera, come gli altri elementi).
+  // Chiave stabile e deterministica per indice: `chiave.<i>`.
+  const chiaviPP = Array.isArray(c.chiaviPsicoPedagogiche) ? c.chiaviPsicoPedagogiche : [];
+  chiaviPP.forEach((k, i) => {
+    const rt = (k && k.riferimentoTeorico) || {};
+    const autore = typeof rt.autore === 'string' ? rt.autore.trim() : '';
+    const concetto = typeof rt.concetto === 'string' ? rt.concetto.trim() : '';
+    out.push({
+      chiave: `chiave.${i}`,
+      gruppo: 'chiave',
+      indice: i,
+      ambito: k && k.ambito === 'trasversale' ? 'trasversale' : 'pilastro',
+      pilastro: k && typeof k.pilastro === 'string' ? k.pilastro : null,
+      etichetta: `Chiave ${i + 1}${autore ? ` · ${autore}` : ''}${concetto ? ` — ${concetto}` : ''}`,
+      testoAI: (k && typeof k.questioneEducativa === 'string') ? k.questioneEducativa : '',
+    });
+  });
   return out;
 }
 
@@ -1038,7 +1132,7 @@ export function renderRiletturaHTML(schedaD, opts = {}) {
     </div>` : '';
 
   const parti = [];
-  let lastPil = null, trasvHeaderDone = false;
+  let lastPil = null, trasvHeaderDone = false, chiaveHeaderDone = false;
   for (const el of elementi) {
     if (el.gruppo === 'pilastro') {
       if (lastPil !== el.pilastro) {
@@ -1048,6 +1142,9 @@ export function renderRiletturaHTML(schedaD, opts = {}) {
     } else if (el.gruppo === 'trasversale' && !trasvHeaderDone) {
       trasvHeaderDone = true;
       parti.push('<h3 class="ppud-ril-grp">Lettura trasversale</h3>');
+    } else if (el.gruppo === 'chiave' && !chiaveHeaderDone) {
+      chiaveHeaderDone = true;
+      parti.push('<h3 class="ppud-ril-grp">Chiavi psico-pedagogiche</h3>');
     }
     parti.push(riletturaElementoHTML(el, ipotesi[el.chiave] || null, modificabile));
   }
@@ -1110,6 +1207,46 @@ function riletturaElementoHTML(el, voce, modificabile) {
       </div>`;
   }
   return `<div class="ppud-ril-el" data-ril-chiave="${escHtml(el.chiave)}">${etich}${testoAI}${controlli}</div>`;
+}
+
+// ── Passo 6 — resa di una singola chiave psico-pedagogica ─────────────
+// SOLO testo prodotto dal modello + etichette fisse dell'app. Nessun semaforo,
+// punteggio, percentuale, livello di rischio o badge diagnostico.
+function listaChiavePP(items) {
+  const arr = Array.isArray(items) ? items.filter(s => typeof s === 'string' && s.trim()) : [];
+  if (!arr.length) return '<p class="ppud-vuoto">—</p>';
+  return `<ul class="ppud-chiave-lista">${arr.map(s => `<li>${escHtml(s.trim())}</li>`).join('')}</ul>`;
+}
+export function renderChiavePPHTML(k, i) {
+  if (!k || typeof k !== 'object') return '';
+  const rt = (k.riferimentoTeorico && typeof k.riferimentoTeorico === 'object') ? k.riferimentoTeorico : {};
+  const autore = typeof rt.autore === 'string' ? rt.autore.trim() : '';
+  const teoria = typeof rt.teoria === 'string' ? rt.teoria.trim() : '';
+  const concetto = typeof rt.concetto === 'string' ? rt.concetto.trim() : '';
+  const ambitoTxt = k.ambito === 'trasversale'
+    ? 'Ambito: lettura trasversale'
+    : `Ambito: ${(PILASTRI.find(p => p.id === k.pilastro) || {}).nome || k.pilastro || '—'}`;
+  const lente = `${autore || '—'}${concetto ? ` — ${concetto}` : ''}`;
+  const alternative = Array.isArray(k.lettureAlternative) ? k.lettureAlternative.filter(s => typeof s === 'string' && s.trim()) : [];
+  const campo = (label, txt) =>
+    `<div class="ppud-campo"><div class="ppud-campo-k">${escHtml(label)}</div>${paragrafo(txt)}</div>`;
+  return `
+    <div class="ppud-chiave">
+      <div class="ppud-chiave-ambito">${escHtml(ambitoTxt)}</div>
+      ${CAMPI_CHIAVE_PP.map(([f, label]) => campo(label, k[f])).join('')}
+      <div class="ppud-campo">
+        <div class="ppud-campo-k">LENTE TEORICA</div>
+        <p class="ppud-chiave-lente">${escHtml(lente)}</p>
+        ${teoria ? `<p class="ppud-chiave-teoria">${escHtml(teoria)}</p>` : ''}
+      </div>
+      ${campo('IL CONCETTO IN BREVE', rt.spiegazione)}
+      ${campo('PERCHÉ PUÒ ESSERE UTILE QUI', k.pertinenzaNelCaso)}
+      ${campo('LIMITI DI QUESTA LETTURA', k.limitiDellaLettura)}
+      ${alternative.length ? `<div class="ppud-campo"><div class="ppud-campo-k">ALTRE LETTURE POSSIBILI</div>${listaChiavePP(alternative)}</div>` : ''}
+      <div class="ppud-campo"><div class="ppud-campo-k">COSA OSSERVARE</div>${listaChiavePP(k.elementiDaOsservare)}</div>
+      <div class="ppud-campo"><div class="ppud-campo-k">DOMANDE PER L’ÉQUIPE</div>${listaChiavePP(k.domandeEquipe)}</div>
+      ${bottoneFonti(`chiave:${i}`, k.fonti)}
+    </div>`;
 }
 
 // HTML dell'intero documento Scheda D. `opts`:
@@ -1185,10 +1322,20 @@ export function renderVistaHTML(schedaD, opts = {}) {
       }).join('')}
     </section>`;
 
+  // Passo 6 — sezione opzionale. Assente su D promptVersion 1 e su v2 con
+  // `chiaviPsicoPedagogiche: []` → non si renderizza nulla (nessun titolo vuoto).
+  const chiaviArr = Array.isArray(c.chiaviPsicoPedagogiche) ? c.chiaviPsicoPedagogiche : [];
+  const chiaviHtml = chiaviArr.length ? `
+    <section class="ppud-sez ppud-chiavi">
+      <h2>${escHtml(TITOLI_D.chiaviPP)}</h2>
+      <p class="ppud-chiavi-sub">${escHtml(SOTTOTITOLO_CHIAVI_PP)}</p>
+      ${chiaviArr.map((k, i) => renderChiavePPHTML(k, i)).join('')}
+    </section>` : '';
+
   const riletturaSez = renderRiletturaHTML(schedaD, {
     modificabile: !!opts.modificabile,
     validataInfo: opts.validataInfo || null,
   });
 
-  return `<article class="ppud-doc">${testa}${nota}${sintesi}${pilastriHtml}${trasvHtml}${riletturaSez}</article>`;
+  return `<article class="ppud-doc">${testa}${nota}${sintesi}${pilastriHtml}${trasvHtml}${chiaviHtml}${riletturaSez}</article>`;
 }

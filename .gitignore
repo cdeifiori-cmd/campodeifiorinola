@@ -4,6 +4,9 @@ node_modules/
 *.env
 .firebase-service-account.json
 
+# Output collaudo DEV-ONLY Passo 6C (harness Scheda D) — mai versionato
+tests/.out/
+
 # Firebase Emulator (test Security Rules — Milestone A Console Admin)
 firebase-debug.log
 firestore-debug.log
