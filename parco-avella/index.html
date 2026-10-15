@@ -570,15 +570,32 @@ footer a{color:#fff}
 </footer>
 
 <script>
-// Link della raccolta fondi: tutti i bottoni "Sostieni" puntano qui.
+// Link delle raccolte fondi (da compilare quando saranno disponibili).
+// RACCOLTA_FONDI_URL: raccolta generale, usata dal bottone "Dona" e dagli obiettivi senza link proprio.
+// RACCOLTE_OBIETTIVI: link specifico per ciascun obiettivo (s1 … s11).
+// Se un link è vuoto, il bottone porta alla sezione "Sostieni" con PEC e telefono.
 const RACCOLTA_FONDI_URL = '';
-if (RACCOLTA_FONDI_URL) {
-  document.querySelectorAll('.sostieni,[data-raccolta]').forEach(a=>{
-    a.href = RACCOLTA_FONDI_URL;
-    a.target = '_blank'; a.rel = 'noopener';
-    if (a.dataset.obiettivo) a.title = 'Sostieni: ' + a.dataset.obiettivo;
-  });
-}
+const RACCOLTE_OBIETTIVI = {
+  s1:  '', // La Recinzione che parla
+  s2:  '', // Centro di aggregazione Gramigna
+  s3:  '', // Giardino della Memoria e Sentiero per fare pace
+  s4:  '', // Percorso sensoriale
+  s5:  '', // Terra Madre
+  s6:  '', // Biblioteca dei Libri Erranti
+  s7:  '', // I Murales
+  s8:  '', // La Panchina dell'Ascolto
+  s9:  '', // La Stazione del Gioco Perduto
+  s10: '', // La Bacheca delle Cose Possibili
+  s11: '', // Arena degli Eroici Furori
+};
+document.querySelectorAll('.sostieni,[data-raccolta]').forEach(a=>{
+  const id = a.closest('[id^="s"]')?.id;
+  const url = (a.classList.contains('sostieni') && RACCOLTE_OBIETTIVI[id]) || RACCOLTA_FONDI_URL;
+  if (!url) return;
+  a.href = url;
+  a.target = '_blank'; a.rel = 'noopener';
+  if (a.dataset.obiettivo) a.title = 'Sostieni: ' + a.dataset.obiettivo;
+});
 const btn=document.querySelector('.menu-btn'),nav=document.querySelector('.nav nav');
 btn.addEventListener('click',()=>{const o=nav.classList.toggle('open');btn.setAttribute('aria-expanded',o)});
 nav.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>{nav.classList.remove('open');btn.setAttribute('aria-expanded',false)}));
