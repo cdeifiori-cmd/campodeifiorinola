@@ -116,6 +116,31 @@ header.nav{position:sticky;top:0;z-index:20;background:rgba(250,246,238,.92);bac
 .valore::before{content:"Il valore per la comunità";display:block;font:700 .7rem/1.4 "Nunito Sans";letter-spacing:.16em;text-transform:uppercase;color:var(--verde);margin-bottom:4px}
 @media(max-width:860px){.spazio .wrap{grid-template-columns:1fr;gap:22px}.spazio.flip .media{order:0}}
 
+/* SOSTIENI */
+.sostieni{display:inline-flex;align-items:center;gap:10px;margin-top:18px;padding:12px 22px;border-radius:999px;background:var(--terra);color:#fff;font-weight:800;text-decoration:none;box-shadow:0 8px 20px -10px rgba(196,98,45,.8);transition:transform .15s,background .15s}
+.sostieni::before{content:"♥";font-size:1.05rem}
+.sostieni:hover{transform:translateY(-2px);background:#a94f20}
+.sostieni-box{background:var(--terra);color:#fff;border-radius:var(--r);padding:clamp(28px,5vw,52px);display:grid;grid-template-columns:1.4fr 1fr;gap:32px;align-items:center}
+.sostieni-box h2{color:#fff}
+.sostieni-box p{opacity:.92}
+.sostieni-box .btn{background:#fff;color:var(--terra)}
+.sostieni-box .kicker{color:var(--sole)}
+@media(max-width:760px){.sostieni-box{grid-template-columns:1fr}}
+
+/* PICCOLI SPAZI */
+.legami{background:#fff;border-top:1px solid var(--bordo)}
+.legami h2 em{font-style:italic;color:var(--terra);font-weight:500}
+.legami-img{border-radius:var(--r);box-shadow:0 18px 40px -20px rgba(31,63,40,.45);margin:28px 0 36px;width:100%}
+.legami-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+.legame{border-top:4px solid var(--terra);padding-top:18px;display:flex;flex-direction:column}
+.legame:nth-child(2){border-color:var(--sole)}.legame:nth-child(3){border-color:#a9c49a}
+.legame .pallino{width:38px;height:38px;border-radius:50%;background:var(--terra);color:#fff;display:grid;place-items:center;font-family:Fraunces,serif;font-weight:700;margin-bottom:10px}
+.legame .motto{font-family:Caveat,cursive;font-size:1.55rem;color:var(--terra);line-height:1.2;margin:-2px 0 12px}
+.legame .lista{background:var(--salvia);border-radius:12px;padding:6px 14px;margin-top:auto}
+.legame .lista li{border-bottom:0;font-size:.93rem}
+.legame .sostieni{align-self:flex-start}
+@media(max-width:860px){.legami-grid{grid-template-columns:1fr}}
+
 /* IMPATTO */
 .impatto{background:var(--verde-scuro);color:#eef3ea}
 .impatto h2,.impatto h3{color:#fff}
@@ -186,6 +211,7 @@ footer a{color:#fff}
       <a href="#percorso">Gli spazi</a>
       <a href="#impatto">L'impatto</a>
       <a href="#proposta">La proposta</a>
+      <a href="#sostieni">Sostieni</a>
       <a href="#lettera">La lettera</a>
       <a href="#contatti">Contatti</a>
     </nav>
@@ -203,7 +229,7 @@ footer a{color:#fff}
       <p class="lead">Un luogo di incontro, crescita e partecipazione. Con il <strong>Progetto Gramigna</strong>, un centro polivalente per bambini, adolescenti e giovani.</p>
       <blockquote class="quote">«Non soltanto un parco da frequentare, ma un bene comune da costruire e custodire insieme.»</blockquote>
       <div class="btns">
-        <a class="btn" href="#percorso">Scopri gli 8 spazi</a>
+        <a class="btn" href="#percorso">Scopri gli 11 spazi</a>
         <a class="btn alt" href="#proposta">La proposta al Comune</a>
       </div>
     </div>
@@ -242,8 +268,8 @@ footer a{color:#fff}
 <section id="percorso">
   <div class="wrap">
     <span class="kicker">Il percorso</span>
-    <h2>Otto spazi, un solo cammino</h2>
-    <p style="max-width:44em;color:var(--grigio)">Il parco si articola in otto ambiti collegati tra loro. Ciascuno ha una funzione propria, e insieme compongono un unico percorso educativo aperto a tutta la cittadinanza.</p>
+    <h2>Undici spazi, un solo cammino</h2>
+    <p style="max-width:44em;color:var(--grigio)">Il parco si articola in undici ambiti collegati tra loro. Ciascuno ha una funzione propria, e insieme compongono un unico percorso educativo aperto a tutta la cittadinanza.</p>
     <div class="grid8">
       <a class="tile" href="#s1"><span class="n">1</span><img src="img/recinzione.jpg" alt="" loading="lazy"><span class="t"><b>La Recinzione che parla</b><small>Sicurezza e un confine che comunica valori</small></span></a>
       <a class="tile" href="#s2"><span class="n">2</span><img src="img/gramigna.jpg" alt="" loading="lazy"><span class="t"><b>Centro Gramigna</b><small>Aggregazione e sede del servizio civile</small></span></a>
@@ -252,7 +278,10 @@ footer a{color:#fff}
       <a class="tile" href="#s5"><span class="n">5</span><img src="img/terra-madre.jpg" alt="" loading="lazy"><span class="t"><b>Terra Madre</b><small>Orti, biodiversità, educazione ambientale</small></span></a>
       <a class="tile" href="#s6"><span class="n">6</span><img src="img/biblioteca.jpg" alt="" loading="lazy"><span class="t"><b>Biblioteca dei Libri Erranti</b><small>Lettura all'aperto e libri in viaggio</small></span></a>
       <a class="tile" href="#s7"><span class="n">7</span><img src="img/murales.jpg" alt="" loading="lazy"><span class="t"><b>I Murales</b><small>Storia, geografia e volto della città</small></span></a>
-      <a class="tile" href="#s8"><span class="n">8</span><img src="img/arena.jpg" alt="" loading="lazy"><span class="t"><b>Arena degli Eroici Furori</b><small>Musica, teatro, parola, creatività</small></span></a>
+      <a class="tile" href="#s8"><span class="n">8</span><img src="img/piccoli-spazi.jpg" alt="" loading="lazy" style="object-position:0% 50%"><span class="t"><b>La Panchina dell'Ascolto</b><small>Fermarsi, raccontarsi, ascoltare</small></span></a>
+      <a class="tile" href="#s9"><span class="n">9</span><img src="img/piccoli-spazi.jpg" alt="" loading="lazy" style="object-position:48% 50%"><span class="t"><b>La Stazione del Gioco Perduto</b><small>Giochi tradizionali tra generazioni</small></span></a>
+      <a class="tile" href="#s10"><span class="n">10</span><img src="img/piccoli-spazi.jpg" alt="" loading="lazy" style="object-position:100% 50%"><span class="t"><b>La Bacheca delle Cose Possibili</b><small>Offrire, cercare, fare insieme</small></span></a>
+      <a class="tile" href="#s11"><span class="n">11</span><img src="img/arena.jpg" alt="" loading="lazy"><span class="t"><b>Arena degli Eroici Furori</b><small>Musica, teatro, parola, creatività</small></span></a>
     </div>
   </div>
 </section>
@@ -269,6 +298,7 @@ footer a{color:#fff}
       <div class="lista-tit">Cosa realizziamo</div>
       <ul class="lista"><li>Messa in sicurezza del parco</li><li>Innalzamento della recinzione</li><li>Attivazione delle telecamere già esistenti</li><li>Parole e valori lungo tutto il perimetro</li></ul>
       <p class="valore">Una cultura del rispetto e della convivenza, scritta sul confine del parco.</p>
+      <a class="sostieni" href="#sostieni" data-obiettivo="La Recinzione che parla">Sostieni questo obiettivo</a>
     </div>
   </div>
 </article>
@@ -285,6 +315,7 @@ footer a{color:#fff}
       <div class="lista-tit">Cosa realizziamo</div>
       <ul class="lista"><li>Container per le attività con bambini, ragazzi e giovani</li><li>Sede per il servizio civile</li><li>Laboratori educativi, artistici e culturali</li><li>Luoghi di ascolto</li></ul>
       <p class="valore">Inclusione, partecipazione e relazioni positive per le nuove generazioni.</p>
+      <a class="sostieni" href="#sostieni" data-obiettivo="Centro di aggregazione Gramigna">Sostieni questo obiettivo</a>
     </div>
   </div>
 </article>
@@ -301,6 +332,7 @@ footer a{color:#fff}
       <div class="lista-tit">Le tappe del sentiero</div>
       <ul class="lista tappe"><li>Mi fermo: riconosco le emozioni</li><li>Io parlo, tu ascolti: ci diamo spazio</li><li>Mi metto nei tuoi panni</li><li>Riconosco ciò che è importante</li></ul>
       <p class="valore">Il dialogo e la riconciliazione diventano strumenti quotidiani di comunità.</p>
+      <a class="sostieni" href="#sostieni" data-obiettivo="Il Giardino del Pensiero e della Memoria e il Sentiero per fare pace">Sostieni questo obiettivo</a>
     </div>
   </div>
 </article>
@@ -317,6 +349,7 @@ footer a{color:#fff}
       <div class="lista-tit">Cosa realizziamo</div>
       <ul class="lista"><li>Un sentiero con cinque superfici naturali da attraversare</li><li>Piante aromatiche da toccare e annusare</li><li>Un cammino che prepara alla cura di Terra Madre</li><li>Attività educative per scuole e famiglie</li></ul>
       <p class="valore">Imparare a percepire, rallentare e prendersi cura dell'ambiente che ci circonda.</p>
+      <a class="sostieni" href="#sostieni" data-obiettivo="Percorso sensoriale">Sostieni questo obiettivo</a>
     </div>
   </div>
 </article>
@@ -333,6 +366,7 @@ footer a{color:#fff}
       <div class="lista-tit">Cosa realizziamo</div>
       <ul class="lista"><li>Orti didattici e piante aromatiche</li><li>Aree dedicate alla biodiversità</li><li>Esperienze di educazione ambientale per tutte le età</li><li>Cura condivisa di orti e aiuole</li></ul>
       <p class="valore">Il rispetto dell'ambiente e il valore della sostenibilità, imparati con l'esperienza.</p>
+      <a class="sostieni" href="#sostieni" data-obiettivo="Terra Madre">Sostieni questo obiettivo</a>
     </div>
   </div>
 </article>
@@ -349,6 +383,7 @@ footer a{color:#fff}
       <div class="lista-tit">Come funziona</div>
       <ul class="lista tappe"><li>Ti fermi e leggi</li><li>Lasci un libro importante per te</li><li>Ne prendi uno lasciato da altri</li><li>Libera circolazione dei libri e delle idee</li></ul>
       <p class="valore">Storie, emozioni e pensieri che passano di mano in mano e uniscono le persone.</p>
+      <a class="sostieni" href="#sostieni" data-obiettivo="La Biblioteca dei Libri Erranti">Sostieni questo obiettivo</a>
     </div>
   </div>
 </article>
@@ -365,15 +400,51 @@ footer a{color:#fff}
       <div class="lista-tit">Cosa realizziamo</div>
       <ul class="lista"><li>Murales sulla storia della città</li><li>Murales sulla geografia e sul territorio</li><li>Murales «instagrammabili» da fotografare e condividere</li></ul>
       <p class="valore">Memoria, identità e bellezza visibili a tutti: un parco che si fa conoscere.</p>
+      <a class="sostieni" href="#sostieni" data-obiettivo="I Murales: il parco che racconta">Sostieni questo obiettivo</a>
     </div>
   </div>
 </article>
 
-<article class="spazio flip" id="s8">
+<section class="legami" id="legami">
+  <div class="wrap">
+    <div class="obiettivo">Obiettivi 8 · 9 · 10 · Relazioni di prossimità</div>
+    <h2>Piccoli spazi, <em>grandi legami</em></h2>
+    <p style="max-width:44em;color:var(--grigio)">Tre luoghi semplici che fanno del parco un posto dove ci si ferma, ci si incontra e ci si aiuta.</p>
+    <img class="legami-img reveal" src="img/piccoli-spazi.jpg" alt="Rendering della Panchina dell'Ascolto, della Stazione del Gioco Perduto e della Bacheca delle Cose Possibili" loading="lazy">
+    <div class="legami-grid">
+      <article class="legame reveal" id="s8">
+        <span class="pallino">8</span>
+        <h3>La Panchina dell'Ascolto</h3>
+        <p class="motto">Siediti. C'è sempre qualcuno da ascoltare.</p>
+        <p>Una panchina dedicata all'<strong>ascolto reciproco</strong>: chi si siede sa di trovare qualcuno con cui parlare, o disposto ad ascoltare. Giovani e anziani, vicini e sconosciuti: un piccolo presidio contro la solitudine.</p>
+        <ul class="lista"><li>Panchina in legno nei colori dell'arcobaleno</li><li>Cartello e messaggio «Ascoltare fa crescere la comunità»</li><li>Aiuole fiorite intorno</li></ul>
+        <a class="sostieni" href="#sostieni" data-obiettivo="La Panchina dell'Ascolto">Sostieni questo obiettivo</a>
+      </article>
+      <article class="legame reveal" id="s9">
+        <span class="pallino">9</span>
+        <h3>La Stazione del Gioco Perduto</h3>
+        <p class="motto">I giochi non hanno bisogno di batterie.</p>
+        <p>Campana, elastico, quattro cantoni, tris gigante, piste per biglie e giochi disegnati a terra: un'<strong>area intergenerazionale</strong> dove gli adulti insegneranno ai bambini i giochi della propria infanzia. La memoria si trasmette giocando.</p>
+        <ul class="lista"><li>Campana dipinta a terra con i numeri colorati</li><li>Tris gigante in legno</li><li>Pista e cassetta delle biglie, ceppi per sedersi</li></ul>
+        <a class="sostieni" href="#sostieni" data-obiettivo="La Stazione del Gioco Perduto">Sostieni questo obiettivo</a>
+      </article>
+      <article class="legame reveal" id="s10">
+        <span class="pallino">10</span>
+        <h3>La Bacheca delle Cose Possibili</h3>
+        <p class="motto">Io posso offrire. Io sto cercando. Facciamolo insieme.</p>
+        <p>Una grande bacheca protetta per i messaggi della comunità: chi offre un'ora per insegnare chitarra, chi cerca libri scolastici, chi propone una passeggiata ecologica. <strong>Solidarietà di prossimità</strong>: il parco diventa luogo in cui nascono relazioni.</p>
+        <ul class="lista"><li>Bacheca in legno con tettoia</li><li>Sezioni «Musica insieme», «Un libro in condivisione», «Più verde per tutti»</li><li>Foglietti per offerte e richieste</li></ul>
+        <a class="sostieni" href="#sostieni" data-obiettivo="La Bacheca delle Cose Possibili">Sostieni questo obiettivo</a>
+      </article>
+    </div>
+  </div>
+</section>
+
+<article class="spazio flip" id="s11">
   <div class="wrap">
     <div class="media reveal"><img src="img/arena.jpg" alt="Rendering dell'Arena degli Eroici Furori, palcoscenico all'aperto" loading="lazy"></div>
     <div class="reveal">
-      <div class="num">08</div>
+      <div class="num">11</div>
       <div class="obiettivo">Obiettivo · Cultura e creatività</div>
       <h3>Arena degli Eroici Furori</h3>
       <p class="motto">Un palcoscenico all'aperto per le idee e i talenti del territorio.</p>
@@ -381,6 +452,7 @@ footer a{color:#fff}
       <div class="lista-tit">Cosa ospiterà</div>
       <ul class="lista"><li>Musica dal vivo</li><li>Teatro e letture</li><li>Incontri, dibattiti e parola pubblica</li><li>Laboratori creativi</li></ul>
       <p class="valore">Uno spazio culturale aperto, dove ogni voce trova il suo palcoscenico.</p>
+      <a class="sostieni" href="#sostieni" data-obiettivo="Arena degli Eroici Furori">Sostieni questo obiettivo</a>
     </div>
   </div>
 </article>
@@ -428,8 +500,24 @@ footer a{color:#fff}
     <div class="fasi">
       <div class="fase reveal"><h3>Sicurezza</h3><p>Telecamere, varchi di ingresso e illuminazione: le condizioni per aprire il parco a tutti.</p></div>
       <div class="fase reveal"><h3>Gramigna</h3><p>Il centro di aggregazione e la sede del servizio civile.</p></div>
-      <div class="fase reveal"><h3>Gli spazi</h3><p>Giardino, Sentiero, Percorso sensoriale, Terra Madre, Biblioteca, Murales e Arena.</p></div>
+      <div class="fase reveal"><h3>Gli spazi</h3><p>Giardino, Sentiero, Percorso sensoriale, Terra Madre, Biblioteca, Murales, Panchina, Gioco, Bacheca e Arena.</p></div>
       <div class="fase reveal"><h3>La comunità</h3><p>Un parco abitato, curato e custodito insieme.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="sostieni" style="padding-top:0">
+  <div class="wrap">
+    <div class="sostieni-box reveal">
+      <div>
+        <span class="kicker">Sostieni il progetto</span>
+        <h2>Ogni spazio cresce con il contributo di tutti</h2>
+        <p>Puoi scegliere l'obiettivo che ti sta più a cuore — una panchina, un orto, un murale, il Centro Gramigna — oppure sostenere l'intero Parco Paolino Avella. Ogni donazione diventa un pezzo concreto del parco.</p>
+      </div>
+      <div>
+        <a class="btn" href="#sostieni" data-raccolta>Dona alla raccolta fondi</a>
+        <p style="margin-top:14px;font-size:.92rem">Per informazioni: <a style="color:#fff" href="mailto:campodeifiorinola@pec.it">campodeifiorinola@pec.it</a> · <a style="color:#fff" href="tel:+393492950563">349 295 0563</a></p>
+      </div>
     </div>
   </div>
 </section>
@@ -482,6 +570,15 @@ footer a{color:#fff}
 </footer>
 
 <script>
+// Link della raccolta fondi: tutti i bottoni "Sostieni" puntano qui.
+const RACCOLTA_FONDI_URL = '';
+if (RACCOLTA_FONDI_URL) {
+  document.querySelectorAll('.sostieni,[data-raccolta]').forEach(a=>{
+    a.href = RACCOLTA_FONDI_URL;
+    a.target = '_blank'; a.rel = 'noopener';
+    if (a.dataset.obiettivo) a.title = 'Sostieni: ' + a.dataset.obiettivo;
+  });
+}
 const btn=document.querySelector('.menu-btn'),nav=document.querySelector('.nav nav');
 btn.addEventListener('click',()=>{const o=nav.classList.toggle('open');btn.setAttribute('aria-expanded',o)});
 nav.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>{nav.classList.remove('open');btn.setAttribute('aria-expanded',false)}));
