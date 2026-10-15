@@ -229,7 +229,7 @@ footer a{color:#fff}
       <p class="lead">Un luogo di incontro, crescita e partecipazione. Con il <strong>Progetto Gramigna</strong>, un centro polivalente per bambini, adolescenti e giovani.</p>
       <blockquote class="quote">«Non soltanto un parco da frequentare, ma un bene comune da costruire e custodire insieme.»</blockquote>
       <div class="btns">
-        <a class="btn" href="#percorso">Scopri gli 11 spazi</a>
+        <a class="btn" href="#percorso">Scopri i 12 spazi</a>
         <a class="btn alt" href="#proposta">La proposta al Comune</a>
       </div>
     </div>
@@ -268,8 +268,8 @@ footer a{color:#fff}
 <section id="percorso">
   <div class="wrap">
     <span class="kicker">Il percorso</span>
-    <h2>Undici spazi, un solo cammino</h2>
-    <p style="max-width:44em;color:var(--grigio)">Il parco si articola in undici ambiti collegati tra loro. Ciascuno ha una funzione propria, e insieme compongono un unico percorso educativo aperto a tutta la cittadinanza.</p>
+    <h2>Dodici spazi, un solo cammino</h2>
+    <p style="max-width:44em;color:var(--grigio)">Il parco si articola in dodici ambiti collegati tra loro. Ciascuno ha una funzione propria, e insieme compongono un unico percorso educativo aperto a tutta la cittadinanza.</p>
     <div class="grid8">
       <a class="tile" href="#s1"><span class="n">1</span><img src="img/recinzione.jpg" alt="" loading="lazy"><span class="t"><b>La Recinzione che parla</b><small>Sicurezza e un confine che comunica valori</small></span></a>
       <a class="tile" href="#s2"><span class="n">2</span><img src="img/gramigna.jpg" alt="" loading="lazy"><span class="t"><b>Centro Gramigna</b><small>Aggregazione e sede del servizio civile</small></span></a>
@@ -282,6 +282,7 @@ footer a{color:#fff}
       <a class="tile" href="#s9"><span class="n">9</span><img src="img/piccoli-spazi.jpg" alt="" loading="lazy" style="object-position:48% 50%"><span class="t"><b>La Stazione del Gioco Perduto</b><small>Giochi tradizionali tra generazioni</small></span></a>
       <a class="tile" href="#s10"><span class="n">10</span><img src="img/piccoli-spazi.jpg" alt="" loading="lazy" style="object-position:100% 50%"><span class="t"><b>La Bacheca delle Cose Possibili</b><small>Offrire, cercare, fare insieme</small></span></a>
       <a class="tile" href="#s11"><span class="n">11</span><img src="img/arena.jpg" alt="" loading="lazy"><span class="t"><b>Arena degli Eroici Furori</b><small>Musica, teatro, parola, creatività</small></span></a>
+      <a class="tile" href="#s12"><span class="n">12</span><img src="img/sgambatura-cani.jpg" alt="" loading="lazy"><span class="t"><b>Area sgambatura cani</b><small>Uno spazio sicuro per i cani e i loro amici</small></span></a>
     </div>
   </div>
 </section>
@@ -457,6 +458,23 @@ footer a{color:#fff}
   </div>
 </article>
 
+<article class="spazio" id="s12">
+  <div class="wrap">
+    <div class="media reveal"><img src="img/sgambatura-cani.jpg" alt="Rendering dell'area sgambatura cani con rampa, slalom, cerchio e tunnel per l'agility" loading="lazy"></div>
+    <div class="reveal">
+      <div class="num">12</div>
+      <div class="obiettivo">Obiettivo · Convivenza e benessere</div>
+      <h3>Area sgambatura cani</h3>
+      <p class="motto">Uno spazio sicuro per i cani, un luogo d'incontro per le persone.</p>
+      <p>Un'area recintata dove i cani possono correre e giocare liberamente, in sicurezza, con semplici attrezzature per l'agility. Un luogo che ordina la convivenza tra chi frequenta il parco con il proprio cane e chi lo vive con i bambini, e che diventa occasione di incontro quotidiano tra vicini.</p>
+      <div class="lista-tit">Cosa realizziamo</div>
+      <ul class="lista"><li>Area recintata dedicata ai cani</li><li>Attrezzature per l'agility: rampa, slalom, cerchio e tunnel</li><li>Panchine e punti d'ombra per i proprietari</li><li>Regole condivise per un uso rispettoso e pulito dello spazio</li></ul>
+      <p class="valore">Rispetto degli animali, cura condivisa degli spazi e nuove occasioni di incontro tra vicini.</p>
+      <a class="sostieni" href="#sostieni" data-obiettivo="Area sgambatura cani">Sostieni questo obiettivo</a>
+    </div>
+  </div>
+</article>
+
 <section class="impatto" id="impatto">
   <div class="wrap">
     <span class="kicker">L'impatto</span>
@@ -500,7 +518,7 @@ footer a{color:#fff}
     <div class="fasi">
       <div class="fase reveal"><h3>Sicurezza</h3><p>Telecamere, varchi di ingresso e illuminazione: le condizioni per aprire il parco a tutti.</p></div>
       <div class="fase reveal"><h3>Gramigna</h3><p>Il centro di aggregazione e la sede del servizio civile.</p></div>
-      <div class="fase reveal"><h3>Gli spazi</h3><p>Giardino, Sentiero, Percorso sensoriale, Terra Madre, Biblioteca, Murales, Panchina, Gioco, Bacheca e Arena.</p></div>
+      <div class="fase reveal"><h3>Gli spazi</h3><p>Giardino, Sentiero, Percorso sensoriale, Terra Madre, Biblioteca, Murales, Panchina, Gioco, Bacheca, Arena e Area cani.</p></div>
       <div class="fase reveal"><h3>La comunità</h3><p>Un parco abitato, curato e custodito insieme.</p></div>
     </div>
   </div>
@@ -587,6 +605,7 @@ const RACCOLTE_OBIETTIVI = {
   s9:  '', // La Stazione del Gioco Perduto
   s10: '', // La Bacheca delle Cose Possibili
   s11: '', // Arena degli Eroici Furori
+  s12: '', // Area sgambatura cani
 };
 document.querySelectorAll('.sostieni,[data-raccolta]').forEach(a=>{
   const id = a.closest('[id^="s"]')?.id;
