@@ -255,3 +255,4 @@ footer a{color:#fff}
 .lb-chiudi{top:16px;right:16px;font-size:1.2rem!important}
 .lb-prec{left:16px;top:50%;transform:translateY(-50%)}
 .lb-succ{right:16px;top:50%;transform:translateY(-50%)}
+.numeri b.frase{font-size:clamp(1.15rem,2.2vw,1.5rem);line-height:1.05;height:clamp(2.2rem,5vw,3.2rem);display:flex;align-items:flex-end;justify-content:center}
