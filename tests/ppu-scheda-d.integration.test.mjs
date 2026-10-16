@@ -19,7 +19,7 @@ import { doc, getDoc, setDoc, updateDoc, deleteDoc, runTransaction, serverTimest
 import {
   elencaElementiRilettura, costruisciRiletturaDaValori, validaRiletturaEquipe,
   riletturaSignificativa, mergeRiletturaBy, PILASTRI_ID,
-} from '../js/ppu-scheda-d-model.js';
+} from '../villaggio/js/ppu-scheda-d-model.js';
 
 const PROJECT_ID = 'demo-campo-dei-fiori-test';
 const ADMIN_UID = 'mCSgNMVEphVIIf4HX0bkcKq2ZKv2';

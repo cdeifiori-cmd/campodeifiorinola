@@ -25,16 +25,27 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
+// Il Villaggio vive in /villaggio/: i link delle notifiche generati lato server
+// come '/profilo.html?...' vengono riportati sotto quel percorso.
+const VILLAGGIO = '/villaggio';
+function villaggioUrl(url) {
+  if (typeof url === 'string' && url.startsWith('/') && !url.startsWith('/villaggio/')
+      && !url.startsWith('/robinson/') && !url.startsWith('/parco-avella/') && /^\/[\w-]+\.html/.test(url)) {
+    return VILLAGGIO + url;
+  }
+  return url;
+}
+
 // Notifiche in background o con app chiusa
 messaging.onBackgroundMessage(payload => {
   const n    = payload.notification || {};
   const data = payload.data || {};
   self.registration.showNotification(n.title || 'Campo dei Fiori 🌸', {
     body:                n.body  || '',
-    icon:                '/icons/icon-192.png',
-    badge:               '/icons/icon-192.png',
+    icon:                '/villaggio/icons/icon-192.png',
+    badge:               '/villaggio/icons/icon-192.png',
     tag:                 data.tag || 'campo-notifica',
-    data:                { url: data.url || '/giornale.html' },
+    data:                { url: villaggioUrl(data.url) || '/villaggio/giornale.html' },
     requireInteraction:  false
   });
 });
@@ -45,7 +56,7 @@ self.addEventListener('notificationclick', event => {
   // Azzera badge (tutti i metodi, compatibilità Samsung/Android)
   if (self.registration.clearBadge) self.registration.clearBadge().catch(() => {});
   if (self.registration.setAppBadge) self.registration.setAppBadge(0).catch(() => {});
-  const url = (event.notification.data && event.notification.data.url) || '/giornale.html';
+  const url = villaggioUrl(event.notification.data && event.notification.data.url) || '/villaggio/giornale.html';
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
       for (const client of list) {
@@ -68,10 +79,7 @@ self.addEventListener('message', event => {
 });
 
 // ── Caching (ex service-worker.js) ───────────────────────────────────────
-// v3: forza lo svuotamento della cache v2 (poteva contenere asset disallineati
-// — es. js/firebase-config.js senza `export { app }` — che rompevano login.html).
-// L'handler 'activate' qui sotto elimina ogni cache con nome != CACHE_NAME.
-const CACHE_NAME = 'campo-dei-fiori-v3';
+const CACHE_NAME = 'campo-dei-fiori-v2';
 const ASSETS_TO_PRECACHE = [
   '/',
   '/index.html',
@@ -80,7 +88,7 @@ const ASSETS_TO_PRECACHE = [
   '/giornale.html',
   '/staff.html',
   '/amici.html',
-  '/icons/icon-192.png',
+  '/villaggio/icons/icon-192.png',
   '/icons/icon-512.png'
 ];
 

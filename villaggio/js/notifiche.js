@@ -224,10 +224,10 @@ export async function setupNotifiche(user) {
       navigator.serviceWorker.ready.then(reg => {
         reg.showNotification(n.title || 'Campo dei Fiori 🌸', {
           body:               n.body || '',
-          icon:               '/icons/icon-192.png',
-          badge:              '/icons/icon-192.png',
+          icon:               '/villaggio/icons/icon-192.png',
+          badge:              '/villaggio/icons/icon-192.png',
           tag:                data.tag || 'campo-foreground',
-          data:               { url: data.url || '/giornale.html' },
+          data:               { url: data.url || '/villaggio/giornale.html' },
           requireInteraction: false
         });
       });

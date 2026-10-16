@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestione ragazzi – Campo dei Fiori</title>
+  <meta name="theme-color" content="#e07b39">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    body { padding-bottom: 40px; }
+
+    .top-header {
+      background: #e07b39; color: #fff;
+      display: flex; align-items: center; gap: 10px;
+      padding: 0 1rem; height: 56px;
+      position: sticky; top: 0; z-index: 200;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    }
+    .top-header .back-btn {
+      background: rgba(0,0,0,0.2); border: none; color: #fff;
+      border-radius: 50%; width: 34px; height: 34px; font-size: 1.1rem;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      text-decoration: none; flex-shrink: 0;
+    }
+    .top-header h1 { font-size: 1.05rem; font-weight: 800; flex: 1; }
+
+    .page-wrap { max-width: 760px; margin: 0 auto; padding: 16px 12px 40px; }
+
+    .access-denied { text-align: center; padding: 3rem 1.5rem; color: var(--testo-light); }
+    .access-denied .ad-icon { font-size: 2.4rem; margin-bottom: 0.5rem; }
+
+    .filtri-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; align-items: center; }
+    .filtri-bar select {
+      border: 1.5px solid #d0c9c0; border-radius: 20px; padding: 6px 12px;
+      font-family: 'Nunito', sans-serif; font-size: 0.85rem; background: #fff;
+    }
+    .stato-tabs { display: flex; border-radius: 20px; overflow: hidden; border: 1.5px solid var(--verde); }
+    .stato-tab {
+      background: #fff; color: var(--verde); border: none; padding: 6px 14px;
+      font-family: 'Nunito', sans-serif; font-size: 0.82rem; font-weight: 700; cursor: pointer;
+    }
+    .stato-tab.active { background: var(--verde); color: #fff; }
+
+    .stats-strip { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+    .stat-card { background: #fff; border-radius: var(--radius-sm); box-shadow: var(--shadow); padding: 10px 16px; flex: 1; min-width: 110px; }
+    .stat-num { font-size: 1.3rem; font-weight: 800; color: var(--verde); }
+    .stat-lbl { font-size: 0.72rem; color: var(--testo-light); }
+
+    .btn-nuovo { display: block; width: 100%; margin-bottom: 16px; }
+
+    .ragazzo-row {
+      background: #fff; border-radius: var(--radius); box-shadow: var(--shadow);
+      display: flex; align-items: center; gap: 12px; padding: 0.75rem 0.9rem; margin-bottom: 10px;
+    }
+    .ragazzo-row.archiviato { opacity: 0.6; }
+    .rr-avatar-wrap { position: relative; width: 54px; height: 54px; flex-shrink: 0; }
+    .rr-avatar {
+      width: 54px; height: 54px; border-radius: 50%; object-fit: cover;
+      background: var(--verde-pale); display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem;
+    }
+    .rr-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+    .rr-cambia-foto {
+      position: absolute; bottom: -2px; right: -2px;
+      background: var(--arancio); color: #fff; border-radius: 50%;
+      width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;
+      font-size: 11px; cursor: pointer; border: 2px solid #fff;
+    }
+    .rr-info { flex: 1; min-width: 0; }
+    .rr-nome { font-weight: 800; font-size: 0.95rem; }
+    .rr-tag { font-size: 0.75rem; color: var(--testo-light); margin-top: 1px; }
+    .rr-pin-row { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+    .rr-pin { font-family: monospace; font-size: 0.92rem; letter-spacing: 2px; }
+    .rr-eye { background: none; border: none; cursor: pointer; font-size: 0.85rem; padding: 0 2px; }
+    .badge-archiviato {
+      display: inline-block; background: #f0e0d0; color: #8b5e3c; border-radius: 20px;
+      padding: 1px 9px; font-size: 0.68rem; font-weight: 700; margin-left: 6px;
+    }
+    .rr-azioni { display: flex; flex-direction: column; gap: 5px; align-items: flex-end; }
+    .btn-mini {
+      background: none; border: 1.5px solid #d0c9c0; border-radius: 16px; padding: 4px 10px;
+      font-family: 'Nunito', sans-serif; font-size: 0.72rem; font-weight: 700; cursor: pointer;
+      color: var(--testo); white-space: nowrap;
+    }
+    .btn-mini:hover { background: #f5f5f5; }
+    .btn-mini.arch { border-color: #c0392b; color: #c0392b; }
+    .btn-mini.riattiva { border-color: var(--verde); color: var(--verde); }
+
+    .modal-box .pin-esito {
+      text-align: center; background: var(--verde-pale); border-radius: var(--radius-sm);
+      padding: 14px; margin-top: 10px; display: none;
+    }
+    .modal-box .pin-esito .pin-big { font-family: monospace; font-size: 1.8rem; letter-spacing: 6px; color: var(--verde); font-weight: 800; }
+    .modal-box .form-error { color: #c0392b; font-size: 0.82rem; min-height: 18px; margin-top: 4px; }
+    .modal-box select {
+      width: 100%; border: 1.5px solid #d0c9c0; border-radius: var(--radius-sm); padding: 0.7rem 0.9rem;
+      font-family: 'Nunito', sans-serif; font-size: 0.95rem; background: #fff;
+    }
+    .foto-preview-wrap { display: flex; align-items: center; gap: 12px; margin-bottom: 1rem; }
+    .foto-preview {
+      width: 64px; height: 64px; border-radius: 50%; object-fit: cover; background: var(--verde-pale);
+      display: flex; align-items: center; justify-content: center; font-size: 1.6rem; flex-shrink: 0;
+    }
+    .foto-preview img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+    .modal-pin-input {
+      width: 100%; padding: 12px; border: 1.5px solid #d0c9c0; border-radius: var(--radius-sm);
+      font-size: 1.3rem; letter-spacing: 6px; font-family: monospace; text-align: center; outline: none;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="top-header">
+    <a href="index.html" class="back-btn">←</a>
+    <h1>👥 Gestione ragazzi</h1>
+    <div id="nav-auth-slot"></div>
+  </header>
+
+  <div class="page-wrap" id="page-wrap">
+    <div class="spinner"></div>
+  </div>
+
+  <!-- Modal: nuovo ragazzo -->
+  <div class="modal-overlay hidden" id="modal-nuovo">
+    <div class="modal-box">
+      <h3>➕ Nuovo ragazzo</h3>
+      <div class="foto-preview-wrap">
+        <label class="foto-preview" id="np-foto-preview">🧒
+          <input type="file" id="np-foto" accept="image/*" style="display:none">
+        </label>
+        <div style="font-size:0.8rem;color:var(--testo-light)">Tocca per aggiungere una foto (facoltativa)</div>
+      </div>
+      <div class="form-group">
+        <label for="np-nome">Nome</label>
+        <input type="text" id="np-nome" placeholder="Es. Marco Rossi">
+      </div>
+      <div class="form-group">
+        <label for="np-comunita">Comunità</label>
+        <select id="np-comunita"><option value="">Caricamento…</option></select>
+      </div>
+      <div class="form-error" id="np-error"></div>
+      <div class="pin-esito" id="np-esito">
+        <div style="font-size:0.85rem;color:var(--testo-light);margin-bottom:4px;">PIN generato per l'accesso:</div>
+        <div class="pin-big" id="np-pin-val"></div>
+        <div style="font-size:0.78rem;color:var(--testo-light);margin-top:6px;">Comunicalo al ragazzo/a: potrà usarlo per accedere dalla pagina di login.</div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-secondary" id="np-annulla">Chiudi</button>
+        <button class="btn-primary" id="np-crea">Crea ragazzo</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: cambia PIN -->
+  <div class="modal-overlay hidden" id="modal-pin">
+    <div class="modal-box">
+      <h3>🔄 Cambia PIN</h3>
+      <div style="font-size:0.85rem;color:var(--testo-light);margin-bottom:12px;" id="cp-nome-lbl"></div>
+      <input type="tel" class="modal-pin-input" id="cp-input" placeholder="0000" maxlength="6" inputmode="numeric" pattern="[0-9]*">
+      <div class="form-error" id="cp-error"></div>
+      <div class="modal-actions">
+        <button class="btn-secondary" id="cp-genera">🎲 Genera</button>
+        <button class="btn-secondary" id="cp-annulla">Annulla</button>
+        <button class="btn-primary" id="cp-salva">Salva</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { db, auth } from './js/firebase-config.js';
+    import { onAuthChange, setupNavAuth } from './js/auth.js';
+    import {
+      collection, getDocs, query, orderBy
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import {
+      creaRagazzo, cambiaPinRagazzo, cambiaFotoRagazzo, setStatoRagazzo, generaPin
+    } from './js/ragazzi-pin.js';
+
+    setupNavAuth();
+
+    const ADMIN_UID = 'mCSgNMVEphVIIf4HX0bkcKq2ZKv2';
+    const wrap = document.getElementById('page-wrap');
+
+    let ragazzi = [];      // [{id, nome, comunitaId, fotoProfilo, stato}]
+    let pinMap = {};        // uid -> {pin, lastLogin}
+    let pinInUso = new Set();
+    let comunitaList = [];  // [{id, nomeComunita}]
+    let filtroComunita = '';
+    let filtroStato = 'attivo'; // 'attivo' | 'archiviato' | 'tutti'
+
+    onAuthChange(user => {
+      if (!user || user.uid !== ADMIN_UID) {
+        wrap.innerHTML = `
+          <div class="access-denied">
+            <div class="ad-icon">🔒</div>
+            <strong>Accesso riservato</strong>
+            <p>Quest'area è riservata all'amministrazione.</p>
+            <a href="index.html" style="color:#e07b39;font-weight:700;text-decoration:none;">← Torna alla home</a>
+          </div>`;
+        return;
+      }
+      boot();
+    });
+
+    async function boot() {
+      wrap.innerHTML = '<div class="spinner"></div>';
+      try {
+        const [comSnap, utSnap, pinSnap] = await Promise.all([
+          getDocs(query(collection(db, 'comunita'), orderBy('nomeComunita'))),
+          getDocs(collection(db, 'utenti')),
+          getDocs(collection(db, 'utenti_pin'))
+        ]);
+
+        comunitaList = [];
+        comSnap.forEach(d => comunitaList.push({ id: d.id, nomeComunita: d.data().nomeComunita || d.id }));
+
+        pinMap = {};
+        pinInUso = new Set();
+        pinSnap.forEach(d => {
+          const data = d.data();
+          pinMap[d.id] = data;
+          if (data.pin) pinInUso.add(data.pin);
+        });
+
+        ragazzi = [];
+        utSnap.forEach(d => {
+          if (d.id === ADMIN_UID) return;
+          const data = d.data();
+          if (!data.comunitaId) return; // esclude staff/altri profili non "ragazzo"
+          ragazzi.push({ id: d.id, ...data, stato: data.stato || 'attivo' });
+        });
+
+        render();
+      } catch (e) {
+        wrap.innerHTML = `<p class="empty-msg">Errore: ${e.message}</p>`;
+      }
+    }
+
+    function esc(s) {
+      return String(s ?? '').replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
+    }
+
+    function render() {
+      const filtrati = ragazzi
+        .filter(r => !filtroComunita || r.comunitaId === filtroComunita)
+        .filter(r => filtroStato === 'tutti' || r.stato === filtroStato)
+        .sort((a, b) => (a.nome||'').localeCompare(b.nome||'', 'it'));
+
+      const nAttivi = ragazzi.filter(r => r.stato === 'attivo').length;
+      const nArchiviati = ragazzi.filter(r => r.stato === 'archiviato').length;
+
+      wrap.innerHTML = `
+        <div class="stats-strip">
+          <div class="stat-card"><div class="stat-num">${ragazzi.length}</div><div class="stat-lbl">Totale ragazzi</div></div>
+          <div class="stat-card"><div class="stat-num">${nAttivi}</div><div class="stat-lbl">Attivi</div></div>
+          <div class="stat-card"><div class="stat-num">${nArchiviati}</div><div class="stat-lbl">Archiviati</div></div>
+        </div>
+        <button class="btn-arancio btn-nuovo" id="btn-nuovo">➕ Nuovo ragazzo</button>
+        <div class="filtri-bar">
+          <select id="filtro-comunita">
+            <option value="">Tutte le comunità</option>
+            ${comunitaList.map(c => `<option value="${esc(c.id)}" ${c.id===filtroComunita?'selected':''}>${esc(c.nomeComunita)}</option>`).join('')}
+          </select>
+          <div class="stato-tabs">
+            <button class="stato-tab ${filtroStato==='attivo'?'active':''}" data-stato="attivo">Attivi</button>
+            <button class="stato-tab ${filtroStato==='archiviato'?'active':''}" data-stato="archiviato">Archiviati</button>
+            <button class="stato-tab ${filtroStato==='tutti'?'active':''}" data-stato="tutti">Tutti</button>
+          </div>
+        </div>
+        <div id="lista-ragazzi"></div>`;
+
+      document.getElementById('btn-nuovo').addEventListener('click', apriModalNuovo);
+      document.getElementById('filtro-comunita').addEventListener('change', e => { filtroComunita = e.target.value; render(); });
+      document.querySelectorAll('.stato-tab').forEach(btn => {
+        btn.addEventListener('click', () => { filtroStato = btn.dataset.stato; render(); });
+      });
+
+      const lista = document.getElementById('lista-ragazzi');
+      if (!filtrati.length) {
+        lista.innerHTML = '<p class="empty-msg">Nessun ragazzo/a trovato con questi filtri.</p>';
+        return;
+      }
+      lista.innerHTML = '';
+      filtrati.forEach(r => lista.appendChild(rigaRagazzo(r)));
+    }
+
+    function rigaRagazzo(r) {
+      const pd = pinMap[r.id];
+      const comLabel = (comunitaList.find(c => c.id === r.comunitaId) || {}).nomeComunita || r.comunitaId || '';
+      const row = document.createElement('div');
+      row.className = 'ragazzo-row' + (r.stato === 'archiviato' ? ' archiviato' : '');
+
+      const avatarInner = r.fotoProfilo ? `<img src="${esc(r.fotoProfilo)}" alt="">` : '🧒';
+      const pinHtml = pd?.pin
+        ? `<span class="rr-pin" id="pv-${r.id}" data-pin="${esc(pd.pin)}" data-hidden="1">${'●'.repeat(pd.pin.length)}</span>
+           <button class="rr-eye" data-toggle="${r.id}" title="Mostra/Nascondi">👁️</button>`
+        : `<span style="font-size:0.78rem;color:var(--testo-light)">nessun PIN</span>`;
+
+      row.innerHTML = `
+        <div class="rr-avatar-wrap">
+          <div class="rr-avatar">${avatarInner}</div>
+          <label class="rr-cambia-foto" title="Cambia foto">📷<input type="file" accept="image/*" style="display:none" data-foto="${r.id}"></label>
+        </div>
+        <div class="rr-info">
+          <div class="rr-nome">${esc(r.nome||'—')}${r.stato==='archiviato' ? '<span class="badge-archiviato">archiviato</span>' : ''}</div>
+          <div class="rr-tag">🏡 ${esc(comLabel)}</div>
+          <div class="rr-pin-row">${pinHtml}</div>
+        </div>
+        <div class="rr-azioni">
+          <button class="btn-mini" data-pin-btn="${r.id}">🔄 PIN</button>
+          ${r.stato === 'archiviato'
+            ? `<button class="btn-mini riattiva" data-riattiva="${r.id}">♻️ Riattiva</button>`
+            : `<button class="btn-mini arch" data-archivia="${r.id}">📦 Archivia</button>`}
+        </div>`;
+
+      row.querySelector(`[data-toggle="${r.id}"]`)?.addEventListener('click', () => {
+        const el = document.getElementById('pv-' + r.id);
+        if (el.dataset.hidden === '1') { el.textContent = el.dataset.pin; el.dataset.hidden = '0'; }
+        else { el.textContent = '●'.repeat(el.dataset.pin.length); el.dataset.hidden = '1'; }
+      });
+      row.querySelector(`[data-foto="${r.id}"]`)?.addEventListener('change', e => onCambiaFoto(r, e.target));
+      row.querySelector(`[data-pin-btn="${r.id}"]`)?.addEventListener('click', () => apriModalPin(r));
+      row.querySelector(`[data-archivia="${r.id}"]`)?.addEventListener('click', () => confermaArchivia(r, true));
+      row.querySelector(`[data-riattiva="${r.id}"]`)?.addEventListener('click', () => confermaArchivia(r, false));
+
+      return row;
+    }
+
+    async function onCambiaFoto(r, input) {
+      if (!input.files[0]) return;
+      try {
+        const url = await cambiaFotoRagazzo(r.id, input.files[0]);
+        r.fotoProfilo = url;
+        render();
+      } catch (e) {
+        alert('Errore caricamento foto: ' + e.message);
+      }
+    }
+
+    async function confermaArchivia(r, archivia) {
+      const msg = archivia
+        ? `Archiviare ${r.nome}? Il profilo non comparirà più negli elenchi pubblici, ma diario, messaggi e fascicolo personale/PPU restano intatti e consultabili da Area Documenti. Potrai riattivarlo in qualsiasi momento.`
+        : `Riattivare ${r.nome}? Tornerà visibile negli elenchi pubblici.`;
+      if (!confirm(msg)) return;
+      try {
+        await setStatoRagazzo(r.id, archivia ? 'archiviato' : 'attivo');
+        r.stato = archivia ? 'archiviato' : 'attivo';
+        render();
+      } catch (e) {
+        alert('Errore: ' + e.message);
+      }
+    }
+
+    // ── Modal nuovo ragazzo ─────────────────────────────────────────────────
+    let npFotoFile = null;
+
+    function apriModalNuovo() {
+      npFotoFile = null;
+      document.getElementById('np-nome').value = '';
+      document.getElementById('np-error').textContent = '';
+      document.getElementById('np-esito').style.display = 'none';
+      document.getElementById('np-foto-preview').innerHTML = '🧒<input type="file" id="np-foto" accept="image/*" style="display:none">';
+      const sel = document.getElementById('np-comunita');
+      sel.innerHTML = comunitaList.map(c => `<option value="${esc(c.id)}">${esc(c.nomeComunita)}</option>`).join('') || '<option value="">Nessuna comunità disponibile</option>';
+      document.getElementById('np-crea').disabled = false;
+      document.getElementById('np-crea').textContent = 'Crea ragazzo';
+      document.getElementById('modal-nuovo').classList.remove('hidden');
+      document.getElementById('np-foto').addEventListener('change', e => {
+        npFotoFile = e.target.files[0] || null;
+        if (npFotoFile) {
+          const url = URL.createObjectURL(npFotoFile);
+          document.getElementById('np-foto-preview').innerHTML = `<img src="${url}" alt="">`;
+        }
+      });
+    }
+    document.getElementById('np-annulla').addEventListener('click', () => {
+      document.getElementById('modal-nuovo').classList.add('hidden');
+      render();
+    });
+    document.getElementById('modal-nuovo').addEventListener('click', e => {
+      if (e.target.id === 'modal-nuovo') { document.getElementById('modal-nuovo').classList.add('hidden'); render(); }
+    });
+
+    document.getElementById('np-crea').addEventListener('click', async () => {
+      const nome = document.getElementById('np-nome').value.trim();
+      const comunitaId = document.getElementById('np-comunita').value;
+      const errEl = document.getElementById('np-error');
+      errEl.textContent = '';
+      if (!nome) { errEl.textContent = 'Inserisci il nome del ragazzo/a.'; return; }
+      if (!comunitaId) { errEl.textContent = 'Seleziona una comunità.'; return; }
+
+      const btn = document.getElementById('np-crea');
+      btn.disabled = true; btn.textContent = 'Creazione…';
+      try {
+        const { uid, pin, fotoProfilo } = await creaRagazzo({ nome, comunitaId, fotoFile: npFotoFile }, pinInUso);
+        pinInUso.add(pin);
+        pinMap[uid] = { pin, lastLogin: null };
+        ragazzi.push({ id: uid, nome, comunitaId, fotoProfilo, stato: 'attivo' });
+
+        document.getElementById('np-pin-val').textContent = pin;
+        document.getElementById('np-esito').style.display = 'block';
+        btn.textContent = 'Fatto ✓';
+      } catch (e) {
+        errEl.textContent = 'Errore: ' + e.message;
+        btn.disabled = false; btn.textContent = 'Crea ragazzo';
+      }
+    });
+
+    // ── Modal cambia PIN ────────────────────────────────────────────────────
+    let cpTarget = null;
+
+    function apriModalPin(r) {
+      cpTarget = r;
+      document.getElementById('cp-nome-lbl').textContent = r.nome;
+      document.getElementById('cp-input').value = '';
+      document.getElementById('cp-error').textContent = '';
+      document.getElementById('modal-pin').classList.remove('hidden');
+    }
+    document.getElementById('cp-annulla').addEventListener('click', () => document.getElementById('modal-pin').classList.add('hidden'));
+    document.getElementById('modal-pin').addEventListener('click', e => {
+      if (e.target.id === 'modal-pin') document.getElementById('modal-pin').classList.add('hidden');
+    });
+    document.getElementById('cp-genera').addEventListener('click', () => {
+      document.getElementById('cp-input').value = generaPin(pinInUso);
+    });
+    document.getElementById('cp-salva').addEventListener('click', async () => {
+      const nuovoPin = document.getElementById('cp-input').value.trim();
+      const errEl = document.getElementById('cp-error');
+      errEl.textContent = '';
+      const btn = document.getElementById('cp-salva');
+      btn.disabled = true; btn.textContent = 'Salvataggio…';
+      try {
+        const vecchioPin = pinMap[cpTarget.id]?.pin;
+        await cambiaPinRagazzo(cpTarget.id, nuovoPin, pinInUso);
+        if (vecchioPin) pinInUso.delete(vecchioPin);
+        pinInUso.add(nuovoPin);
+        pinMap[cpTarget.id] = { ...(pinMap[cpTarget.id]||{}), pin: nuovoPin };
+        document.getElementById('modal-pin').classList.add('hidden');
+        render();
+      } catch (e) {
+        errEl.textContent = e.message;
+      }
+      btn.disabled = false; btn.textContent = 'Salva';
+    });
+  </script>
+</body>
+</html>

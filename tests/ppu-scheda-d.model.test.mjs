@@ -25,7 +25,7 @@ import {
   VALUTAZIONI_RILETTURA, VALUTAZIONI_RILETTURA_ID, LIMITI_RILETTURA,
   elencaElementiRilettura, validaRiletturaEquipe, riletturaSignificativa,
   mergeRiletturaBy, costruisciRiletturaDaValori, renderRiletturaHTML,
-} from '../js/ppu-scheda-d-model.js';
+} from '../villaggio/js/ppu-scheda-d-model.js';
 
 // ── Helper di test ─────────────────────────────────────────────────────
 function schedaA({ id = 'a1', status = 'completata', ppuMoment = 'ingresso', ppuMomentNote = '', completedAt = 1000 } = {}) {
@@ -869,7 +869,7 @@ describe('toggle "Mostra / Nascondi elementi di origine"', () => {
   test('lo stylesheet rende "hidden" autoritativo sul pannello fonti (regressione CSS)', async () => {
     const { readFileSync } = await import('node:fs');
     const { fileURLToPath } = await import('node:url');
-    const src = readFileSync(fileURLToPath(new URL('../js/ppu-scheda-d.js', import.meta.url)), 'utf8');
+    const src = readFileSync(fileURLToPath(new URL('../villaggio/js/ppu-scheda-d.js', import.meta.url)), 'utf8');
     assert.match(src, /\.ppud-fonti-pan\[hidden\]\s*\{\s*display:\s*none\s*\}/,
       '.ppud-fonti-pan ha display:grid → serve .ppud-fonti-pan[hidden]{display:none}');
   });
@@ -1341,13 +1341,13 @@ describe('Passo 6 - anti-standardizzazione (nessuna mappa rigida pilastro -> aut
   const AUTORI = ['Bandura', 'Vygotskij', 'Bronfenbrenner', 'Erikson', 'Marcia', 'Bowlby', 'Rogers',
     'Cooley', 'Dewey', 'Bruner', 'Freire', 'Kohlberg', 'Winnicott', 'Gardner', 'Antonovsky', 'Seligman'];
   test('model e wiring browser-side non nominano alcun autore', () => {
-    for (const f of ['js/ppu-scheda-d-model.js', 'js/ppu-scheda-d.js']) {
+    for (const f of ['villaggio/js/ppu-scheda-d-model.js', 'villaggio/js/ppu-scheda-d.js']) {
       const s = readSorgente(f);
       for (const a of AUTORI) assert.ok(!new RegExp(`\\b${a}\\b`).test(s), `${f} non deve nominare ${a}`);
     }
   });
   test('nessuna struttura che associ un pilastro a teoria/autore nel model', () => {
-    const s = readSorgente('js/ppu-scheda-d-model.js');
+    const s = readSorgente('villaggio/js/ppu-scheda-d-model.js');
     for (const pid of PILASTRI_ID) {
       assert.ok(!new RegExp(`${pid}\\s*:\\s*['"\`][^'"\`]*(teoria|autore|${AUTORI.join('|')})`, 'i').test(s),
         `sospetta associazione ${pid} -> teoria/autore`);
@@ -1381,7 +1381,7 @@ describe('Passo 6C - promptVersion 4 e lettura retrocompatibile v1/v2/v3/v4', ()
     assert.equal((h.match(/class="ppud-chiave"/g) || []).length, 2);
   });
   test('il model non ha alcun ramo che dipende dal valore di promptVersion', () => {
-    const s = readSorgente('js/ppu-scheda-d-model.js');
+    const s = readSorgente('villaggio/js/ppu-scheda-d-model.js');
     assert.ok(!/promptVersion\s*(===?|!==?|>=?|<=?)\s*[0-9]/.test(s));
     assert.ok(!/PROMPT_VERSION\s*(===?|!==?|>=?|<=?)\s*[0-9]/.test(s));
   });

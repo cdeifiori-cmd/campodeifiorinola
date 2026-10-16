@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>After Us – Campo dei Fiori</title>
+  <meta name="theme-color" content="#e07b39">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Nunito', sans-serif; background: #f5f5f5; padding-bottom: 70px; }
+
+    .top-header {
+      background: #e07b39; color: #fff;
+      display: flex; align-items: center;
+      padding: 0 1rem; height: 56px;
+      position: sticky; top: 0; z-index: 100;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    }
+    .top-header h1 { font-size: 1.1rem; font-weight: 800; flex: 1; }
+    .top-header .subtitle { font-size: 0.78rem; opacity: 0.85; }
+
+    .list-minori {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2px;
+      padding: 2px;
+    }
+    @media (min-width: 769px) {
+      .list-minori { grid-template-columns: 1fr 1fr 1fr; gap: 3px; padding: 3px; }
+    }
+
+    .card-minore {
+      background: #fff;
+      text-decoration: none; color: #222;
+      display: flex; flex-direction: column;
+      overflow: hidden;
+      transition: opacity 0.15s;
+    }
+    .card-minore:hover { opacity: 0.88; }
+
+    .card-foto {
+      width: 100%; aspect-ratio: 1 / 1;
+      overflow: hidden; background: #e8f4e0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 3rem;
+    }
+    .card-foto img {
+      width: 100%; height: 100%;
+      object-fit: cover; object-position: top center; display: block;
+    }
+    .card-nome {
+      padding: 8px 10px 10px; background: #fff;
+      font-size: 0.88rem; font-weight: 700; color: #222;
+    }
+    .avatar-star {
+      position: absolute; bottom: 6px; right: 6px;
+      font-size: 1.3rem; line-height: 1; z-index: 2;
+      filter: drop-shadow(0 1px 3px rgba(0,0,0,0.55));
+      pointer-events: none;
+    }
+    .accessi-badge { font-size: 0.65rem; font-weight: 700; color: #555; margin-top: 4px; }
+    .interazioni-badge {
+      font-size: 0.6rem; font-weight: 600; color: #777; margin-top: 4px;
+      line-height: 1.6; border-top: 1px solid #f0f0f0; padding-top: 4px;
+    }
+
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      height: 62px; background: #fff;
+      border-top: 1px solid #e0e0e0;
+      display: flex; align-items: stretch; z-index: 100;
+      box-shadow: 0 -2px 8px rgba(0,0,0,0.07);
+    }
+    .nav-item {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-decoration: none; color: #999;
+      font-size: 0.55rem; font-weight: 600; gap: 1px;
+    }
+    .nav-item.active { color: #e07b39; }
+    .nav-item:hover  { color: #e07b39; }
+    .nav-item .nav-icon { font-size: 1.15rem; line-height: 1; }
+
+    .spinner {
+      width: 34px; height: 34px;
+      border: 3px solid #eee; border-top-color: #5a8a4a;
+      border-radius: 50%; animation: spin 0.7s linear infinite;
+      margin: 2rem auto; grid-column: 1/-1;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .empty-msg { color: #aaa; text-align: center; padding: 2rem; grid-column: 1/-1; }
+  </style>
+</head>
+<body>
+
+  <header class="top-header">
+    <div style="flex:1">
+      <div style="font-size:1.1rem;font-weight:800" id="comunita-title">🏠 After Us</div>
+      <div class="subtitle" id="page-subtitle"></div>
+    </div>
+    <div id="nav-auth-slot"></div>
+  </header>
+
+  <div id="list-minori" class="list-minori">
+    <div class="spinner"></div>
+  </div>
+
+  <nav class="bottom-nav">
+    <a href="index.html" class="nav-item"><img src="https://res.cloudinary.com/dxqyprtzh/image/upload/v1780171524/viso_campo_brd2ic.webp" alt="" style="width:26px;height:26px;border-radius:50%;object-fit:cover;display:block;">Home</a>
+    <a href="piazzetta.html" class="nav-item"><span class="nav-icon">🏡</span>Piazzetta</a>
+    <a href="comunita.html" class="nav-item"><span class="nav-icon">🏘️</span>Comunità</a>
+    <a href="staff.html" class="nav-item"><span class="nav-icon">🤡</span>Staff</a>
+    <a href="amici.html" class="nav-item"><span class="nav-icon">👥</span>Amici</a>
+    <a href="progetti.html" class="nav-item"><span class="nav-icon">📁</span>Progetti</a>
+    <a href="giornale.html" class="nav-item"><span class="nav-icon">📰</span>Giornale</a>
+    <a href="documenti.html" class="nav-item nav-doc-link" style="display:none"><span class="nav-icon">📋</span>Documenti</a>
+  </nav>
+
+  <script type="module">
+    import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { getFirestore, doc, getDoc, collection, getDocs }
+      from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { setupNavAuth } from './js/nav-auth.js';
+    import { setupDocumentiNav } from './js/nav-docs.js';
+    import { setupInstallBanner } from './js/install-banner.js';
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyC18lzwqhYcW29TsEO6Oy4Bqvb2PMBUmAg",
+      authDomain: "campo-dei-fiori.firebaseapp.com",
+      projectId: "campo-dei-fiori",
+      storageBucket: "campo-dei-fiori.firebasestorage.app",
+      messagingSenderId: "928976798756",
+      appId: "1:928976798756:web:1b90027ec9f03b203e44b1"
+    };
+    const app  = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+    const db   = getFirestore(app);
+    const auth = getAuth(app);
+    setupNavAuth();
+    setupDocumentiNav();
+    setupInstallBanner();
+
+    const ADMIN_UID  = 'mCSgNMVEphVIIf4HX0bkcKq2ZKv2';
+    const comunitaId = 'after-us';
+    const list       = document.getElementById('list-minori');
+
+    function computeBadges(allUsers) {
+      function score(u) {
+        const i = u.interazioni || {};
+        return (i.diarioScritti||0) + (i.bottigliaInviati||0) +
+               (i.commentiScritti||0) + (i.audioRegistrati||0) + (i.fotoCaricate||0);
+      }
+      const byCom = {};
+      allUsers.forEach(u => {
+        if (!u.comunitaId) return;
+        (byCom[u.comunitaId] = byCom[u.comunitaId] || []).push(u);
+      });
+      const badges = {};
+      let globalLeaderUid = null, globalMax = 0;
+      Object.values(byCom).forEach(members => {
+        let leader = null, leaderScore = 0;
+        members.forEach(u => { const s = score(u); if (s > leaderScore) { leaderScore = s; leader = u; } });
+        if (leader && leaderScore > 0) {
+          badges[leader.id] = '⭐';
+          if (leaderScore > globalMax) { globalMax = leaderScore; globalLeaderUid = leader.id; }
+        }
+      });
+      if (globalLeaderUid) badges[globalLeaderUid] = '⭐🏆';
+      return badges;
+    }
+
+    onAuthStateChanged(auth, user => {
+      const isAdmin = !!(user && user.uid === ADMIN_UID);
+      init(isAdmin);
+    });
+
+    async function init(isAdmin) {
+      try {
+        const snap = await getDoc(doc(db, 'comunita', comunitaId));
+        if (snap.exists()) {
+          document.getElementById('comunita-title').textContent = snap.data().nomeComunita || '🏠 After Us';
+          document.getElementById('page-subtitle').textContent  = snap.data().descrizione || '';
+        }
+      } catch (_) {}
+
+      try {
+        const tuttiSnap = await getDocs(collection(db, 'utenti'));
+        const tutti = [];
+        tuttiSnap.forEach(d => tutti.push({ id: d.id, ...d.data() }));
+        const badges = computeBadges(tutti);
+
+        const members = tutti.filter(u => u.comunitaId === comunitaId);
+        list.innerHTML = '';
+        if (!members.length) { list.innerHTML = '<p class="empty-msg">Nessun ragazzo/a in After Us.</p>'; return; }
+
+        members.forEach(data => {
+          const fotoHtml = data.fotoProfilo
+            ? `<img src="${data.fotoProfilo}" alt="${data.nome}" loading="lazy">`
+            : '🧒';
+          const star = badges[data.id] ? `<span class="avatar-star">${badges[data.id]}</span>` : '';
+          const accessiBadge = isAdmin
+            ? `<div class="accessi-badge">🔑 ${data.numeroAccessi ?? 0} accessi</div>` : '';
+          const int = data.interazioni || {};
+          const interazioniBadge = isAdmin ? `<div class="interazioni-badge">
+            📝 ${int.diarioScritti??0} post &nbsp;
+            🍾 ${int.bottigliaInviati??0} inv / ${int.bottigliaRicevuti??0} ric<br>
+            ❤️ ${int.reazioniDate??0} date / ${int.reazioniRicevute??0} ric &nbsp;
+            💬 ${int.commentiScritti??0} / ${int.commentiRicevuti??0} ric<br>
+            🎙️ ${int.audioRegistrati??0} audio &nbsp;
+            🖼️ ${int.fotoCaricate??0} foto
+          </div>` : '';
+          list.innerHTML += `
+            <a class="card-minore" href="profilo.html?uid=${data.id}">
+              <div class="card-foto" style="position:relative">${fotoHtml}${star}</div>
+              <div class="card-nome">
+                ${data.nome || '—'}
+                ${accessiBadge}${interazioniBadge}
+              </div>
+            </a>`;
+        });
+      } catch (e) {
+        list.innerHTML = `<p class="empty-msg">Errore: ${e.message}</p>`;
+      }
+    }
+  </script>
+</body>
+</html>

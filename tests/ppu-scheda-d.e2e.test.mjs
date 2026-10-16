@@ -16,7 +16,7 @@ import assert from 'node:assert/strict';
 import core from '../functions/schedaDCore.js';
 import {
   raggruppaFontiPerMomento, elencaMomenti, confrontaFontiConGruppo, ricostruisciFonte,
-} from '../js/ppu-scheda-d-model.js';
+} from '../villaggio/js/ppu-scheda-d-model.js';
 
 // ── Fake Firestore (stessa superficie usata da core.eseguiGenerazione) ──
 function makeDb(seed = {}) {

@@ -15,7 +15,7 @@ import {
   arcoTraCoppia, creaArco, impostaDirezioneArco, impostaQualitaArco, eliminaArco,
   contaPersone, descriviArco, validaCompletamento,
   GEOMETRIA, geometriaArco, disegnaSociogrammaSVG, dimensioniNodo,
-} from '../js/ppu-scheda-c-model.js';
+} from '../villaggio/js/ppu-scheda-c-model.js';
 
 // ── Struttura di una Scheda C nuova ─────────────────────────────────────
 test('creazione Scheda C: due sociogrammi vuoti indipendenti, ognuno col solo centro IO', () => {

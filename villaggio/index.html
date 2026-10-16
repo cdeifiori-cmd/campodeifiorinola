@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Campo dei Fiori Nola</title>
+  <meta name="description" content="Un posto dove ogni storia merita di essere raccontata e custodita">
+  <meta name="theme-color" content="#1a2e1a">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      height: 100%; overflow: hidden;
+      background: #1a2e1a; font-family: 'Nunito', sans-serif;
+    }
+
+    /* Cover a schermo intero */
+    .cover {
+      display: block;
+      position: fixed; inset: 0;
+      background: center center / cover no-repeat;
+      cursor: pointer;
+      z-index: 0;
+    }
+    @media (max-width: 768px) {
+      .cover { background-image: url('https://res.cloudinary.com/dxqyprtzh/image/upload/v1780146302/logo_camp_app_cellulare_txohak.png'); }
+    }
+    @media (min-width: 769px) {
+      .cover { background-image: url('https://res.cloudinary.com/dxqyprtzh/image/upload/v1780146911/logo_campo_sito_web_ed52gm.png'); }
+    }
+
+
+    /* Auth slot in alto a destra */
+    .index-nav {
+      position: fixed;
+      top: 0; right: 0;
+      padding: 12px 16px;
+      z-index: 200;
+    }
+
+    /* ---- DESKTOP: top nav orizzontale ---- */
+    .top-nav-desktop {
+      display: none;
+    }
+    @media (min-width: 769px) {
+      .top-nav-desktop {
+        display: flex;
+        position: fixed;
+        top: 0; left: 0; right: 0;
+        z-index: 150;
+        background: rgba(0,0,0,0.55);
+        backdrop-filter: blur(8px);
+        align-items: center;
+        padding: 0 24px;
+        height: 52px;
+        gap: 4px;
+      }
+      .top-nav-desktop .brand {
+        font-size: 0.92rem;
+        font-weight: 800;
+        color: #fff;
+        text-decoration: none;
+        margin-right: 24px;
+        opacity: 0.9;
+        white-space: nowrap;
+      }
+      .top-nav-desktop a {
+        color: rgba(255,255,255,0.82);
+        text-decoration: none;
+        font-size: 0.88rem;
+        font-weight: 700;
+        padding: 6px 14px;
+        border-radius: 20px;
+        transition: background 0.15s, color 0.15s;
+        white-space: nowrap;
+      }
+      .top-nav-desktop a:hover {
+        background: rgba(255,255,255,0.15);
+        color: #fff;
+      }
+      .top-nav-desktop .spacer { flex: 1; }
+    }
+
+    /* ---- Sezione Ultimi Post — overlay in basso sulla cover ---- */
+    .ultimi-post {
+      position: fixed;
+      bottom: 62px;   /* sopra la bottom nav mobile */
+      left: 0; right: 0;
+      z-index: 10;
+      background: rgba(0,0,0,0.58);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      padding: 12px 16px 14px;
+      pointer-events: auto;
+    }
+    @media (min-width: 769px) {
+      .ultimi-post { bottom: 0; }
+    }
+    .ultimi-post-inner {
+      max-width: 640px;
+      margin: 0 auto;
+    }
+    .ultimi-post-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .ultimi-post-title {
+      color: #fff; font-size: 1.05rem; font-weight: 800;
+      letter-spacing: 0.02em;
+    }
+    .ultimi-post-link {
+      color: #a8d5a2; font-size: 0.82rem; font-weight: 700;
+      text-decoration: none; transition: color 0.15s;
+    }
+    .ultimi-post-link:hover { color: #fff; }
+    /* Lista post compatta verticale */
+    #ultimi-post-list { display: flex; flex-direction: column; gap: 6px; }
+
+    .post-card {
+      display: flex; align-items: baseline; gap: 10px;
+      text-decoration: none;
+      padding: 5px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .post-card:last-child { border-bottom: none; }
+    .post-card:hover { opacity: 0.75; }
+    .post-card-autore {
+      font-size: 0.76rem; font-weight: 800;
+      color: #a8d5a2; white-space: nowrap; flex-shrink: 0;
+      display: flex; align-items: center; gap: 3px;
+    }
+    .post-card-testo {
+      font-size: 0.8rem; color: rgba(255,255,255,0.82);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      flex: 1;
+    }
+    .post-card-ora {
+      font-size: 0.68rem; color: rgba(255,255,255,0.4);
+      font-weight: 600; white-space: nowrap; flex-shrink: 0;
+    }
+    .post-card-media { font-size: 0.78rem; color: rgba(255,255,255,0.5); }
+    #ultimi-spinner {
+      color: rgba(255,255,255,0.35); font-size: 0.8rem; text-align: center; padding: 6px 0;
+    }
+
+    /* ---- MOBILE: bottom nav fissa ---- */
+    .bottom-nav-mobile {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      height: 62px;
+      background: #fff;
+      border-top: 1px solid #e0e0e0;
+      display: flex;
+      align-items: stretch;
+      z-index: 150;
+      box-shadow: 0 -2px 8px rgba(0,0,0,0.1);
+    }
+    .bottom-nav-mobile .nav-item {
+      flex: 1;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-decoration: none;
+      color: #999;
+      font-size: 0.55rem;
+      font-weight: 700;
+      gap: 1px;
+    }
+    .bottom-nav-mobile .nav-item .nav-icon { font-size: 1.15rem; line-height: 1; }
+    @media (min-width: 769px) {
+      .bottom-nav-mobile { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <a class="cover" href="comunita.html" aria-label="Entra nel mondo di Campo dei Fiori"></a>
+
+  <!-- DESKTOP: barra in cima -->
+  <nav class="top-nav-desktop">
+    <a href="index.html" class="brand">🌸 Campo dei Fiori</a>
+    <a href="piazzetta.html">🏡 Piazzetta</a>
+    <a href="comunita.html">🏘️ Comunità</a>
+    <a href="afterus.html">🏠 After Us</a>
+    <a href="staff.html">🤡 Staff</a>
+    <a href="amici.html">👥 Amici</a>
+    <a href="progetti.html">📁 Progetti</a>
+    <a href="giornale.html">📰 Giornale</a>
+    <a href="documenti.html" class="nav-doc-link" style="display:none">📋 Documenti</a>
+    <a href="console.html" class="nav-gestione-link" style="display:none">🛠️ Console Admin</a>
+    <div class="spacer"></div>
+    <div id="nav-auth-slot-desktop" style="display:flex;align-items:center"></div>
+  </nav>
+
+  <!-- Sezione Ultimi Post del Giornale -->
+  <section class="ultimi-post" aria-label="Ultimi post del giornale">
+    <div class="ultimi-post-inner">
+      <div class="ultimi-post-header">
+        <span class="ultimi-post-title">📰 Dal giornale<span id="notif-badge" style="display:none;margin-left:6px;background:#e07b39;color:#fff;border-radius:12px;padding:1px 8px;font-size:0.75rem;font-weight:700;vertical-align:middle"></span></span>
+        <a href="giornale.html" class="ultimi-post-link">Vedi tutto →</a>
+      </div>
+      <div id="ultimi-post-list"><div id="ultimi-spinner">Caricamento…</div></div>
+    </div>
+  </section>
+
+  <!-- Auth su mobile (in alto a destra) -->
+  <div class="index-nav">
+    <div id="nav-auth-slot"></div>
+  </div>
+
+  <!-- MOBILE: bottom nav -->
+  <nav class="bottom-nav-mobile">
+    <a href="piazzetta.html" class="nav-item"><span class="nav-icon">🏡</span>Piazzetta</a>
+    <a href="comunita.html" class="nav-item"><span class="nav-icon">🏘️</span>Comunità</a>
+    <a href="afterus.html" class="nav-item"><span class="nav-icon">🏠</span>After Us</a>
+    <a href="staff.html" class="nav-item"><span class="nav-icon">🤡</span>Staff</a>
+    <a href="amici.html" class="nav-item"><span class="nav-icon">👥</span>Amici</a>
+    <a href="progetti.html" class="nav-item"><span class="nav-icon">📁</span>Progetti</a>
+    <a href="giornale.html" class="nav-item"><span class="nav-icon">📰</span>Giornale</a>
+    <a href="documenti.html" class="nav-item nav-doc-link" style="display:none"><span class="nav-icon">📋</span>Documenti</a>
+    <a href="console.html" class="nav-item nav-gestione-link" style="display:none"><span class="nav-icon">🛠️</span>Console Admin</a>
+  </nav>
+
+  <script type="module">
+    import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getFirestore, collection, getDocs, query, orderBy, limit, onSnapshot, doc }
+      from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { setupNavAuth }      from './js/nav-auth.js';
+    import { setupDocumentiNav } from './js/nav-docs.js';
+    import { setupInstallBanner } from './js/install-banner.js';
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyC18lzwqhYcW29TsEO6Oy4Bqvb2PMBUmAg",
+      authDomain: "campo-dei-fiori.firebaseapp.com",
+      projectId: "campo-dei-fiori",
+      storageBucket: "campo-dei-fiori.firebasestorage.app",
+      messagingSenderId: "928976798756",
+      appId: "1:928976798756:web:1b90027ec9f03b203e44b1"
+    };
+    const app  = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+    const db   = getFirestore(app);
+    const auth = getAuth(app);
+
+    // ultimaLettura: ms dell'ultima visita al Giornale (0 = mai visitato)
+    // Usato da renderWidget() per filtrare i post già visti.
+    let ultimaLetturaMsec = 0;
+    let unsubNotifiche    = null;
+
+    onAuthStateChanged(auth, user => {
+      if (unsubNotifiche) { unsubNotifiche(); unsubNotifiche = null; }
+      const badge = document.getElementById('notif-badge');
+      if (!user) {
+        ultimaLetturaMsec = 0;
+        if (badge) badge.style.display = 'none';
+        renderWidget();
+        return;
+      }
+      unsubNotifiche = onSnapshot(doc(db, 'notifiche', user.uid), snap => {
+        const data = snap.exists() ? snap.data() : {};
+        // Aggiorna soglia e ri-renderizza il widget
+        const ul = data.ultimaLettura;
+        ultimaLetturaMsec = ul?.toMillis ? ul.toMillis() : 0;
+        renderWidget();
+        // Aggiorna badge numerico
+        const n = data.contatore || 0;
+        if (badge) {
+          if (n > 0) { badge.textContent = n; badge.style.display = 'inline'; }
+          else        { badge.style.display = 'none'; }
+        }
+      }, () => {
+        // Errore (utente non ancora in notifiche): mostra tutto
+        ultimaLetturaMsec = 0;
+        renderWidget();
+      });
+    });
+
+    const isMobile = window.innerWidth < 769;
+    setupNavAuth(isMobile ? 'nav-auth-slot' : 'nav-auth-slot-desktop');
+    setupDocumentiNav();
+    setupInstallBanner();
+
+    // ── "Dal Giornale" — feed real-time con diario + piazzetta ──────────
+    // Manteniamo due array separati (uno per collezione) e ri-renderizziamo
+    // ogni volta che uno dei due onSnapshot scatta.
+    const nomiCache = {};
+    let diaroPosts    = [];  // { autore, testo, tsMs, href, badge }
+    let piazzettaPosts = []; // { autore, testo, tsMs, href, badge }
+
+    function tsMs(ts) {
+      return ts?.toMillis?.() ?? ts?.seconds * 1000 ?? 0;
+    }
+
+    function formatOra(ts) {
+      if (!ts?.toDate) return '';
+      const d = ts.toDate();
+      return d.toLocaleTimeString('it-IT', { hour:'2-digit', minute:'2-digit' })
+             + ' · ' + d.toLocaleDateString('it-IT', { day:'numeric', month:'short' });
+    }
+
+    function trunc(s, n = 80) {
+      if (!s) return '';
+      return s.length > n ? s.slice(0, n) + '…' : s;
+    }
+
+    function renderWidget() {
+      const list = document.getElementById('ultimi-post-list');
+      if (!list) return;
+
+      // Unisci e ordina per timestamp decrescente
+      const ordinati = [...diaroPosts, ...piazzettaPosts]
+        .sort((a, b) => b.tsMs - a.tsMs);
+
+      // Filtra: mostra solo i post nuovi (dopo ultimaLettura).
+      // Se ultimaLetturaMsec è 0 (mai visitato o non loggato) mostra i 3 più recenti.
+      const nuovi = ultimaLetturaMsec > 0
+        ? ordinati.filter(item => item.tsMs > ultimaLetturaMsec)
+        : ordinati.slice(0, 3);
+
+      list.innerHTML = '';
+
+      if (!nuovi.length) {
+        // Niente di nuovo da leggere
+        if (ultimaLetturaMsec > 0) {
+          list.innerHTML = '<p style="color:#aaa;font-size:0.85rem;padding:8px 0;margin:0">✅ Sei aggiornato — nessuna novità dal tuo ultimo accesso al Giornale.</p>';
+        }
+        return;
+      }
+
+      nuovi.slice(0, 3).forEach(item => {
+        const card = document.createElement('a');
+        card.className = 'post-card';
+        card.href = item.href;
+        card.innerHTML = `
+          <span class="post-card-autore">${item.badge ? item.badge + ' ' : ''}${item.autore}</span>
+          <span class="post-card-testo">${item.testo}</span>
+          <span class="post-card-ora">${item.ora}</span>`;
+        list.appendChild(card);
+      });
+    }
+
+    async function setupWidget() {
+      // Cache nomi utenti (one-time, sufficiente per il widget)
+      try {
+        const [u, s] = await Promise.all([
+          getDocs(collection(db, 'utenti')),
+          getDocs(collection(db, 'staff')),
+        ]);
+        u.forEach(d => { nomiCache[d.id] = d.data().nome; });
+        s.forEach(d => { nomiCache[d.id] = d.data().nome; });
+      } catch(_) {}
+
+      // ── Listener 1: diario ──────────────────────────────────────────
+      onSnapshot(
+        query(collection(db, 'diario'), orderBy('createdAt', 'desc'), limit(10)),
+        snap => {
+          diaroPosts = [];
+          snap.forEach(d => {
+            const p = d.data();
+            const testo = p.testo
+              ? trunc(p.testo)
+              : (p.immagineUrl ? '📷 Foto' : p.videoUrl ? '🎬 Video' : p.audioUrl ? '🎵 Audio' : '');
+            diaroPosts.push({
+              autore: nomiCache[p.uidRagazzo] || 'Qualcuno',
+              testo,
+              ora:   formatOra(p.createdAt),
+              tsMs:  tsMs(p.createdAt),
+              href:  'giornale.html',
+              badge: '',
+            });
+          });
+          renderWidget();
+        },
+        err => console.warn('diario onSnapshot:', err.message)
+      );
+
+      // ── Listener 2: piazzetta_posts ─────────────────────────────────
+      onSnapshot(
+        query(collection(db, 'piazzetta_posts'), orderBy('timestamp', 'desc'), limit(10)),
+        snap => {
+          piazzettaPosts = [];
+          snap.forEach(d => {
+            const p = d.data();
+            // testo del post o tipo di media
+            let testo = p.text ? trunc(p.text) : '';
+            if (!testo) {
+              const media = Array.isArray(p.media) ? p.media : (p.mediaUrl ? [{ type: p.mediaType }] : []);
+              const tipi  = media.map(m => m.type === 'image' ? '📷 Foto' : m.type === 'video' ? '🎬 Video' : '🎵 Audio');
+              testo = tipi.join(' · ') || '';
+            }
+            piazzettaPosts.push({
+              autore: p.authorName || 'Qualcuno',
+              testo,
+              ora:   formatOra(p.timestamp),
+              tsMs:  tsMs(p.timestamp),
+              href:  'piazzetta.html',
+              badge: '📍',
+            });
+          });
+          renderWidget();
+        },
+        err => console.warn('piazzetta onSnapshot:', err.message)
+      );
+    }
+
+    setupWidget();
+  </script>
+  <script>
+    // Registra UN SOLO service worker unificato (FCM + caching).
+    // NON registrare service-worker.js separatamente: stesso scope = conflitto.
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/firebase-messaging-sw.js')
+        .then(reg => console.log('[SW] Registrato:', reg.scope))
+        .catch(err => console.warn('[SW] Errore registrazione:', err));
+    }
+  </script>
+</body>
+</html>
