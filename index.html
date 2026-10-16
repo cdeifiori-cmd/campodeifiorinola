@@ -123,6 +123,9 @@ section.sez{padding:84px 0}
 .blocco:nth-child(even) .foto{order:2}
 .blocco .foto{position:relative;min-height:280px;background:#eee}
 .blocco .foto img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.blocco .foto.insegna{overflow:hidden}
+.blocco .foto.insegna::before{content:"";position:absolute;inset:-30px;background:url(gruppo/img/macrame-insegna.webp) center/cover;filter:blur(22px) brightness(.85)}
+.blocco .foto.insegna img{object-fit:contain;z-index:1}
 .blocco .testo{padding:30px 32px}
 .blocco .label{color:var(--c)}
 .blocco h3{font-size:1.9rem;margin:.3em 0 .4em;color:var(--cs)}
