@@ -202,6 +202,19 @@ footer{background:#13323f;color:rgba(255,255,255,.75);padding:28px 0;font-size:.
 footer .wrap{display:flex;flex-wrap:wrap;gap:12px 24px;justify-content:space-between;align-items:center}
 footer a{color:#fff}
 
+/* musica */
+.musica{position:fixed;left:16px;bottom:16px;z-index:40;display:flex;align-items:center;gap:6px;background:rgba(29,75,97,.94);color:#fff;border-radius:99px;padding:6px 8px 6px 14px;box-shadow:0 10px 26px rgba(0,0,0,.25);backdrop-filter:blur(6px);font-size:.85rem;max-width:calc(100vw - 32px);transition:opacity .3s}
+.musica[hidden]{display:none}
+.musica .titolo{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-right:4px}
+.musica .titolo b{color:var(--giallo);font-weight:700}
+.musica button{width:36px;height:36px;flex:none;border-radius:50%;border:0;background:rgba(255,255,255,.14);color:#fff;font-size:1rem;cursor:pointer;display:grid;place-items:center}
+.musica button:hover{background:rgba(255,255,255,.28)}
+.musica .note{display:inline-block}
+.musica.suona .note{animation:nota 1.2s ease-in-out infinite}
+@keyframes nota{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+.musica.mini .titolo,.musica.mini .riavvia{display:none}
+.musica.mini{padding:6px}
+@media (prefers-reduced-motion:reduce){.musica.suona .note{animation:none}}
 .reveal{opacity:0;transform:translateY(18px);transition:opacity .7s ease,transform .7s ease}
 .reveal.in{opacity:1;transform:none}
 @media (prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none;transition:none}}
@@ -506,6 +519,13 @@ footer a{color:#fff}
   </div>
 </footer>
 
+<div class="musica mini" id="musica" role="region" aria-label="Musica di sottofondo">
+  <span class="titolo"><span class="note" aria-hidden="true">♪</span> <b>Ricomincio da tre</b> · Pino Daniele</span>
+  <button class="play" type="button" aria-label="Ascolta la musica" title="Ascolta">▶</button>
+  <button class="riavvia" type="button" aria-label="Riavvia dall'inizio" title="Riavvia">↺</button>
+</div>
+<audio id="musica-audio" src="gruppo/audio/ricomincio-da-tre.mp3" preload="none"></audio>
+
 <script>
 // Menu mobile
 const menuBtn = document.querySelector('.menu-btn');
@@ -523,6 +543,50 @@ document.querySelectorAll('.copia').forEach(b => b.addEventListener('click', asy
   catch { b.textContent = b.dataset.copy; }
   setTimeout(() => { b.textContent = testo; }, 2000);
 }));
+
+// Musica: parte da sola solo alla prima visita; poi resta il pulsante ♪ per riascoltarla.
+(() => {
+  const box = document.getElementById('musica');
+  const audio = document.getElementById('musica-audio');
+  const btnPlay = box.querySelector('.play');
+  const btnRiavvia = box.querySelector('.riavvia');
+  const CHIAVE = 'cdf-musica-ascoltata';
+  const leggi = () => { try { return localStorage.getItem(CHIAVE); } catch { return '1'; } };
+  const segna = () => { try { localStorage.setItem(CHIAVE, '1'); } catch {} };
+  audio.volume = 0.5;
+
+  const aggiorna = () => {
+    const suona = !audio.paused;
+    box.classList.toggle('suona', suona);
+    btnPlay.textContent = suona ? '❚❚' : '▶';
+    btnPlay.setAttribute('aria-label', suona ? 'Ferma la musica' : 'Ascolta la musica');
+    btnPlay.title = suona ? 'Ferma' : 'Ascolta';
+  };
+  const suona = () => audio.play().then(() => { segna(); box.classList.remove('mini'); }).catch(() => {});
+  audio.addEventListener('play', aggiorna);
+  audio.addEventListener('pause', aggiorna);
+  audio.addEventListener('ended', () => { box.classList.add('mini'); aggiorna(); });
+
+  btnPlay.addEventListener('click', () => {
+    if (audio.paused) suona();
+    else { audio.pause(); audio.currentTime = 0; }
+  });
+  btnRiavvia.addEventListener('click', () => { audio.currentTime = 0; suona(); });
+
+  if (!leggi()) {
+    box.classList.remove('mini');
+    audio.preload = 'auto';
+    // I browser bloccano l'audio finché il visitatore non interagisce: in quel caso parte al primo tocco/tasto.
+    audio.play().then(segna).catch(() => {
+      const alPrimoGesto = e => {
+        if (box.contains(e.target)) return;   // i pulsanti gestiscono da sé
+        suona();
+        ['pointerdown', 'keydown', 'touchstart'].forEach(t => removeEventListener(t, alPrimoGesto, true));
+      };
+      ['pointerdown', 'keydown', 'touchstart'].forEach(t => addEventListener(t, alPrimoGesto, true));
+    });
+  }
+})();
 
 // Comparsa morbida delle sezioni
 const io = 'IntersectionObserver' in window ? new IntersectionObserver(entries => {
