@@ -132,6 +132,20 @@ section.sez{padding:84px 0}
 .blocco .link{font-weight:700;color:var(--cs)}
 @media (max-width:820px){.blocco{grid-template-columns:1fr}.blocco:nth-child(even) .foto{order:0}.blocco .foto{min-height:240px}}
 
+/* le nostre radici */
+.radici{display:grid;grid-template-columns:1.15fr .85fr;gap:40px;align-items:center;background:var(--blu);color:#fff;border-radius:var(--r);padding:40px;margin-top:34px;position:relative;overflow:hidden}
+.radici::before{content:"";position:absolute;right:-60px;bottom:-40px;width:340px;height:620px;background:url(gruppo/img/mascotte.webp) center/contain no-repeat;opacity:.08;transform:rotate(-8deg);pointer-events:none}
+.radici .label{color:var(--giallo)}
+.radici h3{font-size:clamp(1.8rem,3.4vw,2.4rem);color:var(--giallo);margin:.3em 0 .6em}
+.radici p{font-size:1.04rem;line-height:1.75;opacity:.96}
+.radici p:first-of-type::first-letter{float:left;font:800 3.4em/0.8 "Baloo 2",sans-serif;color:var(--giallo);margin:.08em .08em 0 0}
+.radici .data{display:inline-block;background:var(--giallo);color:var(--blu-scuro);font-weight:800;padding:2px 10px;border-radius:8px}
+.radici-foto{display:grid;grid-template-columns:1fr 1fr;gap:16px;position:relative;z-index:1}
+.radici-foto .polaroid{color:var(--grigio)}
+.radici-foto .polaroid img{aspect-ratio:1/1}
+.radici-foto .polaroid.alta{display:flex;flex-direction:column}
+.radici-foto .polaroid.alta img{flex:1;min-height:0;aspect-ratio:auto;object-fit:cover;object-position:center top}
+@media (max-width:900px){.radici{grid-template-columns:1fr;padding:28px 22px}}
 .associazione{--c:var(--verde);--cs:var(--verde-scuro);--cc:var(--verde-chiaro);background:linear-gradient(180deg,var(--carta),var(--verde-chiaro))}
 .coop-campo{--c:#7f9c78;--cs:var(--arancio-scuro);--cc:#fde3c4;background:var(--crema)}
 .coop-campo .tab{background:var(--arancio)}
@@ -290,6 +304,21 @@ footer a{color:#fff}
   <div class="wrap">
     <div class="tab reveal" style="background:var(--verde)">Associazione<small>Campo dei Fiori · Organizzazione di volontariato</small></div>
     <p class="intro reveal">Volontari, cittadini, ragazzi: l'associazione è la radice del gruppo. Crede nella <em>pedagogia dell'esperienza</em> e nella cittadinanza attiva, e porta avanti progetti educativi nel quartiere.</p>
+    <article class="radici reveal">
+      <div>
+        <span class="label">Le nostre radici</span>
+        <h3>Il giorno in cui è nato Campo dei Fiori</h3>
+        <p>La storia di Campo dei Fiori ha inizio nel 1991, quando il gruppo scout Agesci di Nola decise di svolgere attività di volontariato nel quartiere Gescal della città. È anche vero che dai documenti risulta che la costituzione dell'associazione Campo dei Fiori avvenne il 22 ottobre del 1993.</p>
+        <p>C'è tuttavia un giorno ben preciso da cui far partire in modo certo la nostra avventura. Quel giorno, di mattina, eravamo impegnati come volontari in piazza d'Armi per la venuta del Papa. Nel pomeriggio portavamo i ragazzi della Gescal alla loro prima attività di campeggio, con pernottamento a Castel Cicala: eravamo molto soddisfatti, era il risultato di un lavoro cominciato molti mesi prima. In serata un amico ci portò la notizia dell'attentato a Giovanni Falcone.</p>
+        <p>Ecco le radici di Campo dei Fiori: impegno civile e solidarietà come lotta alla malavita e al degrado del nostro territorio. Quel giorno la Storia del nostro Paese si intrecciò con i nostri piccoli impegni quotidiani. Era il <span class="data">23 maggio 1992</span>: nasce Campo dei Fiori.</p>
+      </div>
+      <div class="radici-foto">
+        <figure class="polaroid"><img src="gruppo/img/radici-ragazzo.webp" alt="Un ragazzo sorridente con il giubbotto di jeans, primi anni del Centro Sociale" loading="lazy"><figcaption>I primi ragazzi della Gescal</figcaption></figure>
+        <figure class="polaroid alta" style="grid-row:span 2"><img src="gruppo/img/radici-bambini.webp" alt="Un gruppo di bambini abbracciati e sorridenti" loading="lazy"><figcaption>Abbracciati, come una famiglia</figcaption></figure>
+        <figure class="polaroid"><img src="gruppo/img/radici-amici.webp" alt="Ragazzi e giovani volontari seduti insieme" loading="lazy"><figcaption>Volontari e ragazzi, insieme</figcaption></figure>
+        <figure class="polaroid wide"><img src="gruppo/img/radici-doposcuola.webp" alt="Bambini al tavolo del doposcuola con zaini e quaderni" loading="lazy" style="aspect-ratio:7/5"><figcaption>Il doposcuola del Centro Sociale</figcaption></figure>
+      </div>
+    </article>
     <div class="blocchi">
       <article class="blocco reveal">
         <div class="foto"><img src="gruppo/img/parco-trattorino.webp" alt="Volontari sorridenti sul trattorino tosaerba al Parco Paolino Avella" loading="lazy"></div>
