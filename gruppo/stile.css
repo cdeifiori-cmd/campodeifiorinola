@@ -226,3 +226,32 @@ footer a{color:#fff}
 .cta-sost h3{margin:0;color:var(--giallo)}
 .cta-sost p{margin:.3em 0 0;opacity:.9}
 .cta-sost .btn{background:var(--giallo);color:var(--verde-scuro)}
+
+/* centro sociale */
+.centro{background:#fff;border-radius:var(--r);box-shadow:0 10px 28px rgba(30,40,50,.07);padding:36px;margin-top:34px;border-top:8px solid var(--verde)}
+.centro .label{color:var(--verde)}
+.centro h3{font-size:clamp(1.8rem,3.4vw,2.4rem);color:var(--verde-scuro);margin:.3em 0 .6em}
+.centro p{color:#3c4346;line-height:1.75}
+.centro-testo{display:grid;grid-template-columns:1.3fr .7fr;gap:36px;align-items:start}
+.progetti{background:var(--verde-chiaro);border-radius:16px;padding:22px 24px}
+.progetti h4{font:700 1rem/1.4 "Nunito Sans",sans-serif;color:var(--verde-scuro);margin:0 0 12px}
+.progetti ul{list-style:none;margin:0;padding:0}
+.progetti li{position:relative;padding:0 0 12px 22px;font-size:.95rem;line-height:1.5}
+.progetti li::before{content:"";position:absolute;left:2px;top:.55em;width:9px;height:9px;border-radius:50%;background:var(--verde)}
+.galleria{columns:3 240px;column-gap:14px;margin-top:30px}
+.foto-g{display:block;break-inside:avoid;margin:0 0 14px;position:relative;border-radius:12px;overflow:hidden;cursor:zoom-in;background:#eee}
+.foto-g img{width:100%;transition:transform .4s}
+.foto-g:hover img{transform:scale(1.04)}
+.foto-g span{position:absolute;left:0;right:0;bottom:0;padding:24px 12px 9px;font-size:.85rem;font-weight:700;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.65))}
+@media (max-width:860px){.centro{padding:26px 20px}.centro-testo{grid-template-columns:1fr}}
+.lightbox{border:0;padding:0;background:transparent;max-width:100vw;max-height:100vh;width:100vw;height:100vh;overflow:hidden}
+.lightbox::backdrop{background:rgba(10,15,20,.88)}
+.lightbox[open]{display:flex;align-items:center;justify-content:center}
+.lightbox figure{margin:0;max-width:min(92vw,1300px);text-align:center}
+.lightbox img{max-width:100%;max-height:82vh;border-radius:10px;margin:0 auto;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.lightbox figcaption{color:#fff;font-weight:700;margin-top:12px}
+.lightbox button{position:fixed;border:0;background:rgba(255,255,255,.14);color:#fff;width:48px;height:48px;border-radius:50%;font-size:1.6rem;cursor:pointer;display:grid;place-items:center}
+.lightbox button:hover{background:rgba(255,255,255,.3)}
+.lb-chiudi{top:16px;right:16px;font-size:1.2rem!important}
+.lb-prec{left:16px;top:50%;transform:translateY(-50%)}
+.lb-succ{right:16px;top:50%;transform:translateY(-50%)}

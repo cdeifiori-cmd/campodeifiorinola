@@ -82,3 +82,27 @@ const io = 'IntersectionObserver' in window ? new IntersectionObserver(entries =
   entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
 }, { rootMargin: '0px 0px -8% 0px' }) : null;
 document.querySelectorAll('.reveal').forEach(el => io ? io.observe(el) : el.classList.add('in'));
+
+// Galleria: ingrandimento delle foto
+(() => {
+  const lb = document.getElementById('lightbox');
+  const voci = [...document.querySelectorAll('.galleria .foto-g')];
+  if (!lb || !voci.length || typeof lb.showModal !== 'function') return;
+  const img = lb.querySelector('img'), cap = lb.querySelector('figcaption');
+  let i = 0;
+  const mostra = n => {
+    i = (n + voci.length) % voci.length;
+    img.src = voci[i].getAttribute('href');
+    img.alt = voci[i].querySelector('img').alt;
+    cap.textContent = voci[i].dataset.didascalia || '';
+  };
+  voci.forEach((a, n) => a.addEventListener('click', e => { e.preventDefault(); mostra(n); lb.showModal(); }));
+  lb.querySelector('.lb-chiudi').addEventListener('click', () => lb.close());
+  lb.querySelector('.lb-prec').addEventListener('click', () => mostra(i - 1));
+  lb.querySelector('.lb-succ').addEventListener('click', () => mostra(i + 1));
+  lb.addEventListener('click', e => { if (e.target === lb) lb.close(); });
+  lb.addEventListener('keydown', e => {
+    if (e.key === 'ArrowLeft') mostra(i - 1);
+    if (e.key === 'ArrowRight') mostra(i + 1);
+  });
+})();
