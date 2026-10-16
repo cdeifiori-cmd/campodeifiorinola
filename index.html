@@ -130,7 +130,7 @@ section.sez{padding:84px 0}
 .blocco .meta{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}
 .pill{background:var(--cc);color:var(--cs);font-weight:700;font-size:.8rem;padding:4px 12px;border-radius:99px}
 .blocco .link{font-weight:700;color:var(--cs)}
-@media (max-width:820px){.blocco{grid-template-columns:1fr}.blocco:nth-child(even) .foto{order:0}.blocco .foto{min-height:240px}}
+@media (max-width:820px){.blocco .foto.insegna{min-height:0;aspect-ratio:606/333}.blocco{grid-template-columns:1fr}.blocco:nth-child(even) .foto{order:0}.blocco .foto{min-height:240px}}
 
 /* le nostre radici */
 .radici{display:grid;grid-template-columns:1.15fr .85fr;gap:40px;align-items:center;background:var(--blu);color:#fff;border-radius:var(--r);padding:40px;margin-top:34px;position:relative;overflow:hidden}
@@ -211,7 +211,7 @@ footer a{color:#fff}
     <a class="brand" href="#top"><img src="gruppo/img/mascotte.webp" alt="" width="30" height="56">Campo dei Fiori</a>
     <button class="menu-btn" aria-label="Apri il menu" aria-expanded="false" aria-controls="menu">☰</button>
     <ul id="menu">
-      <li><a href="#storia">Storia</a></li>
+      <li><a href="#storia">Le Radici</a></li>
       <li><a href="#associazione">Associazione</a></li>
       <li><a href="#coop-campo">Coop Campo dei Fiori</a></li>
       <li><a href="#coop-lindberg">Coop Lindberg</a></li>
@@ -273,7 +273,7 @@ footer a{color:#fff}
 
 <section class="sez storia" id="storia" style="--c:var(--blu)">
   <div class="wrap">
-    <div class="tab reveal">Storia<small>Il Centro Sociale Campo dei Fiori</small></div>
+    <div class="tab reveal">Le Radici<small>Il Centro Sociale Campo dei Fiori</small></div>
     <div class="cols">
       <div class="reveal">
         <ol class="timeline">
@@ -289,9 +289,9 @@ footer a{color:#fff}
       </div>
       <div class="collage reveal">
         <figure class="polaroid wide"><img src="gruppo/img/falcone-borsellino.webp" alt="Giovanni Falcone e Paolo Borsellino" loading="lazy"><figcaption>«La legalità mette radici»: il 23 maggio 1992 è il nostro punto di partenza.</figcaption></figure>
-        <figure class="polaroid"><img src="gruppo/img/chitarra-tenda.webp" alt="Un ragazzo suona la chitarra davanti a una tenda" loading="lazy"><figcaption>I primi campeggi</figcaption></figure>
+        <figure class="polaroid"><img src="gruppo/img/chitarra-tenda.webp" alt="Un ragazzo suona la chitarra davanti a una tenda" loading="lazy"><figcaption>Il gruppo scout AGESCI Nola II</figcaption></figure>
         <figure class="polaroid"><img src="gruppo/img/centro-sociale-murale.webp" alt="Bambini al biliardino davanti al murale del Centro Sociale" loading="lazy"><figcaption>Il Centro Sociale</figcaption></figure>
-        <figure class="polaroid"><img src="gruppo/img/gruppo-scout.webp" alt="Un gruppo di ragazzi in posa all'aperto" loading="lazy"><figcaption>Gli anni del Gescal</figcaption></figure>
+        <figure class="polaroid"><img src="gruppo/img/gruppo-scout.webp" alt="Un gruppo di ragazzi in posa all'aperto" loading="lazy"><figcaption>Lo scoutismo di frontiera!</figcaption></figure>
         <figure class="polaroid"><img src="gruppo/img/gruppo-ragazze-prato.webp" alt="Un gruppo di ragazze in piramide su un prato" loading="lazy"><figcaption>Insieme, da sempre</figcaption></figure>
         <figure class="polaroid wide"><img src="gruppo/img/centro-sociale-cerchio.webp" alt="Ragazzi seduti in cerchio in una sala, foto in bianco e nero" loading="lazy"><figcaption>Un cerchio in cui ognuno ha voce</figcaption></figure>
       </div>
@@ -412,7 +412,7 @@ footer a{color:#fff}
         </div>
       </article>
       <article class="blocco reveal">
-        <div class="foto"><img src="gruppo/img/macrame.svg" alt="Un pannello in macramè: fili annodati a mano che formano una trama" loading="lazy"></div>
+        <div class="foto insegna"><img src="gruppo/img/macrame-insegna.webp" alt="La scritta Macramè in lettere di lana colorata lavorata a maglia, appesa a un balcone" loading="lazy"></div>
         <div class="testo">
           <span class="label">Gruppo appartamento</span>
           <h3>Macramè</h3>
