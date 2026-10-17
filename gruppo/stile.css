@@ -263,3 +263,4 @@ footer a{color:#fff}
 .btn.gramigna:hover{background:var(--verde-scuro)}
 .nav .solo-mobile{display:none}
 @media (max-width:1240px){.nav-btns{display:none}.nav ul.open .solo-mobile{display:block}.nav .solo-mobile a{color:var(--blu-scuro)}}
+.hero .sopra{font:600 clamp(1.1rem,2.4vw,1.6rem)/1 Oswald,sans-serif;letter-spacing:.14em;text-transform:uppercase;margin:0 0 .15em}
