@@ -4,6 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Accedi – Robinson</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
+  <meta name="theme-color" content="#1a3a5c">
   <meta name="theme-color" content="#1a3a5c">
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
   <style>
@@ -274,7 +279,10 @@
       btnEmailLogin.disabled = true;
       btnEmailLogin.textContent = 'Accesso in corso...';
       try {
-        await signInWithEmailAndPassword(auth, email, password);
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        console.log('[LOGIN] UID ricevuto:', userCredential.user.uid);
+        console.log('[LOGIN] Email:', userCredential.user.email);
+        console.log('[LOGIN] Confronto con ADMIN_UID:', userCredential.user.uid === 'mCSgNMVEphVIIf4HX0bkcKq2ZKv2');
         goAfterLogin();
       } catch(e) {
         showError('Credenziali non valide. Riprova.');

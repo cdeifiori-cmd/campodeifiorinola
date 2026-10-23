@@ -4,6 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Gestione PIN – Robinson Admin</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
+  <meta name="theme-color" content="#1a3a5c">
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/robinson.css">
   <style>
@@ -16,6 +21,12 @@
     .admin-header-links a { color:var(--oro); font-size:0.82rem; text-decoration:none; }
 
     .page-wrap { max-width:900px; margin:0 auto; padding:20px 16px 100px; }
+
+    /* Selettore modalità Naufraghi / Ciurma */
+    .mode-tabs { display:flex; gap:0; margin-bottom:20px; border-radius:10px; overflow:hidden; border:1.5px solid var(--navy); }
+    .mode-tab { flex:1; padding:11px 8px; background:#fff; border:none; color:var(--navy); font-family:'Lora',serif; font-size:0.88rem; font-weight:600; cursor:pointer; transition:background 0.15s,color 0.15s; }
+    .mode-tab:not(:last-child) { border-right:1.5px solid var(--navy); }
+    .mode-tab.active { background:var(--navy); color:var(--oro); }
 
     /* Stats strip */
     .stats-strip { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:22px; }
@@ -81,7 +92,7 @@
 <body>
 
 <div class="admin-header">
-  <h1>🔑 Gestione PIN Naufraghi</h1>
+  <h1 id="h1-title">🔑 Gestione PIN</h1>
   <div class="admin-header-links">
     <a href="admin-isola.html">🏝️ Isola</a>
     <a href="admin-classifica.html">📊 Classifica</a>
@@ -91,17 +102,23 @@
 
 <div class="page-wrap">
 
+  <!-- Selettore modalità -->
+  <div class="mode-tabs" id="mode-tabs">
+    <button class="mode-tab active" id="tab-naufraghi">🧍 Naufraghi</button>
+    <button class="mode-tab" id="tab-ciurma">⚓ Ciurma</button>
+  </div>
+
   <!-- Statistiche -->
   <div class="stats-strip" id="stats-strip">
-    <div class="stat-card"><div class="stat-num" id="st-tot">–</div><div class="stat-lbl">Naufraghi totali</div></div>
+    <div class="stat-card"><div class="stat-num" id="st-tot">–</div><div class="stat-lbl" id="st-tot-lbl">Totali</div></div>
     <div class="stat-card"><div class="stat-num" id="st-pin">–</div><div class="stat-lbl">Con PIN attivo</div></div>
     <div class="stat-card"><div class="stat-num" id="st-log">–</div><div class="stat-lbl">Hanno fatto login</div></div>
     <div class="stat-card"><div class="stat-num" id="st-last" style="font-size:0.9rem;">–</div><div class="stat-lbl">Ultimo accesso</div></div>
   </div>
 
-  <!-- Form aggiungi naufrago -->
+  <!-- Form aggiungi -->
   <div style="background:#fff;border:1.5px solid var(--carta-scura);border-radius:12px;padding:18px 20px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,0.05);">
-    <div style="font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;color:var(--navy);margin-bottom:14px;">➕ Aggiungi nuovo naufrago</div>
+    <div style="font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;color:var(--navy);margin-bottom:14px;" id="add-title">➕ Aggiungi nuovo naufrago</div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
       <div style="flex:2;min-width:160px;">
         <label style="font-size:0.72rem;color:var(--muted);display:block;margin-bottom:4px;font-weight:600;">NOME COMPLETO</label>
@@ -173,20 +190,76 @@ import {
 
 const API_KEY = 'AIzaSyC18lzwqhYcW29TsEO6Oy4Bqvb2PMBUmAg';
 
+// ── Config per modalità (Naufraghi / Ciurma) ───────────────────────────────
+// Stesso identico meccanismo per entrambe: cambia solo la collezione di
+// appartenenza e il campo "ruolo". robinson_pin resta un'unica collezione
+// condivisa (senza campo ruolo) — l'unicità del PIN viene sempre verificata
+// su TUTTI i record, naufraghi e ciurma insieme, per evitare collisioni.
+const MODI = {
+  naufrago: {
+    collection: 'robinson_naufraghi',
+    ruolo: 'naufrago',
+    fotoField: 'fotoRobinson',
+    pageTitle: '🔑 Gestione PIN Naufraghi',
+    addTitle: '➕ Aggiungi nuovo naufrago',
+    addBtnLabel: '➕ Aggiungi naufrago',
+    addBtnLoading: '⏳ Creazione...',
+    nomePlaceholder: 'Es. Mario Rossi',
+    nomeErrLabel: 'del naufrago',
+    totLabel: 'Naufraghi totali',
+    emptyLabel: 'Nessun naufrago trovato.',
+    confirmLabel: 'naufrago'
+  },
+  ciurma: {
+    collection: 'robinson_ciurma',
+    ruolo: 'ciurma',
+    fotoField: 'fotoProfilo',
+    pageTitle: '🔑 Gestione PIN Ciurma',
+    addTitle: '➕ Aggiungi nuovo membro della ciurma',
+    addBtnLabel: '➕ Aggiungi alla ciurma',
+    addBtnLoading: '⏳ Creazione...',
+    nomePlaceholder: 'Es. Giulia Bianchi',
+    nomeErrLabel: 'del membro della ciurma',
+    totLabel: 'Ciurma totale',
+    emptyLabel: 'Nessun membro della ciurma trovato.',
+    confirmLabel: 'membro della ciurma'
+  }
+};
+let modo = 'naufrago';
+
 requireAuth(async user => {
   const profilo = await getDoc(doc(db, 'utenti', user.uid));
   if (user.uid !== ADMIN_UID && profilo.data()?.ruolo !== 'admin') {
     window.location.replace('index.html'); return;
   }
+  document.getElementById('tab-naufraghi').addEventListener('click', () => setModo('naufrago'));
+  document.getElementById('tab-ciurma').addEventListener('click', () => setModo('ciurma'));
   await loadAll();
 });
 
+function setModo(nuovoModo) {
+  if (modo === nuovoModo) return;
+  modo = nuovoModo;
+  document.getElementById('tab-naufraghi').classList.toggle('active', modo === 'naufrago');
+  document.getElementById('tab-ciurma').classList.toggle('active', modo === 'ciurma');
+  document.getElementById('h1-title').textContent = MODI[modo].pageTitle;
+  document.getElementById('add-title').textContent = MODI[modo].addTitle;
+  document.getElementById('new-aggiungi').textContent = MODI[modo].addBtnLabel;
+  document.getElementById('new-nome').placeholder = MODI[modo].nomePlaceholder;
+  document.getElementById('st-tot-lbl').textContent = MODI[modo].totLabel;
+  document.getElementById('new-nome').value = '';
+  document.getElementById('new-pin').value = '';
+  document.getElementById('new-error').textContent = '';
+  document.getElementById('pin-tbody').innerHTML = '<tr><td colspan="6"><div class="spinner"></div></td></tr>';
+  loadAll();
+}
+
 // ── Dati globali ──────────────────────────────────────────────────────────────
-let naufraghi = [];
-// pinMap è indicizzato per originalUid (il vecchio uid Firestore del naufrago)
+let membri = []; // { uid, nome, foto } — naufraghi o ciurma a seconda di `modo`
+// pinMap è indicizzato per originalUid (il vecchio uid Firestore della persona)
 // ogni entry: { uid:newUid, originalUid, pin, email, lastLogin, createdAt, _docId }
 let pinMap = {};
-// pinLookup: pin → newUid (per check unicità)
+// pinLookup: pin → newUid (per check unicità, su TUTTI i ruoli)
 let pinLookup = {};
 
 function nomeToEmail(nome) {
@@ -199,8 +272,8 @@ function nomeToEmail(nome) {
 }
 
 async function loadAll() {
-  const [nSnap, pSnap, utSnap] = await Promise.all([
-    getDocs(collection(db, 'robinson_naufraghi')),
+  const [mSnap, pSnap, utSnap] = await Promise.all([
+    getDocs(collection(db, MODI[modo].collection)),
     getDocs(collection(db, 'robinson_pin')),
     getDocs(collection(db, 'utenti'))
   ]);
@@ -208,8 +281,8 @@ async function loadAll() {
   const utMap = {};
   utSnap.forEach(d => { utMap[d.id] = d.data(); });
 
-  // Fonte di verità: robinson_naufraghi, escluso l'admin
-  naufraghi = nSnap.docs
+  // Fonte di verità: la collezione di appartenenza del ruolo attivo, escluso l'admin
+  membri = mSnap.docs
     .filter(d => d.id !== ADMIN_UID)
     .map(d => {
       const rData = d.data();
@@ -220,7 +293,8 @@ async function loadAll() {
     })
     .sort((a, b) => a.nome.localeCompare(b.nome, 'it'));
 
-  // pinMap indicizzato per uid (doc.id = uid del naufrago)
+  // pinMap indicizzato per uid (doc.id = uid della persona), su TUTTA robinson_pin
+  // (naufraghi + ciurma insieme), necessario per il check di unicità del PIN.
   pinMap = {};
   pinLookup = {};
   pSnap.forEach(d => {
@@ -235,14 +309,14 @@ async function loadAll() {
 }
 
 function renderStats() {
-  document.getElementById('st-tot').textContent = naufraghi.length;
-  const conPin = naufraghi.filter(n => pinMap[n.uid]).length;
+  document.getElementById('st-tot').textContent = membri.length;
+  const conPin = membri.filter(n => pinMap[n.uid]).length;
   document.getElementById('st-pin').textContent = conPin;
-  const loggati = naufraghi.filter(n => pinMap[n.uid]?.lastLogin).length;
+  const loggati = membri.filter(n => pinMap[n.uid]?.lastLogin).length;
   document.getElementById('st-log').textContent = loggati;
 
   let ultimoTs = 0, ultimoNome = '–';
-  naufraghi.forEach(n => {
+  membri.forEach(n => {
     const pd = pinMap[n.uid];
     if (!pd?.lastLogin) return;
     const ms = pd.lastLogin.toMillis?.() || 0;
@@ -255,12 +329,12 @@ function renderStats() {
 
 function renderTable() {
   const tbody = document.getElementById('pin-tbody');
-  if (!naufraghi.length) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--muted);">Nessun naufrago trovato.</td></tr>';
+  if (!membri.length) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--muted);">${esc(MODI[modo].emptyLabel)}</td></tr>`;
     return;
   }
   tbody.innerHTML = '';
-  naufraghi.forEach(n => {
+  membri.forEach(n => {
     const pd = pinMap[n.uid];
     const haPin = !!pd;
     const hasLogin = haPin && !!pd.lastLogin;
@@ -311,7 +385,7 @@ function renderTable() {
       aprirModal(btn.dataset.uid, btn.dataset.nome, btn.dataset.change === '1');
     });
     const elimBtn = document.getElementById(elimId);
-    if (elimBtn) elimBtn.addEventListener('click', () => eliminaNaufrago(elimBtn.dataset.uid, elimBtn.dataset.nome));
+    if (elimBtn) elimBtn.addEventListener('click', () => eliminaMembro(elimBtn.dataset.uid, elimBtn.dataset.nome));
   });
 }
 
@@ -369,7 +443,7 @@ async function salvaPin() {
   const esistente = pinMap[modalUid];
   const existingNewUid = esistente?.uid;
   if (pinLookup[pinNuovo] && pinLookup[pinNuovo] !== existingNewUid) {
-    errEl.textContent = 'Questo PIN è già usato da un altro naufrago.'; return;
+    errEl.textContent = `Questo PIN è già usato da un'altra persona (naufrago o ciurma).`; return;
   }
 
   const btnSalva = document.getElementById('modal-salva');
@@ -394,20 +468,20 @@ async function salvaPin() {
       newUid = data.localId;
 
       // Crea profilo utente per il nuovo account
-      const nInfo = naufraghi.find(n => n.uid === modalUid) || {};
+      const mInfo = membri.find(n => n.uid === modalUid) || {};
       await setDoc(doc(db, 'utenti', newUid), {
         nome: modalNome,
-        fotoProfilo: nInfo.foto || '',
-        ruolo: 'naufrago',
+        fotoProfilo: mInfo.foto || '',
+        ruolo: MODI[modo].ruolo,
         originalUid: modalUid,
         createdAt: serverTimestamp()
       });
 
-      // Copia robinson_naufraghi se esiste
+      // Copia il documento di appartenenza (robinson_naufraghi o robinson_ciurma) se esiste
       try {
-        const nDoc = await getDoc(doc(db, 'robinson_naufraghi', modalUid));
-        await setDoc(doc(db, 'robinson_naufraghi', newUid), {
-          ...(nDoc.exists() ? nDoc.data() : {}),
+        const mDoc = await getDoc(doc(db, MODI[modo].collection, modalUid));
+        await setDoc(doc(db, MODI[modo].collection, newUid), {
+          ...(mDoc.exists() ? mDoc.data() : {}),
           uid: newUid,
           originalUid: modalUid
         });
@@ -419,7 +493,7 @@ async function salvaPin() {
       const oldPassword = 'RR' + vecchioPin;
       const oldEmail = esistente?.email;
 
-      // Sign in come naufrago per ottenere idToken
+      // Sign in come la persona per ottenere idToken
       const signInRes = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${API_KEY}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -482,9 +556,9 @@ async function salvaPin() {
   btnSalva.disabled = false; btnSalva.textContent = '💾 Salva';
 }
 
-// ── Elimina naufrago ──────────────────────────────────────────────────────────
-async function eliminaNaufrago(uid, nome) {
-  if (!confirm(`Sei sicuro di voler eliminare ${nome}?\nQuesta azione elimina il profilo Robinson ma NON l'account su campodeifiori.org`)) return;
+// ── Elimina membro (naufrago o ciurma, a seconda del ruolo attivo) ────────────
+async function eliminaMembro(uid, nome) {
+  if (!confirm(`Sei sicuro di voler eliminare ${nome} (${MODI[modo].confirmLabel})?\nQuesta azione elimina il profilo Robinson ma NON l'account su campodeifiori.org`)) return;
 
   try {
     const pd = pinMap[uid];
@@ -496,12 +570,12 @@ async function eliminaNaufrago(uid, nome) {
     // Elimina robinson_pin/{uid}
     const pinUid = pd?.uid || uid;
     try { await deleteDoc(doc(db, 'robinson_pin', pinUid)); } catch(_) {}
-    // Elimina robinson_naufraghi/{uid}
-    try { await deleteDoc(doc(db, 'robinson_naufraghi', uid)); } catch(_) {}
-    // Elimina utenti/{uid} solo se ruolo === 'naufrago'
+    // Elimina il documento di appartenenza (robinson_naufraghi o robinson_ciurma)
+    try { await deleteDoc(doc(db, MODI[modo].collection, uid)); } catch(_) {}
+    // Elimina utenti/{uid} solo se il ruolo corrisponde al ruolo attivo
     try {
       const uSnap = await getDoc(doc(db, 'utenti', pinUid));
-      if (uSnap.exists() && uSnap.data().ruolo === 'naufrago') {
+      if (uSnap.exists() && uSnap.data().ruolo === MODI[modo].ruolo) {
         await deleteDoc(doc(db, 'utenti', pinUid));
       }
     } catch(_) {}
@@ -509,8 +583,8 @@ async function eliminaNaufrago(uid, nome) {
     // Aggiorna stato locale
     if (pd?.pin) delete pinLookup[pd.pin];
     delete pinMap[uid];
-    const idx = naufraghi.findIndex(n => n.uid === uid);
-    if (idx !== -1) naufraghi.splice(idx, 1);
+    const idx = membri.findIndex(n => n.uid === uid);
+    if (idx !== -1) membri.splice(idx, 1);
 
     renderStats();
     renderTable();
@@ -519,7 +593,7 @@ async function eliminaNaufrago(uid, nome) {
   }
 }
 
-// ── Aggiungi nuovo naufrago ───────────────────────────────────────────────────
+// ── Aggiungi nuova persona (naufrago o ciurma, a seconda del ruolo attivo) ────
 document.getElementById('new-genera').addEventListener('click', () => {
   let pin, t = 0;
   do { pin = String(Math.floor(1000 + Math.random() * 9000)); t++; }
@@ -534,12 +608,12 @@ document.getElementById('new-aggiungi').addEventListener('click', async () => {
   const errEl = document.getElementById('new-error');
   errEl.textContent = '';
 
-  if (!nome) { errEl.textContent = 'Inserisci il nome del naufrago.'; return; }
+  if (!nome) { errEl.textContent = `Inserisci il nome ${MODI[modo].nomeErrLabel}.`; return; }
   if (!/^\d{4,6}$/.test(pin)) { errEl.textContent = 'PIN deve essere 4-6 cifre.'; return; }
-  if (pinLookup[pin]) { errEl.textContent = 'Questo PIN è già usato.'; return; }
+  if (pinLookup[pin]) { errEl.textContent = `Questo PIN è già usato.`; return; }
 
   const btn = document.getElementById('new-aggiungi');
-  btn.disabled = true; btn.textContent = '⏳ Creazione...';
+  btn.disabled = true; btn.textContent = MODI[modo].addBtnLoading;
 
   try {
     const password = 'RR' + pin;
@@ -548,18 +622,18 @@ document.getElementById('new-aggiungi').addEventListener('click', async () => {
     const existingSnap = await getDocs(query(
       collection(db, 'utenti'),
       where('nome', '>=', nome),
-      where('nome', '<=', nome + '')
+      where('nome', '<=', nome + '')
     ));
     // Filtra match esatto (la query range può restituire prefissi)
     const existingDoc = existingSnap.docs.find(d => d.data().nome === nome && !d.data().ruolo?.includes('admin'));
 
-    // NOTA: si crea SEMPRE un nuovo account Firebase Auth con un uid fresco.
-    // In passato, se esisteva già un profilo 'utenti' con lo stesso nome (es. proveniente
-    // dalla Comunità/Villaggio), il codice riusava quel uid senza verificare che avesse
-    // davvero un account Firebase Auth associato: se il profilo era stato creato solo su
-    // Firestore (senza mai passare da un signUp), il naufrago restava con PIN "valido" su
-    // Firestore ma senza nessun utente Auth corrispondente → login impossibile
-    // (auth/user-not-found). Vedi Mohamed / Ala Eddine, corretti con diag-*.cjs.
+    // NOTA: si crea SEMPRE un nuovo account Firebase Auth con un uid fresco, esattamente
+    // come per i naufraghi — anche se esiste già un profilo 'utenti'/'staff' con lo stesso
+    // nome (es. un membro della ciurma con account email reale già esistente), per evitare
+    // di riusare un uid senza un vero account Firebase Auth PIN-based collegato.
+    // ATTENZIONE (ciurma): se la persona ha già un login email reale, creare qui un PIN
+    // genera un SECONDO account separato (stesso identico comportamento già presente per
+    // i naufraghi con profilo preesistente) — non è un merge automatico.
     let uid, email, isExisting;
     email = nomeToEmail(nome);
     const res = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${API_KEY}`, {
@@ -574,14 +648,15 @@ document.getElementById('new-aggiungi').addEventListener('click', async () => {
 
     const fotoEsistente = existingDoc?.data()?.fotoRobinson || existingDoc?.data()?.fotoProfilo || '';
     await setDoc(doc(db, 'utenti', uid), {
-      uid, nome, ruolo: 'naufrago', email,
+      uid, nome, ruolo: MODI[modo].ruolo, email,
       fotoProfilo: fotoEsistente,
       ...(existingDoc ? { originalUid: existingDoc.id } : {})
     });
 
-    // robinson_naufraghi (merge per non sovrascrivere foto esistente)
-    await setDoc(doc(db, 'robinson_naufraghi', uid), {
-      uid, nome, ruolo: 'naufrago', attivo: true, fotoRobinson: fotoEsistente
+    // Documento di appartenenza (merge per non sovrascrivere foto esistente)
+    await setDoc(doc(db, MODI[modo].collection, uid), {
+      uid, nome, ruolo: MODI[modo].ruolo, attivo: true,
+      [MODI[modo].fotoField]: fotoEsistente
     }, { merge: true });
     // robinson_pin
     await setDoc(doc(db, 'robinson_pin', uid), {
@@ -594,8 +669,8 @@ document.getElementById('new-aggiungi').addEventListener('click', async () => {
     // Aggiorna stato locale e ricarica tabella
     pinLookup[pin] = uid;
     pinMap[uid] = { uid, _docId: uid, nome, pin, email, lastLogin: null, createdAt: null };
-    naufraghi.push({ uid, nome, foto: fotoEsistente });
-    naufraghi.sort((a, b) => a.nome.localeCompare(b.nome, 'it'));
+    membri.push({ uid, nome, foto: fotoEsistente });
+    membri.sort((a, b) => a.nome.localeCompare(b.nome, 'it'));
 
     document.getElementById('new-nome').value = '';
     document.getElementById('new-pin').value = '';
@@ -611,7 +686,7 @@ document.getElementById('new-aggiungi').addEventListener('click', async () => {
   } catch(e) {
     errEl.textContent = 'Errore: ' + e.message;
   }
-  btn.disabled = false; btn.textContent = '➕ Aggiungi naufrago';
+  btn.disabled = false; btn.textContent = MODI[modo].addBtnLabel;
 });
 </script>
 </body>

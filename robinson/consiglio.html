@@ -102,7 +102,7 @@
 import { db, ADMIN_UID } from './js/robinson-firebase.js';
 import { requireAuth } from './js/robinson-auth.js';
 import { setupNavAuth } from './js/robinson-nav.js';
-import { esc, getFotoRobinson } from './js/robinson-utils.js';
+import { esc, getFotoRobinson, caricaMappaUidCanonico, uidCanonico } from './js/robinson-utils.js';
 import {
   collection, getDocs, query, orderBy, limit, doc, getDoc, setDoc, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -127,6 +127,7 @@ let allNaufraghi = [];
 let currentUser = null;
 let step = 0; // 0 = intro, 1..4 = domande, 5 = riepilogo
 let selezioni = { ciurma: [], ponti: [], correnti: [], scogli: [] };
+let mappaUidCanonico = {}; // originalUid -> authUid (vedi robinson-utils.js)
 
 requireAuth(async user => {
   currentUser = user;
@@ -156,28 +157,43 @@ async function avviaPagina() {
   }
 
   // rilevazione aperta: carica naufraghi + eventuale risposta esistente
+  mappaUidCanonico = await caricaMappaUidCanonico();
   await caricaNaufraghi();
   const rispostaSnap = await getDoc(doc(db, 'attivita', ATT_ID, 'rilevazioni', ril.id, 'risposte', currentUser.uid));
   if (rispostaSnap.exists()) {
     const d = rispostaSnap.data();
+    // Canonicalizza gli uid già salvati: potrebbero risalire a prima del fix dedup e
+    // puntare a un docId robinson_naufraghi ormai sostituito dal vero authUid.
+    const canon = arr => (arr || []).map(u => uidCanonico(mappaUidCanonico, u));
     selezioni = {
-      ciurma: d.ciurma || [], ponti: d.ponti || [],
-      correnti: d.correnti || [], scogli: d.scogli || [],
+      ciurma: canon(d.ciurma), ponti: canon(d.ponti),
+      correnti: canon(d.correnti), scogli: canon(d.scogli),
     };
   }
   renderIntro(ril);
 }
 
+// Deduplica per authUid reale: admin-pin.html copia il profilo naufrago su un nuovo
+// docId (authUid) quando crea il PIN, lasciando spesso vivo il vecchio docId. Senza
+// questo dedup la stessa persona comparirebbe due volte nella griglia di selezione,
+// spezzando le sue nomination su due identità diverse (vedi mappaUidCanonico).
 async function caricaNaufraghi() {
   const snap = await getDocs(collection(db, 'robinson_naufraghi'));
-  const entries = await Promise.all(snap.docs.map(async d => {
-    if (d.id === currentUser.uid) return null;
+  const seenAuth = new Set();
+  const base = [];
+  snap.docs.forEach(d => {
+    const authUid = uidCanonico(mappaUidCanonico, d.id);
+    if (authUid === currentUser.uid) return;
     const data = d.data();
-    if (!data.nome) return null;
-    const foto = data.fotoRobinson || data.fotoProfilo || await getFotoRobinson(d.id);
-    return { uid: d.id, nome: data.nome, foto: foto || '' };
-  }));
-  allNaufraghi = entries.filter(Boolean).sort((a, b) => a.nome.localeCompare(b.nome, 'it'));
+    if (!data.nome) return;
+    if (seenAuth.has(authUid)) return;
+    seenAuth.add(authUid);
+    base.push({ docId: d.id, uid: authUid, nome: data.nome, fotoDiretta: data.fotoRobinson || data.fotoProfilo || '' });
+  });
+  const entries = await Promise.all(base.map(async b => ({
+    uid: b.uid, nome: b.nome, foto: b.fotoDiretta || await getFotoRobinson(b.docId) || '',
+  })));
+  allNaufraghi = entries.sort((a, b) => a.nome.localeCompare(b.nome, 'it'));
 }
 
 // ── Intro ────────────────────────────────────────────────────────────────

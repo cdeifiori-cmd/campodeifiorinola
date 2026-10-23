@@ -52,8 +52,9 @@ export async function seedCategorieIniziali() {
 }
 
 // ── Modalità di riordino ─────────────────────────────────────────────────────
-// soglia: si riordina sotto la soglia minima (stabili). ricorrente: entra sempre
-// in ogni nuova lista (freschi/giornalieri: pane, latte, frutta). manuale: mai
+// soglia: nessun trigger automatico, solo indicatore visivo "sotto soglia";
+// entra in lista solo se il flag `serve` è attivo. ricorrente: entra sempre in
+// ogni nuova lista (freschi/giornalieri: pane, latte, frutta). manuale: mai
 // automatico, entra solo se il flag `serve` è attivo (consumo sporadico).
 export function modalitaProdotto(prodotto) {
   return prodotto.modalita_riordino || 'soglia';
@@ -61,20 +62,24 @@ export function modalitaProdotto(prodotto) {
 
 export const ETICHETTA_MODALITA = { ricorrente: 'giornaliero', manuale: 'a richiesta' };
 
-// Sotto soglia ha senso solo per la modalità `soglia`: punto di riordino
-// prudente, sotto soglia già quando si tocca il minimo.
+// Solo per l'indicatore visivo (badge/cella evidenziata in magazzino.html):
+// NON determina più l'aggiunta automatica a spesa, vedi daComprare(). Soglia 0
+// = nessuna soglia impostata: non deve mai scattare, nemmeno a quantità 0.
 export function sottoSoglia(prodotto) {
   if (modalitaProdotto(prodotto) !== 'soglia') return false;
-  return (prodotto.quantita_attuale ?? 0) <= (prodotto.soglia_minima ?? 0);
+  const soglia = prodotto.soglia_minima ?? 0;
+  if (soglia <= 0) return false;
+  return (prodotto.quantita_attuale ?? 0) <= soglia;
 }
 
-// Un prodotto è "da comprare" secondo la sua modalità, oppure se qualcuno lo ha
-// forzato a mano col flag `serve` (utilizzabile su qualsiasi modalità).
+// Un prodotto è "da comprare" solo se ricorrente, oppure se qualcuno lo ha
+// forzato a mano col flag `serve` (utilizzabile su qualsiasi modalità,
+// compresa `soglia`). Il confronto quantita_attuale <= soglia_minima non
+// aggiunge più nulla in automatico: sottoSoglia() resta solo un indicatore.
 export function daComprare(prodotto) {
   const m = modalitaProdotto(prodotto);
   if (m === 'ricorrente') return true;
-  if (m === 'manuale') return !!prodotto.serve;
-  return sottoSoglia(prodotto) || !!prodotto.serve;
+  return !!prodotto.serve;
 }
 
 export function quantitaSuggerita(prodotto) {

@@ -4,12 +4,21 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Robinson Republic – In arrivo</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
+  <meta name="theme-color" content="#1a3a5c">
   <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: 'Lora', serif;
-      background: #0d1b2a;
+      background-color: #0d1b2a;
+      background-image: url('https://res.cloudinary.com/dxqyprtzh/image/upload/v1782858807/sfondo_countdown_pc_vx4tv8.png');
+      background-size: cover;
+      background-position: center bottom;
+      background-attachment: fixed;
       color: #fff;
       min-height: 100vh;
       display: flex;
@@ -21,12 +30,26 @@
       position: relative;
       overflow: hidden;
     }
-    /* Stelle di sfondo */
+    /* Fix iOS: background-attachment fixed non funziona su Safari mobile */
+    @supports (-webkit-touch-callout: none) {
+      body { background-attachment: scroll; }
+    }
+    /* Overlay scuro per leggibilità (stessa logica di notte.html) */
     body::before {
       content: '';
       position: fixed;
       inset: 0;
       pointer-events: none;
+      z-index: 0;
+      background: linear-gradient(180deg, rgba(10,15,30,0.85) 0%, rgba(10,15,30,0.60) 50%, rgba(10,15,30,0.80) 100%);
+    }
+    /* Stelle sopra l'overlay */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1;
       background-image:
         radial-gradient(1px 1px at 8% 12%, rgba(255,255,255,0.9) 0%, transparent 100%),
         radial-gradient(1.5px 1.5px at 25% 7%, rgba(255,255,255,0.7) 0%, transparent 100%),
@@ -134,6 +157,163 @@
       margin-top: 12px;
       font-style: italic;
     }
+    /* Contenuto sopra overlay e stelle */
+    .logo-wrap, .testo-attesa, .countdown-wrap, #msg-zero, .firma,
+    a[href="notte.html"] {
+      position: relative;
+      z-index: 2;
+    }
+    .onde { z-index: 2; }
+
+    /* ── Login equipaggio ── */
+    #login-toggle {
+      position: relative;
+      z-index: 2;
+      margin-top: 28px;
+      margin-bottom: 80px;
+      background: none;
+      border: none;
+      color: rgba(255,255,255,0.22);
+      font-size: 0.72rem;
+      font-family: 'Lora', serif;
+      cursor: pointer;
+      letter-spacing: 0.05em;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      padding: 0;
+    }
+    #login-toggle:hover { color: rgba(255,255,255,0.45); }
+    #login-box {
+      display: none;
+      position: relative;
+      z-index: 2;
+      background: rgba(10,20,40,0.92);
+      border: 1px solid rgba(255,215,0,0.25);
+      border-radius: 14px;
+      padding: 20px 22px 22px;
+      width: 100%;
+      max-width: 320px;
+      margin-top: 8px;
+      margin-bottom: 80px;
+      text-align: left;
+    }
+    .lb-title {
+      font-size: 0.88rem;
+      color: #7ECFFF;
+      font-weight: 600;
+      margin-bottom: 14px;
+      text-align: center;
+    }
+    .lb-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .lb-tab {
+      flex: 1;
+      padding: 6px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 8px;
+      color: rgba(255,255,255,0.5);
+      font-size: 0.78rem;
+      font-family: 'Lora', serif;
+      cursor: pointer;
+      text-align: center;
+    }
+    .lb-tab.active {
+      background: rgba(255,215,0,0.15);
+      border-color: rgba(255,215,0,0.4);
+      color: #FFD700;
+    }
+    #lb-pin-display {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 12px;
+    }
+    .lb-pin-dot {
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.3);
+      transition: background 0.15s;
+    }
+    .lb-pin-dot.filled { background: #FFD700; border-color: #FFD700; }
+    #lb-keypad {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+    .lb-key {
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 8px;
+      color: #fff;
+      font-size: 1.1rem;
+      font-family: 'Lora', serif;
+      padding: 10px 0;
+      cursor: pointer;
+      text-align: center;
+    }
+    .lb-key:hover { background: rgba(255,255,255,0.14); }
+    .lb-key.del { font-size: 0.85rem; color: rgba(255,255,255,0.5); }
+    #lb-panel-email { display: none; }
+    #lb-panel-email input {
+      width: 100%;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 8px;
+      color: #fff;
+      font-size: 0.9rem;
+      font-family: 'Lora', serif;
+      padding: 9px 12px;
+      margin-bottom: 8px;
+      outline: none;
+      display: block;
+    }
+    #lb-panel-email input::placeholder { color: rgba(255,255,255,0.3); }
+    #lb-panel-email input:focus { border-color: rgba(255,215,0,0.4); }
+    .lb-btn {
+      width: 100%;
+      background: linear-gradient(135deg, #1a3a6b, #0f2244);
+      border: 1px solid rgba(255,215,0,0.4);
+      border-radius: 8px;
+      color: #FFD700;
+      font-size: 0.88rem;
+      font-family: 'Lora', serif;
+      font-weight: 600;
+      padding: 10px;
+      cursor: pointer;
+      margin-top: 4px;
+    }
+    .lb-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    #lb-error {
+      font-size: 0.78rem;
+      color: #ff7070;
+      margin-top: 8px;
+      min-height: 18px;
+      text-align: center;
+    }
+    #lb-benvenuto {
+      display: none;
+      position: relative;
+      z-index: 2;
+      background: rgba(10,30,60,0.88);
+      border: 1px solid rgba(126,207,255,0.3);
+      border-radius: 14px;
+      padding: 18px 20px;
+      max-width: 320px;
+      width: 100%;
+      margin-top: 8px;
+      margin-bottom: 80px;
+      text-align: center;
+      font-size: 0.92rem;
+      color: #c8e6ff;
+      line-height: 1.6;
+    }
+    #lb-benvenuto strong { color: #FFD700; }
   </style>
 </head>
 <body>
@@ -164,12 +344,188 @@
 
 <p class="firma">Ci vediamo sull'isola 🌴</p>
 
+<!-- Login discreto equipaggio -->
+<button id="login-toggle">⚓ Accesso equipaggio</button>
+
+<div id="login-box">
+  <div class="lb-title">⚓ Accesso equipaggio</div>
+  <div class="lb-tabs">
+    <button class="lb-tab active" id="lb-tab-pin">PIN</button>
+    <button class="lb-tab" id="lb-tab-email">Email</button>
+  </div>
+  <!-- PIN panel -->
+  <div id="lb-panel-pin">
+    <div id="lb-pin-display"></div>
+    <div id="lb-keypad">
+      <button class="lb-key" data-d="1">1</button>
+      <button class="lb-key" data-d="2">2</button>
+      <button class="lb-key" data-d="3">3</button>
+      <button class="lb-key" data-d="4">4</button>
+      <button class="lb-key" data-d="5">5</button>
+      <button class="lb-key" data-d="6">6</button>
+      <button class="lb-key" data-d="7">7</button>
+      <button class="lb-key" data-d="8">8</button>
+      <button class="lb-key" data-d="9">9</button>
+      <button class="lb-key del" id="lb-del">⌫</button>
+      <button class="lb-key" data-d="0">0</button>
+      <button class="lb-key" id="lb-btn-pin">OK</button>
+    </div>
+  </div>
+  <!-- Email panel -->
+  <div id="lb-panel-email">
+    <input type="email" id="lb-email" placeholder="Email">
+    <input type="password" id="lb-password" placeholder="Password">
+    <button class="lb-btn" id="lb-btn-email">⚓ Entra</button>
+  </div>
+  <div id="lb-error"></div>
+</div>
+
+<div id="lb-benvenuto">
+  <strong id="lb-nome-benvenuto"></strong><br><br>
+  Sei a bordo! L'isola apre domani.<br>
+  Nel frattempo puoi leggere le domande della Notte:<br><br>
+  <a href="notte.html" style="color:#7ECFFF;text-decoration:underline;">🌙 Notte prima dello sbarco</a><br><br>
+  <button id="lb-logout" style="background:none;border:1px solid rgba(255,255,255,0.2);border-radius:6px;color:rgba(255,255,255,0.4);font-size:0.72rem;font-family:'Lora',serif;padding:5px 12px;cursor:pointer;">🚪 Cambia account</button>
+</div>
+
 <div class="onde">
   <svg viewBox="0 0 1440 80" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
     <path class="onda1" d="M0 40 C180 10 360 70 540 40 C720 10 900 70 1080 40 C1260 10 1440 70 1440 40 L1440 80 L0 80 Z" fill="rgba(0,100,180,0.18)"/>
     <path class="onda2" d="M0 50 C180 20 360 80 540 50 C720 20 900 80 1080 50 C1260 20 1440 80 1440 50 L1440 80 L0 80 Z" fill="rgba(0,150,220,0.12)"/>
   </svg>
 </div>
+
+<script type="module">
+  import { auth, db, ADMIN_UID } from './js/robinson-firebase.js';
+  import { signInWithEmailAndPassword, onAuthStateChanged, signOut }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import { getDoc, doc }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const _apertura = new Date('2026-07-02T10:00:00');
+
+  // Se già loggato, comportamento dipende da chi è e dall'orario
+  onAuthStateChanged(auth, user => {
+    if (!user) return;
+    if (user.uid === ADMIN_UID) {
+      window.location.href = 'index.html';
+    } else if (new Date() >= _apertura) {
+      window.location.href = 'index.html';
+    } else {
+      // Naufrago normale pre-apertura: mostra benvenuto
+      mostraBenvenuto(user.displayName || '');
+    }
+  });
+
+  function mostraBenvenuto(nome) {
+    document.getElementById('login-toggle').style.display = 'none';
+    document.getElementById('login-box').style.display = 'none';
+    const benv = document.getElementById('lb-benvenuto');
+    document.getElementById('lb-nome-benvenuto').textContent = nome ? 'Ciao, ' + nome + '!' : 'Sei a bordo!';
+    benv.style.display = 'block';
+    document.getElementById('lb-logout').addEventListener('click', async () => {
+      await signOut(auth);
+      document.getElementById('lb-benvenuto').style.display = 'none';
+      document.getElementById('login-toggle').style.display = 'inline';
+    });
+  }
+
+  // Toggle box
+  document.getElementById('login-toggle').addEventListener('click', () => {
+    const box = document.getElementById('login-box');
+    box.style.display = box.style.display === 'block' ? 'none' : 'block';
+    document.getElementById('login-toggle').style.marginBottom = box.style.display === 'block' ? '8px' : '80px';
+  });
+
+  // Tab switcher
+  document.getElementById('lb-tab-pin').addEventListener('click', () => {
+    document.getElementById('lb-panel-pin').style.display = 'block';
+    document.getElementById('lb-panel-email').style.display = 'none';
+    document.getElementById('lb-tab-pin').classList.add('active');
+    document.getElementById('lb-tab-email').classList.remove('active');
+    clearErr();
+  });
+  document.getElementById('lb-tab-email').addEventListener('click', () => {
+    document.getElementById('lb-panel-pin').style.display = 'none';
+    document.getElementById('lb-panel-email').style.display = 'block';
+    document.getElementById('lb-tab-email').classList.add('active');
+    document.getElementById('lb-tab-pin').classList.remove('active');
+    clearErr();
+  });
+
+  // PIN
+  let pin = '';
+  const MAX = 6, MIN = 4;
+
+  function renderDots() {
+    const el = document.getElementById('lb-pin-display');
+    el.innerHTML = '';
+    for (let i = 0; i < MAX; i++) {
+      const d = document.createElement('div');
+      d.className = 'lb-pin-dot' + (i < pin.length ? ' filled' : '');
+      el.appendChild(d);
+    }
+  }
+  renderDots();
+
+  document.querySelectorAll('#lb-keypad .lb-key[data-d]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (pin.length >= MAX) return;
+      pin += btn.dataset.d;
+      clearErr();
+      renderDots();
+    });
+  });
+  document.getElementById('lb-del').addEventListener('click', () => {
+    pin = pin.slice(0, -1);
+    clearErr();
+    renderDots();
+  });
+  document.getElementById('lb-btn-pin').addEventListener('click', doLoginPin);
+
+  async function doLoginPin() {
+    if (pin.length < MIN) { showErr('PIN troppo corto.'); return; }
+    const btn = document.getElementById('lb-btn-pin');
+    btn.disabled = true; btn.textContent = '…';
+    try {
+      const snap = await getDoc(doc(db, 'robinson_pin_lookup', pin));
+      if (!snap.exists()) {
+        showErr('PIN non valido.');
+        pin = ''; renderDots();
+        btn.disabled = false; btn.textContent = 'OK';
+        return;
+      }
+      const { email, password } = snap.data();
+      await signInWithEmailAndPassword(auth, email, password);
+      // onAuthStateChanged gestirà il redirect
+    } catch(e) {
+      console.error(e);
+      showErr('Errore. Riprova.');
+      pin = ''; renderDots();
+      btn.disabled = false; btn.textContent = 'OK';
+    }
+  }
+
+  // Email login
+  document.getElementById('lb-btn-email').addEventListener('click', async () => {
+    const email = document.getElementById('lb-email').value.trim();
+    const password = document.getElementById('lb-password').value;
+    if (!email || !password) { showErr('Compila email e password.'); return; }
+    const btn = document.getElementById('lb-btn-email');
+    btn.disabled = true; btn.textContent = '…';
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      // onAuthStateChanged gestirà il redirect
+    } catch(e) {
+      console.error(e);
+      showErr('Credenziali non valide.');
+      btn.disabled = false; btn.textContent = '⚓ Entra';
+    }
+  });
+
+  function showErr(msg) { document.getElementById('lb-error').textContent = msg; }
+  function clearErr()   { document.getElementById('lb-error').textContent = ''; }
+</script>
 
 <script>
   const TARGET = new Date('2026-07-02T10:00:00');

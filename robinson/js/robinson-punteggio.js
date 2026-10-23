@@ -2,7 +2,7 @@ import { db } from './robinson-firebase.js';
 import { doc, setDoc, getDoc, increment } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { SETTIMANA_KEY, MESE_KEY } from './robinson-utils.js';
 
-const PUNTI = {
+export const PUNTI = {
   post: 3,
   foto: 4,
   video: 5,
@@ -12,7 +12,7 @@ const PUNTI = {
   bottiglia: 3
 };
 
-const CAMPO_DETTAGLIO = {
+export const CAMPO_DETTAGLIO = {
   post: 'post',
   foto: 'foto',
   video: 'video',

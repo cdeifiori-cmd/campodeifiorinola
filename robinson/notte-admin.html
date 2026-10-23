@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>🌙 Notte — Monitoraggio Admin</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
+  <meta name="theme-color" content="#1a3a5c">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/robinson.css">
+  <style>
+    :root {
+      --navy: #1a3a5c;
+      --oro: #c8860a;
+      --oro-light: #FFD700;
+      --bg: #f5f0e8;
+      --card-bg: #faf7f0;
+      --inchiostro: #2c1e0f;
+      --muted: #8b7355;
+      --verde: #2ecc71;
+      --giallo: #f39c12;
+      --grigio: #95a5a6;
+      --ciano: #00FFD1;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--inchiostro); font-family: 'Lora', serif; min-height: 100vh; padding-bottom: 40px; }
+
+    .page-header {
+      background: linear-gradient(135deg, var(--navy) 0%, #0d1b2a 100%);
+      color: var(--oro-light);
+      padding: 16px 20px 12px;
+      font-family: 'Playfair Display', serif;
+      font-size: 1.2rem;
+      font-weight: 700;
+      border-bottom: 2px solid var(--oro);
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    }
+    .page-header span { font-size: 0.78rem; font-weight: 400; color: #7ECFFF; display: block; font-family: 'Lora', serif; margin-top: 2px; }
+    .back-link { color: var(--oro-light); font-size: 0.82rem; text-decoration: none; opacity: 0.8; white-space: nowrap; }
+    .back-link:hover { opacity: 1; }
+
+    .content { max-width: 700px; margin: 0 auto; padding: 16px 14px 60px; }
+
+    /* Contatori */
+    .counters { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+    .counter-box {
+      flex: 1; min-width: 90px;
+      background: var(--card-bg);
+      border: 2px solid;
+      border-radius: 12px;
+      padding: 12px 10px;
+      text-align: center;
+    }
+    .counter-box.completati { border-color: var(--verde); }
+    .counter-box.in-corso   { border-color: var(--giallo); }
+    .counter-box.non-iniziati { border-color: var(--grigio); }
+    .counter-num { font-size: 2rem; font-weight: 700; font-family: 'Playfair Display', serif; line-height: 1; display: block; }
+    .counter-box.completati .counter-num { color: var(--verde); }
+    .counter-box.in-corso   .counter-num { color: var(--giallo); }
+    .counter-box.non-iniziati .counter-num { color: var(--grigio); }
+    .counter-label { font-size: 0.72rem; color: var(--muted); margin-top: 4px; display: block; }
+
+    /* Lista naufraghi */
+    .naufrago-row {
+      background: var(--card-bg);
+      border: 1.5px solid #d6cbb8;
+      border-radius: 10px;
+      margin-bottom: 8px;
+      overflow: hidden;
+    }
+    .naufrago-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .naufrago-header:hover { background: #f0ebe0; }
+    .naufrago-nome { font-weight: 700; font-size: 0.95rem; flex: 1; }
+    .badge {
+      font-size: 0.72rem; font-weight: 700;
+      padding: 3px 9px; border-radius: 20px;
+      white-space: nowrap;
+    }
+    .badge.completato  { background: #d5f5e3; color: #1e8449; border: 1px solid #2ecc71; }
+    .badge.in-corso    { background: #fef9e7; color: #b7770d; border: 1px solid #f39c12; }
+    .badge.non-iniziato { background: #f2f3f4; color: #6c757d; border: 1px solid #bdc3c7; }
+    .risp-count { font-size: 0.78rem; color: var(--muted); white-space: nowrap; }
+    .bottiglia-icon { font-size: 1rem; }
+    .ultimo-salv { font-size: 0.7rem; color: var(--muted); white-space: nowrap; }
+    .expand-arrow { font-size: 0.75rem; color: var(--muted); transition: transform 0.2s; }
+    .expand-arrow.open { transform: rotate(180deg); }
+
+    /* Pannello espanso */
+    .naufrago-detail { display: none; border-top: 1px solid #e8e0d0; }
+    .naufrago-detail.open { display: block; }
+    .detail-inner { padding: 12px 14px; }
+    .domanda-item { margin-bottom: 14px; }
+    .domanda-testo { font-size: 0.82rem; font-weight: 700; color: var(--navy); margin-bottom: 4px; }
+    .risposta-testo {
+      font-size: 0.88rem; color: var(--inchiostro);
+      background: rgba(26,58,92,0.05);
+      border-left: 3px solid var(--oro);
+      border-radius: 4px;
+      padding: 6px 10px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+    }
+    .risposta-vuota { font-size: 0.82rem; color: var(--muted); font-style: italic; }
+    .audio-mini { margin-top: 4px; width: 100%; height: 32px; }
+    .bottiglia-section {
+      margin-top: 16px;
+      padding: 10px 12px;
+      background: rgba(0,255,209,0.06);
+      border: 1.5px solid var(--ciano);
+      border-radius: 8px;
+    }
+    .bottiglia-title { font-size: 0.85rem; font-weight: 700; color: var(--ciano); margin-bottom: 6px; }
+
+    /* Loading */
+    .loading-msg { text-align: center; color: var(--muted); padding: 40px 0; font-style: italic; }
+
+    /* Refresh btn */
+    .refresh-btn {
+      background: var(--navy); color: var(--oro-light);
+      border: none; border-radius: 8px;
+      padding: 7px 14px; font-family: 'Lora', serif; font-size: 0.82rem;
+      cursor: pointer; margin-bottom: 16px;
+    }
+    .refresh-btn:hover { opacity: 0.85; }
+  </style>
+</head>
+<body>
+
+<div class="page-header">
+  <div>
+    🌙 Notte prima di approdare
+    <span>Monitoraggio compilazione — solo admin</span>
+  </div>
+  <a href="notte.html" class="back-link">← Notte</a>
+</div>
+
+<div class="content">
+  <div id="loading" class="loading-msg">⏳ Caricamento dati…</div>
+
+  <div id="main" style="display:none;">
+    <div class="counters">
+      <div class="counter-box completati">
+        <span class="counter-num" id="cnt-completati">0</span>
+        <span class="counter-label">✅ Completati</span>
+      </div>
+      <div class="counter-box in-corso">
+        <span class="counter-num" id="cnt-in-corso">0</span>
+        <span class="counter-label">🔄 In corso</span>
+      </div>
+      <div class="counter-box non-iniziati">
+        <span class="counter-num" id="cnt-non-iniziati">0</span>
+        <span class="counter-label">⬜ Non iniziati</span>
+      </div>
+    </div>
+
+    <button class="refresh-btn" id="refresh-btn">🔄 Aggiorna</button>
+
+    <div id="lista"></div>
+  </div>
+</div>
+
+<script type="module">
+import { db, ADMIN_UID } from './js/robinson-firebase.js';
+import { auth } from './js/robinson-firebase.js';
+import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import {
+  collection, getDocs, doc, getDoc
+} from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+const DOMANDE = [
+  { n: 1, emoji: '🌊', titolo: 'Con quale stato d\'animo sto per approdare sull\'isola?', sub: 'Quali emozioni sento più forti questa sera?' },
+  { n: 2, emoji: '🎒', titolo: 'Cosa porto con me?', sub: 'Non nello zaino, ma dentro di me. Quali sono le qualità che mi accompagneranno durante questa avventura?' },
+  { n: 3, emoji: '🌱', titolo: 'Cosa spero di trovare sull\'isola?', sub: 'Che cosa mi piacerebbe vivere?' },
+  { n: 4, emoji: '🧭', titolo: 'Quale parte di me vorrei conoscere meglio?', sub: 'C\'è qualcosa che vorrei capire di me stesso?' },
+  { n: 5, emoji: '⛰️', titolo: 'Quali sono gli scogli che temo di incontrare?', sub: 'Quali difficoltà penso di dover affrontare?' },
+  { n: 6, emoji: '🌊', titolo: 'Quali onde fanno ancora paura?', sub: 'Quali sono le paure che vorrei imparare ad affrontare?' },
+  { n: 7, emoji: '🔥', titolo: 'Quale fuoco posso accendere per gli altri?', sub: 'Quali qualità, capacità o gesti posso mettere a disposizione della mia ciurma?' },
+  { n: 8, emoji: '🤝', titolo: 'Che tipo di compagno di viaggio voglio essere?', sub: 'Come vorrei che gli altri mi ricordassero al termine dell\'avventura?' },
+  { n: 9, emoji: '⭐', titolo: 'Se questa isola potesse regalarmi una sola cosa...', sub: 'Che cosa vorrei portare con me quando tornerò a casa?' },
+];
+
+function esc(s) { return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function fmtData(ts) {
+  if (!ts) return '';
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  return d.toLocaleString('it-IT', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+}
+
+function calcStato(dati) {
+  if (!dati) return { stato: 'non-iniziato', count: 0 };
+  let count = 0;
+  for (let i = 1; i <= 9; i++) {
+    const testo = (dati['risposta' + i] || '').trim();
+    const audio = (dati['audio' + i] || '').trim();
+    if (testo || audio) count++;
+  }
+  if (count === 0) return { stato: 'non-iniziato', count: 0 };
+  if (count === 9) return { stato: 'completato', count: 9 };
+  return { stato: 'in-corso', count };
+}
+
+function renderRiga(n, dati) {
+  const { stato, count } = calcStato(dati);
+  const hasBott = dati && ((dati.bottiglia || '').trim() || (dati.audiobottiglia || '').trim());
+  const ultimoSalv = dati?.ultimoSalvataggio ? fmtData(dati.ultimoSalvataggio) : '';
+
+  const badgeLabel = stato === 'completato' ? 'Completato' : stato === 'in-corso' ? 'In corso' : 'Non iniziato';
+  const hasDati = stato !== 'non-iniziato';
+
+  return `
+  <div class="naufrago-row" id="row-${esc(n.uid)}">
+    <div class="naufrago-header" onclick="toggleDetail('${esc(n.uid)}', ${hasDati})">
+      <div class="naufrago-nome">${esc(n.nome)}</div>
+      <span class="badge ${stato === 'non-iniziato' ? 'non-iniziato' : stato}">${badgeLabel}</span>
+      <span class="risp-count">${count}/9</span>
+      ${hasBott ? '<span class="bottiglia-icon" title="Bottiglia compilata">🍾</span>' : ''}
+      ${ultimoSalv ? `<span class="ultimo-salv">${esc(ultimoSalv)}</span>` : ''}
+      ${hasDati ? '<span class="expand-arrow" id="arr-' + esc(n.uid) + '">▼</span>' : ''}
+    </div>
+    ${hasDati ? `<div class="naufrago-detail" id="det-${esc(n.uid)}"></div>` : ''}
+  </div>`;
+}
+
+function renderDetail(uid, dati) {
+  let html = '<div class="detail-inner">';
+  for (const d of DOMANDE) {
+    const testo = (dati['risposta' + d.n] || '').trim();
+    const audio = (dati['audio' + d.n] || '').trim();
+    html += `<div class="domanda-item">
+      <div class="domanda-testo">${d.emoji} ${esc(d.titolo)}</div>`;
+    if (testo) html += `<div class="risposta-testo">${esc(testo)}</div>`;
+    else if (!audio) html += `<div class="risposta-vuota">— non risposto</div>`;
+    if (audio) html += `<audio class="audio-mini" controls src="${esc(audio)}"></audio>`;
+    html += '</div>';
+  }
+  // Bottiglia
+  const bottTesto = (dati.bottiglia || '').trim();
+  const bottAudio = (dati.audiobottiglia || '').trim();
+  if (bottTesto || bottAudio) {
+    html += `<div class="bottiglia-section">
+      <div class="bottiglia-title">🍾 Una bottiglia affidata al mare</div>`;
+    if (bottTesto) html += `<div class="risposta-testo">${esc(bottTesto)}</div>`;
+    if (bottAudio) html += `<audio class="audio-mini" controls src="${esc(bottAudio)}"></audio>`;
+    html += '</div>';
+  }
+  html += '</div>';
+  return html;
+}
+
+window.toggleDetail = function(uid, hasDati) {
+  if (!hasDati) return;
+  const det = document.getElementById('det-' + uid);
+  const arr = document.getElementById('arr-' + uid);
+  if (!det) return;
+  if (det.classList.contains('open')) {
+    det.classList.remove('open');
+    if (arr) arr.classList.remove('open');
+  } else {
+    det.classList.add('open');
+    if (arr) arr.classList.add('open');
+    if (!det.dataset.loaded) {
+      det.innerHTML = renderDetail(uid, window._notteData[uid] || {});
+      det.dataset.loaded = '1';
+    }
+  }
+};
+
+async function carica() {
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('main').style.display = 'none';
+
+  // 1. Mappa originalUid → Firebase Auth uid da robinson_pin
+  //    Serve per i naufraghi creati con "salvaPin" modal che genera newUid separato
+  const snapPin = await getDocs(collection(db, 'robinson_pin'));
+  const origToAuth = {};  // originalUid → authUid
+  snapPin.docs.forEach(d => {
+    const pd = d.data();
+    const authUid = pd.uid || d.id;
+    if (pd.originalUid && pd.originalUid !== authUid) {
+      origToAuth[pd.originalUid] = authUid;
+    }
+  });
+
+  // 2. Lista naufraghi da robinson_naufraghi, deduplicata per authUid
+  //    Per ogni doc, risolvi l'authUid reale (potrebbe differire dal doc id)
+  const snapN = await getDocs(collection(db, 'robinson_naufraghi'));
+  const seenAuth = new Set();
+  const naufraghi = [];
+  snapN.docs.forEach(d => {
+    if (d.id === ADMIN_UID) return;
+    const data = d.data();
+    if (!data.nome) return;
+    const authUid = origToAuth[d.id] || d.id;
+    if (seenAuth.has(authUid)) return;  // dedup: salta la copia se già vista
+    seenAuth.add(authUid);
+    naufraghi.push({ uid: authUid, nome: data.nome });
+  });
+  naufraghi.sort((a, b) => a.nome.localeCompare(b.nome, 'it'));
+
+  // 3. Tutti i dati notte_sbarco (keyed per Firebase Auth uid)
+  const snapNS = await getDocs(collection(db, 'notte_sbarco'));
+  const notteMap = {};
+  snapNS.docs.forEach(d => { notteMap[d.id] = d.data(); });
+  window._notteData = notteMap;
+
+  // 4. Incrocio e render (n.uid è già l'authUid corretto)
+  let cCompletati = 0, cInCorso = 0, cNonIniziati = 0;
+  let html = '';
+  for (const n of naufraghi) {
+    const dati = notteMap[n.uid] || null;
+    const { stato } = calcStato(dati);
+    if (stato === 'completato') cCompletati++;
+    else if (stato === 'in-corso') cInCorso++;
+    else cNonIniziati++;
+    html += renderRiga(n, dati);
+  }
+
+  document.getElementById('cnt-completati').textContent = cCompletati;
+  document.getElementById('cnt-in-corso').textContent = cInCorso;
+  document.getElementById('cnt-non-iniziati').textContent = cNonIniziati;
+  document.getElementById('lista').innerHTML = html;
+
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('main').style.display = 'block';
+}
+
+document.getElementById('refresh-btn').addEventListener('click', carica);
+
+// Auth guard: solo admin
+let resolved = false;
+onAuthStateChanged(auth, async user => {
+  if (resolved) return;
+  resolved = true;
+  if (!user || user.uid !== ADMIN_UID) {
+    window.location.replace('index.html');
+    return;
+  }
+  await carica();
+});
+</script>
+</body>
+</html>

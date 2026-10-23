@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🧭 La bussola del gruppo — Vista Educatore</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
+  <meta name="theme-color" content="#1a3a5c">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/robinson.css">
+  <style>
+    :root {
+      --rc-sp-1: 6px; --rc-sp-2: 10px; --rc-sp-3: 16px; --rc-sp-4: 22px; --rc-sp-5: 30px;
+      --rc-radius: 12px;
+      --rc-radius-sm: 8px;
+      --rc-ombra: 0 2px 8px rgba(26,58,92,0.07);
+      --rc-bordo: 1.5px solid var(--carta-scura);
+    }
+    body { padding-bottom: 40px; background:var(--carta); }
+
+    .admin-header { background:var(--navy); color:#fff; padding:14px 16px 10px; position:sticky; top:0; z-index:200; display:flex; align-items:center; justify-content:space-between; flex-wrap: wrap; gap: 8px; }
+    .admin-header h1 { font-family:'Playfair Display',serif; font-size:1.15rem; margin:0; }
+    .admin-header a { color:var(--oro); font-size:0.8rem; text-decoration:none; }
+
+    .content { max-width: 980px; margin: 0 auto; padding: var(--rc-sp-3) var(--rc-sp-2) 60px; }
+
+    .rc-sezione { margin-bottom: var(--rc-sp-4); }
+    .rc-sezione-titolo { font-family:'Playfair Display',serif; font-size:1.05rem; color:var(--navy); margin:0 0 var(--rc-sp-2); display:flex; align-items:center; gap:8px; }
+    .rc-sezione-sottotitolo { font-size:0.76rem; color:var(--muted); margin:-4px 0 var(--rc-sp-3); }
+    .rc-card { background:#fff; border:var(--rc-bordo); border-radius:var(--rc-radius); box-shadow:var(--rc-ombra); padding:var(--rc-sp-3); }
+    .rc-card-riga { display:flex; flex-wrap:wrap; align-items:center; gap:var(--rc-sp-3); }
+
+    .filtro-bar { display:flex; gap:6px; flex-wrap:wrap; }
+    .filtro-btn { padding:6px 14px; border-radius:20px; border:1.5px solid var(--navy); background:#fff; color:var(--navy); font-size:0.78rem; cursor:pointer; font-family:'Lora',serif; }
+    .filtro-btn.active { background:var(--navy); color:var(--oro); }
+
+    .legenda { display:flex; gap:var(--rc-sp-3); flex-wrap:wrap; font-size:0.72rem; color:var(--muted); margin-top:var(--rc-sp-2); }
+
+    .loading-msg { text-align:center; color:var(--muted); padding:40px 0; font-style:italic; }
+
+    .qc-stato { font-size:0.78rem; color:var(--muted); margin-bottom:var(--rc-sp-2); }
+
+    /* ── Vista "Per naufrago" ── */
+    .questionario-card { margin-bottom: var(--rc-sp-3); }
+    .qc-header { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px; border-bottom:1px solid var(--carta-scura); padding-bottom:8px; margin-bottom:10px; }
+    .qc-header strong { font-family:'Playfair Display',serif; color:var(--navy); font-size:1rem; }
+    .qc-data { font-size:0.72rem; color:var(--muted); }
+    .qc-azioni { display:flex; gap:6px; }
+    .qc-azioni button { padding:4px 10px; border-radius:14px; border:1.5px solid var(--carta-scura); background:#fff; font-size:0.72rem; cursor:pointer; font-family:'Lora',serif; }
+    .qc-azioni button:hover { border-color:var(--navy); }
+    .qc-azioni .reset-btn:hover { border-color:var(--rosso); color:var(--rosso); }
+    .qc-domanda { margin-bottom: 10px; }
+    .qc-domanda-titolo { font-weight:700; font-size:0.86rem; margin-bottom:4px; }
+    .qc-riga { display:flex; flex-wrap:wrap; align-items:baseline; gap:6px 10px; padding:4px 0; border-top:1px dashed var(--carta-scura); }
+    .qc-riga:first-of-type { border-top:none; }
+    .qc-nome { font-weight:700; color:var(--navy); font-size:0.86rem; }
+    .qc-perche { font-size:0.8rem; color:var(--muted); font-style:italic; flex-basis:100%; }
+    .qc-bloccata { display:inline-block; font-size:0.68rem; color:var(--oro); border:1px solid var(--oro); border-radius:10px; padding:1px 8px; margin-left:6px; }
+
+    /* ── Vista "Lettura trasversale" ── */
+    .trasv-item { background:var(--post-bg); border-radius:8px; padding:10px 14px; margin-bottom:8px; }
+    .trasv-quote { display:block; font-size:0.92rem; font-style:italic; color:var(--inchiostro); }
+    .trasv-meta { display:block; font-size:0.72rem; color:var(--muted); margin-top:4px; }
+
+    /* ── Vista "Aggregati" ── */
+    .agg-tabella { width:100%; border-collapse:collapse; font-size:0.84rem; }
+    .agg-tabella th, .agg-tabella td { border-bottom:1px solid var(--carta-scura); padding:8px 10px; text-align:left; }
+    .agg-tabella th { color:var(--navy); font-family:'Playfair Display',serif; font-weight:700; }
+    .agg-tabella td.num { text-align:center; font-weight:700; }
+
+    .vuoto { color:var(--muted); font-style:italic; font-size:0.85rem; text-align:center; padding:24px 0; }
+  </style>
+</head>
+<body>
+
+<div class="admin-header">
+  <h1>🧭 La bussola del gruppo — Vista Educatore</h1>
+  <div style="display:flex;gap:14px;align-items:center;">
+    <a href="consiglio-admin.html">🧩 Dinamiche di gruppo</a>
+    <a href="attivita.html">🧭 Attività</a>
+    <a href="index.html">← Home</a>
+  </div>
+</div>
+
+<div class="content">
+  <div id="loading" class="loading-msg">⏳ Caricamento della bussola…</div>
+
+  <div id="main" style="display:none;">
+
+    <section class="rc-sezione">
+      <div class="rc-card">
+        <div class="rc-card-riga">
+          <span style="font-size:0.72rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.03em;min-width:64px;">Vista</span>
+          <div class="filtro-bar" id="vista-toggle-bar">
+            <button class="filtro-btn active" data-vista="naufrago">👤 Per naufrago</button>
+            <button class="filtro-btn" data-vista="trasversale">🔎 Lettura trasversale</button>
+            <button class="filtro-btn" data-vista="aggregati">📊 Aggregati</button>
+          </div>
+          <button class="filtro-btn" id="btn-csv">⬇️ Esporta CSV</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="rc-sezione">
+      <div class="qc-stato" id="qc-stato"></div>
+      <div id="vista-contenuto"></div>
+    </section>
+
+  </div>
+</div>
+
+<script type="module">
+import { db, auth, ADMIN_UID } from './js/robinson-firebase.js';
+import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import {
+  collection, getDocs, doc, updateDoc, deleteDoc
+} from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { esc, fmtDate, caricaMappaUidCanonico, uidCanonico } from './js/robinson-utils.js';
+
+// Le tre domande a podio: stessa chiave/ordine di bussola-gruppo.html.
+const DOMANDE = [
+  { chiave: 'migliori', emoji: '🌟', titolo: 'I migliori del campo', colore: '#1e8449' },
+  { chiave: 'peggiori', emoji: '⚠️', titolo: 'I peggiori del campo', colore: '#c0392b' },
+  { chiave: 'puoMigliorare', emoji: '🌱', titolo: 'Chi potrebbe migliorare', colore: '#b7860b' },
+];
+const POSIZIONI = [{ emoji: '🥇', label: '1°' }, { emoji: '🥈', label: '2°' }, { emoji: '🥉', label: '3°' }];
+
+let naufraghiInfo = {}; // authUid -> {nome, foto}
+let mappaUidCanonico = {};
+let risposteQuestionario = []; // [{docId, autoreUid, migliori, peggiori, puoMigliorare, timestamp, bloccata}]
+let vistaAttiva = 'naufrago'; // 'naufrago' | 'trasversale' | 'aggregati'
+let domandaTrasversale = 'migliori';
+let ordinaAggregati = 'alfabetico'; // 'alfabetico' | 'migliori' | 'peggiori' | 'puoMigliorare'
+
+function nomeDi(uid) { return naufraghiInfo[uid]?.nome || '⚠ Sconosciuto'; }
+
+// Deduplica per authUid reale: stessa logica già in uso in consiglio-admin.html/notte-admin.html.
+async function caricaNaufraghi() {
+  mappaUidCanonico = await caricaMappaUidCanonico();
+  const snap = await getDocs(collection(db, 'robinson_naufraghi'));
+  const seenAuth = new Set();
+  snap.forEach(d => {
+    const authUid = uidCanonico(mappaUidCanonico, d.id);
+    if (authUid === ADMIN_UID) return;
+    const data = d.data();
+    if (!data.nome) return;
+    if (seenAuth.has(authUid)) return;
+    seenAuth.add(authUid);
+    naufraghiInfo[authUid] = { nome: data.nome, foto: data.fotoRobinson || data.fotoProfilo || '' };
+  });
+}
+
+async function caricaRisposteQuestionario() {
+  const snap = await getDocs(collection(db, 'robinson_questionario_campo'));
+  const canonEntry = e => (e && e.uid) ? { uid: uidCanonico(mappaUidCanonico, e.uid), perche: e.perche || '' } : null;
+  const canonArr = arr => (arr || []).map(canonEntry);
+  const perAutore = {};
+  snap.forEach(d => {
+    const raw = d.data();
+    const autoreUid = uidCanonico(mappaUidCanonico, d.id);
+    const risposta = {
+      docId: d.id,
+      autoreUid,
+      migliori: canonArr(raw.migliori),
+      peggiori: canonArr(raw.peggiori),
+      puoMigliorare: canonArr(raw.puoMigliorare),
+      timestamp: raw.timestamp,
+      bloccata: !!raw.bloccata,
+    };
+    const esistente = perAutore[autoreUid];
+    const tNuovo = risposta.timestamp?.toMillis ? risposta.timestamp.toMillis() : 0;
+    const tVecchio = esistente?.timestamp?.toMillis ? esistente.timestamp.toMillis() : -1;
+    if (!esistente || tNuovo >= tVecchio) perAutore[autoreUid] = risposta;
+  });
+  risposteQuestionario = Object.values(perAutore).sort((a, b) => nomeDi(a.autoreUid).localeCompare(nomeDi(b.autoreUid), 'it'));
+}
+
+async function ricarica() {
+  await caricaRisposteQuestionario();
+  renderTutto();
+}
+
+// ── Vista "Per naufrago" ─────────────────────────────────────────────────
+function renderVistaNaufrago() {
+  if (!risposteQuestionario.length) {
+    return '<div class="vuoto">Nessun naufrago ha ancora risposto alla bussola del gruppo.</div>';
+  }
+  return risposteQuestionario.map(r => `
+    <div class="rc-card questionario-card">
+      <div class="qc-header">
+        <span><strong>${esc(nomeDi(r.autoreUid))}</strong>${r.bloccata ? '<span class="qc-bloccata">🔒 bloccata</span>' : ''}</span>
+        <span class="qc-data">${r.timestamp ? esc(fmtDate(r.timestamp)) : ''}</span>
+        <span class="qc-azioni">
+          <button class="blocca-btn" data-uid="${esc(r.autoreUid)}">${r.bloccata ? '🔓 Sblocca' : '🔒 Blocca'}</button>
+          <button class="reset-btn" data-uid="${esc(r.autoreUid)}">🗑️ Resetta</button>
+        </span>
+      </div>
+      ${DOMANDE.map(d => `
+        <div class="qc-domanda">
+          <div class="qc-domanda-titolo" style="color:${d.colore};">${d.emoji} ${esc(d.titolo)}</div>
+          ${POSIZIONI.map((pos, i) => {
+            const e = r[d.chiave][i];
+            return `<div class="qc-riga">
+              <span>${pos.emoji}</span>
+              <span class="qc-nome">${e && e.uid ? esc(nomeDi(e.uid)) : '—'}</span>
+              ${e && e.perche ? `<span class="qc-perche">"${esc(e.perche)}"</span>` : ''}
+            </div>`;
+          }).join('')}
+        </div>
+      `).join('')}
+    </div>
+  `).join('');
+}
+
+// ── Vista "Lettura trasversale" ──────────────────────────────────────────
+function renderVistaTrasversale() {
+  const barra = `
+    <div class="filtro-bar" style="margin-bottom:var(--rc-sp-3);">
+      ${DOMANDE.map(d => `<button class="filtro-btn ${domandaTrasversale === d.chiave ? 'active' : ''}" data-domanda-trasv="${d.chiave}">${d.emoji} ${esc(d.titolo)}</button>`).join('')}
+    </div>
+  `;
+  const d = DOMANDE.find(x => x.chiave === domandaTrasversale);
+  const motivazioni = [];
+  risposteQuestionario.forEach(r => {
+    r[d.chiave].forEach((e, i) => {
+      if (e && e.uid && e.perche) motivazioni.push({ autoreUid: r.autoreUid, nominatoUid: e.uid, perche: e.perche, pos: POSIZIONI[i] });
+    });
+  });
+  const lista = motivazioni.length
+    ? motivazioni.map(m => `
+        <div class="trasv-item">
+          <span class="trasv-quote">"${esc(m.perche)}"</span>
+          <span class="trasv-meta">${m.pos.emoji} ${esc(nomeDi(m.nominatoUid))} — indicato/a da ${esc(nomeDi(m.autoreUid))}</span>
+        </div>
+      `).join('')
+    : '<div class="vuoto">Nessuna motivazione ancora raccolta per questa domanda.</div>';
+  return barra + `<div class="rc-sezione-sottotitolo">Tutte le motivazioni "${esc(d.titolo)}" in fila: aiutano a far emergere i criteri di valore ricorrenti nella ciurma.</div>` + lista;
+}
+
+// ── Vista "Aggregati" ─────────────────────────────────────────────────────
+function calcolaAggregati() {
+  const conte = {};
+  Object.keys(naufraghiInfo).forEach(uid => { conte[uid] = { migliori: 0, peggiori: 0, puoMigliorare: 0 }; });
+  risposteQuestionario.forEach(r => {
+    DOMANDE.forEach(d => {
+      r[d.chiave].forEach(e => {
+        if (e && e.uid && conte[e.uid]) conte[e.uid][d.chiave]++;
+      });
+    });
+  });
+  return conte;
+}
+
+function renderVistaAggregati() {
+  const conte = calcolaAggregati();
+  const barra = `
+    <div class="filtro-bar" style="margin-bottom:var(--rc-sp-3);">
+      <button class="filtro-btn ${ordinaAggregati === 'alfabetico' ? 'active' : ''}" data-ordina-agg="alfabetico">🔤 Alfabetico</button>
+      <button class="filtro-btn ${ordinaAggregati === 'migliori' ? 'active' : ''}" data-ordina-agg="migliori">🌟 Più "migliore"</button>
+      <button class="filtro-btn ${ordinaAggregati === 'peggiori' ? 'active' : ''}" data-ordina-agg="peggiori">⚠️ Più "peggiore"</button>
+      <button class="filtro-btn ${ordinaAggregati === 'puoMigliorare' ? 'active' : ''}" data-ordina-agg="puoMigliorare">🌱 Più "può migliorare"</button>
+    </div>
+  `;
+  let uids = Object.keys(naufraghiInfo);
+  if (ordinaAggregati === 'alfabetico') {
+    uids.sort((a, b) => nomeDi(a).localeCompare(nomeDi(b), 'it'));
+  } else {
+    uids.sort((a, b) => (conte[b][ordinaAggregati] - conte[a][ordinaAggregati]) || nomeDi(a).localeCompare(nomeDi(b), 'it'));
+  }
+  const righe = uids.map(uid => `
+    <tr>
+      <td>${esc(nomeDi(uid))}</td>
+      <td class="num">${conte[uid].migliori}</td>
+      <td class="num">${conte[uid].peggiori}</td>
+      <td class="num">${conte[uid].puoMigliorare}</td>
+    </tr>
+  `).join('');
+  return barra + `
+    <table class="agg-tabella">
+      <thead><tr><th>Naufrago</th><th>🌟 Migliore</th><th>⚠️ Peggiore</th><th>🌱 Può migliorare</th></tr></thead>
+      <tbody>${righe}</tbody>
+    </table>
+  `;
+}
+
+// ── Render principale ──────────────────────────────────────────────────────
+function renderTutto() {
+  const risposeCount = risposteQuestionario.length;
+  const totaleNaufraghi = Object.keys(naufraghiInfo).length;
+  document.getElementById('qc-stato').textContent = `${risposeCount} su ${totaleNaufraghi} naufraghi hanno risposto.`;
+
+  const contenuto = document.getElementById('vista-contenuto');
+  if (vistaAttiva === 'naufrago') contenuto.innerHTML = renderVistaNaufrago();
+  else if (vistaAttiva === 'trasversale') contenuto.innerHTML = renderVistaTrasversale();
+  else contenuto.innerHTML = renderVistaAggregati();
+
+  if (vistaAttiva === 'naufrago') {
+    contenuto.querySelectorAll('.blocca-btn').forEach(btn => {
+      btn.addEventListener('click', () => toggleBlocco(btn.dataset.uid));
+    });
+    contenuto.querySelectorAll('.reset-btn').forEach(btn => {
+      btn.addEventListener('click', () => resettaCompilazione(btn.dataset.uid));
+    });
+  } else if (vistaAttiva === 'trasversale') {
+    contenuto.querySelectorAll('[data-domanda-trasv]').forEach(btn => {
+      btn.addEventListener('click', () => { domandaTrasversale = btn.dataset.domandaTrasv; renderTutto(); });
+    });
+  } else if (vistaAttiva === 'aggregati') {
+    contenuto.querySelectorAll('[data-ordina-agg]').forEach(btn => {
+      btn.addEventListener('click', () => { ordinaAggregati = btn.dataset.ordinaAgg; renderTutto(); });
+    });
+  }
+}
+
+async function toggleBlocco(uid) {
+  const r = risposteQuestionario.find(x => x.autoreUid === uid);
+  if (!r) return;
+  await updateDoc(doc(db, 'robinson_questionario_campo', r.docId), { bloccata: !r.bloccata });
+  await ricarica();
+}
+
+async function resettaCompilazione(uid) {
+  const r = risposteQuestionario.find(x => x.autoreUid === uid);
+  if (!r) return;
+  if (!confirm(`Resettare la compilazione di ${nomeDi(uid)}? Le risposte verranno eliminate e potrà ricompilare da zero.`)) return;
+  await deleteDoc(doc(db, 'robinson_questionario_campo', r.docId));
+  await ricarica();
+}
+
+function esportaCSV() {
+  const righe = [['Autore', 'Domanda', 'Posizione', 'Nominato', 'Perché']];
+  risposteQuestionario.forEach(r => {
+    DOMANDE.forEach(d => {
+      r[d.chiave].forEach((e, i) => {
+        if (!e || !e.uid) return;
+        righe.push([nomeDi(r.autoreUid), d.titolo, POSIZIONI[i].label, nomeDi(e.uid), e.perche || '']);
+      });
+    });
+  });
+  const csv = righe.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(';')).join('\r\n');
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'bussola-del-gruppo.csv';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+document.querySelectorAll('#vista-toggle-bar .filtro-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#vista-toggle-bar .filtro-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    vistaAttiva = btn.dataset.vista;
+    renderTutto();
+  });
+});
+document.getElementById('btn-csv').addEventListener('click', esportaCSV);
+
+// ── Guardia admin + avvio ───────────────────────────────────────────────
+let resolved = false;
+onAuthStateChanged(auth, async user => {
+  if (resolved) return;
+  resolved = true;
+  if (!user || user.uid !== ADMIN_UID) { window.location.replace('index.html'); return; }
+
+  await caricaNaufraghi();
+  await caricaRisposteQuestionario();
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('main').style.display = 'block';
+  renderTutto();
+});
+</script>
+</body>
+</html>
