@@ -818,5 +818,19 @@ service cloud.firestore {
       allow read: if puoAccedereGestione();
       allow write: if isAdmin();
     }
+
+    // ── Consolle LSU (parco-avella/lsu): dati condivisi dei Lavori Socialmente Utili ──
+    // Il documento lsu/dati contiene i dati CRIPTATI nel browser con la password della
+    // consolle: qui si decide solo CHI può leggerli/salvarli (admin o account abilitati
+    // in lsu_autorizzati/{uid}, che crea solo l'admin).
+    function puoAccedereLSU() {
+      return isAdmin() ||
+        (isLoggedIn() && exists(/databases/$(database)/documents/lsu_autorizzati/$(request.auth.uid)));
+    }
+    match /lsu/{doc} { allow read, write: if puoAccedereLSU(); }
+    match /lsu_autorizzati/{uid} {
+      allow read: if isOwner(uid) || isAdmin();
+      allow write: if isAdmin();
+    }
   }
 }
