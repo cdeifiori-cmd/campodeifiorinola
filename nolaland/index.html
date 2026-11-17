@@ -2128,9 +2128,9 @@ const BARCA_FIABA = {
     },
     regalo(a, x, y, s, c) { fs(a, rett(x - s * .35, y - s * .7, s * .7, s * .7), c || "#cf2a1f", .025); fs(a, rett(x - s * .06, y - s * .7, s * .12, s * .7), "#ffd27a", 0); fs(a, ellisse(x - s * .12, y - s * .78, s * .12, s * .08), "#ffd27a", .015); fs(a, ellisse(x + s * .12, y - s * .78, s * .12, s * .08), "#ffd27a", .015); },
     bobina(a, x, y, s) { fs(a, cerchio(x, y - s * .5, s * .5), "#3d4f66", .025); for (let k = 0; k < 5; k++) { const an = k / 5 * 7; fs(a, cerchio(x + Math.cos(an) * s * .27, y - s * .5 + Math.sin(an) * s * .27, s * .1), "#fffaf0", 0); } fs(a, cerchio(x, y - s * .5, s * .07), "#fffaf0", 0); },
-    corona(a, x, y, s, c) { fs(a, poli([[x - s * .45, y], [x - s * .5, y - s * .7], [x - s * .22, y - s * .35], [x, y - s * .85], [x + s * .22, y - s * .35], [x + s * .5, y - s * .7], [x + s * .45, y]]), c || "#f4a01c", .025); },
+    corona(a, x, y, s, c) { fs(a, poli([[x - s * .45, y], [x - s * .5, y - s * .7], [x - s * .22, y - s * .35], [x, y - s * .85], [x + s * .22, y - s * .35], [x + s * .5, y - s * .7], [x + s * .45, y]]), c || "#f2c230", .025); fs(a, cerchio(x, y - s * .2, s * .07), "#cf2a1f", .015); fs(a, cerchio(x - s * .27, y - s * .18, s * .05), "#2c7a57", .015); fs(a, cerchio(x + s * .27, y - s * .18, s * .05), "#24508f", .015); },
     pennello(a, x, y, s) { a.save(); a.translate(x, y); a.rotate(-.35); fs(a, rett(-s * .05, -s, s * .1, s * .7), "#c48a4a", .02); fs(a, poli([[-s * .07, -s * .3], [s * .07, -s * .3], [0, 0]]), "#cf2a1f", .02); a.restore(); },
-    stella(a, x, y, s) { stella(a, x, y - s * .5, s * .5, "#ffd27a"); },
+    stella(a, x, y, s) { stella(a, x, y - s * .5, s * .5, "#c9ced6"); stella(a, x - s * .06, y - s * .56, s * .2, "rgba(255,255,255,.75)"); },
     ciak(a, x, y, s) { fs(a, rett(x - s * .45, y - s * .6, s * .9, s * .6), "#2a2a2a", .025); fs(a, poli([[x - s * .45, y - s * .62], [x + s * .45, y - s * .78], [x + s * .45, y - s * .9], [x - s * .45, y - s * .76]]), "#fffaf0", .02); fs(a, rett(x - s * .35, y - s * .45, s * .7, s * .05), "#fffaf0", 0); },
     tamburo(a, x, y, s) { fs(a, rett(x - s * .38, y - s * .7, s * .76, s * .7), "#cf2a1f", .025); fs(a, ellisse(x, y - s * .7, s * .38, s * .12), "#fffaf0", .025); a.lineWidth = s * .04; a.strokeStyle = "#ffd27a"; a.beginPath(); for (let k = 0; k < 4; k++) { a.moveTo(x - s * .38 + k * s * .25, y - s * .65); a.lineTo(x - s * .26 + k * s * .25, y - s * .05); } a.stroke(); }
   };
@@ -2762,10 +2762,10 @@ const BARCA_FIABA = {
     { pelle: "#f8dcc0", capelli: "#e8c25a", veste: "#3fa7c9", gambe: "#ec7c9a", scarpe: "#fffaf0", stile: "lunghi", gonna: true },
     { pelle: "#d9a07a", capelli: "#6b3a1e", veste: "#9ccf4e", gambe: "#5b3a22", scarpe: "#cf2a1f" },
     { pelle: "#b07a52", capelli: "#2a1a10", veste: "#fffaf0", gambe: "#cf2a1f", scarpe: "#24508f", coda: true, righe: "#24508f", gonna: true },
-    { pelle: "#f6c9a0", capelli: "#a8452a", veste: "#24508f", gambe: "#9ccf4e", scarpe: "#f4a01c", stile: "ricci" },
+    { pelle: "#f6c9a0", capelli: "#a8452a", veste: "#f08a24", gambe: "#9ccf4e", scarpe: "#24508f", stile: "ricci" },
     { pelle: "#e8b48c", capelli: "#3d2414", veste: "#c2364e", gambe: "#ffd27a", scarpe: "#3d2b1c", stile: "lunghi", gonna: true, righe: "#ffd27a" },
     { pelle: "#6e4630", capelli: "#141010", veste: "#ffd27a", gambe: "#7b5fc0", scarpe: "#fffaf0", coda: true },
-    { pelle: "#f2d0b0", capelli: "#7a5030", veste: "#e86a2c", gambe: "#2c7a57", scarpe: "#5b3a22", righe: "#fffaf0" }
+    { pelle: "#f2d0b0", capelli: "#7a5030", veste: "#2fb5a0", gambe: "#2c4a6e", scarpe: "#5b3a22", righe: "#fffaf0" }
   ];
   // il bambino numero "posto" della pagina i: sei posti per pagina, tutti diversi tra loro
   const bimboDi = (i, posto) => BIMBI[(i * 5 + posto) % BIMBI.length];
@@ -2856,7 +2856,7 @@ const BARCA_FIABA = {
       });
       // gli oggetti sul tavolo
       const posti = [w * .28, w * .5, w * .72], dim = .5;
-      posti.forEach((x, i) => { const c = cose[i % cose.length]; OGG[c] && OGG[c](a, x, piano, dim, i % 2 ? tinta : undefined); });
+      posti.forEach((x, i) => { const c = cose[i % cose.length]; OGG[c] && OGG[c](a, x, piano, dim, i % 2 && c !== "corona" ? tinta : undefined); });
       // il tavolino: piano con la tovaglia a festoni e gambe corte
       fs(a, rett(tx0 + .14, piano + .12, .1, h - piano - .14), "#8a5a32", .025);
       fs(a, rett(tx1 - .24, piano + .12, .1, h - piano - .14), "#8a5a32", .025);
