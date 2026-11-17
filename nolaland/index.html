@@ -2754,27 +2754,51 @@ const BARCA_FIABA = {
     cucina: { cose: ["pizza", "pizza", "pizza"], bimbi: ["festa", "festa"] }
   };
   const BIMBI = [
-    { pelle: "#f6c9a0", capelli: "#3d2414", veste: "#ec7c9a", coda: false },
-    { pelle: "#c98d5e", capelli: "#1f140c", veste: "#2c7a57", coda: false },
-    { pelle: "#f2d0b0", capelli: "#c4772c", veste: "#7b5fc0", coda: true },
-    { pelle: "#e0a57a", capelli: "#2a1a10", veste: "#24508f", coda: false }
+    { pelle: "#f6c9a0", capelli: "#3d2414", veste: "#ec7c9a", gambe: "#3a3a5e", scarpe: "#5b3a22", stile: "lunghi" },
+    { pelle: "#c98d5e", capelli: "#1f140c", veste: "#2c7a57", gambe: "#c48a4a", scarpe: "#24508f", stile: "ricci" },
+    { pelle: "#f2d0b0", capelli: "#c4772c", veste: "#7b5fc0", gambe: "#24508f", scarpe: "#cf2a1f", coda: true, gonna: true },
+    { pelle: "#e0a57a", capelli: "#2a1a10", veste: "#f4a01c", gambe: "#2c4a6e", scarpe: "#3d2b1c", righe: "#cf2a1f" },
+    { pelle: "#8a5a3a", capelli: "#141010", veste: "#cf2a1f", gambe: "#f2e3c4", scarpe: "#2c7a57", stile: "ricci", righe: "#fffaf0" },
+    { pelle: "#f8dcc0", capelli: "#e8c25a", veste: "#3fa7c9", gambe: "#ec7c9a", scarpe: "#fffaf0", stile: "lunghi", gonna: true },
+    { pelle: "#d9a07a", capelli: "#6b3a1e", veste: "#9ccf4e", gambe: "#5b3a22", scarpe: "#cf2a1f" },
+    { pelle: "#b07a52", capelli: "#2a1a10", veste: "#fffaf0", gambe: "#cf2a1f", scarpe: "#24508f", coda: true, righe: "#24508f", gonna: true },
+    { pelle: "#f6c9a0", capelli: "#a8452a", veste: "#24508f", gambe: "#9ccf4e", scarpe: "#f4a01c", stile: "ricci" },
+    { pelle: "#e8b48c", capelli: "#3d2414", veste: "#c2364e", gambe: "#ffd27a", scarpe: "#3d2b1c", stile: "lunghi", gonna: true, righe: "#ffd27a" },
+    { pelle: "#6e4630", capelli: "#141010", veste: "#ffd27a", gambe: "#7b5fc0", scarpe: "#fffaf0", coda: true },
+    { pelle: "#f2d0b0", capelli: "#7a5030", veste: "#e86a2c", gambe: "#2c7a57", scarpe: "#5b3a22", righe: "#fffaf0" }
   ];
+  // il bambino numero "posto" della pagina i: sei posti per pagina, tutti diversi tra loro
+  const bimboDi = (i, posto) => BIMBI[(i * 5 + posto) % BIMBI.length];
+  // capelli lunghi (dietro la testa) e ricci (sopra)
+  function chioma(a, b, x, y, r, fase) {
+    if (fase === "dietro" && b.stile === "lunghi") fs(a, ellisse(x, y + r * .45, r * 1.2, r * 1.15), b.capelli, .025);
+    if (fase === "sopra" && b.stile === "ricci") for (let k = 0; k < 7; k++) { const an = Math.PI * (1.08 + k * .14); fs(a, cerchio(x + Math.cos(an) * r * .95, y - .02 + Math.sin(an) * r * .95, r * .3), b.capelli, .02); }
+  }
+  // la maglietta, con le righe se ce le ha, e la gonna o i pantaloni
+  function maglia(a, b, forma, x, y0, y1) {
+    fs(a, forma, b.veste, .03);
+    if (b.righe) { a.save(); a.clip(forma); a.fillStyle = b.righe; for (let y = y0 + .08; y < y1; y += .12) a.fillRect(x - .4, y, .8, .045); a.restore(); a.lineWidth = .03; a.strokeStyle = INK; a.stroke(forma); }
+  }
   function bimbo(b, cosa) {
     return (a, w, h) => {
       const cx = w / 2;
       a.lineCap = "round";
-      fs(a, rett(cx - .14, h - .46, .1, .42), "#3a3a5e", .025); fs(a, rett(cx + .04, h - .46, .1, .42), "#3a3a5e", .025);
-      fs(a, ellisse(cx - .11, h - .04, .1, .045), "#5b3a22", .02); fs(a, ellisse(cx + .11, h - .04, .1, .045), "#5b3a22", .02);
+      fs(a, rett(cx - .14, h - .46, .1, .42), b.gonna ? b.pelle : b.gambe, .025); fs(a, rett(cx + .04, h - .46, .1, .42), b.gonna ? b.pelle : b.gambe, .025);
+      fs(a, ellisse(cx - .11, h - .04, .1, .045), b.scarpe, .02); fs(a, ellisse(cx + .11, h - .04, .1, .045), b.scarpe, .02);
       const braccio = (x1, y1, x2, y2) => { a.lineWidth = .11; a.strokeStyle = INK; a.beginPath(); a.moveTo(x1, y1); a.lineTo(x2, y2); a.stroke(); a.lineWidth = .07; a.strokeStyle = b.veste; a.stroke(); fs(a, cerchio(x2, y2, .05), b.pelle, .02); };
       const mani = { pennello: [[cx + .42, .55], [cx - .36, 1.0]], chitarra: [[cx + .22, 1.05], [cx - .3, .95]], libro: [[cx + .22, .92], [cx - .22, .92]], festa: [[cx + .4, .3], [cx - .4, .3]] }[cosa];
       const dietro = cosa === "festa" || cosa === "pennello";
       if (dietro) { braccio(cx + .16, .85, ...mani[0]); braccio(cx - .16, .85, ...mani[1]); }
-      fs(a, poli([[cx - .19, .78], [cx + .19, .78], [cx + .27, h - .42], [cx - .27, h - .42]]), b.veste, .035);
+      maglia(a, b, poli([[cx - .19, .78], [cx + .19, .78], [cx + .27, h - .42], [cx - .27, h - .42]]), cx, .78, h - .42);
+      if (b.gonna) fs(a, poli([[cx - .25, h - .7], [cx + .25, h - .7], [cx + .36, h - .38], [cx - .36, h - .38]]), b.gambe, .03);
+      else fs(a, rett(cx - .26, h - .62, .52, .2), b.gambe, .03);
       if (!dietro) { braccio(cx + .16, .85, ...mani[0]); braccio(cx - .16, .85, ...mani[1]); }
       fs(a, rett(cx - .05, .66, .1, .14), b.pelle, .025);
+      chioma(a, b, cx, .5, .21, "dietro");
       fs(a, cerchio(cx, .5, .21), b.pelle, .035);
       const cap = P(); cap.arc(cx, .48, .23, Math.PI * 1.05, Math.PI * 1.95); cap.quadraticCurveTo(cx + .05, .36, cx - .2, .44); cap.closePath();
       fs(a, cap, b.capelli, .03);
+      chioma(a, b, cx, .5, .21, "sopra");
       if (b.coda) { fs(a, cerchio(cx - .24, .55, .08), b.capelli, .025); fs(a, cerchio(cx + .24, .55, .08), b.capelli, .025); }
       fs(a, cerchio(cx - .075, .52, .022), INK, 0); fs(a, cerchio(cx + .075, .52, .022), INK, 0);
       fs(a, cerchio(cx - .12, .58, .035), "rgba(236,124,154,.55)", 0); fs(a, cerchio(cx + .12, .58, .035), "rgba(236,124,154,.55)", 0);
@@ -2811,9 +2835,11 @@ const BARCA_FIABA = {
       a.lineCap = "round";
       const piano = .86, tx0 = .72, tx1 = w - .72;
       const testa = (b, x, y, r) => {
+        chioma(a, b, x, y, r, "dietro");
         fs(a, cerchio(x, y, r), b.pelle, .03);
         const cap = P(); cap.arc(x, y - .02, r * 1.08, Math.PI * 1.05, Math.PI * 1.95); cap.quadraticCurveTo(x + r * .2, y - r * .55, x - r * .9, y - r * .25); cap.closePath();
         fs(a, cap, b.capelli, .025);
+        chioma(a, b, x, y, r, "sopra");
         if (b.coda) { fs(a, cerchio(x - r * 1.1, y + r * .2, r * .35), b.capelli, .02); fs(a, cerchio(x + r * 1.1, y + r * .2, r * .35), b.capelli, .02); }
         fs(a, cerchio(x - r * .36, y + r * .08, r * .1), INK, 0); fs(a, cerchio(x + r * .36, y + r * .08, r * .1), INK, 0);
         fs(a, cerchio(x - r * .58, y + r * .38, r * .16), "rgba(236,124,154,.55)", 0); fs(a, cerchio(x + r * .58, y + r * .38, r * .16), "rgba(236,124,154,.55)", 0);
@@ -2823,8 +2849,8 @@ const BARCA_FIABA = {
       // i bambini dietro il tavolo: si vede la parte di sopra, con le mani appoggiate sul piano
       const dietro = [[w * .39, 0], [w * .61, 1]];
       dietro.forEach(([x, k]) => {
-        const b = BIMBI[(i0 + k + 1) % 4];
-        fs(a, poli([[x - .17, .5], [x + .17, .5], [x + .24, piano + .05], [x - .24, piano + .05]]), b.veste, .03);
+        const b = bimboDi(i0, 2 + k);
+        maglia(a, b, poli([[x - .17, .5], [x + .17, .5], [x + .24, piano + .05], [x - .24, piano + .05]]), x, .5, piano);
         braccio(b, x - .14, .56, x - .3, piano - .04); braccio(b, x + .14, .56, x + .3, piano - .04);
         testa(b, x, .33, .17);
       });
@@ -2844,11 +2870,13 @@ const BARCA_FIABA = {
       for (let k = 0; k < n; k++) { a.beginPath(); a.arc(tx0 + (k + .5) * pz, piano + .13, .03, 0, 7); a.fill(); }
       // due bambini in piedi ai lati, che allungano un braccio verso il tavolo
       [[.38, 1], [w - .38, -1]].forEach(([x, verso], k) => {
-        const b = BIMBI[(i0 + k * 2) % 4];
-        fs(a, rett(x - .12, h - .4, .09, .38), "#3a3a5e", .02); fs(a, rett(x + .03, h - .4, .09, .38), "#3a3a5e", .02);
-        fs(a, ellisse(x - .09, h - .04, .09, .04), "#5b3a22", .02); fs(a, ellisse(x + .09, h - .04, .09, .04), "#5b3a22", .02);
+        const b = bimboDi(i0, 4 + k);
+        fs(a, rett(x - .12, h - .4, .09, .38), b.gonna ? b.pelle : b.gambe, .02); fs(a, rett(x + .03, h - .4, .09, .38), b.gonna ? b.pelle : b.gambe, .02);
+        fs(a, ellisse(x - .09, h - .04, .09, .04), b.scarpe, .02); fs(a, ellisse(x + .09, h - .04, .09, .04), b.scarpe, .02);
         braccio(b, x - verso * .14, .62, x - verso * .3, .3);
-        fs(a, poli([[x - .17, .55], [x + .17, .55], [x + .24, h - .38], [x - .24, h - .38]]), b.veste, .03);
+        maglia(a, b, poli([[x - .17, .55], [x + .17, .55], [x + .24, h - .38], [x - .24, h - .38]]), x, .55, h - .38);
+        if (b.gonna) fs(a, poli([[x - .22, h - .62], [x + .22, h - .62], [x + .32, h - .36], [x - .32, h - .36]]), b.gambe, .025);
+        else fs(a, rett(x - .23, h - .56, .46, .18), b.gambe, .025);
         braccio(b, x + verso * .14, .62, x + verso * .38, piano - .02);
         testa(b, x, .36, .18);
       });
@@ -3096,8 +3124,8 @@ const BARCA_FIABA = {
       { w: 3.2, h: 2.6, x: 0, z: -.9, o: .35, scala: 1.3, d: CENTRI[id] || centroIcona(ICONE[id], tinta) },
       FORMATORI[id]
         ? { w: 1.6, h: 2.3, x: -2.65, z: .45, o: .6, scala: 1.5, d: medaglione(FORMATORI[id].nome, FORMATORI[id].ritratto, tinta), lab: id, anim: (m, t) => m.rotation.z = .015 * Math.sin(t * 1.1) }
-        : { w: 1.0, h: 1.65, x: -2.85, z: .6, o: .6, scala: 1.3, d: bimbo(BIMBI[pagina.i % 4], sp.bimbi[0]), anim: (m, t) => m.position.y = m.userData.y0 + Math.max(0, Math.sin(t * 2.2)) * .06 },
-      { w: 1.0, h: 1.65, x: 2.85, z: .6, o: .65, scala: 1.3, d: bimbo(BIMBI[(pagina.i + 2) % 4], sp.bimbi[1]), anim: (m, t) => m.position.y = m.userData.y0 + Math.max(0, Math.sin(t * 2.2 + 1.6)) * .06 },
+        : { w: 1.0, h: 1.65, x: -2.85, z: .6, o: .6, scala: 1.3, d: bimbo(bimboDi(pagina.i, 0), sp.bimbi[0]), anim: (m, t) => m.position.y = m.userData.y0 + Math.max(0, Math.sin(t * 2.2)) * .06 },
+      { w: 1.0, h: 1.65, x: 2.85, z: .6, o: .65, scala: 1.3, d: bimbo(bimboDi(pagina.i, 1), sp.bimbi[1]), anim: (m, t) => m.position.y = m.userData.y0 + Math.max(0, Math.sin(t * 2.2 + 1.6)) * .06 },
       { w: 3.2, h: 1.3, x: 0, z: 1.8, o: .85, scala: 1.5, d: tavolino(sp.cose, tinta, pagina.i) }
     ];
   }
