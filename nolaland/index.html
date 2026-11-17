@@ -3256,6 +3256,8 @@ const BARCA_FIABA = {
   }
   /* ---------- i fuochi d'artificio di notte, da dietro il Municipio ---------- */
   const FUOCHI_N = 2400, COLORI_FUOCHI = [[1, .2, .35], [1, .78, .25], [.35, 1, .45], [.35, .6, 1], [1, .35, 1], [1, 1, 1], [1, .5, .15], [.3, 1, 1]];
+  // non tutte le notti: a volte la piazza è calma, a volte ci sono i fuochi. Per provarle: ?fuochi oppure ?calma
+  const CON_FUOCHI = NOTTE && (/[?&]fuochi/.test(location.search) ? true : /[?&]calma/.test(location.search) ? false : Math.random() < .5);
   let fuochi = null;
   function costruisciFuochi() {
     const geo = new T.BufferGeometry();
@@ -3834,7 +3836,7 @@ const BARCA_FIABA = {
     try { disegnaTornaPiazza(); } catch (e) { console.error(e); }
     costruisciCielo();
     try { costruisciAnimali(); } catch (e) { console.error(e); }
-    try { if (NOTTE) costruisciFuochi(); } catch (e) { console.error(e); }
+    try { if (CON_FUOCHI) costruisciFuochi(); } catch (e) { console.error(e); }
     prepara(0);
     pagSx.material.map = G[0].L; pagDx.material.map = G[0].R;
     pagSx.material.needsUpdate = pagDx.material.needsUpdate = true;
