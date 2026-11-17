@@ -1993,6 +1993,7 @@ const BARCA_FIABA = {
   let aggiornaTabella = () => {};
   function scriviTesto() {
     const p = PAGINE[idx];
+    try { disegnaTornaPiazza(p.id); } catch (e) {}
     const etichetta = p.tipo === "lab" ? `Il giglio: ${LABS[p.id].tag} · ` : p.tipo === "barca" ? `La Barca: ${LABS[p.id].tag} · ` : "";
     $f("pop-num").textContent = `${etichetta}pagina ${idx + 1} di ${N}`;
     $f("pop-titolo").textContent = p.titolo;
@@ -2644,31 +2645,101 @@ const BARCA_FIABA = {
     }
   }
   // il medaglione "Torna in piazza": il ritratto in un cerchio con la scritta sotto
-  function medaglioneCasa(a, w, h) {
+  // Annalisa: capelli scuri mossi fino alle spalle con la riga di lato, grande sorriso, maglia marrone e collanina d'oro
+  function ritrattoAnnalisa(a, cx, cy, r) {
+    const sf = a.createRadialGradient(cx, cy - .2 * r, .1 * r, cx, cy, 1.1 * r); sf.addColorStop(0, "#fff3cf"); sf.addColorStop(1, "#ffd27a");
+    fs(a, cerchio(cx, cy, r), sf, 0);
+    for (let k = 0; k < 12; k++) { const an = k / 12 * Math.PI * 2; fs(a, poli([[cx, cy], [cx + Math.cos(an) * 1.3 * r, cy + Math.sin(an) * 1.3 * r], [cx + Math.cos(an + .26) * 1.3 * r, cy + Math.sin(an + .26) * 1.3 * r]]), "rgba(255,255,255,.35)", 0); }
+    const CAP = "#2a1a14", PELLE = "#f0bf98";
+    // i capelli dietro, mossi, che scendono sulle spalle
+    const dietro = P();
+    dietro.moveTo(cx - .5 * r, cy + .55 * r);
+    dietro.bezierCurveTo(cx - .62 * r, cy + .2 * r, cx - .55 * r, cy - .62 * r, cx, cy - .58 * r);
+    dietro.bezierCurveTo(cx + .55 * r, cy - .62 * r, cx + .62 * r, cy + .2 * r, cx + .48 * r, cy + .55 * r);
+    dietro.quadraticCurveTo(cx + .36 * r, cy + .62 * r, cx + .3 * r, cy + .45 * r);
+    dietro.lineTo(cx - .3 * r, cy + .45 * r);
+    dietro.quadraticCurveTo(cx - .38 * r, cy + .64 * r, cx - .5 * r, cy + .55 * r);
+    dietro.closePath();
+    fs(a, dietro, CAP, .03);
+    [[-.5, .3], [-.54, .48], [.5, .3], [.52, .46]].forEach(([dx, dy]) => fs(a, cerchio(cx + dx * r, cy + dy * r, .1 * r), CAP, .02));
+    // la maglia marrone scuro
+    const corpo = P(); corpo.moveTo(cx - 1.1 * r, cy + 1.1 * r); corpo.quadraticCurveTo(cx - .95 * r, cy + .42 * r, cx - .22 * r, cy + .44 * r); corpo.lineTo(cx + .22 * r, cy + .44 * r); corpo.quadraticCurveTo(cx + .95 * r, cy + .42 * r, cx + 1.1 * r, cy + 1.1 * r); corpo.closePath();
+    fs(a, corpo, "#4a3328", .03);
+    // il collo con lo scollo tondo e la collanina d'oro
+    const scollo = P(); scollo.moveTo(cx - .2 * r, cy + .44 * r); scollo.quadraticCurveTo(cx, cy + .66 * r, cx + .2 * r, cy + .44 * r); scollo.closePath();
+    fs(a, rett(cx - .1 * r, cy + .2 * r, .2 * r, .3 * r), "#e3ad86", .02);
+    fs(a, scollo, "#e3ad86", .02);
+    a.lineWidth = .022 * r; a.strokeStyle = "#e8b83a";
+    a.beginPath(); a.arc(cx, cy + .36 * r, .17 * r, .45, Math.PI - .45); a.stroke();
+    a.beginPath(); a.arc(cx, cy + .38 * r, .22 * r, .5, Math.PI - .5); a.stroke();
+    fs(a, poli([[cx - .03 * r, cy + .6 * r], [cx + .03 * r, cy + .6 * r], [cx, cy + .67 * r]]), "#e8b83a", .01);
+    // il viso
+    fs(a, ellisse(cx, cy - .04 * r, .3 * r, .37 * r), PELLE, .03);
+    // la frangia di lato
+    const fr = P();
+    fr.moveTo(cx - .33 * r, cy + .02 * r);
+    fr.bezierCurveTo(cx - .36 * r, cy - .4 * r, cx - .05 * r, cy - .52 * r, cx + .2 * r, cy - .44 * r);
+    fr.bezierCurveTo(cx + .36 * r, cy - .36 * r, cx + .38 * r, cy - .1 * r, cx + .32 * r, cy + .08 * r);
+    fr.quadraticCurveTo(cx + .26 * r, cy - .2 * r, cx + .12 * r, cy - .3 * r);
+    fr.quadraticCurveTo(cx - .1 * r, cy - .22 * r, cx - .22 * r, cy - .32 * r);
+    fr.quadraticCurveTo(cx - .26 * r, cy - .14 * r, cx - .33 * r, cy + .02 * r);
+    fr.closePath();
+    fs(a, fr, CAP, .025);
+    a.lineWidth = .015 * r; a.strokeStyle = "rgba(255,255,255,.25)"; a.beginPath(); a.moveTo(cx - .15 * r, cy - .42 * r); a.quadraticCurveTo(cx + .1 * r, cy - .45 * r, cx + .25 * r, cy - .3 * r); a.stroke();
+    // sopracciglia, occhi sorridenti con le ciglia
+    a.lineCap = "round"; a.strokeStyle = CAP; a.lineWidth = .03 * r;
+    a.beginPath(); a.moveTo(cx - .2 * r, cy - .17 * r); a.quadraticCurveTo(cx - .12 * r, cy - .21 * r, cx - .05 * r, cy - .17 * r); a.stroke();
+    a.beginPath(); a.moveTo(cx + .05 * r, cy - .17 * r); a.quadraticCurveTo(cx + .12 * r, cy - .21 * r, cx + .2 * r, cy - .17 * r); a.stroke();
+    for (const dx of [-.12, .12]) {
+      a.lineWidth = .032 * r; a.strokeStyle = INK; a.beginPath(); a.arc(cx + dx * r, cy - .06 * r, .06 * r, Math.PI + .3, -.3); a.stroke();
+      a.lineWidth = .018 * r; a.beginPath(); a.moveTo(cx + (dx + (dx < 0 ? -.06 : .06)) * r, cy - .08 * r); a.lineTo(cx + (dx + (dx < 0 ? -.09 : .09)) * r, cy - .11 * r); a.stroke();
+    }
+    // guance rosa e grande sorriso coi denti
+    fs(a, cerchio(cx - .2 * r, cy + .07 * r, .07 * r), "rgba(236,110,130,.55)", 0); fs(a, cerchio(cx + .2 * r, cy + .07 * r, .07 * r), "rgba(236,110,130,.55)", 0);
+    const b = P(); b.moveTo(cx - .15 * r, cy + .09 * r); b.quadraticCurveTo(cx, cy + .32 * r, cx + .15 * r, cy + .09 * r); b.quadraticCurveTo(cx, cy + .13 * r, cx - .15 * r, cy + .09 * r); b.closePath();
+    fs(a, b, "#fffaf0", 0);
+    a.lineWidth = .035 * r; a.strokeStyle = "#c2364e"; a.stroke(b);
+    a.lineWidth = .012 * r; a.strokeStyle = "rgba(0,0,0,.15)"; a.beginPath(); a.moveTo(cx - .12 * r, cy + .14 * r); a.quadraticCurveTo(cx, cy + .17 * r, cx + .12 * r, cy + .14 * r); a.stroke();
+    // orecchini piccoli d'oro
+    fs(a, cerchio(cx - .31 * r, cy + .06 * r, .025 * r), "#e8b83a", .008); fs(a, cerchio(cx + .31 * r, cy + .06 * r, .025 * r), "#e8b83a", .008);
+  }
+  // chi accoglie nel medaglione "Torna in piazza": di solito Maria, in alcuni laboratori un'altra persona
+  const GUIDE = { cartapesta: { nome: "Annalisa", ritratto: ritrattoAnnalisa } };
+  const guidaDi = id => GUIDE[id] || { nome: "Maria", ritratto: ritrattoAmica };
+  function medaglioneDi(guida) { return (a, w, h) => medaglioneCasa(a, w, h, guida); }
+  function medaglioneCasa(a, w, h, guida = guidaDi()) {
     const fum = .58, cx = w / 2, rr = w / 2 - .02, cy = fum + rr;
     // il fumetto "Ciao, sono Maria!"
     const f = P(); f.roundRect ? f.roundRect(.04, .02, w - .08, fum - .16, .2) : f.rect(.04, .02, w - .08, fum - .16);
     f.moveTo(cx - .12, fum - .15); f.lineTo(cx + .02, fum + .06); f.lineTo(cx + .14, fum - .15);
     fs(a, f, "#fffaf0", .035);
     fs(a, rett(cx - .11, fum - .19, .24, .06), "#fffaf0", 0);
-    testo(a, "Ciao, sono Maria!", cx, (fum - .14) / 2 + .03, .27, '"Caveat Brush", cursive', "#cf2a1f", w - .3);
+    testo(a, `Ciao, sono ${guida.nome}!`, cx, (fum - .14) / 2 + .03, .27, '"Caveat Brush", cursive', "#cf2a1f", w - .3);
     fs(a, cerchio(cx, cy, rr), "#24508f", .045);
     fs(a, cerchio(cx, cy, rr - .07), "#fffaf0", 0);
-    a.save(); a.clip(cerchio(cx, cy, rr - .11)); ritrattoAmica(a, cx, cy, rr - .11); a.restore();
+    a.save(); a.clip(cerchio(cx, cy, rr - .11)); guida.ritratto(a, cx, cy, rr - .11); a.restore();
     fs(a, cerchio(cx, cy, rr - .11), null, .035);
     const n = P(); n.roundRect ? n.roundRect(.05, h - .5, w - .1, .46, .23) : n.rect(.05, h - .5, w - .1, .46);
     fs(a, n, "#cf2a1f", .04);
     testo(a, "Torna in piazza", cx, h - .27, .3, '"Caveat Brush", cursive', "#fffaf0", w - .3);
   }
   // il ritratto rotondo del pulsante "Torna in piazza"
-  function disegnaTornaPiazza() {
-    const c = tela(300, 300), a = c.getContext("2d");
-    a.setTransform(120, 0, 0, 120, 150, 150);
-    fs(a, cerchio(0, 0, 1.2), "#24508f", .05);
-    fs(a, cerchio(0, 0, 1.12), "#fffaf0", 0);
-    a.save(); a.clip(cerchio(0, 0, 1.08)); ritrattoAmica(a, 0, 0, 1.08); a.restore();
-    fs(a, cerchio(0, 0, 1.08), null, .04);
-    $f("pop-casa").innerHTML = `<b class="pop-casa-fumetto">Ciao, sono Maria!</b><img src="${c.toDataURL()}" alt=""><span>Torna in piazza</span>`;
+  const fotoGuida = {};
+  function disegnaTornaPiazza(id) {
+    const guida = guidaDi(id);
+    if (!fotoGuida[guida.nome]) {
+      const c = tela(300, 300), a = c.getContext("2d");
+      a.setTransform(120, 0, 0, 120, 150, 150);
+      fs(a, cerchio(0, 0, 1.2), "#24508f", .05);
+      fs(a, cerchio(0, 0, 1.12), "#fffaf0", 0);
+      a.save(); a.clip(cerchio(0, 0, 1.08)); guida.ritratto(a, 0, 0, 1.08); a.restore();
+      fs(a, cerchio(0, 0, 1.08), null, .04);
+      fotoGuida[guida.nome] = c.toDataURL();
+    }
+    const b = $f("pop-casa");
+    if (b.dataset.guida === guida.nome) return;
+    b.dataset.guida = guida.nome;
+    b.innerHTML = `<b class="pop-casa-fumetto">Ciao, sono ${guida.nome}!</b><img src="${fotoGuida[guida.nome]}" alt=""><span>Torna in piazza</span>`;
   }
   const FORMATORI = {
     cucina: { nome: "Paolino", ritratto: ritrattoCucina },
@@ -3559,22 +3630,32 @@ const BARCA_FIABA = {
   // il medaglione "Torna in piazza" in 3D, sopra il cartello
   let casa3d = null;
   function creaCasa3D() {
-    const w = 1.85, h = 2.85, m = .07, cv = ritaglio(w, h, medaglioneCasa, m, 220), tex = texture(cv);
+    const w = 1.85, h = 2.85, m = .07, cv = ritaglio(w, h, medaglioneDi(guidaDi()), m, 220), tex = texture(cv);
     const mesh = new T.Mesh(new T.PlaneGeometry(w + 2 * m, h + 2 * m), new T.MeshStandardMaterial({ map: tex, alphaTest: .5, side: T.DoubleSide, roughness: .9 }));
     mesh.castShadow = true;
     mesh.customDepthMaterial = new T.MeshDepthMaterial({ depthPacking: T.RGBADepthPacking, map: tex, alphaTest: .5 });
     const g = new T.Group(); g.add(mesh);
     g.position.set(-4.9, 3.75, -1.7); g.rotation.y = .3; g.scale.setScalar(.92);
     scena.add(g);
-    casa3d = { casa: true, mesh, gruppo: g, alza: 0 };
+    casa3d = { casa: true, mesh, gruppo: g, alza: 0, guida: "Maria", disegni: { Maria: { tex, cv } } };
     mesh.userData.carta = casa3d;
     try { mesh.userData.alfa = { data: cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data, w: cv.width, h: cv.height }; } catch (e) {}
+    casa3d.cambia = guida => {
+      if (casa3d.guida === guida.nome) return;
+      let d = casa3d.disegni[guida.nome];
+      if (!d) { const c2 = ritaglio(w, h, medaglioneDi(guida), m, 220); d = casa3d.disegni[guida.nome] = { tex: texture(c2), cv: c2 }; }
+      casa3d.guida = guida.nome;
+      mesh.material.map = d.tex; mesh.material.needsUpdate = true;
+      mesh.customDepthMaterial = new T.MeshDepthMaterial({ depthPacking: T.RGBADepthPacking, map: d.tex, alphaTest: .5 });
+      try { mesh.userData.alfa = { data: d.cv.getContext("2d").getImageData(0, 0, d.cv.width, d.cv.height).data, w: d.cv.width, h: d.cv.height }; } catch (e) {}
+    };
   }
   function aggiornaCasa3D(t) {
     if (!casa3d) return;
     const c = casa3d, vedi = !!cartello && cartello.gruppo.visible && idx > 0;
     c.gruppo.visible = vedi;
     if (!vedi) return;
+    c.cambia(guidaDi(PAGINE[idx].id));
     c.alza += ((sopra === c ? 1 : 0) - c.alza) * .2;
     const s2 = 1 + c.alza * .06;
     c.mesh.scale.set(s2, s2, s2);
