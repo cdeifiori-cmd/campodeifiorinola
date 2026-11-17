@@ -167,6 +167,10 @@ p{text-wrap:pretty}
 .manifesto{padding:clamp(90px,12vw,170px) 0 clamp(70px,9vw,120px);position:relative;overflow:hidden}
 .manifesto .grande{font:700 clamp(1.7rem,3.9vw,3.35rem)/1.14 var(--titolo);letter-spacing:-.025em;max-width:22em;margin:0}
 .manifesto .grande + .grande{margin-top:.7em}
+.manifesto .racconto{font:500 clamp(1.15rem,1.75vw,1.55rem)/1.5 var(--titolo);max-width:36em;margin:0;color:var(--inchiostro)}
+.manifesto .grande + .racconto,.manifesto .racconto + .racconto,.manifesto .racconto + .grande,.manifesto .racconto + .nome-progetto,.manifesto .nome-progetto + .grande{margin-top:1em}
+.manifesto .racconto + .grande{margin-top:1.1em}
+.manifesto .nome-progetto{font:400 clamp(1.4rem,2.3vw,2rem)/1.2 var(--pennello);color:var(--blu);margin:0}
 .k{font-family:var(--pennello);font-weight:400;letter-spacing:0;font-size:1.12em;line-height:1;padding:0 .08em}
 .k.r{color:var(--rosso)}.k.b{color:var(--blu)}.k.g{color:#c47800}.k.v{color:var(--verde)}.k.l{color:var(--lilla)}.k.p{color:#c94a6c}
 .parola{display:inline}
@@ -705,9 +709,17 @@ html:not([data-sito="ragazzi"]) .solo-ragazzi{display:none!important}
     <div class="schizzi" id="schizzi" aria-hidden="true"></div>
     <div class="wrap">
       <h2 id="t-citta" class="pennello" style="font-size:clamp(2rem,4vw,3rem);color:var(--rosso);margin-bottom:28px;transform:rotate(-1.5deg);transform-origin:left">Ma lo sapete che…</h2>
-      <p class="grande" data-parole>A Nola esiste una città invisibile. Non la trovate sulle mappe né seguendo il navigatore: vive sotto le cose di tutti i giorni, come un secondo battito del cuore.</p>
-      <p class="grande" data-parole>Dietro porte che sembrano qualunque lavora <span class="k r">gente folle</span>: <span class="k g">ceramisti</span>, maestri della <span class="k b">cartapesta</span>, <span class="k l">librai</span>, attori, <span class="k v">musicisti</span>, cuochi. Persone che hanno fatto della loro vita un'invenzione di bellezza.</p>
-      <p class="grande" data-parole>Questa è la città invisibile. Non sta sulle mappe: <span class="k r">tocca a voi</span> percorrerla e svelarla.</p>
+      <p class="grande" data-parole>A Nola esiste una <span class="k r">città invisibile</span>.</p>
+      <p class="racconto" data-parole>Non la trovate sulle mappe né seguendo il navigatore. Vive dietro le porte delle botteghe, nei laboratori degli artisti, tra le mani di <span class="k g">ceramisti</span>, maestri della <span class="k b">cartapesta</span>, <span class="k v">musicisti</span>, <span class="k p">pittori</span>, <span class="k l">librai</span> e artigiani. Persone che hanno fatto della loro passione un'invenzione di bellezza.</p>
+      <p class="grande" data-parole>Nola Land nasce per far scoprire questa città <span class="k r">ai bambini</span>.</p>
+      <p class="racconto" data-parole>Guardate le scale del Duomo. Nei fine settimana sono il ritrovo di tanti giovani che trascorrono lì il loro tempo, spesso senza particolari interessi o attività.</p>
+      <p class="racconto" data-parole>Noi abbiamo immaginato quelle stesse scale popolate dai nostri figli: bambini che <span class="k r">dipingono</span>, <span class="k l">leggono</span>, <span class="k v">suonano</span>, <span class="k g">modellano la creta</span>, costruiscono e inventano.</p>
+      <p class="grande" data-parole>Perché i giovani che domani siederanno su quelle scale sono i bambini ai quali <span class="k r">oggi</span> possiamo offrire nuove opportunità.</p>
+      <p class="racconto" data-parole>Non vogliamo trasformarli tutti in artisti. Vogliamo aiutarli a scoprire passioni, sviluppare curiosità e coltivare il desiderio di conoscere e migliorarsi.</p>
+      <p class="racconto" data-parole>Per farlo non occorre inventare una città nuova. Basta aprire le porte di quella che già esiste, mettendo in rete artisti, artigiani, associazioni, famiglie e luoghi della cultura.</p>
+      <p class="racconto" data-parole>Il nostro sogno? Che un giorno, su quelle stesse scale, si incontrino giovani pieni di idee, interessi e progetti. Giovani che abbiano imparato a vivere la città non soltanto come luogo di ritrovo, ma come <span class="k b">spazio di possibilità</span>.</p>
+      <p class="nome-progetto">Nola Land 2026 – La chiamata alle arti di Campo dei Fiori.</p>
+      <p class="grande" data-parole>Il futuro dei nostri figli comincia dalle <span class="k r">opportunità</span> che offriamo loro oggi.</p>
       <div class="firma">
         <a class="btn" href="#mappa"><i data-lucide="map"></i>Apri la mappa</a>
         <p>Ogni bambino sceglie il suo tratto di strada, raggiunge uno o più luoghi misteriosi e raccoglie un timbro sul passaporto. L'avventura comincia appena varchi la prima porta.</p>
