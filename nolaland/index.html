@@ -2018,16 +2018,27 @@ const BARCA_FIABA = {
   $f("pop-sr").innerHTML = `<p>Le pagine del libro</p>` + PAGINE.map((p, i) => `<button type="button" data-pagina-fiaba="${i}">${p.id ? LABS[p.id].tag : p.titolo}</button>`).join("");
 
   let vaiA = n => { if (n < 0 || n >= N || n === idx) return; idx = n; scriviTesto(); };
-  $f("pop-piazza").addEventListener("click", () => vaiA(0));
-  $f("pop-casa").addEventListener("click", e => { e.stopPropagation(); vaiA(0); });
+  // le pagine visitate: "Indietro" torna alla pagina da cui si è arrivati (per esempio la piazza, se si è toccato un giglio)
+  const storia = [];
+  const occupatoOra = () => typeof occupato !== "undefined" && occupato;
+  function andareA(n) { if (n < 0 || n >= N || n === idx || occupatoOra()) return; storia.push(idx); vaiA(n); }
+  function avanti() { andareA(idx + 1); }
+  function indietro() {
+    if (occupatoOra()) return;
+    if (storia.length) { vaiA(storia.pop()); return; }
+    vaiA(idx - 1);
+  }
+  function tornaInPiazza() { if (occupatoOra()) return; storia.length = 0; vaiA(0); }
+  $f("pop-piazza").addEventListener("click", () => tornaInPiazza());
+  $f("pop-casa").addEventListener("click", e => { e.stopPropagation(); tornaInPiazza(); });
   for (const ev of ["pointerdown", "pointerup", "pointermove"]) $f("pop-casa").addEventListener(ev, e => e.stopPropagation());
   $f("pop-luogo").addEventListener("click", () => { const p = PAGINE[idx]; if (p.id) { chiudiLettura(); vaiAlLab(p.id); } });
   $f("pop-chips").addEventListener("click", e => { const b = e.target.closest("[data-lab-fiaba]"); if (b) { chiudiLettura(); vaiAlLab(b.dataset.labFiaba); } });
-  $f("pop-sr").addEventListener("click", e => { const b = e.target.closest("[data-pagina-fiaba]"); if (b) vaiA(+b.dataset.paginaFiaba); });
+  $f("pop-sr").addEventListener("click", e => { const b = e.target.closest("[data-pagina-fiaba]"); if (b) andareA(+b.dataset.paginaFiaba); });
   palco.addEventListener("keydown", e => {
     if (libroChiuso && (e.key === "ArrowRight" || e.key === "Enter" || e.key === " ")) { e.preventDefault(); vaiA(0); return; }
-    if (e.key === "ArrowRight") { e.preventDefault(); vaiA(idx + 1); }
-    if (e.key === "ArrowLeft") { e.preventDefault(); vaiA(idx - 1); }
+    if (e.key === "ArrowRight") { e.preventDefault(); avanti(); }
+    if (e.key === "ArrowLeft") { e.preventDefault(); indietro(); }
     if (e.key === "Enter" && $f("fiaba-scena").classList.contains("con-tabella")) { e.preventDefault(); apriLettura(); }
   });
 
@@ -3902,7 +3913,7 @@ const BARCA_FIABA = {
     if (trascinato || palco.classList.contains("senza-3d")) { trascinato = false; return; }
     if (libroChiuso) { apriLibro(); return; }
     const c = cartaSotto(e);
-    if (c) { if (c.casa) vaiA(0); else if (c.cartello) apriLettura(); else if (c.omino) vaiA(idx + c.omino); else if (c.lab) vaiAlLab(c.lab); else vaiA(c.vai); }
+    if (c) { if (c.casa) tornaInPiazza(); else if (c.cartello) apriLettura(); else if (c.omino) (c.omino > 0 ? avanti() : indietro()); else if (c.lab) vaiAlLab(c.lab); else andareA(c.vai); }
   });
 
   async function costruisci() {
