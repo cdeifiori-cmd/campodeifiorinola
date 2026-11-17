@@ -556,7 +556,16 @@ details .testo-info p{margin:0 0 8px}
 @media (max-width:760px){.contatti{grid-template-columns:1fr}}
 
 /* ---------- la fiaba: libro pop-up 3D ---------- */
-.fiaba{background:var(--zafferano-chiaro);padding:0;position:relative;overflow:hidden}
+.fiaba{padding:0;position:relative;overflow:hidden;background:
+  radial-gradient(ellipse 60% 55% at 50% 30%,rgba(255,236,190,.65),transparent 70%),
+  repeating-linear-gradient(90deg,rgba(255,255,255,.22) 0 3px,transparent 3px 44px),
+  linear-gradient(#e6d3b0,#d9c29a)}
+/* il tavolo di legno su cui è appoggiato il libro */
+.fiaba::before{content:"";position:absolute;left:-70%;right:-70%;top:var(--orizzonte,47%);height:130%;z-index:0;pointer-events:none;
+  background:linear-gradient(rgba(60,30,10,.35),transparent 18%),var(--legno,none) center top/360px auto repeat,#a8703f;
+  border-top:6px solid #7a4a24;transform-origin:50% 0;transform:perspective(620px) rotateX(56deg)}
+.fiaba::after{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background:radial-gradient(ellipse 75% 70% at 50% 55%,transparent 55%,rgba(40,20,5,.35))}
+.fiaba > *{position:relative;z-index:1}
 .fiaba-titolo{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .fiaba .testa{display:grid;grid-template-columns:1.1fr .9fr;gap:20px 60px;align-items:end;margin-bottom:clamp(8px,2vw,20px)}
 .fiaba h2 .pennello{color:var(--rosso)}
@@ -568,10 +577,11 @@ details .testo-info p{margin:0 0 8px}
 .palco{position:relative;height:100%;aspect-ratio:3/2;width:auto;max-width:calc(100vw - 330px);min-width:0;cursor:grab;user-select:none;-webkit-user-select:none;touch-action:pan-y;outline-offset:-6px}
 /* sul computer il testo sta su un cartello in 3D: toccandolo si apre qui, in grande */
 .fiaba-scena{position:relative}
-.fiaba-scena.con-tabella{grid-template-columns:minmax(0,1fr)}
+.fiaba-scena.con-tabella{grid-template-columns:minmax(0,1fr);padding-left:0;padding-right:0}
+.con-tabella .palco{width:100%;max-width:none;aspect-ratio:auto}
 .con-tabella .palco{width:100%;max-width:none;aspect-ratio:auto}
 .con-tabella .pop-lato{display:none}
-.con-tabella .pop-lato.aperta{display:flex;position:absolute;z-index:6;left:max(16px,env(safe-area-inset-left,0px));top:calc(50% + 30px);transform:translateY(-50%);transform-origin:left center;width:clamp(270px,17vw,340px);max-height:calc(100% - 100px);overflow:auto;gap:18px;padding:34px 28px 26px;background:var(--bianco);border-radius:22px;border:5px solid #a5703f;box-shadow:0 30px 60px -20px rgba(31,23,18,.6);animation:apriTabella .45s var(--ease)}
+.con-tabella .pop-lato.aperta{display:flex;position:absolute;z-index:6;left:max(16px,env(safe-area-inset-left,0px));top:calc(50% + 30px);transform:translateY(-50%);transform-origin:left center;width:clamp(270px,17vw,340px);max-height:calc(100% - 100px);overflow:auto;gap:18px;padding:34px 28px 26px;background:var(--bianco);border-radius:6px;border:8px solid #c9963f;outline:2px solid #9a6a2c;outline-offset:-10px;box-shadow:0 30px 60px -20px rgba(31,23,18,.6);animation:apriTabella .45s var(--ease)}
 .con-tabella .pop-lato.aperta .pop-num{font-size:.95rem}
 .con-tabella .pop-lato.aperta .pop-titolo{font-size:clamp(1.7rem,2.2vw,2.3rem);margin-bottom:12px}
 .con-tabella .pop-lato.aperta .pop-frase{font-size:clamp(1.05rem,1.15vw,1.25rem);line-height:1.55}
@@ -590,7 +600,7 @@ details .testo-info p{margin:0 0 8px}
 .palco.senza-3d{height:auto;aspect-ratio:auto;cursor:default}
 .palco.senza-3d canvas,.palco.senza-3d .pop-casa{display:none}
 .pop-ripiego{margin:0;padding:24px;border-radius:14px;background:var(--carta);color:var(--inchiostro-2)}
-.pop-tocca{position:absolute;left:50%;transform:translateX(-50%);bottom:1.5%;white-space:nowrap;margin:0;font:400 1.3rem/1 var(--pennello);color:var(--inchiostro-2);display:flex;align-items:center;gap:8px;pointer-events:none;transition:opacity .5s}
+.pop-tocca{position:absolute;left:50%;transform:translateX(-50%);bottom:1.5%;white-space:nowrap;margin:0;font:400 1.3rem/1 var(--pennello);color:var(--inchiostro-2);background:rgba(255,250,240,.88);padding:6px 16px 7px;border-radius:999px;box-shadow:0 4px 10px -4px rgba(40,20,5,.45);display:flex;align-items:center;gap:8px;pointer-events:none;transition:opacity .5s}
 .pop-tocca svg{width:22px;height:22px}
 .pop-piede{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:20px 40px;align-items:center;margin-top:clamp(4px,1.5vw,16px)}
 .pop-testo{min-width:0}
@@ -2030,6 +2040,22 @@ const BARCA_FIABA = {
   const W = 4.2, D = 5.6, TOP = 0.28;      // misure di una pagina e altezza del foglio
   const PX = 128;                          // pixel per unità nei disegni
   const INK = "#5b3f26";
+  // le venature del tavolo di legno sotto il libro
+  try {
+    const c = document.createElement("canvas"); c.width = 512; c.height = 512; const g = c.getContext("2d"); let sm = 9; const r = () => (sm = (sm * 16807) % 2147483647) / 2147483647;
+    const tinte = ["#a86f3e", "#b47a45", "#9c6536", "#ae7642"];
+    for (let k = 0; k < 4; k++) {
+      const x0 = k * 128; g.fillStyle = tinte[k]; g.fillRect(x0, 0, 128, 512);
+      for (let v = 0; v < 22; v++) {
+        const xv = x0 + 6 + r() * 116, amp = 2 + r() * 6, fr = .01 + r() * .02, ph = r() * 7;
+        g.strokeStyle = `rgba(${r() > .5 ? "70,35,12" : "255,220,170"},${.08 + r() * .14})`; g.lineWidth = .8 + r() * 1.6;
+        g.beginPath(); for (let y = 0; y <= 512; y += 8) { const x = xv + amp * Math.sin(y * fr + ph); y ? g.lineTo(x, y) : g.moveTo(x, y); } g.stroke();
+      }
+      if (r() > .4) { const kx = x0 + 30 + r() * 68, ky = r() * 480; g.fillStyle = "rgba(80,40,15,.35)"; g.beginPath(); g.ellipse(kx, ky, 7, 12, 0, 0, 7); g.fill(); }
+      g.fillStyle = "rgba(60,28,8,.55)"; g.fillRect(x0, 0, 3, 512);
+    }
+    document.querySelector(".fiaba").style.setProperty("--legno", `url(${c.toDataURL("image/jpeg", .85)})`);
+  } catch (e) {}
   let renderer;
   try {
     renderer = new T.WebGLRenderer({ canvas: $f("pop-canvas"), antialias: true, alpha: true });
@@ -3077,6 +3103,86 @@ const BARCA_FIABA = {
   const cielo0 = new T.Group(); scena.add(cielo0);
   let soleM, aerei = [], uccelli = [], stelle3D = [];
   const SW_STR = 2.3, SH_STR = .62, AW = 1.75;
+  // un gattino e un cagnolino visti di lato, con le zampe in due pose per camminare
+  function zampe(a, xs, y0, y1, fase, col) {
+    xs.forEach((x, i) => {
+      const d = (i % 2 === fase ? .05 : -.05);
+      a.lineWidth = .075; a.strokeStyle = INK; a.lineCap = "round"; a.beginPath(); a.moveTo(x, y0); a.lineTo(x + d, y1); a.stroke();
+      a.lineWidth = .045; a.strokeStyle = col; a.stroke();
+    });
+  }
+  function gattino(fase) {
+    return (a, w, h) => {
+      const col = "#f4a01c";
+      a.lineCap = "round";
+      // la coda alzata
+      a.lineWidth = .08; a.strokeStyle = INK; a.beginPath(); a.moveTo(.22, .4); a.quadraticCurveTo(.02, .3, .1, .08); a.stroke();
+      a.lineWidth = .05; a.strokeStyle = col; a.stroke();
+      zampe(a, [.28, .36, .56, .64], .44, .64, fase, col);
+      fs(a, ellisse(.45, .4, .27, .13), col, .03);
+      a.lineWidth = .025; a.strokeStyle = "#c46a1c"; [.34, .44, .54].forEach(x => { a.beginPath(); a.moveTo(x, .29); a.lineTo(x + .02, .38); a.stroke(); });
+      fs(a, poli([[.66, .2], [.7, .04], [.76, .17]]), col, .025); fs(a, poli([[.8, .17], [.88, .03], [.9, .2]]), col, .025);
+      fs(a, cerchio(.78, .27, .13), col, .03);
+      fs(a, ellisse(.74, .25, .02, .03), INK, 0); fs(a, ellisse(.84, .25, .02, .03), INK, 0);
+      fs(a, poli([[.8, .3], [.83, .3], [.815, .32]]), "#e8738f", 0);
+      a.lineWidth = .012; a.strokeStyle = INK; [[-.02], [.02]].forEach(([dy]) => { a.beginPath(); a.moveTo(.84, .32 + dy); a.lineTo(.95, .3 + dy * 2); a.stroke(); });
+      fs(a, cerchio(.72, .31, .025), "rgba(236,124,154,.6)", 0);
+    };
+  }
+  function cagnolino(fase) {
+    return (a, w, h) => {
+      const col = "#c98a4a";
+      a.lineCap = "round";
+      // la coda che scodinzola
+      a.save(); a.translate(.2, .34); a.rotate(fase ? -.35 : .15);
+      a.lineWidth = .08; a.strokeStyle = INK; a.beginPath(); a.moveTo(0, 0); a.quadraticCurveTo(-.1, -.05, -.12, -.2); a.stroke();
+      a.lineWidth = .05; a.strokeStyle = col; a.stroke(); a.restore();
+      zampe(a, [.3, .38, .6, .68], .46, .7, fase, col);
+      fs(a, ellisse(.48, .4, .3, .15), col, .03);
+      fs(a, ellisse(.5, .36, .12, .08), "#fffaf0", 0);
+      fs(a, rett(.72, .3, .05, .1), "#cf2a1f", .015);
+      fs(a, cerchio(.86, .27, .15), col, .03);
+      fs(a, ellisse(.98, .33, .09, .06), "#fffaf0", .025);
+      fs(a, cerchio(1.05, .3, .028), INK, 0);
+      fs(a, ellisse(.78, .27, .06, .13, .25), "#7a4f2a", .025);
+      fs(a, cerchio(.9, .23, .022), INK, 0);
+      a.lineWidth = .018; a.strokeStyle = INK; a.beginPath(); a.arc(.98, .36, .04, .3, 2.6); a.stroke();
+      fs(a, ellisse(.99, .41, .025, .03), "#e8738f", .01);
+    };
+  }
+  const ANIMALI = [];
+  let animaleTurno = 0, prossimaPasseggiata = 6, passeggiata = null;
+  function costruisciAnimali() {
+    for (const [w, h, d] of [[1.0, .72, gattino], [1.12, .78, cagnolino]]) {
+      const g = new T.Group(), pose = [cartaVolante(w, h, d(0)), cartaVolante(w, h, d(1))];
+      pose.forEach(m => { m.position.y = h / 2; g.add(m); });
+      g.visible = false; scena.add(g);
+      ANIMALI.push({ g, pose });
+    }
+  }
+  // posa e saltello di chi sta camminando
+  function muovi(a, x, y, z, verso, sc, t) {
+    a.g.visible = true;
+    a.g.position.set(x, y + Math.abs(Math.sin(t * (a.lento ? 6 : 9))) * (a.lento ? .015 : .03), z);
+    a.g.scale.set(verso * sc, sc, sc);
+    const f = Math.floor(t * (a.lento ? 5 : 7)) % 2;
+    a.pose[0].visible = f === 0; a.pose[1].visible = f === 1;
+  }
+  function aggiornaAnimali(t) {
+    if (!ANIMALI.length) return;
+    if (pocoMoto) { ANIMALI.forEach(a => a.g.visible = false); return; }
+    // nelle pagine dei laboratori: una volta il gatto e una volta il cane
+    if (!passeggiata) {
+      ANIMALI.forEach(a => a.g.visible = false);
+      if (idx === 0 || t < prossimaPasseggiata || occupato || !S[idx] || S[idx].p < .98) return;
+      passeggiata = { a: ANIMALI[animaleTurno % 2], t0: t, verso: Math.random() < .5 ? 1 : -1, z: 2.25 + Math.random() * .2, dur: 9, sc: 1.6 };
+      animaleTurno++;
+    }
+    const P0 = passeggiata, a = P0.a, k = (t - P0.t0) / P0.dur;
+    if (k >= 1 || occupato || idx === 0) { a.g.visible = false; passeggiata = null; prossimaPasseggiata = t + 14 + Math.random() * 8; return; }
+    const x = P0.verso * (-4.7 + 9.4 * k);
+    muovi(a, x, TOP + .01, P0.z, P0.verso, P0.sc, t);
+  }
   function costruisciCielo() {
     soleM = cartaVolante(1.3, 1.3, NOTTE ? lunaSorridente : soleSorridente); soleM.position.set(-3.3, 3.75, -2.8); cielo0.add(soleM);
     if (NOTTE) [[-1.6, 4.35, -2.7], [2.2, 4.6, -2.75], [-4.3, 4.7, -2.6], [3.6, 3.85, -2.7], [-.4, 5.0, -2.8]].forEach(([x, y, z], i) => {
@@ -3262,11 +3368,11 @@ const BARCA_FIABA = {
   let dist = 20;
   const giro = { yaw: 0, el: .6, yawObj: 0, elObj: .6 };   // rotazione del libro con la manina
   function adatta() {
+    modoTabella();   // prima il modo: sullo schermo largo il riquadro prende tutta la larghezza
     const w = palco.clientWidth, h = palco.clientHeight; if (!w || !h) return;
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     const v = camera.fov * Math.PI / 180, hf = 2 * Math.atan(Math.tan(v / 2) * camera.aspect);
-    modoTabella();
     dist = Math.max((cartello && cartello.gruppo.visible ? 7.5 : camera.aspect > 1 ? 6.3 : 5.9) / Math.tan(hf / 2), 4.2 / Math.tan(v / 2)); // ai lati i due bambini e il cartello
     camera.updateProjectionMatrix();
     disegnaFrame();
@@ -3287,6 +3393,7 @@ const BARCA_FIABA = {
     aggiornaOmini(tempo);
     aggiornaCartello(tempo);
     aggiornaCasa3D(tempo);
+    aggiornaAnimali(tempo);
     for (const m of MONGOLFIERE) {
       const t = pocoMoto ? 0 : tempo;
       m.g.position.set(m.x + .9 * Math.sin(t * m.v + m.f), m.y + .15 * Math.sin(t * .8 + m.f), m.z + .3 * Math.cos(t * m.v + m.f));
@@ -3313,6 +3420,7 @@ const BARCA_FIABA = {
   vaiA = async n => {
     if (occupato || n < 0 || n >= N || n === idx || !S[idx]) return;
     occupato = true; sopra = null; palco.style.cursor = "";
+    chiudiLettura();
     const vecchio = idx, dir = n > idx ? 1 : -1;
     prepara(n);
     idx = n; scriviTesto();
@@ -3363,8 +3471,9 @@ const BARCA_FIABA = {
     if (!cartello) return;
     const c = cartello, su = sopra === c ? 1 : 0;
     c.alza += (su - c.alza) * .2;
-    c.mesh.position.y = c.y0 + c.alza * .15;
-    c.mesh.rotation.z = pocoMoto ? 0 : .012 * Math.sin(t * 1.1);
+    const ang = pocoMoto ? 0 : .012 * Math.sin(t * 1.1) + c.alza * .03, R = CART.h / 2 + CART.m - .1;
+    c.mesh.rotation.z = ang;
+    c.mesh.position.set(R * Math.sin(ang), c.y0 + R - R * Math.cos(ang), 0);
     c.mesh.material.emissive.setRGB(c.alza * .14, c.alza * .1, c.alza * .03);
   }
   function aggiornaOmini(t) {
@@ -3380,24 +3489,28 @@ const BARCA_FIABA = {
   }
 
   /* ---------- il cartello con il testo della pagina, accanto al libro ---------- */
-  const CART = { w: 2.9, h: 3.8, m: .07, px: 200 };
+  const CART = { w: 2.9, h: 4.1, m: .07, px: 200 };
   let cartello = null;
+  const QUADRO = { x: -8.7, y: 1.4, z: -2.2, ry: .2, s: 1.08 };
   function righe(g, testo, maxW) {
     const out = []; let riga = "";
     for (const p of String(testo).split(/\s+/)) { const prova = riga ? riga + " " + p : p; if (g.measureText(prova).width > maxW && riga) { out.push(riga); riga = p; } else riga = prova; }
     if (riga) out.push(riga); return out;
   }
   function disegnaCartello(a, w, h) {
-    const bh = h - .5, px = a.__px, m = a.__m;
-    fs(a, rett(.38, bh - .15, .14, h - bh + .15), "#8a5a2b", .03);
-    fs(a, rett(w - .52, bh - .15, .14, h - bh + .15), "#8a5a2b", .03);
-    const c = P(); c.roundRect ? c.roundRect(0, 0, w, bh, .14) : c.rect(0, 0, w, bh);
-    fs(a, c, "#a5703f", .045);
-    a.lineWidth = .012; a.strokeStyle = "rgba(91,63,38,.4)"; for (let y = .06; y < bh; y += .09) { a.beginPath(); a.moveTo(.03, y); a.quadraticCurveTo(w / 2, y + .03, w - .03, y); a.stroke(); }
-    fs(a, rett(.15, .15, w - .3, bh - .3), "#fffaf0", .025);
-    [[.3, .26], [w - .3, .26]].forEach(([x, y]) => { fs(a, cerchio(x, y, .055), "#cf2a1f", .015); fs(a, cerchio(x - .015, y - .015, .015), "rgba(255,255,255,.7)", 0); });
+    // un quadro appeso alla parete: chiodo, cordino, cornice dorata e il foglio dentro
+    const T0 = .55, bh = h, px = a.__px, m = a.__m;
+    a.lineWidth = .035; a.strokeStyle = "#6b4a2a"; a.lineCap = "round";
+    a.beginPath(); a.moveTo(.55, T0 + .12); a.lineTo(w / 2, .1); a.lineTo(w - .55, T0 + .12); a.stroke();
+    fs(a, cerchio(w / 2, .1, .07), "#8c8c8c", .02); fs(a, cerchio(w / 2 - .02, .08, .02), "rgba(255,255,255,.8)", 0);
+    const c = P(); c.rect(0, T0, w, h - T0);
+    const oro = a.createLinearGradient(0, T0, w, h); oro.addColorStop(0, "#e2b65a"); oro.addColorStop(.5, "#b9832f"); oro.addColorStop(1, "#d9a94c");
+    fs(a, c, oro, .045);
+    fs(a, rett(.1, T0 + .1, w - .2, h - T0 - .2), "#9a6a2c", .02);
+    a.lineWidth = .02; a.strokeStyle = "rgba(255,240,200,.6)"; a.strokeRect(.05, T0 + .05, w - .1, h - T0 - .1);
+    fs(a, rett(.17, T0 + .17, w - .34, h - T0 - .34), "#fffaf0", .025);
     const p = PAGINE[idx], etichetta = $f("pop-num").textContent.toUpperCase();
-    const X = (w / 2 + m) * px, maxW = (w - .6) * px, y0 = (.42 + m) * px, yMax = (bh - .5 + m) * px;
+    const X = (w / 2 + m) * px, maxW = (w - .6) * px, y0 = (T0 + .42 + m) * px, yMax = (bh - .55 + m) * px;
     const g = a; g.save(); g.setTransform(1, 0, 0, 1, 0, 0); g.textAlign = "center"; g.textBaseline = "top";
     let k = 1, blocchi;
     for (let tent = 0; tent < 14; tent++) {
@@ -3417,18 +3530,18 @@ const BARCA_FIABA = {
       if (i < 2) y += f * .35;
     });
     g.restore();
-    const n = P(); n.roundRect ? n.roundRect(w / 2 - .62, bh - .42, 1.24, .24, .12) : n.rect(w / 2 - .62, bh - .42, 1.24, .24);
+    const n = P(); n.roundRect ? n.roundRect(w / 2 - .62, bh - .5, 1.24, .24, .12) : n.rect(w / 2 - .62, bh - .5, 1.24, .24);
     fs(a, n, "#cf2a1f", .02);
-    testo(a, "Tocca per leggere", w / 2, bh - .3, .15, '"Caveat Brush", cursive', "#fffaf0", 1.1);
+    testo(a, "Tocca per leggere", w / 2, bh - .38, .15, '"Caveat Brush", cursive', "#fffaf0", 1.1);
   }
   function creaCartello() {
     const { w, h, m } = CART;
     const mat = new T.MeshStandardMaterial({ alphaTest: .5, side: T.DoubleSide, roughness: .9 });
     const mesh = new T.Mesh(new T.PlaneGeometry(w + 2 * m, h + 2 * m), mat);
-    mesh.castShadow = true;
     mesh.position.y = (h + 2 * m) / 2 - m;
     const g = new T.Group(); g.add(mesh);
-    g.position.set(-7.75, 0, -1.6); g.rotation.y = .42;
+    // appeso alla parete in fondo, a sinistra, sopra il tavolo
+    g.position.set(QUADRO.x, QUADRO.y, QUADRO.z); g.rotation.y = QUADRO.ry; g.scale.setScalar(QUADRO.s);
     scena.add(g);
     cartello = { cartello: true, mesh, gruppo: g, y0: mesh.position.y, alza: 0 };
     mesh.userData.carta = cartello;
@@ -3451,7 +3564,7 @@ const BARCA_FIABA = {
     mesh.castShadow = true;
     mesh.customDepthMaterial = new T.MeshDepthMaterial({ depthPacking: T.RGBADepthPacking, map: tex, alphaTest: .5 });
     const g = new T.Group(); g.add(mesh);
-    g.position.set(-5.3, 3.75, -1.7); g.rotation.y = .3; g.scale.setScalar(.92);
+    g.position.set(-4.9, 3.75, -1.7); g.rotation.y = .3; g.scale.setScalar(.92);
     scena.add(g);
     casa3d = { casa: true, mesh, gruppo: g, alza: 0 };
     mesh.userData.carta = casa3d;
@@ -3561,6 +3674,7 @@ const BARCA_FIABA = {
     creaCasa3D();
     try { disegnaTornaPiazza(); } catch (e) { console.error(e); }
     costruisciCielo();
+    try { costruisciAnimali(); } catch (e) { console.error(e); }
     prepara(0);
     pagSx.material.map = G[0].L; pagDx.material.map = G[0].R;
     pagSx.material.needsUpdate = pagDx.material.needsUpdate = true;
