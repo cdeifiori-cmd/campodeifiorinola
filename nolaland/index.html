@@ -2136,6 +2136,53 @@ const BARCA_FIABA = {
   };
 
   /* ---------- il cielo e la piazza ---------- */
+  // la piazza a volte è di giorno (sole) e a volte di notte (luna, stelle, finestre e lampioni accesi).
+  // Per provarla: ?notte oppure ?giorno nell'indirizzo
+  const NOTTE = /[?&]notte/.test(location.search) ? true : /[?&]giorno/.test(location.search) ? false : Math.random() < .5;
+  function mescola(c1, c2, k) {
+    const a1 = parseInt(c1.slice(1), 16), a2 = parseInt(c2.slice(1), 16);
+    const f = sh => Math.round((a1 >> sh & 255) * (1 - k) + (a2 >> sh & 255) * k).toString(16).padStart(2, "0");
+    return "#" + f(16) + f(8) + f(0);
+  }
+  const NOT = c => NOTTE ? mescola(c, "#26306b", .4) : c;
+  function cieloNotte(a, w, h) {
+    const g = a.createLinearGradient(0, 0, 0, h); g.addColorStop(0, "#0d1838"); g.addColorStop(.7, "#22336e"); g.addColorStop(1, "#3b4c8c");
+    fs(a, arco(w, h, 1.1), g, .045);
+    a.save(); a.clip(arco(w, h, 1.1));
+    const r = rng(5);
+    for (let i = 0; i < 90; i++) { a.fillStyle = `rgba(255,248,220,${.4 + r() * .6})`; a.beginPath(); a.arc(r() * w, .3 + r() * (h - 1.2), .012 + r() * .02, 0, 7); a.fill(); }
+    for (let i = 0; i < 16; i++) stella(a, .3 + r() * (w - .6), .45 + r() * (h - 1.6), .05 + r() * .06, r() > .5 ? "#fff3c4" : "#ffd27a");
+    // una stella cadente
+    a.lineWidth = .035; a.lineCap = "round"; const sc = a.createLinearGradient(5.2, .7, 6.4, 1.2); sc.addColorStop(0, "rgba(255,243,196,1)"); sc.addColorStop(1, "rgba(255,243,196,0)");
+    a.strokeStyle = sc; a.beginPath(); a.moveTo(5.2, .7); a.lineTo(6.4, 1.2); a.stroke(); stella(a, 5.2, .7, .08, "#fff3c4");
+    nuvola(a, 4.6, 1.75, .55, "#55649c");
+    a.restore();
+  }
+  function lunaSorridente(a, w, h) {
+    const c = w / 2;
+    const alone = a.createRadialGradient(c, c, .3, c, c, .62); alone.addColorStop(0, "rgba(255,243,196,.9)"); alone.addColorStop(1, "rgba(255,243,196,0)");
+    fs(a, cerchio(c, c, .6), "#fff6d6", .03);
+    fs(a, cerchio(c, c, .44), "#fff1b8", .04);
+    fs(a, cerchio(c + .2, c - .2, .07), "#efd98a", .015); fs(a, cerchio(c - .22, c + .22, .05), "#efd98a", .015); fs(a, cerchio(c + .24, c + .14, .04), "#efd98a", .015);
+    // occhi chiusi che sognano
+    a.lineWidth = .03; a.strokeStyle = INK; a.lineCap = "round";
+    a.beginPath(); a.arc(c - .13, c - .06, .06, .2, Math.PI - .2); a.stroke();
+    a.beginPath(); a.arc(c + .13, c - .06, .06, .2, Math.PI - .2); a.stroke();
+    fs(a, cerchio(c - .22, c + .07, .05), "rgba(236,124,154,.45)", 0); fs(a, cerchio(c + .22, c + .07, .05), "rgba(236,124,154,.45)", 0);
+    a.beginPath(); a.arc(c, c + .06, .12, .3, Math.PI - .3); a.stroke();
+  }
+  function stellina(a, w, h) { stella(a, w / 2, h / 2 + .02, w * .48, "#fff3c4"); }
+  // il lampione della piazza, con la lanterna accesa
+  function lampione(a, w, h) {
+    const cx = w / 2;
+    fs(a, rett(cx - .2, h - .18, .4, .18), "#2d3a3a", .03);
+    fs(a, rett(cx - .05, .7, .1, h - .85), "#2d3a3a", .025);
+    fs(a, rett(cx - .3, .62, .6, .07), "#2d3a3a", .02);
+    fs(a, poli([[cx - .2, .62], [cx - .26, .2], [cx + .26, .2], [cx + .2, .62]]), "#ffe08a", .035);
+    a.lineWidth = .025; a.strokeStyle = "#2d3a3a"; a.beginPath(); a.moveTo(cx, .2); a.lineTo(cx, .62); a.stroke();
+    fs(a, poli([[cx - .32, .22], [cx, .02], [cx + .32, .22]]), "#2d3a3a", .025);
+    fs(a, cerchio(cx, .42, .08), "#fffaf0", 0);
+  }
   function cieloGiorno(a, w, h) {
     const g = a.createLinearGradient(0, 0, 0, h); g.addColorStop(0, "#5aaee0"); g.addColorStop(1, "#d6eef8");
     fs(a, arco(w, h, 1.1), g, .045);
@@ -2153,46 +2200,47 @@ const BARCA_FIABA = {
   }
   // il Municipio di Nola, con le case vicine
   function municipio(a, w, h) {
+    const VETRO = NOTTE ? "#ffd45e" : "#3d5b7a", PORTICO = NOTTE ? "#f7b84a" : "#4a6680";
     const finestra = (x, y, fw, fh, tipo) => {
-      fs(a, rett(x - .03, y - .03, fw + .06, fh + .06), "#f3dfae", .02);
-      fs(a, rett(x, y, fw, fh), "#3d5b7a", .025);
-      a.lineWidth = .012; a.strokeStyle = "#f3dfae"; a.beginPath(); a.moveTo(x + fw / 2, y); a.lineTo(x + fw / 2, y + fh); a.moveTo(x, y + fh * .4); a.lineTo(x + fw, y + fh * .4); a.stroke();
-      if (tipo === "tri") fs(a, poli([[x - .07, y - .05], [x + fw / 2, y - .2], [x + fw + .07, y - .05]]), "#f3dfae", .02);
-      if (tipo === "arco") { const p = P(); p.moveTo(x - .06, y - .04); p.quadraticCurveTo(x + fw / 2, y - .22, x + fw + .06, y - .04); p.closePath(); fs(a, p, "#f3dfae", .02); }
+      fs(a, rett(x - .03, y - .03, fw + .06, fh + .06), NOT("#f3dfae"), .02);
+      fs(a, rett(x, y, fw, fh), VETRO, .025);
+      a.lineWidth = .012; a.strokeStyle = NOT("#f3dfae"); a.beginPath(); a.moveTo(x + fw / 2, y); a.lineTo(x + fw / 2, y + fh); a.moveTo(x, y + fh * .4); a.lineTo(x + fw, y + fh * .4); a.stroke();
+      if (tipo === "tri") fs(a, poli([[x - .07, y - .05], [x + fw / 2, y - .2], [x + fw + .07, y - .05]]), NOT("#f3dfae"), .02);
+      if (tipo === "arco") { const p = P(); p.moveTo(x - .06, y - .04); p.quadraticCurveTo(x + fw / 2, y - .22, x + fw + .06, y - .04); p.closePath(); fs(a, p, NOT("#f3dfae"), .02); }
     };
-    fs(a, rett(0, .9, .95, h - .9), "#e7c79a", .035);
+    fs(a, rett(0, .9, .95, h - .9), NOT("#e7c79a"), .035);
     for (let y = 1.15; y < h - .4; y += .45) { finestra(.18, y, .18, .26); finestra(.58, y, .18, .26); }
-    fs(a, rett(w - 1.0, 1.05, .52, h - 1.05), "#e98f86", .035);
-    fs(a, rett(w - .5, .8, .5, h - .8), "#8fbf8a", .035);
+    fs(a, rett(w - 1.0, 1.05, .52, h - 1.05), NOT("#e98f86"), .035);
+    fs(a, rett(w - .5, .8, .5, h - .8), NOT("#8fbf8a"), .035);
     for (let y = 1.3; y < h - .4; y += .45) finestra(w - .86, y, .2, .26);
     for (let y = 1.05; y < h - .4; y += .45) finestra(w - .36, y, .2, .26);
     const x0 = .9, x1 = w - 1.0, top = .7;
-    fs(a, rett(x0, top, x1 - x0, h - top), "#e9c26c", .04);
+    fs(a, rett(x0, top, x1 - x0, h - top), NOT("#e9c26c"), .04);
     a.save(); a.clip(rett(x0, h - .72, x1 - x0, .72));
     a.lineWidth = .012; a.strokeStyle = "rgba(91,63,38,.35)";
     for (let y = h - .72; y < h; y += .1) { a.beginPath(); a.moveTo(x0, y); a.lineTo(x1, y); a.stroke(); }
     a.restore();
-    fs(a, rett(x0 - .05, top - .1, x1 - x0 + .1, .12), "#c46a3a", .03);
-    fs(a, rett(x0 - .04, top, x1 - x0 + .08, .07), "#f3dfae", .025);
-    fs(a, rett(x0 - .03, 1.3, x1 - x0 + .06, .05), "#f3dfae", .02);
-    fs(a, rett(x0 - .03, h - .74, x1 - x0 + .06, .05), "#f3dfae", .02);
+    fs(a, rett(x0 - .05, top - .1, x1 - x0 + .1, .12), NOT("#c46a3a"), .03);
+    fs(a, rett(x0 - .04, top, x1 - x0 + .08, .07), NOT("#f3dfae"), .025);
+    fs(a, rett(x0 - .03, 1.3, x1 - x0 + .06, .05), NOT("#f3dfae"), .02);
+    fs(a, rett(x0 - .03, h - .74, x1 - x0 + .06, .05), NOT("#f3dfae"), .02);
     const n = 9, passo = (x1 - x0) / n, cx = (x0 + x1) / 2;
     for (let i = 0; i < n; i++) {
       const bx = x0 + passo * i + passo / 2, centro = i === 4;
-      if (i > 0) fs(a, rett(x0 + passo * i - .025, top + .08, .05, h - top - .8), "#f0d394", 0);
+      if (i > 0) fs(a, rett(x0 + passo * i - .025, top + .08, .05, h - top - .8), NOT("#f0d394"), 0);
       finestra(bx - .1, .88, .2, .3);
-      if (centro) { const p = P(); p.moveTo(bx - .14, 1.85); p.lineTo(bx - .14, 1.6); p.arc(bx, 1.6, .14, Math.PI, 0); p.lineTo(bx + .14, 1.85); p.closePath(); fs(a, p, "#3d5b7a", .025); }
+      if (centro) { const p = P(); p.moveTo(bx - .14, 1.85); p.lineTo(bx - .14, 1.6); p.arc(bx, 1.6, .14, Math.PI, 0); p.lineTo(bx + .14, 1.85); p.closePath(); fs(a, p, VETRO, .025); }
       else finestra(bx - .11, 1.5, .22, .34, i % 2 ? "tri" : "arco");
       const ar = P(); ar.moveTo(bx - .15, h); ar.lineTo(bx - .15, h - .38); ar.arc(bx, h - .38, .15, Math.PI, 0); ar.lineTo(bx + .15, h); ar.closePath();
-      fs(a, ar, centro ? "#5b3a22" : "#4a6680", .03);
+      fs(a, ar, centro ? NOT("#5b3a22") : PORTICO, .03);
     }
-    fs(a, rett(cx - .62, 1.86, 1.24, .08), "#f3dfae", .025);
+    fs(a, rett(cx - .62, 1.86, 1.24, .08), NOT("#f3dfae"), .025);
     a.lineWidth = .015; a.strokeStyle = INK; for (let x = cx - .58; x < cx + .6; x += .08) { a.beginPath(); a.moveTo(x, 1.86); a.lineTo(x, 1.78); a.stroke(); }
-    fs(a, rett(cx - .62, 1.76, 1.24, .03), "#f3dfae", .015);
-    for (const dx of [-.5, -.17, .17, .5]) fs(a, rett(cx + dx - .04, h - .7, .08, .7), "#f6e4b8", .02);
-    fs(a, poli([[cx - 1.25, top], [cx, top - .55], [cx + 1.25, top]]), "#e9c26c", .04);
-    fs(a, poli([[cx - 1.33, top + .02], [cx, top - .62], [cx + 1.33, top + .02], [cx + 1.22, top + .02], [cx, top - .5], [cx - 1.22, top + .02]]), "#f3dfae", .02);
-    fs(a, cerchio(cx, top - .2, .13), "#fffaf0", .03);
+    fs(a, rett(cx - .62, 1.76, 1.24, .03), NOT("#f3dfae"), .015);
+    for (const dx of [-.5, -.17, .17, .5]) fs(a, rett(cx + dx - .04, h - .7, .08, .7), NOT("#f6e4b8"), .02);
+    fs(a, poli([[cx - 1.25, top], [cx, top - .55], [cx + 1.25, top]]), NOT("#e9c26c"), .04);
+    fs(a, poli([[cx - 1.33, top + .02], [cx, top - .62], [cx + 1.33, top + .02], [cx + 1.22, top + .02], [cx, top - .5], [cx - 1.22, top + .02]]), NOT("#f3dfae"), .02);
+    fs(a, cerchio(cx, top - .2, .13), NOT("#fffaf0"), .03);
     a.lineWidth = .02; a.strokeStyle = INK; a.beginPath(); a.moveTo(cx, top - .2); a.lineTo(cx, top - .29); a.moveTo(cx, top - .2); a.lineTo(cx + .06, top - .17); a.stroke();
   }
   // un giglio per ogni laboratorio: i colori dell'arte e il suo simbolo sulla base
@@ -2920,6 +2968,13 @@ const BARCA_FIABA = {
         }
       }
       g.fillStyle = "rgba(255,248,230,.18)"; g.fillRect(0, 0, SW, SH);
+      if (NOTTE) {
+        g.fillStyle = "rgba(18,26,70,.5)"; g.fillRect(0, 0, SW, SH);
+        const luce = (x, z, r, k) => { const [lx, ly] = aTela(x, z), gr = g.createRadialGradient(lx, ly, 0, lx, ly, r); gr.addColorStop(0, `rgba(255,214,120,${k})`); gr.addColorStop(1, "rgba(255,214,120,0)"); g.fillStyle = gr; g.fillRect(lx - r, ly - r, 2 * r, 2 * r); };
+        LAMPIONI.forEach(([x, z]) => luce(x, z, 330, .55));
+        luce(0, -1.2, 520, .4);
+        luce(0, 2.2, 600, .3);
+      }
       // le scritte dipinte sul selciato
       g.textAlign = "center"; g.textBaseline = "middle";
       const [, y1] = aTela(0, 1.98), [, y2] = aTela(0, 2.5);
@@ -3020,10 +3075,13 @@ const BARCA_FIABA = {
     return mesh;
   }
   const cielo0 = new T.Group(); scena.add(cielo0);
-  let soleM, aerei = [], uccelli = [];
+  let soleM, aerei = [], uccelli = [], stelle3D = [];
   const SW_STR = 2.3, SH_STR = .62, AW = 1.75;
   function costruisciCielo() {
-    soleM = cartaVolante(1.3, 1.3, soleSorridente); soleM.position.set(-3.3, 3.75, -2.8); cielo0.add(soleM);
+    soleM = cartaVolante(1.3, 1.3, NOTTE ? lunaSorridente : soleSorridente); soleM.position.set(-3.3, 3.75, -2.8); cielo0.add(soleM);
+    if (NOTTE) [[-1.6, 4.35, -2.7], [2.2, 4.6, -2.75], [-4.3, 4.7, -2.6], [3.6, 3.85, -2.7], [-.4, 5.0, -2.8]].forEach(([x, y, z], i) => {
+      const st = cartaVolante(.32, .32, stellina); st.position.set(x, y, z); st.userData.f = i * 1.3; stelle3D.push(st); cielo0.add(st);
+    });
     for (const verso of [1, -1]) {
       const g = new T.Group();
       const aM = cartaVolante(AW, .75, aereo(verso));
@@ -3038,6 +3096,7 @@ const BARCA_FIABA = {
       const b = new T.Mesh(geo, mat);
       const riga = Math.ceil(i / 2), lato = i % 2 ? 1 : -1;
       b.userData = { dx: riga * .32, dy: lato * riga * .16 + (i % 3) * .03, f: i * .9, s: .1 + (i % 3) * .02 };
+      b.visible = !NOTTE;
       uccelli.push(b); cielo0.add(b);
     }
   }
@@ -3046,7 +3105,8 @@ const BARCA_FIABA = {
     if (!cielo0.visible || !soleM) return;
     const s = Math.min(1, easeBack(clamp(p)));
     cielo0.scale.set(s, s, s);
-    soleM.rotation.z = pocoMoto ? 0 : t * .15;
+    soleM.rotation.z = pocoMoto ? 0 : NOTTE ? .12 * Math.sin(t * .5) : t * .15;
+    for (const st of stelle3D) { const k = pocoMoto ? 1 : .75 + .3 * Math.sin(t * 2.4 + st.userData.f); st.scale.setScalar(k); st.rotation.z = pocoMoto ? 0 : .2 * Math.sin(t * .8 + st.userData.f); }
     // l'aereo gira sopra la piazza: lontano (piccolo) dietro, vicino (grande) davanti
     const th = pocoMoto ? .6 : t * .16;
     const x = 2.6 * Math.sin(th), z = .6 - .8 * Math.cos(th), y = 4.4 + .1 * Math.cos(th), zoom = .62 - .24 * Math.cos(th);
@@ -3081,6 +3141,7 @@ const BARCA_FIABA = {
   /* ---------- i cartoncini di ogni pagina ----------
      x = destra/sinistra, z = dietro (negativo) / davanti, o = ordine di apertura */
   const TINTE_GIGLI = ["#cf2a1f", "#24508f", "#2c7a57", "#c47800", "#7b5fc0", "#d9577b", "#3d8fc4", "#a51d15"];
+  const LAMPIONI = [[-3.95, 1.45], [3.95, 1.45]];
   const XS = [-3.75, -3.05, -2.35, -1.65, 1.65, 2.35, 3.05, 3.75], ZS = [.3, -.3, .3, -.3, -.3, .3, -.3, .3];
   function iconaSvg(nome, col) {
     return new Promise(res => {
@@ -3100,7 +3161,8 @@ const BARCA_FIABA = {
   let ICONE = {};
   function cartePagina(pagina) {
     if (pagina.tipo === "piazza") return [
-      { w: 7.8, h: 3.6, x: 0, z: -2.5, o: 0, d: cieloGiorno },
+      { w: 7.8, h: 3.6, x: 0, z: -2.5, o: 0, d: NOTTE ? cieloNotte : cieloGiorno },
+      ...(NOTTE ? LAMPIONI.map(([x, z], i) => ({ w: .75, h: 2.5, x, z, o: .6 + i * .05, scala: 1.05, d: lampione, alone: [.375, .42] })) : []),
       { w: 8.0, h: 2.6, x: 0, z: -1.55, o: .2, d: municipio },
       ...idGigli.map((id, i) => ({ w: .6, h: 3.5, x: XS[i], z: ZS[i], o: .45 + i * .04, d: giglioArte(TINTE_GIGLI[i], ICONE[id]), vai: paginaDi(id),
         anim: (m, t) => m.rotation.z = .018 * Math.sin(t * 1.2 + i) })),
@@ -3131,6 +3193,14 @@ const BARCA_FIABA = {
   }
 
   /* ---------- costruzione dei cartoncini ---------- */
+  let texAlone = null;
+  const TEX_ALONE = () => {
+    if (texAlone) return texAlone;
+    const c = tela(128, 128), g = c.getContext("2d"), gr = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+    gr.addColorStop(0, "rgba(255,220,130,.85)"); gr.addColorStop(.35, "rgba(255,200,100,.35)"); gr.addColorStop(1, "rgba(255,200,100,0)");
+    g.fillStyle = gr; g.fillRect(0, 0, 128, 128);
+    return texAlone = new T.CanvasTexture(c);
+  };
   function cartoncino(s) {
     const m = .07, cv = ritaglio(s.w, s.h, s.d, m), tex = texture(cv);
     const mat = new T.MeshStandardMaterial({ map: tex, alphaTest: .5, side: T.DoubleSide, roughness: .92, transparent: !!s.op, opacity: s.op || 1 });
@@ -3140,6 +3210,11 @@ const BARCA_FIABA = {
     mesh.position.y = mesh.userData.y0 = ((s.h + 2 * m) / 2 - m - .02) * k;
     mesh.castShadow = mesh.receiveShadow = true;
     mesh.customDepthMaterial = new T.MeshDepthMaterial({ depthPacking: T.RGBADepthPacking, map: tex, alphaTest: .5 });
+    if (s.alone) {
+      const al = new T.Sprite(new T.SpriteMaterial({ map: TEX_ALONE(), blending: T.AdditiveBlending, depthWrite: false, transparent: true }));
+      al.position.set(s.alone[0] - s.w / 2, s.h / 2 - s.alone[1], .05); al.scale.set(1.5, 1.5, 1);
+      mesh.add(al);
+    }
     const cerniera = new T.Group(); cerniera.position.set(s.x, TOP + .003, s.z); cerniera.add(mesh);
     const carta = { cerniera, mesh, o: s.o, anim: s.anim, vai: s.vai, lab: s.lab, tocca: s.vai !== undefined || !!s.lab };
     if (carta.tocca) {
