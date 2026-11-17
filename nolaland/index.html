@@ -3061,9 +3061,9 @@ const BARCA_FIABA = {
     return gr;
   }
   const MONGOLFIERE = [
-    { g: creaMongolfiera(["#cf2a1f", "#fffaf0", "#f4a01c", "#24508f"], 1.0), x: 6.2, y: 4.3, z: -2.2, v: .13, f: 0 },
-    { g: creaMongolfiera(["#2c7a57", "#ffd27a", "#ec7c9a"], .72), x: 4.4, y: 5.05, z: -2.6, v: .1, f: 2 },
-    { g: creaMongolfiera(["#7b5fc0", "#fffaf0", "#69b3de"], .55), x: .8, y: 4.95, z: -3.1, v: .08, f: 4 }
+    { g: creaMongolfiera(["#cf2a1f", "#fffaf0", "#f4a01c", "#24508f"], 1.0), x: 5.6, y: 3.65, z: -2.2, v: .13, f: 0 },
+    { g: creaMongolfiera(["#2c7a57", "#ffd27a", "#ec7c9a"], .72), x: 4.2, y: 4.3, z: -2.6, v: .1, f: 2 },
+    { g: creaMongolfiera(["#7b5fc0", "#fffaf0", "#69b3de"], .55), x: .8, y: 4.75, z: -3.1, v: .08, f: 4 }
   ];
 
   /* ---------- il cielo della piazza: sole, aereo con lo striscione, uccelli ---------- */
@@ -3126,8 +3126,9 @@ const BARCA_FIABA = {
       pos.needsUpdate = true;
     }
     // lo stormo
-    const fx = pocoMoto ? -1.5 : 4.6 * Math.sin(t * .09 + 2), fy = 3.75 + (pocoMoto ? 0 : .12 * Math.sin(t * .7));
-    const dir = pocoMoto ? 1 : Math.sign(Math.cos(t * .09 + 2)) || 1;
+    // lo stormo vola sempre al contrario dell'aereo: se l'aereo va verso destra, gli uccelli vanno verso sinistra
+    const fx = pocoMoto ? -1.5 : -4.2 * Math.sin(th), fy = 3.75 + (pocoMoto ? 0 : .12 * Math.sin(t * .7));
+    const dir = pocoMoto ? 1 : -verso;
     for (const b of uccelli) {
       const u = b.userData, ali = pocoMoto ? .5 : Math.sin(t * 9 + u.f), sz = u.s;
       const bx = fx - dir * u.dx, by = fy + u.dy, bz = -.6 - u.dx * .2;
