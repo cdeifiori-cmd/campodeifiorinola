@@ -2025,6 +2025,7 @@ const BARCA_FIABA = {
   $f("pop-chips").addEventListener("click", e => { const b = e.target.closest("[data-lab-fiaba]"); if (b) { chiudiLettura(); vaiAlLab(b.dataset.labFiaba); } });
   $f("pop-sr").addEventListener("click", e => { const b = e.target.closest("[data-pagina-fiaba]"); if (b) vaiA(+b.dataset.paginaFiaba); });
   palco.addEventListener("keydown", e => {
+    if (libroChiuso && (e.key === "ArrowRight" || e.key === "Enter" || e.key === " ")) { e.preventDefault(); vaiA(0); return; }
     if (e.key === "ArrowRight") { e.preventDefault(); vaiA(idx + 1); }
     if (e.key === "ArrowLeft") { e.preventDefault(); vaiA(idx - 1); }
     if (e.key === "Enter" && $f("fiaba-scena").classList.contains("con-tabella")) { e.preventDefault(); apriLettura(); }
@@ -3110,7 +3111,8 @@ const BARCA_FIABA = {
   const bordoOro = new T.Mesh(new T.BoxGeometry(2 * W + .47, .02, D + .42), new T.MeshStandardMaterial({ color: 0xf4a01c, roughness: .6 }));
   bordoOro.position.y = .1; scena.add(bordoOro);
   const blocchi = new T.MeshStandardMaterial({ color: 0xf1e3c6, roughness: 1 });
-  for (const s of [-1, 1]) { const b = new T.Mesh(new T.BoxGeometry(W - .03, .16, D), blocchi); b.position.set(s * (W / 2 + .01), .2, 0); b.castShadow = b.receiveShadow = true; scena.add(b); }
+  const BLOCCHI = {};
+  for (const s of [-1, 1]) { const b = new T.Mesh(new T.BoxGeometry(W - .03, .16, D), blocchi); b.position.set(s * (W / 2 + .01), .2, 0); b.castShadow = b.receiveShadow = true; scena.add(b); BLOCCHI[s] = b; }
   const piano = new T.Mesh(new T.PlaneGeometry(60, 60), new T.ShadowMaterial({ opacity: .2 }));
   piano.rotation.x = -Math.PI / 2; piano.receiveShadow = true; scena.add(piano);
 
@@ -3120,6 +3122,84 @@ const BARCA_FIABA = {
     m.position.set(x, TOP + .002, 0); m.receiveShadow = true; scena.add(m); return m;
   }
   const pagSx = paginaPiatta(-W / 2), pagDx = paginaPiatta(W / 2);
+
+  /* ---------- la copertina: all'inizio il libro è chiuso ---------- */
+  var libroChiuso = true;
+  const WC = W + .225, DC = D + .4;
+  // la metà destra della base, finché il libro è chiuso
+  const baseDx = new T.Mesh(new T.BoxGeometry(WC, .12, DC), copertina.material);
+  baseDx.position.set(WC / 2, .06, 0); baseDx.castShadow = baseDx.receiveShadow = true; scena.add(baseDx);
+  function disegnaCopertina(logo) {
+    const px = 220, c = tela(Math.round(WC * px), Math.round(DC * px)), a = c.getContext("2d");
+    a.setTransform(px, 0, 0, px, 0, 0); a.__px = px; a.__m = 0;
+    const w = WC, h = DC;
+    // tela blu con la cornice dorata e il riquadro color carta
+    fs(a, rett(0, 0, w, h), "#173a6b", 0);
+    a.lineWidth = .05; a.strokeStyle = "#f4a01c"; a.strokeRect(.12, .12, w - .24, h - .24);
+    a.lineWidth = .02; a.strokeRect(.2, .2, w - .4, h - .4);
+    const r = P(); r.roundRect ? r.roundRect(.32, .32, w - .64, h - .64, .2) : r.rect(.32, .32, w - .64, h - .64);
+    fs(a, r, "#fff4dc", .04);
+    a.save(); a.clip(r);
+    for (let k = 0; k < 18; k++) { const an = k / 18 * Math.PI * 2; fs(a, poli([[w / 2, 1.55], [w / 2 + Math.cos(an) * 4, 1.55 + Math.sin(an) * 4], [w / 2 + Math.cos(an + .17) * 4, 1.55 + Math.sin(an + .17) * 4]]), "rgba(244,160,28,.12)", 0); }
+    a.restore();
+    // gli angoli con le stelline
+    [[.55, .55], [w - .55, .55], [.55, h - .55], [w - .55, h - .55]].forEach(([x, y]) => stella(a, x, y, .13, "#f4a01c"));
+    // il logo di Campo dei Fiori
+    if (logo) { const lh = 1.85, lw = lh * logo.width / logo.height; a.drawImage(logo, w / 2 - lw / 2, .55, lw, lh); }
+    // il titolo
+    testo(a, "Nola Land", w / 2, 2.95, .78, '"Caveat Brush", cursive', "#cf2a1f", w - .9);
+    a.lineWidth = .04; a.strokeStyle = "#f4a01c"; a.lineCap = "round";
+    a.beginPath(); a.moveTo(w / 2 - 1.3, 3.42); a.bezierCurveTo(w / 2 - .4, 3.55, w / 2 + .4, 3.3, w / 2 + 1.3, 3.45); a.stroke();
+    testo(a, "La chiamata alle Arti", w / 2, 3.85, .3, '800 "Bricolage Grotesque", sans-serif', "#24508f", w - .9);
+    testo(a, "di Campo dei Fiori", w / 2, 4.22, .3, '800 "Bricolage Grotesque", sans-serif', "#24508f", w - .9);
+    // otto gigli piccoli in fila
+    for (let k = 0; k < 8; k++) {
+      const x = w / 2 - 1.4 + k * .4, col = ["#cf2a1f", "#24508f", "#2c7a57", "#c47800", "#7b5fc0", "#d9577b", "#3d8fc4", "#a51d15"][k];
+      fs(a, poli([[x - .11, 4.95], [x - .03, 4.5], [x + .03, 4.5], [x + .11, 4.95]]), col, .015);
+      fs(a, cerchio(x, 4.47, .035), "#f4a01c", .01);
+    }
+    // il nastro rosso con il motto
+    const n = P(); n.moveTo(.45, 5.12); n.lineTo(w - .45, 5.12); n.lineTo(w - .6, 5.35); n.lineTo(w - .45, 5.58); n.lineTo(.45, 5.58); n.lineTo(.6, 5.35); n.closePath();
+    fs(a, n, "#cf2a1f", .03);
+    testo(a, "alla scoperta dei tesori della nostra città", w / 2, 5.36, .2, '"Caveat Brush", cursive', "#fffaf0", w - 1.4);
+    testo(a, "tocca per aprire", w / 2, h - .2, .15, '"Caveat Brush", cursive', "#f4a01c", w);
+    return c;
+  }
+  // il coperchio: ruota sulla costola (x = 0) e si apre verso sinistra
+  const perno = new T.Group(); perno.position.set(0, TOP, 0); scena.add(perno);
+  const matBlu = copertina.material;
+  const matCop = new T.MeshStandardMaterial({ roughness: .8 });
+  const coperchio = new T.Mesh(new T.BoxGeometry(WC, .08, DC), [matBlu, matBlu, matCop, matBlu, matBlu, matBlu]);
+  coperchio.position.set(WC / 2, .04, 0); coperchio.castShadow = coperchio.receiveShadow = true;
+  perno.add(coperchio);
+  function mostraLibroAperto(si) {
+    copertina.visible = bordoOro.visible = BLOCCHI[-1].visible = pagSx.visible = si;
+    baseDx.visible = !si;
+  }
+  mostraLibroAperto(false);
+  // da chiuso il libro sta al centro: quando si apre scivola a destra e poi gira la copertina
+  const PEZZI_DX = [baseDx, BLOCCHI[1], pagDx, perno];
+  PEZZI_DX.forEach(m => m.userData.x0 = m.position.x);
+  const spostaLibro = o => PEZZI_DX.forEach(m => m.position.x = m.userData.x0 + o);
+  spostaLibro(-WC / 2);
+  let aprendo = null;
+  function apriLibro() {
+    if (!libroChiuso) return Promise.resolve();
+    if (aprendo) return aprendo;
+    occupato = true;
+    aprendo = tween(2.0, k => {
+      spostaLibro(-WC / 2 * (1 - easeIO(clamp(k / .35))));
+      const e = easeIO(clamp((k - .35) / .65));
+      perno.rotation.z = e * Math.PI;
+      if (e > .5) mostraLibroAperto(true);
+      coperchio.visible = e < .985;
+    }).then(() => {
+      libroChiuso = false; coperchio.visible = false; mostraLibroAperto(true);
+      scriviTesto();
+      return tween(1.4, k => S[idx].p = k);
+    }).then(() => { occupato = false; prepara(1); aprendo = null; });
+    return aprendo;
+  }
 
   // il foglio che si gira: due facce, con la stampa giusta su ciascun lato
   const geoF = new T.PlaneGeometry(W, D, 28, 1); geoF.rotateX(-Math.PI / 2); geoF.translate(W / 2, 0, 0);
@@ -3569,6 +3649,7 @@ const BARCA_FIABA = {
 
   // sfoglia fino alla pagina n (anche saltando più pagine con un solo giro)
   vaiA = async n => {
+    if (libroChiuso) { await apriLibro(); if (n <= 0) return; }
     if (occupato || n < 0 || n >= N || n === idx || !S[idx]) return;
     occupato = true; sopra = null; palco.style.cursor = "";
     chiudiLettura();
@@ -3809,6 +3890,7 @@ const BARCA_FIABA = {
       return;
     }
     if (e.pointerType === "touch") return;
+    if (libroChiuso) { palco.style.cursor = "pointer"; return; }
     const c = cartaSotto(e);
     if (c !== sopra) { sopra = c; palco.style.cursor = c ? "pointer" : ""; if (!visibile) disegnaFrame(); }
   });
@@ -3818,6 +3900,7 @@ const BARCA_FIABA = {
   // le pagine si girano solo con i bambini (e con i pulsanti qui accanto); sul libro si toccano gigli, targhette e ritratti
   palco.addEventListener("click", e => {
     if (trascinato || palco.classList.contains("senza-3d")) { trascinato = false; return; }
+    if (libroChiuso) { apriLibro(); return; }
     const c = cartaSotto(e);
     if (c) { if (c.casa) vaiA(0); else if (c.cartello) apriLettura(); else if (c.omino) vaiA(idx + c.omino); else if (c.lab) vaiAlLab(c.lab); else vaiA(c.vai); }
   });
@@ -3838,6 +3921,11 @@ const BARCA_FIABA = {
     try { costruisciAnimali(); } catch (e) { console.error(e); }
     try { if (CON_FUOCHI) costruisciFuochi(); } catch (e) { console.error(e); }
     prepara(0);
+    try {
+      const logo = await new Promise(res => { const im = new Image(); im.onload = () => res(im); im.onerror = () => res(null); im.src = "img/logo-bimbo.webp"; });
+      matCop.map = texture(disegnaCopertina(logo)); matCop.needsUpdate = true;
+    } catch (e) { console.error(e); }
+    $f("pop-tocca-testo").textContent = "Tocca la copertina per aprire il libro";
     pagSx.material.map = G[0].L; pagDx.material.map = G[0].R;
     pagSx.material.needsUpdate = pagDx.material.needsUpdate = true;
     adatta();
@@ -3847,7 +3935,7 @@ const BARCA_FIABA = {
       visibile = v.isIntersecting;
       if (visibile) {
         avvia();
-        if (!aperto) { aperto = true; occupato = true; setTimeout(() => tween(1.4, k => S[idx].p = k).then(() => { occupato = false; prepara(1); }), 250); }
+        if (!aperto) aperto = true;   // il libro resta chiuso finché non si tocca la copertina
       }
     }, { threshold: .25 }).observe(palco);
     document.addEventListener("visibilitychange", () => {
