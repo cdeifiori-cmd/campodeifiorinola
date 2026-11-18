@@ -612,6 +612,9 @@ html.con-ingresso{overflow:hidden}
 .errore{color:var(--rosso);font-weight:700;margin:0;min-height:1.2em}
 .errore:empty{min-height:0}
 .piccolo{font-size:.92rem;color:var(--inchiostro-2)}
+.salta-prova{margin:18px 0 0;text-align:center}
+.salta-prova .link-btn{display:inline-flex;gap:8px;align-items:center}
+.salta-prova svg{width:18px;height:18px}
 .avviso-prova-area{display:flex;gap:12px;align-items:center;background:#fff6d8;border:2px dashed var(--zafferano);border-radius:14px;padding:12px 16px;margin:0 0 18px}
 .avviso-prova-area svg{flex:none;color:#b57a00}
 .avviso-prova-area b{font-size:1.25rem;letter-spacing:.18em}
@@ -877,6 +880,7 @@ html[data-passo="fiaba"] footer{padding-bottom:110px}
             <p class="errore" id="a-errore" role="alert"></p>
             <button class="btn giallo grande" type="submit"><i data-lucide="message-circle"></i>Mandami il codice su WhatsApp</button>
           </form>
+          <p class="salta-prova"><button type="button" class="link-btn" id="a-salta"><i data-lucide="fast-forward"></i>Versione di prova: entra senza cellulare</button></p>
         </div>
       </div>
 
@@ -2100,6 +2104,7 @@ $("nuova").addEventListener("click", () => {
   /* il suono del battito: un "tum-tum" profondo creato al momento (Web Audio, niente file).
      I browser non fanno partire i suoni da soli: si accende con il tasto in alto o al primo tocco. */
   const PERIODO = 1.15;                 // come l'animazione del cuore (1.15 s)
+  let inizioSuono = 0;
   let ac = null, uscita = null, rumore = null, acceso = false, t0 = 0, prossimo = 0, timer = 0;
   function preparaAudio() {
     if (ac) return true;
@@ -2146,7 +2151,7 @@ $("nuova").addEventListener("click", () => {
     if (!preparaAudio()) return;
     const parti = () => {
       if (ac.state !== "running" || acceso) return;
-      acceso = true; allinea();
+      acceso = true; inizioSuono = performance.now(); allinea();
       t0 = ac.currentTime + .05; prossimo = t0 + .1;   // il primo colpo cade sul primo "salto" del cuore
       uscita.gain.cancelScheduledValues(ac.currentTime); uscita.gain.setValueAtTime(uscita.gain.value, ac.currentTime); uscita.gain.linearRampToValueAtTime(1, ac.currentTime + .3);
       clearTimeout(timer); programma();
@@ -2160,9 +2165,18 @@ $("nuova").addEventListener("click", () => {
     if (ac) { const t = ac.currentTime; uscita.gain.cancelScheduledValues(t); uscita.gain.setValueAtTime(uscita.gain.value, t); uscita.gain.linearRampToValueAtTime(0, t + (sfuma || .2)); }
     const b = $("ing-suono"); if (b) { b.setAttribute("aria-pressed", "false"); $("ing-suono-testo").textContent = "Ascolta il battito"; }
   }
-  $("ing-suono").addEventListener("click", e => { e.stopPropagation(); if (acceso) spegni(); else accendi(); });
-  // un tocco qualsiasi sullo sfondo accende il battito
-  ing.addEventListener("pointerdown", e => { if (!acceso && !e.target.closest("#ing-suono, #ing-cuore, #ing-entra")) accendi(); });
+  $("ing-suono").addEventListener("click", e => { e.stopPropagation(); if (acceso) { spentoDaUtente = true; spegni(); } else { spentoDaUtente = false; accendi(); } });
+  // i browser fanno partire il suono solo dopo un gesto: al primo tocco, clic o tasto (ovunque) il battito si accende da solo
+  let spentoDaUtente = false;
+  const alPrimoGesto = e => {
+    if (!document.body.contains(ing)) return togliGesti();
+    if (e.target.closest && e.target.closest("#ing-suono")) return;
+    if (!acceso && !spentoDaUtente) accendi();
+    if (acceso) togliGesti();
+  };
+  const GESTI = ["pointerdown", "touchstart", "keydown", "mousedown"];
+  const togliGesti = () => GESTI.forEach(g => document.removeEventListener(g, alPrimoGesto, true));
+  GESTI.forEach(g => document.addEventListener(g, alPrimoGesto, { capture: true, passive: true }));
   // si prova ad accenderlo subito (funziona solo se il browser lo permette)
   if (preparaAudio()) { ac.resume().then(() => { if (ac.state === "running") accendi(); }).catch(() => {}); setTimeout(() => { if (!acceso && ac.state === "running") accendi(); }, 300); }
 
@@ -2175,8 +2189,16 @@ $("nuova").addEventListener("click", () => {
     document.documentElement.classList.remove("con-ingresso");
     setTimeout(() => ing.remove(), 800);
   };
-  $("ing-cuore").addEventListener("click", entra);
-  $("ing-entra").addEventListener("click", entra);
+  let entrando = false;
+  const entraConBattito = () => {
+    if (entrando) return; entrando = true;
+    if (spentoDaUtente || !ac) { entra(); return; }
+    if (!acceso) accendi();
+    // se il battito è appena partito, se ne sente uno completo prima di entrare
+    setTimeout(() => setTimeout(entra, acceso ? Math.max(0, 1250 - (performance.now() - inizioSuono)) : 0), 80);
+  };
+  $("ing-cuore").addEventListener("click", entraConBattito);
+  $("ing-entra").addEventListener("click", entraConBattito);
   setTimeout(() => $("ing-cuore").focus({ preventScroll: true }), 50);
 })();
 
@@ -2269,6 +2291,13 @@ DISEGNA.codice = () => {
   $("c-input").value = ""; $("c-errore").textContent = "";
   setTimeout(() => $("c-input").focus(), 100);
 };
+// solo nella versione di prova: si entra senza cellulare e senza codice
+$("a-salta").addEventListener("click", () => {
+  const nome = $("a-nome").value.trim() || "Genitore", cognome = $("a-cognome").value.trim() || "di prova";
+  if (!(FAM && FAM.genitore)) FAM = { genitore: { nome, cognome, cell: "" }, verificato: true, figli: [], confermata: false };
+  else Object.assign(FAM, { verificato: true });
+  salvaFam(); vai("famiglia");
+});
 $("c-rimanda").addEventListener("click", () => { nuovoCodice(); avvisa("Ti abbiamo mandato un nuovo codice."); });
 $("c-cambia").addEventListener("click", () => vai("accesso"));
 $("f-codice").addEventListener("submit", e => {
