@@ -563,6 +563,13 @@ html.con-ingresso{overflow:hidden}
 .ing-avviso svg{width:26px;height:26px}
 .ing-avviso p{margin:0;font-size:1rem;line-height:1.4}
 .ing-entra{margin-top:4px}
+.ing-suono{position:absolute;top:max(16px,env(safe-area-inset-top));right:max(16px,env(safe-area-inset-right));display:inline-flex;align-items:center;gap:8px;border:2.5px solid var(--inchiostro);background:#fff;color:var(--inchiostro);border-radius:999px;padding:10px 16px 10px 12px;font:700 .95rem/1 var(--titolo);cursor:pointer;box-shadow:0 10px 20px -14px rgba(31,23,18,.6)}
+.ing-suono svg{width:22px;height:22px}
+.ing-suono .si{display:none}
+.ing-suono[aria-pressed="true"] .si{display:inline}
+.ing-suono[aria-pressed="true"] .no{display:none}
+.ing-suono:not([aria-pressed="true"]){animation:chiama 1.15s ease-in-out infinite}
+@keyframes chiama{0%,100%{transform:scale(1)}14%{transform:scale(1.07)}}
 
 /* l'invito "Iscrivi tuo figlio" nella parte pubblica */
 .invito{background:var(--rosso);color:#fff;padding:clamp(64px,8vw,100px) 0;text-align:center}
@@ -799,6 +806,7 @@ html[data-passo="fiaba"] footer{padding-bottom:110px}
 </head>
 <body>
 <div class="ingresso" id="ingresso" role="dialog" aria-modal="true" aria-labelledby="ing-titolo">
+  <button type="button" class="ing-suono" id="ing-suono" aria-pressed="false"><i data-lucide="volume-x" class="no"></i><i data-lucide="volume-2" class="si"></i><span id="ing-suono-testo">Ascolta il battito</span></button>
   <button type="button" class="cuore-btn" id="ing-cuore" aria-label="Entra in Nola Land">
         <svg viewBox="0 0 240 220" aria-hidden="true">
           <defs>
@@ -2088,8 +2096,81 @@ $("nuova").addEventListener("click", () => {
   if (new URLSearchParams(location.search).has("cuore")) visto = false;
   if (visto || location.hash === "#iscrizione") { ing.remove(); return; }
   document.documentElement.classList.add("con-ingresso");
+
+  /* il suono del battito: un "tum-tum" profondo creato al momento (Web Audio, niente file).
+     I browser non fanno partire i suoni da soli: si accende con il tasto in alto o al primo tocco. */
+  const PERIODO = 1.15;                 // come l'animazione del cuore (1.15 s)
+  let ac = null, uscita = null, rumore = null, acceso = false, t0 = 0, prossimo = 0, timer = 0;
+  function preparaAudio() {
+    if (ac) return true;
+    const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return false;
+    ac = new AC();
+    const comp = ac.createDynamicsCompressor(); comp.threshold.value = -14; comp.ratio.value = 4;
+    uscita = ac.createGain(); uscita.gain.value = 0;
+    uscita.connect(comp); comp.connect(ac.destination);
+    // un po' di rumore per il "colpo" del cuore contro il petto
+    const n = ac.createBuffer(1, ac.sampleRate * .3, ac.sampleRate), d = n.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 3);
+    rumore = n;
+    return true;
+  }
+  // un colpo: f0 la nota di partenza (scende verso il grave), forza il volume, dur la durata
+  function colpo(t, f0, forza, dur) {
+    const o = ac.createOscillator(), o2 = ac.createOscillator(), g = ac.createGain(), g2 = ac.createGain(), lp = ac.createBiquadFilter();
+    o.type = "sine"; o2.type = "triangle";
+    o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(f0 * .55, t + dur);
+    o2.frequency.setValueAtTime(f0 * 2, t); o2.frequency.exponentialRampToValueAtTime(f0 * 1.1, t + dur);  // armonica: si sente anche dalle casse piccole
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(forza, t + .012); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    g2.gain.setValueAtTime(0.0001, t); g2.gain.exponentialRampToValueAtTime(forza * .32, t + .01); g2.gain.exponentialRampToValueAtTime(0.0001, t + dur * .7);
+    lp.type = "lowpass"; lp.frequency.value = 180; lp.Q.value = .8;
+    o.connect(g); o2.connect(g2); g.connect(lp); g2.connect(lp); lp.connect(uscita);
+    const r = ac.createBufferSource(), gr = ac.createGain(), lr = ac.createBiquadFilter();
+    r.buffer = rumore; lr.type = "lowpass"; lr.frequency.value = 110;
+    gr.gain.setValueAtTime(forza * .9, t); gr.gain.exponentialRampToValueAtTime(0.0001, t + .09);
+    r.connect(lr); lr.connect(gr); gr.connect(uscita);
+    [o, o2, r].forEach(x => { x.start(t); x.stop(t + dur + .05); });
+  }
+  // "tum" forte (chiusura delle valvole) e "tum" più corto e un po' più alto subito dopo
+  const battito = t => { colpo(t, 62, .95, .22); colpo(t + .27, 74, .6, .16); };
+  function programma() {
+    if (!acceso) return;
+    while (prossimo < ac.currentTime + .4) { battito(prossimo); prossimo += PERIODO; }
+    timer = setTimeout(programma, 120);
+  }
+  // fa ripartire l'animazione del cuore nello stesso istante del suono
+  function allinea() {
+    const b = ing.querySelector(".battito"); if (!b) return;
+    b.style.animation = "none"; void b.getBoundingClientRect(); b.style.animation = "";
+  }
+  function accendi() {
+    if (!preparaAudio()) return;
+    const parti = () => {
+      if (ac.state !== "running" || acceso) return;
+      acceso = true; allinea();
+      t0 = ac.currentTime + .05; prossimo = t0 + .1;   // il primo colpo cade sul primo "salto" del cuore
+      uscita.gain.cancelScheduledValues(ac.currentTime); uscita.gain.setValueAtTime(uscita.gain.value, ac.currentTime); uscita.gain.linearRampToValueAtTime(1, ac.currentTime + .3);
+      clearTimeout(timer); programma();
+      const b = $("ing-suono"); b.setAttribute("aria-pressed", "true"); $("ing-suono-testo").textContent = "Suono acceso";
+    };
+    ac.resume().then(parti).catch(() => {});
+    parti();
+  }
+  function spegni(sfuma) {
+    acceso = false; clearTimeout(timer);
+    if (ac) { const t = ac.currentTime; uscita.gain.cancelScheduledValues(t); uscita.gain.setValueAtTime(uscita.gain.value, t); uscita.gain.linearRampToValueAtTime(0, t + (sfuma || .2)); }
+    const b = $("ing-suono"); if (b) { b.setAttribute("aria-pressed", "false"); $("ing-suono-testo").textContent = "Ascolta il battito"; }
+  }
+  $("ing-suono").addEventListener("click", e => { e.stopPropagation(); if (acceso) spegni(); else accendi(); });
+  // un tocco qualsiasi sullo sfondo accende il battito
+  ing.addEventListener("pointerdown", e => { if (!acceso && !e.target.closest("#ing-suono, #ing-cuore, #ing-entra")) accendi(); });
+  // si prova ad accenderlo subito (funziona solo se il browser lo permette)
+  if (preparaAudio()) { ac.resume().then(() => { if (ac.state === "running") accendi(); }).catch(() => {}); setTimeout(() => { if (!acceso && ac.state === "running") accendi(); }, 300); }
+
   const entra = () => {
     try { sessionStorage.setItem("nolaland-ingresso", "1"); } catch (e) {}
+    // entrando: un ultimo battito forte, poi il suono sfuma
+    if (acceso) { acceso = false; clearTimeout(timer); const t = ac.currentTime + .02; colpo(t, 56, 1, .3); colpo(t + .28, 70, .7, .2); uscita.gain.setValueAtTime(1, t + .5); uscita.gain.linearRampToValueAtTime(0, t + 1.2); setTimeout(() => ac.close().catch(() => {}), 1600); }
+    else if (ac) ac.close().catch(() => {});
     ing.classList.add("via");
     document.documentElement.classList.remove("con-ingresso");
     setTimeout(() => ing.remove(), 800);
