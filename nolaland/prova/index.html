@@ -801,11 +801,35 @@ html[data-passo="fiaba"] footer{padding-bottom:110px}
 /* schizzi di colore al clic */
 .schizzo{position:absolute;pointer-events:none;width:110px;height:110px;margin:-55px 0 0 -55px;z-index:0}
 
+/* ---------- le frecce lampeggianti sul prossimo passo da fare ---------- */
+/* di base la freccia sta a sinistra del bottone e punta verso di lui; .sopra = arriva dall'alto, .sotto = arriva dal basso */
+.da-fare{position:relative;animation:alone 1.2s ease-in-out infinite}
+.da-fare::after{content:"";position:absolute;right:calc(100% + 10px);top:50%;width:40px;height:48px;margin-top:-24px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 48'%3E%3Cpath d='M13 2h14v22h10L20 46 3 24h10z' fill='%23f4a01c' stroke='%231f1712' stroke-width='3' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat;rotate:-90deg;pointer-events:none;z-index:6;animation:lampeggia-dx 1.2s ease-in-out infinite;filter:drop-shadow(0 4px 6px rgba(31,23,18,.35))}
+.da-fare[data-freccia]::before{content:attr(data-freccia);position:absolute;right:calc(100% + 62px);top:50%;transform:translateY(-50%);white-space:nowrap;background:var(--zafferano);color:var(--inchiostro);font:800 .92rem/1 var(--titolo);letter-spacing:0;text-transform:none;padding:8px 13px;border-radius:999px;border:2.5px solid var(--inchiostro);box-shadow:0 8px 16px -8px rgba(31,23,18,.6);pointer-events:none;z-index:6;animation:lampeggia-testo 1.2s ease-in-out infinite}
+.da-fare.sopra::after{right:auto;left:50%;top:auto;bottom:calc(100% + 6px);margin:0 0 0 -20px;rotate:none;animation-name:lampeggia-giu}
+.da-fare.sopra[data-freccia]::before{right:auto;left:50%;top:auto;bottom:calc(100% + 58px);transform:translateX(-50%)}
+.da-fare.sotto::after{right:auto;left:50%;top:calc(100% + 6px);margin:0 0 0 -20px;rotate:180deg;animation-name:lampeggia-su}
+.da-fare.sotto[data-freccia]::before{right:auto;left:50%;top:calc(100% + 58px);transform:translateX(-50%)}
+.top .da-fare.sotto[data-freccia]::before{left:auto;right:0;transform:none}
+@keyframes lampeggia-dx{0%,100%{opacity:1;translate:0 0}50%{opacity:.3;translate:-10px 0}}
+@keyframes lampeggia-giu{0%,100%{opacity:1;translate:0 0}50%{opacity:.3;translate:0 -9px}}
+@keyframes lampeggia-su{0%,100%{opacity:1;translate:0 0}50%{opacity:.3;translate:0 9px}}
+@keyframes lampeggia-testo{0%,100%{opacity:1}50%{opacity:.6}}
+@keyframes alone{0%,100%{box-shadow:0 0 0 0 rgba(244,160,28,0),0 6px 16px -6px rgba(31,23,18,.45)}50%{box-shadow:0 0 0 8px rgba(244,160,28,.55),0 6px 16px -6px rgba(31,23,18,.45)}}
+/* spazio libero per la freccia e la scritta, così non coprono altro */
+.passo .da-fare.sopra,.invito .da-fare.sopra{margin-top:100px}
+.passo .da-fare.sotto{margin-bottom:100px}
+/* nel percorso a tappe: la prossima tappa lampeggia */
+.tappa.lampeggia .tondo{animation:alone 1.2s ease-in-out infinite;background:#fff}
+.tappa.lampeggia .nome{animation:lampeggia-testo 1.2s ease-in-out infinite;background:var(--zafferano);color:var(--inchiostro)}
+@media (max-width:600px){.da-fare[data-freccia]::before{font-size:.8rem;padding:7px 11px}}
+
 /* ---------- il percorso a tappe (sinistra: scopri, destra: iscriviti) ---------- */
 .percorso{display:none}
 .binario{position:fixed;top:92px;bottom:22px;z-index:35;width:118px;margin:0;padding:0;list-style:none;display:flex;flex-direction:column;align-items:center;filter:drop-shadow(0 0 1.2px rgba(31,23,18,.85)) drop-shadow(0 6px 10px rgba(31,23,18,.25))}
 .binario.sx{left:max(8px,env(safe-area-inset-left,0px))}
 .binario.dx{right:max(8px,env(safe-area-inset-right,0px))}
+html[data-vista="area"][data-passo="fiaba"] .binario.sx{display:none}
 .binario .titolo-b{font:400 1.45rem/1 var(--pennello);color:var(--zafferano);margin-bottom:8px;white-space:nowrap}
 .binario .tratto{flex:1;min-height:12px;width:4px;position:relative;margin:4px 0 9px;background:repeating-linear-gradient(var(--zafferano-chiaro) 0 6px,transparent 6px 11px);opacity:.75}
 .binario .tratto::after{content:"";position:absolute;left:50%;bottom:-9px;transform:translateX(-50%);border:7px solid transparent;border-top:9px solid var(--zafferano-chiaro);border-bottom:0}
@@ -2328,6 +2352,59 @@ document.addEventListener("click", e => {
   if (v) { e.preventDefault(); if (v.dataset.vai !== "fiaba") figlioAttivo = v.dataset.vai === "famiglia" ? null : figlioAttivo; vai(v.dataset.vai || null); }
 });
 document.querySelector(".top .logo").addEventListener("click", e => { if (document.documentElement.dataset.vista === "area") { e.preventDefault(); vai(null); } });
+/* le frecce lampeggianti: indicano al genitore il prossimo passo da fare per iscrivere i figli */
+(() => {
+  const html = document.documentElement;
+  // la freccia va a sinistra del bottone se c'è posto, altrimenti arriva dall'alto
+  const segna = (el, testo, sotto) => {
+    if (!el) return;
+    el.classList.add("da-fare");
+    if (sotto) el.classList.add("sotto");
+    else {
+      const margine = innerWidth >= 1480 ? 140 : 16;   // a sinistra c'è il percorso a tappe
+      if (el.getBoundingClientRect().left < margine + 70 + (testo ? testo.length * 8.5 + 20 : 0) || innerWidth < 700) el.classList.add("sopra");
+    }
+    if (testo) el.dataset.freccia = testo; else delete el.dataset.freccia;
+  };
+  function guida() {
+    document.querySelectorAll(".da-fare").forEach(el => { el.classList.remove("da-fare", "sotto", "sopra"); delete el.dataset.freccia; });
+    document.querySelectorAll(".tappa.lampeggia").forEach(el => el.classList.remove("lampeggia"));
+    const passo = html.dataset.vista === "area" ? html.dataset.passo : "";
+    const tappa = n => document.querySelectorAll(`.tappa[data-tappa="${n}"]`).forEach(b => b.classList.add("lampeggia"));
+    if (!passo) {
+      if (FAM && FAM.confermata) return;
+      segna(document.querySelector(".top .btn-iscrivi"), "Inizia da qui", true);
+      segna(document.querySelector("#iscriviti [data-iscrivi]"), "Clicca qui per iscrivere");
+      tappa(5);
+      return;
+    }
+    if (passo === "accesso") { segna(document.querySelector("#f-accesso button[type=submit]"), "Compila e clicca qui"); return; }
+    if (passo === "codice") { segna(document.querySelector("#f-codice button[type=submit]"), "Scrivi il codice e clicca qui"); return; }
+    if (passo === "figlio") { segna(document.querySelector("#f-figlio button[type=submit]"), "Scegli il timbro e clicca qui"); return; }
+    if (passo === "fiaba") {
+      const f = figlioCorrente();
+      if (f && f.scelte.length) segna($("fb-finito"), "Quando hai scelto, clicca qui");
+      return;
+    }
+    if (passo === "finito") { segna(document.querySelector("#p-finito [data-vai=famiglia]"), "Genitore, clicca qui"); return; }
+    if (passo === "conferma") { segna(document.querySelector("#f-conferma button[type=submit]"), "Spunta e clicca qui"); return; }
+    if (passo === "famiglia" && FAM) {
+      if (FAM.confermata) return;
+      if (!FAM.figli.length) { segna(document.querySelector("#tessere [data-aggiungi]"), "Clicca qui"); return; }
+      const daFare = FAM.figli.find(f => !f.scelte.length);
+      if (daFare) { segna(document.querySelector(`#tessere [data-gioca="${CSS.escape(daFare.id)}"]`), `Ora sceglie ${daFare.nome}`, true); return; }
+      segna(document.querySelector('#fam-azioni [data-vai="conferma"]'), "Ultimo passo: clicca qui", true);
+    }
+  }
+  let t = 0;
+  const presto = () => { clearTimeout(t); t = setTimeout(guida, 40); };
+  new MutationObserver(presto).observe(html, { attributes: true, attributeFilter: ["data-vista", "data-passo"] });
+  new MutationObserver(presto).observe($("area"), { childList: true, subtree: true });
+  document.addEventListener("nolaland-scelte", presto);
+  addEventListener("resize", presto);
+  guida();
+})();
+
 /* il percorso a tappe: a sinistra si scopre Nola Land, a destra ci si iscrive. La tappa dove sei si accende. */
 (() => {
   const TAPPE = [
