@@ -613,6 +613,7 @@ html.con-ingresso{overflow:hidden}
 .errore:empty{min-height:0}
 .piccolo{font-size:.92rem;color:var(--inchiostro-2)}
 .salta-prova{margin:18px 0 0;text-align:center}
+.facoltativo{font-weight:500;color:var(--inchiostro-2)}
 .salta-prova .link-btn{display:inline-flex;gap:8px;align-items:center}
 .salta-prova svg{width:18px;height:18px}
 .avviso-prova-area{display:flex;gap:12px;align-items:center;background:#fff6d8;border:2px dashed var(--zafferano);border-radius:14px;padding:12px 16px;margin:0 0 18px}
@@ -1010,7 +1011,7 @@ html[data-passo="fiaba"] .percorso-mini,html[data-passo="finito"] .percorso-mini
           <h2 id="fg-titolo">Aggiungi un figlio</h2>
           <form id="f-figlio" novalidate>
             <div class="campi2">
-              <label>Nome del bambino o della bambina<input id="fg-nome" autocomplete="off"></label>
+              <label>Nome del bambino o della bambina <small class="facoltativo">(facoltativo)</small><input id="fg-nome" autocomplete="off" placeholder="Se preferisci, lascialo vuoto"></label>
               <label>Data di nascita<input id="fg-nascita" type="date"></label>
             </div>
             <div>
@@ -2620,12 +2621,14 @@ $("fg-disegni").addEventListener("click", e => { const b = e.target.closest("[da
 $("fg-inchiostri").addEventListener("click", e => { const b = e.target.closest("[data-colore]"); if (!b) return; bozza.colore = b.dataset.colore; disegnaBozza(true); });
 $("f-figlio").addEventListener("submit", e => {
   e.preventDefault();
-  const nome = $("fg-nome").value.trim(), nascita = $("fg-nascita").value, err = $("fg-errore");
-  if (!nome) { err.textContent = "Scrivi il nome del bambino o della bambina."; return; }
+  const nascita = $("fg-nascita").value, err = $("fg-errore");
+  // il nome non è obbligatorio: se resta vuoto il figlio si chiama "Figlio 1", "Figlio 2"...
+  const posto = figlioInModifica ? FAM.figli.findIndex(x => x.id === figlioInModifica) : FAM.figli.length;
+  const nome = $("fg-nome").value.trim() || `Figlio ${posto + 1}`;
   const a = etaBimbo(nascita);
   if (!nascita || isNaN(a)) { err.textContent = "Scrivi la data di nascita."; return; }
   if (a < CONFIG.etaMin || a > CONFIG.etaMax) { err.textContent = `Nola Land è per bambini e ragazzi dai ${CONFIG.etaMin} ai ${CONFIG.etaMax} anni: a dicembre ${nome} avrà ${a} anni.`; return; }
-  if (!bozza.iniziali) bozza.iniziali = iniziali(nome);
+  if (!bozza.iniziali) bozza.iniziali = $("fg-nome").value.trim() ? iniziali(nome) : `F${posto + 1}`;
   if (FAM.figli.some(f => f.id !== figlioInModifica && f.timbro.disegno === bozza.disegno)) { err.textContent = "Questo disegno lo ha già scelto un fratello o una sorella: scegline un altro."; return; }
   const f = FAM.figli.find(x => x.id === figlioInModifica);
   if (f) Object.assign(f, { nome, nascita, timbro: Object.assign({}, bozza) });
