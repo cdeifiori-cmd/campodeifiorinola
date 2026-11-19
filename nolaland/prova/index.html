@@ -802,6 +802,75 @@ html[data-passo="fiaba"] footer{padding-bottom:110px}
 /* schizzi di colore al clic */
 .schizzo{position:absolute;pointer-events:none;width:110px;height:110px;margin:-55px 0 0 -55px;z-index:0}
 
+/* ---------- la scheda di iscrizione del genitore ---------- */
+.scheda{gap:22px!important}
+.sk-blocco{border:3px solid var(--linea);border-radius:22px;background:#fff;padding:22px clamp(16px,3vw,28px) 24px;margin:0;min-width:0}
+.sk-blocco legend{display:flex;align-items:center;gap:10px;font:800 1.3rem/1.1 var(--titolo);padding:0 8px;margin-left:-8px}
+.sk-blocco legend .num{width:34px;height:34px;border-radius:50%;background:var(--zafferano);display:grid;place-items:center;font-size:1rem}
+.sk-nota{margin:0 0 16px;color:var(--inchiostro-2);font-size:.95rem}
+.sk-aiuto{font-weight:500;color:var(--inchiostro-2);font-size:.84rem}
+.campi2 .largo{grid-column:1/-1}
+.scheda label:not(.spunta){display:block}
+.scheda label:not(.spunta) > input,.scheda label:not(.spunta) > select,.scheda label:not(.spunta) > textarea{display:block;margin-top:7px}
+.scheda .sk-aiuto{display:block;margin-top:5px}
+.area label[hidden]{display:none}
+.area select,.area textarea,.area input[type=email]{font:500 1.08rem var(--titolo);padding:14px 16px;border:2px solid var(--linea);border-radius:14px;background:var(--carta);color:var(--inchiostro);width:100%;min-width:0}
+.area textarea{resize:vertical;line-height:1.4}
+.area select:focus,.area textarea:focus{outline:3px solid var(--zafferano);outline-offset:1px;border-color:var(--zafferano)}
+.area input.maiusc{text-transform:uppercase;letter-spacing:.06em}
+.area label.invalido input,.area label.invalido select,.area label.invalido textarea{border-color:var(--errore);background:#fff6f4}
+.area label.invalido::after{content:attr(data-err);color:var(--errore);font-size:.84rem;font-weight:700}
+.sk-figlio{border:2px dashed var(--linea);border-radius:18px;padding:18px;margin:0 0 16px}
+.sk-figlio:last-child{margin-bottom:0}
+.sk-figlio .testa-sk{display:flex;align-items:center;gap:14px;margin:0 0 14px}
+.sk-figlio .testa-sk h3{font:400 1.9rem/1 var(--pennello);margin:0}
+.sk-figlio .testa-sk small{display:block;color:var(--inchiostro-2);font-size:.9rem;margin-top:4px}
+.sk-figlio .spunta{margin-top:2px}
+.sk-tutte-riga{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 16px;margin-bottom:16px}
+.sk-tutte-riga .sk-nota{margin:0;flex:1;min-width:220px}
+.aut-voce{border:2px solid var(--linea);border-radius:16px;padding:14px 16px;margin:0 0 12px;background:var(--bianco)}
+.aut-voce.obbl{border-color:#efb3ab}
+.aut-voce.invalido{border-color:var(--errore);background:#fff6f4}
+.aut-voce .titolo-v{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-weight:800;margin:0 0 8px}
+.aut-voce details{margin:0 0 10px;font-size:.92rem}
+.aut-voce details summary{cursor:pointer;font-weight:700;color:var(--blu)}
+.aut-voce .per-figli{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:8px}
+.aut-voce .per-figli label.spunta{font-weight:700}
+.aut-voce .spunta span{font-weight:500}
+.ps-foglio{margin:20px 0 0}
+.ps-foglio .link-btn,.fo-azioni .link-btn{display:inline-flex;gap:8px;align-items:center}
+.ps-foglio svg{width:18px;height:18px}
+.fo-azioni{justify-content:flex-start;margin:0 0 26px}
+/* il foglio A4 */
+.fogli{display:grid;gap:30px}
+.foglio-a4{background:#fff;color:#111;max-width:820px;width:100%;margin:0 auto;padding:clamp(18px,4vw,46px);border-radius:6px;box-shadow:0 22px 40px -24px rgba(0,0,0,.55);font:400 .95rem/1.45 "Segoe UI",system-ui,sans-serif}
+.foglio-a4 h3{font:800 1.35rem/1.15 var(--titolo);margin:0}
+.foglio-a4 .fa-testa{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;border-bottom:3px solid #111;padding-bottom:12px;margin-bottom:14px;flex-wrap:wrap}
+.foglio-a4 .fa-testa p{margin:4px 0 0;color:#444}
+.foglio-a4 .fa-codice{text-align:right;font-size:.85rem}
+.foglio-a4 .fa-codice b{display:block;font-size:1.05rem}
+.foglio-a4 h4{font:800 .8rem/1 var(--titolo);letter-spacing:.08em;text-transform:uppercase;margin:16px 0 6px;color:#333}
+.foglio-a4 table{width:100%;border-collapse:collapse}
+.foglio-a4 td{border:1px solid #bbb;padding:5px 8px;vertical-align:top}
+.foglio-a4 td:first-child{width:36%;color:#444;background:#f6f6f6}
+.foglio-a4 ul.fa-dich{list-style:none;margin:0;padding:0;display:grid;gap:5px}
+.foglio-a4 ul.fa-dich li{display:grid;grid-template-columns:54px 1fr;gap:8px}
+.foglio-a4 ul.fa-dich b{font-size:.8rem;border:1.5px solid #111;border-radius:4px;text-align:center;padding:1px 0;height:fit-content}
+.foglio-a4 ul.fa-dich b.no{border-style:dashed;color:#777}
+.foglio-a4 .fa-firme{display:grid;grid-template-columns:1fr 1fr;gap:26px;margin-top:26px}
+.foglio-a4 .fa-firme div{border-top:1.5px solid #111;padding-top:6px;font-size:.85rem;color:#333}
+.foglio-a4 .fa-nota{margin-top:16px;font-size:.82rem;color:#444;border:1px dashed #999;padding:8px 10px;border-radius:6px}
+@media (max-width:600px){.foglio-a4 .fa-firme{grid-template-columns:1fr}.foglio-a4 td:first-child{width:42%}}
+@media print{
+  html.stampa body *{visibility:hidden!important}
+  html.stampa body::before{display:none}
+  html.stampa #fogli,html.stampa #fogli *{visibility:visible!important}
+  html.stampa #fogli{position:absolute;left:0;top:0;width:100%;display:block}
+  html.stampa .foglio-a4{box-shadow:none;max-width:none;padding:0;margin:0;break-after:page;page-break-after:always}
+  html.stampa .foglio-a4:last-child{break-after:auto;page-break-after:auto}
+  @page{size:A4;margin:14mm}
+}
+
 /* ---------- sul cellulare: la scelta dei laboratori con le schede in fila, al posto della fiaba ---------- */
 .fb-aiuto-cell,.scelta-cell{display:none}
 @media (max-width:760px){
@@ -974,7 +1043,7 @@ html[data-passo="fiaba"] .percorso-mini,html[data-passo="finito"] .percorso-mini
   <section class="area" id="area" aria-label="Iscrizione della famiglia">
     <div class="wrap">
       <ol class="passi-area" id="passi-area">
-        <li data-n="1">Accesso</li><li data-n="2">La famiglia</li><li data-n="3">La scelta</li><li data-n="4">Conferma</li>
+        <li data-n="1">Accesso</li><li data-n="2">La famiglia</li><li data-n="3">La scelta</li><li data-n="4">La scheda</li>
       </ol>
 
       <!-- 1. accesso del genitore -->
@@ -1084,18 +1153,59 @@ html[data-passo="fiaba"] .percorso-mini,html[data-passo="finito"] .percorso-mini
 
       <!-- 4. conferma -->
       <div class="passo" id="p-conferma" hidden>
-        <p class="sopra-titolo">Conferma</p>
-        <h2>Controlla e conferma</h2>
-        <p class="intro-passo">Ecco cosa hanno scelto i tuoi figli. Puoi togliere un laboratorio; per cambiare le scelte, fai rigiocare il bambino con la fiaba.</p>
+        <p class="sopra-titolo">La scheda di iscrizione</p>
+        <h2>Ora tocca a te, genitore</h2>
+        <p class="intro-passo">I tuoi figli hanno scelto i laboratori. Compila la scheda con i tuoi dati e i loro: quando la invii, a noi arriva il foglio di iscrizione già compilato. <b>Al primo laboratorio lo firmerai di persona</b>: porta un documento d'identità.</p>
         <div class="cf-elenco" id="cf-elenco"></div>
-        <form id="f-conferma" novalidate>
-          <label class="spunta"><input type="checkbox" id="cf-ok"><span>Confermo l'iscrizione dei miei figli ai laboratori indicati.</span></label>
+        <form id="f-conferma" class="scheda" novalidate>
+          <fieldset class="sk-blocco">
+            <legend><span class="num">1</span>Chi iscrive</legend>
+            <p class="sk-nota">Il genitore o chi esercita la responsabilità genitoriale. I campi con <span class="req">*</span> sono obbligatori.</p>
+            <div class="campi2">
+              <label>Nome <span class="req">*</span><input id="sk-g-nome" autocomplete="given-name"></label>
+              <label>Cognome <span class="req">*</span><input id="sk-g-cognome" autocomplete="family-name"></label>
+              <label>Luogo di nascita <span class="req">*</span><input id="sk-g-luogo"></label>
+              <label>Data di nascita <span class="req">*</span><input id="sk-g-data" type="date"></label>
+              <label>Codice fiscale <span class="req">*</span><input id="sk-g-cf" class="maiusc" maxlength="16" autocomplete="off"></label>
+              <label>In qualità di <span class="req">*</span><select id="sk-g-ruolo"><option value="">Scegli…</option><option>Madre</option><option>Padre</option><option>Tutore legale</option><option>Affidatario</option><option>Altra persona con responsabilità genitoriale</option></select></label>
+              <label class="largo">Indirizzo di residenza (via e numero) <span class="req">*</span><input id="sk-g-via" autocomplete="street-address"></label>
+              <label>Comune <span class="req">*</span><input id="sk-g-comune" autocomplete="address-level2"></label>
+              <label>Email <small class="facoltativo">(facoltativa)</small><input id="sk-g-email" type="email" autocomplete="email"></label>
+              <label>Cellulare per le comunicazioni <span class="req">*</span><input id="sk-g-tel" type="tel" inputmode="tel" autocomplete="tel"><small class="sk-aiuto">Qui ti mandiamo avvisi e cambi di programma, anche su WhatsApp.</small></label>
+              <label>Un altro numero per le urgenze <small class="facoltativo">(facoltativo)</small><input id="sk-g-tel2" type="tel" inputmode="tel"><small class="sk-aiuto">Per esempio l'altro genitore o un nonno.</small></label>
+            </div>
+          </fieldset>
+          <fieldset class="sk-blocco">
+            <legend><span class="num">2</span>I bambini</legend>
+            <div id="sk-figli"></div>
+          </fieldset>
+          <fieldset class="sk-blocco">
+            <legend><span class="num">3</span>Chi li riprende</legend>
+            <label>Persone che possono riprendere i bambini, oltre a te <small class="facoltativo">(facoltativo)</small><textarea id="sk-delegati" rows="3" placeholder="Nome, cognome e parentela. Il giorno del ritiro dovranno mostrare un documento."></textarea></label>
+          </fieldset>
+          <fieldset class="sk-blocco">
+            <legend><span class="num">4</span>Autorizzazioni e dichiarazioni</legend>
+            <div class="sk-tutte-riga"><p class="sk-nota">Quelle con <span class="pill si">Obbligatoria</span> servono per partecipare. Le altre puoi sceglierle tu.</p><button type="button" class="btn giallo" id="sk-tutte"><i data-lucide="check-check"></i>Spunta tutte</button></div>
+            <div id="sk-autorizzazioni"></div>
+          </fieldset>
           <p class="errore" id="cf-errore" role="alert"></p>
           <div class="riga-bottoni">
             <button type="button" class="btn vuoto-scuro" data-vai="famiglia"><i data-lucide="arrow-left"></i>Torna alla famiglia</button>
-            <button class="btn giallo grande" type="submit"><i data-lucide="stamp"></i>Conferma l'iscrizione</button>
+            <button class="btn giallo grande" type="submit" id="sk-invia"><i data-lucide="send"></i>Invia la scheda di iscrizione</button>
           </div>
         </form>
+      </div>
+
+      <!-- 4b. il foglio di iscrizione, da firmare al primo laboratorio -->
+      <div class="passo" id="p-foglio" hidden>
+        <p class="sopra-titolo">Iscrizione inviata</p>
+        <h2>Ecco il foglio di iscrizione</h2>
+        <p class="intro-passo" id="fo-intro"></p>
+        <div class="riga-bottoni fo-azioni">
+          <button type="button" class="btn giallo" id="fo-stampa"><i data-lucide="printer"></i>Stampa o salva in PDF</button>
+          <button type="button" class="btn vuoto-scuro" data-vai="passaporti"><i data-lucide="book-marked"></i>Vai ai passaporti</button>
+        </div>
+        <div class="fogli" id="fogli"></div>
       </div>
 
       <!-- 5. i passaporti -->
@@ -1104,6 +1214,7 @@ html[data-passo="fiaba"] .percorso-mini,html[data-passo="finito"] .percorso-mini
         <h2>I passaporti dei tuoi figli</h2>
         <p class="intro-passo">Ogni figlio ha il suo passaporto, con una pagina per ogni laboratorio. Quando partecipa, l'operatore della bottega segna la presenza e sulla pagina compare il suo timbro con la data.</p>
         <div class="ps-elenco" id="ps-elenco"></div>
+        <p class="ps-foglio"><button type="button" class="link-btn" data-vai="foglio"><i data-lucide="file-text"></i>Rivedi il foglio di iscrizione da firmare</button></p>
         <div class="riga-bottoni"><button type="button" class="btn vuoto-scuro" data-vai="famiglia"><i data-lucide="users"></i>Torna alla famiglia</button></div>
       </div>
     </div>
@@ -2340,7 +2451,7 @@ function etaBimbo(nascita) {
 }
 
 /* i passi dell'area */
-const NUMERO_PASSO = { accesso: 1, codice: 1, famiglia: 2, figlio: 2, fiaba: 3, finito: 3, conferma: 4, passaporti: 4 };
+const NUMERO_PASSO = { accesso: 1, codice: 1, famiglia: 2, figlio: 2, fiaba: 3, finito: 3, conferma: 4, foglio: 4, passaporti: 4 };
 const DISEGNA = {};
 function vai(passo, push = true) {
   const html = document.documentElement;
@@ -2349,6 +2460,7 @@ function vai(passo, push = true) {
   if (passo === "codice" && !(FAM && FAM.genitore)) passo = "accesso";
   if ((passo === "fiaba" || passo === "finito") && !figlioCorrente()) passo = "famiglia";
   if (passo === "passaporti" && !(FAM && FAM.confermata)) passo = "famiglia";
+  if (passo === "foglio" && !(FAM && FAM.confermata && FAM.inviata)) passo = "famiglia";
   if (!passo) {
     delete html.dataset.vista; delete html.dataset.passo;
     if (push) history.pushState({}, "", location.pathname + location.search);
@@ -2409,7 +2521,7 @@ document.querySelector(".top .logo").addEventListener("click", e => { if (docume
       return;
     }
     if (passo === "finito") { segna(document.querySelector("#p-finito [data-vai=famiglia]"), "Genitore, clicca qui"); return; }
-    if (passo === "conferma") { segna(document.querySelector("#f-conferma button[type=submit]"), "Spunta e clicca qui"); return; }
+    if (passo === "conferma") { segna($("sk-invia"), "Compila tutto e clicca qui"); return; }
     if (passo === "famiglia" && FAM) {
       if (FAM.confermata) return;
       if (!FAM.figli.length) { segna(document.querySelector("#tessere [data-aggiungi]"), "Clicca qui"); return; }
@@ -2439,7 +2551,7 @@ document.querySelector(".top .logo").addEventListener("click", e => { if (docume
     { t: "Accesso del genitore", i: "message-circle", passi: ["accesso", "codice"] },
     { t: "Famiglia e timbri", i: "stamp", passi: ["famiglia", "figlio"] },
     { t: "La fiaba: si sceglie", i: "book-open", passi: ["fiaba", "finito"] },
-    { t: "Conferma e passaporti", i: "badge-check", passi: ["conferma", "passaporti"] },
+    { t: "Scheda e passaporti", i: "badge-check", passi: ["conferma", "foglio", "passaporti"] },
   ];
   const html = document.documentElement;
   const tondo = (x, n) => `<span class="tondo"><span class="num">${n + 1}</span><i data-lucide="check" class="ic ic-ok"></i><i data-lucide="${x.i}" class="ic ic-tappa"></i></span>`;
@@ -2591,7 +2703,7 @@ DISEGNA.famiglia = () => {
     <button type="button" class="tessera nuova" data-aggiungi><span class="piu"><i data-lucide="plus"></i></span><b>${n ? "Aggiungi un altro figlio" : "Aggiungi un figlio"}</b><span class="piccolo">nome, data di nascita e timbro</span></button>`;
   const pronti = FAM.figli.filter(f => f.scelte.length).length;
   $("fam-azioni").innerHTML = (FAM.confermata
-      ? `<button type="button" class="btn giallo grande" data-vai="passaporti"><i data-lucide="book-marked"></i>Vedi i passaporti</button>`
+      ? `<button type="button" class="btn giallo grande" data-vai="foglio"><i data-lucide="file-text"></i>Il foglio di iscrizione</button><button type="button" class="btn vuoto-scuro" data-vai="passaporti"><i data-lucide="book-marked"></i>Vedi i passaporti</button>`
       : `<button type="button" class="btn giallo grande" data-vai="conferma" ${pronti ? "" : "disabled"}><i data-lucide="clipboard-check"></i>Rivedi e conferma l'iscrizione</button>`)
     + `<button type="button" class="link-btn" id="esci">Esci (in questa prova cancella i dati da questo browser)</button>`
     + (pronti || FAM.confermata ? "" : `<p class="nota-fam">Quando almeno un figlio avrà scelto i suoi laboratori potrai confermare l'iscrizione.</p>`);
@@ -2700,8 +2812,32 @@ DISEGNA.finito = () => {
 };
 
 /* 4. conferma */
+/* 4. la scheda di iscrizione: il genitore compila i dati suoi e dei figli, le autorizzazioni, e la invia */
+const VOCI = [
+  { k: "privacy", obbl: true, t: "Trattamento dei dati personali", d: "Ho letto l'informativa e acconsento al trattamento dei dati personali miei e dei miei figli, compresi quelli sulla salute che ho indicato, per l'iscrizione e lo svolgimento di Nola Land 2026.", info: "informativa" },
+  { k: "accompagno", obbl: true, t: "Accompagnamento e ritiro", d: "So che è compito mio, di chi ne fa le veci o di una persona da me delegata accompagnare mio figlio all'inizio di ogni laboratorio e venirlo a riprendere puntualmente alla fine. Prima dell'inizio e dopo la fine delle attività il minore non è affidato agli organizzatori." },
+  { k: "esonero", obbl: true, t: "Responsabilità degli organizzatori", d: "Sollevo gli organizzatori di Nola Land, chi conduce i laboratori e chi ospita le attività da ogni responsabilità per danni che mio figlio dovesse causare a persone o cose, e per infortuni, smarrimenti o danni a oggetti personali che non dipendano da loro colpa." },
+  { k: "salute", obbl: true, t: "Stato di salute", d: "Dichiaro che mio figlio è in buona salute e può partecipare ad attività creative, manuali e di movimento, e di aver indicato in questa scheda allergie, intolleranze ed esigenze particolari." },
+  { k: "soccorso", obbl: true, t: "Primo soccorso", d: "In caso di malore o infortunio autorizzo gli organizzatori a prestare il primo soccorso e a chiamare il 118, avvisandomi subito." },
+  { k: "regole", obbl: true, t: "Regole dei laboratori", d: "Mi impegno a far rispettare a mio figlio le regole dei laboratori e le indicazioni degli educatori, e ad avvisare in caso di assenza." },
+  { k: "veridicita", obbl: true, t: "Dati veri", d: "Dichiaro che i dati inseriti sono veri (artt. 46 e 47 del DPR 445/2000)." },
+  { k: "foto", perFiglio: true, t: "Foto e video durante le attività", d: "Acconsento a foto e brevi video durante i laboratori, per documentare il progetto. Chi non dà il consenso partecipa lo stesso.", info: "info-foto" },
+  { k: "pubblica", perFiglio: true, t: "Pubblicazione di foto e video", d: "Acconsento alla pubblicazione di foto e video sul sito e sui canali social di Campo dei Fiori, senza il nome del bambino." },
+  { k: "uscite", t: "Spostamenti a piedi", d: "Autorizzo brevi spostamenti a piedi nel centro di Nola, sempre con gli educatori, quando un laboratorio lo prevede." },
+  { k: "assaggi", t: "Assaggi e merende", d: "Autorizzo mio figlio ad assaggiare quello che si prepara nei laboratori (per esempio in cucina o dagli apicoltori), tenendo conto delle allergie che ho indicato." },
+  { k: "whatsapp", t: "Avvisi su WhatsApp", d: "Acconsento a ricevere gli avvisi di Nola Land al numero indicato, anche con una lista o un gruppo WhatsApp." }
+];
+const RE_CF = /^[A-Z]{6}[0-9LMNPQRSTUV]{2}[A-Z][0-9LMNPQRSTUV]{2}[A-Z][0-9LMNPQRSTUV]{3}[A-Z]$/;
+const nomeProvvisorio = n => /^Figlio \d+$/.test(n || "");
+const iscritti = () => FAM.figli.filter(f => f.scelte.some(id => LAB[id]));
+function scheda() {
+  if (!FAM.scheda) FAM.scheda = { genitore: { nome: FAM.genitore.nome === "Genitore" ? "" : FAM.genitore.nome, cognome: FAM.genitore.cognome === "di prova" ? "" : FAM.genitore.cognome, telefono: FAM.genitore.cell || "", comune: "Nola" }, figli: {}, delegati: "", aut: {} };
+  return FAM.scheda;
+}
+const CAMPI_G = { nome: "sk-g-nome", cognome: "sk-g-cognome", luogoNascita: "sk-g-luogo", dataNascita: "sk-g-data", cf: "sk-g-cf", ruolo: "sk-g-ruolo", via: "sk-g-via", comune: "sk-g-comune", email: "sk-g-email", telefono: "sk-g-tel", telefono2: "sk-g-tel2" };
 DISEGNA.conferma = () => {
-  $("cf-ok").checked = false; $("cf-errore").textContent = "";
+  const sk = scheda();
+  $("cf-errore").textContent = "";
   $("cf-elenco").innerHTML = FAM.figli.map(f => `
     <article class="cf-figlio">
       ${timbroHTML(f.timbro, 96)}
@@ -2711,19 +2847,185 @@ DISEGNA.conferma = () => {
           : `<p class="vuoto-cf">Non ha scelto laboratori: non verrà iscritto. <button type="button" class="link-btn" data-gioca-cf="${esc(f.id)}">Fallo scegliere ora</button></p>`}
       </div>
     </article>`).join("");
+  Object.entries(CAMPI_G).forEach(([k, id]) => { $(id).value = sk.genitore[k] || ""; });
+  $("sk-delegati").value = sk.delegati || "";
+  // i dati di ogni bambino iscritto
+  $("sk-figli").innerHTML = iscritti().map(f => {
+    const d = sk.figli[f.id] || {};
+    const nome = d.nome !== undefined ? d.nome : (nomeProvvisorio(f.nome) ? "" : f.nome);
+    return `<div class="sk-figlio" data-figlio="${esc(f.id)}">
+      <div class="testa-sk">${timbroHTML(f.timbro, 60)}<div><h3>${esc(nomeProvvisorio(f.nome) && !nome ? f.nome : nome || f.nome)}</h3><small>${f.scelte.filter(id => LAB[id]).map(id => esc(LAB[id].tag)).join(" · ")}</small></div></div>
+      <div class="campi2">
+        <label>Nome <span class="req">*</span><input data-c="nome" value="${esc(nome)}"></label>
+        <label>Cognome <span class="req">*</span><input data-c="cognome" value="${esc(d.cognome !== undefined ? d.cognome : (sk.genitore.cognome || ""))}"></label>
+        <label>Luogo di nascita <span class="req">*</span><input data-c="luogoNascita" value="${esc(d.luogoNascita || "")}"></label>
+        <label>Data di nascita <span class="req">*</span><input data-c="dataNascita" type="date" value="${esc(d.dataNascita || f.nascita || "")}"></label>
+        <label>Codice fiscale <span class="req">*</span><input data-c="cf" class="maiusc" maxlength="16" autocomplete="off" value="${esc(d.cf || "")}"></label>
+        <label>Ha bisogno di un educatore dedicato?<select data-c="supporto"><option value="No"${d.supporto === "Sì" ? "" : " selected"}>No</option><option value="Sì"${d.supporto === "Sì" ? " selected" : ""}>Sì, ne parliamo insieme</option></select></label>
+        <label class="largo spunta"><input type="checkbox" data-c="stessaRes"${d.stessaRes === false ? "" : " checked"}><span>Abita con me (stessa residenza)</span></label>
+        <label class="largo" data-res${d.stessaRes === false ? "" : " hidden"}>Residenza del bambino <span class="req">*</span><input data-c="via" value="${esc(d.via || "")}" placeholder="Via, numero e comune"></label>
+        <label class="largo">Allergie, intolleranze, farmaci o altro che dobbiamo sapere <small class="facoltativo">(facoltativo)</small><textarea data-c="note" rows="2" placeholder="Per esempio: allergia alle arachidi, porta gli occhiali, si stanca facilmente…">${esc(d.note || "")}</textarea></label>
+      </div>
+    </div>`;
+  }).join("") || `<p class="sk-nota">Nessun bambino ha ancora scelto i laboratori.</p>`;
+  // autorizzazioni e dichiarazioni
+  const figli = iscritti();
+  $("sk-autorizzazioni").innerHTML = VOCI.map(v => {
+    const info = v.info && $(v.info) ? `<details><summary>${v.info === "informativa" ? "Leggi l'informativa sulla privacy" : "Come useremo le immagini"}</summary><div class="testo-info">${$(v.info).innerHTML}</div></details>` : "";
+    const val = sk.aut[v.k];
+    const spunte = v.perFiglio
+      ? `<p class="spunta-testo" style="margin:0">${esc(v.d)}</p><div class="per-figli">${figli.map(f => `<label class="spunta"><input type="checkbox" data-aut="${v.k}" data-f="${esc(f.id)}"${Array.isArray(val) && val.includes(f.id) ? " checked" : ""}><span>${esc((sk.figli[f.id] && sk.figli[f.id].nome) || f.nome)}</span></label>`).join("")}</div>`
+      : `<label class="spunta"><input type="checkbox" data-aut="${v.k}"${val ? " checked" : ""}><span>${esc(v.d)}</span></label>`;
+    return `<div class="aut-voce${v.obbl ? " obbl" : ""}" data-voce="${v.k}"><p class="titolo-v">${esc(v.t)} <span class="pill ${v.obbl ? "si" : "no"}">${v.obbl ? "Obbligatoria" : "Facoltativa"}</span></p>${info}${spunte}</div>`;
+  }).join("");
 };
+// legge la scheda dal modulo e la salva (così non si perde nulla se si chiude la pagina)
+function leggiScheda() {
+  const sk = scheda();
+  Object.entries(CAMPI_G).forEach(([k, id]) => { sk.genitore[k] = $(id).value.trim(); });
+  sk.genitore.cf = sk.genitore.cf.toUpperCase();
+  sk.delegati = $("sk-delegati").value.trim();
+  document.querySelectorAll("#sk-figli [data-figlio]").forEach(el => {
+    const d = sk.figli[el.dataset.figlio] = sk.figli[el.dataset.figlio] || {};
+    el.querySelectorAll("[data-c]").forEach(i => { d[i.dataset.c] = i.type === "checkbox" ? i.checked : i.value.trim(); });
+    d.cf = (d.cf || "").toUpperCase();
+    el.querySelector("[data-res]").hidden = d.stessaRes;
+  });
+  VOCI.forEach(v => {
+    const box = [...document.querySelectorAll(`#sk-autorizzazioni [data-aut="${v.k}"]`)];
+    sk.aut[v.k] = v.perFiglio ? box.filter(b => b.checked).map(b => b.dataset.f) : !!(box[0] && box[0].checked);
+  });
+  salvaFam();
+  return sk;
+}
+$("f-conferma").addEventListener("input", leggiScheda);
+$("f-conferma").addEventListener("change", leggiScheda);
+$("sk-tutte").addEventListener("click", () => {
+  document.querySelectorAll("#sk-autorizzazioni input[type=checkbox]").forEach(c => { c.checked = true; });
+  document.querySelectorAll("#sk-autorizzazioni .aut-voce.invalido").forEach(v => v.classList.remove("invalido"));
+  leggiScheda(); avvisa("Ho spuntato tutte le autorizzazioni. Puoi togliere quelle facoltative che non vuoi dare.");
+});
 $("cf-elenco").addEventListener("click", e => {
   const t = e.target.closest("[data-togli-lab]"), g = e.target.closest("[data-gioca-cf]");
-  if (t) { const [fid, id] = t.dataset.togliLab.split(":"); const f = FAM.figli.find(x => x.id === fid); if (f) { f.scelte = f.scelte.filter(x => x !== id); salvaFam(); DISEGNA.conferma(); icone(); } }
-  if (g) { figlioAttivo = g.dataset.giocaCf; vai("fiaba"); }
+  if (t) { leggiScheda(); const [fid, id] = t.dataset.togliLab.split(":"); const f = FAM.figli.find(x => x.id === fid); if (f) { f.scelte = f.scelte.filter(x => x !== id); FAM.confermata = false; salvaFam(); DISEGNA.conferma(); icone(); } }
+  if (g) { leggiScheda(); figlioAttivo = g.dataset.giocaCf; vai("fiaba"); }
 });
-$("f-conferma").addEventListener("submit", e => {
+function controllaScheda(sk) {
+  const errori = [];
+  const segnaErr = (el, msg) => { const l = el.closest("label"); if (l) { l.classList.add("invalido"); l.dataset.err = msg; } errori.push(el); };
+  document.querySelectorAll("#f-conferma .invalido").forEach(l => l.classList.remove("invalido"));
+  const g = sk.genitore;
+  [["nome", "Scrivi il nome."], ["cognome", "Scrivi il cognome."], ["luogoNascita", "Scrivi il luogo di nascita."], ["dataNascita", "Scrivi la data di nascita."], ["ruolo", "Scegli una voce."], ["via", "Scrivi l'indirizzo."], ["comune", "Scrivi il comune."]]
+    .forEach(([k, m]) => { if (!g[k]) segnaErr($(CAMPI_G[k]), m); });
+  if (!RE_CF.test(g.cf)) segnaErr($("sk-g-cf"), "Controlla il codice fiscale: 16 caratteri.");
+  if (g.telefono.replace(/\D/g, "").length < 9) segnaErr($("sk-g-tel"), "Scrivi un numero di cellulare.");
+  if (g.email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(g.email)) segnaErr($("sk-g-email"), "Controlla l'email.");
+  const cfVisti = new Set([g.cf]);
+  document.querySelectorAll("#sk-figli [data-figlio]").forEach(el => {
+    const d = sk.figli[el.dataset.figlio], q = c => el.querySelector(`[data-c="${c}"]`);
+    if (!d.nome) segnaErr(q("nome"), "Scrivi il nome: sul foglio di iscrizione serve.");
+    if (!d.cognome) segnaErr(q("cognome"), "Scrivi il cognome.");
+    if (!d.luogoNascita) segnaErr(q("luogoNascita"), "Scrivi il luogo di nascita.");
+    const a = etaBimbo(d.dataNascita);
+    if (!d.dataNascita || isNaN(a)) segnaErr(q("dataNascita"), "Scrivi la data di nascita.");
+    else if (a < CONFIG.etaMin || a > CONFIG.etaMax) segnaErr(q("dataNascita"), `Nola Land è dai ${CONFIG.etaMin} ai ${CONFIG.etaMax} anni.`);
+    if (!RE_CF.test(d.cf)) segnaErr(q("cf"), "Controlla il codice fiscale: 16 caratteri.");
+    else if (cfVisti.has(d.cf)) segnaErr(q("cf"), "Questo codice fiscale è già scritto sopra.");
+    cfVisti.add(d.cf);
+    if (!d.stessaRes && !d.via) segnaErr(q("via"), "Scrivi la residenza.");
+  });
+  VOCI.filter(v => v.obbl).forEach(v => {
+    if (!sk.aut[v.k]) { const box = document.querySelector(`[data-voce="${v.k}"]`); box.classList.add("invalido"); errori.push(box.querySelector("input")); }
+  });
+  document.querySelectorAll("#sk-autorizzazioni .aut-voce").forEach(b => { if (!VOCI.find(v => v.k === b.dataset.voce).obbl || sk.aut[b.dataset.voce]) b.classList.remove("invalido"); });
+  return errori;
+}
+$("f-conferma").addEventListener("submit", async e => {
   e.preventDefault();
-  if (!FAM.figli.some(f => f.scelte.length)) { $("cf-errore").textContent = "Nessun figlio ha scelto laboratori."; return; }
-  if (!$("cf-ok").checked) { $("cf-errore").textContent = "Spunta la conferma per completare l'iscrizione."; return; }
-  FAM.figli.forEach(f => { if (f.scelte.length && !f.numero) f.numero = `NL-${CONFIG.anno}-${String(Math.floor(1000 + Math.random() * 9000))}`; f.visti = f.visti || {}; });
-  FAM.confermata = true; salvaFam();
-  vai("passaporti");
+  if (!iscritti().length) { $("cf-errore").textContent = "Nessun figlio ha scelto laboratori."; return; }
+  const sk = leggiScheda();
+  const errori = controllaScheda(sk);
+  if (errori.length) {
+    $("cf-errore").textContent = errori.length === 1 ? "C'è ancora un dato da sistemare: è segnato in rosso." : `Ci sono ancora ${errori.length} dati da sistemare: sono segnati in rosso.`;
+    errori[0].scrollIntoView({ block: "center", behavior: "smooth" }); setTimeout(() => errori[0].focus({ preventScroll: true }), 400);
+    return;
+  }
+  $("cf-errore").textContent = "";
+  // i dati, nello stesso formato del foglio Google (apps-script.gs)
+  const g = sk.genitore;
+  const minori = iscritti().map(f => {
+    const d = sk.figli[f.id];
+    return {
+      nome: d.nome, cognome: d.cognome, luogoNascita: d.luogoNascita, dataNascita: d.dataNascita, eta: etaBimbo(d.dataNascita), cf: d.cf,
+      residenza: d.stessaRes ? `${g.via}, ${g.comune}` : d.via, supporto: d.supporto, note: d.note,
+      laboratori: f.scelte.filter(id => LAB[id]).map(id => `${LAB[id].tag} – ${LAB[id].nome}`),
+      consensoFoto: sk.aut.foto.includes(f.id), consensoPubblicazione: sk.aut.pubblica.includes(f.id)
+    };
+  });
+  const autorizzazioni = {}; VOCI.filter(v => !v.perFiglio).forEach(v => { autorizzazioni[v.k] = !!sk.aut[v.k]; });
+  const dati = { genitore: g, minori, delegati: sk.delegati, consensoPrivacy: !!sk.aut.privacy, autorizzazioni, sito_web: "", inviatoIl: new Date().toISOString() };
+  const btn = $("sk-invia"), testo = btn.innerHTML;
+  btn.disabled = true; btn.textContent = "Invio in corso…";
+  try {
+    let codice;
+    if (CONFIG.endpoint) {
+      const r = await fetch(CONFIG.endpoint, { method: "POST", body: JSON.stringify(dati) });
+      const j = await r.json();
+      if (!j.ok) throw new Error(j.errore || "errore");
+      codice = j.codice;
+    } else {
+      await new Promise(r => setTimeout(r, 500));
+      codice = "PROVA-" + Math.floor(Math.random() * 9000 + 1000);
+    }
+    // il nome vero sostituisce quello provvisorio ("Figlio 1")
+    iscritti().forEach(f => { f.nome = sk.figli[f.id].nome; if (!f.numero) f.numero = `NL-${CONFIG.anno}-${String(Math.floor(1000 + Math.random() * 9000))}`; f.visti = f.visti || {}; });
+    FAM.inviata = { codice, quando: new Date().toISOString(), prova: !CONFIG.endpoint };
+    FAM.confermata = true; salvaFam();
+    vai("foglio");
+  } catch (err) {
+    $("cf-errore").textContent = `La scheda non è stata inviata (problema di connessione o del servizio). Riprova tra qualche minuto; se non funziona chiamaci al ${CONFIG.contatti.telefono}.`;
+  } finally { btn.disabled = false; btn.innerHTML = testo; icone(); }
+});
+
+/* 4b. il foglio di iscrizione: uno per bambino, da stampare e firmare al primo laboratorio */
+const dataIt = iso => { const p = String(iso || "").split("-"); return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : (iso || ""); };
+function foglioHTML(f) {
+  const sk = FAM.scheda, g = sk.genitore, d = sk.figli[f.id] || {}, inv = FAM.inviata || {};
+  const riga = (a, b) => `<tr><td>${esc(a)}</td><td>${esc(b || "—")}</td></tr>`;
+  const quando = inv.quando ? new Date(inv.quando).toLocaleString("it-IT", { dateStyle: "long", timeStyle: "short" }) : "";
+  const dich = VOCI.map(v => {
+    const si = v.perFiglio ? (sk.aut[v.k] || []).includes(f.id) : !!sk.aut[v.k];
+    return `<li><b class="${si ? "" : "no"}">${si ? "SÌ" : "NO"}</b><span><strong>${esc(v.t)}.</strong> ${esc(v.d)}</span></li>`;
+  }).join("");
+  return `<article class="foglio-a4">
+    <div class="fa-testa">
+      <div><h3>Nola Land ${CONFIG.anno} · La chiamata alle arti</h3><p>Scheda di iscrizione ai laboratori · Campo dei Fiori, Nola</p></div>
+      <div class="fa-codice">Codice famiglia<b>${esc(inv.codice || "")}</b>Passaporto ${esc(f.numero || "")}<br>Inviata il ${esc(quando)}</div>
+    </div>
+    <h4>Chi iscrive</h4>
+    <table>${riga("Nome e cognome", `${g.nome} ${g.cognome}`)}${riga("Nato/a a", `${g.luogoNascita}, il ${dataIt(g.dataNascita)}`)}${riga("Codice fiscale", g.cf)}${riga("In qualità di", g.ruolo)}${riga("Residenza", `${g.via}, ${g.comune}`)}${riga("Cellulare per le comunicazioni", g.telefono)}${riga("Altro numero per le urgenze", g.telefono2)}${riga("Email", g.email)}</table>
+    <h4>Il bambino o la bambina</h4>
+    <table>${riga("Nome e cognome", `${d.nome} ${d.cognome}`)}${riga("Nato/a a", `${d.luogoNascita}, il ${dataIt(d.dataNascita)} (${etaBimbo(d.dataNascita)} anni a dicembre)`)}${riga("Codice fiscale", d.cf)}${riga("Residenza", d.stessaRes ? `${g.via}, ${g.comune}` : d.via)}${riga("Educatore dedicato", d.supporto)}${riga("Allergie, intolleranze, note", d.note)}</table>
+    <h4>Laboratori scelti</h4>
+    <table>${f.scelte.filter(id => LAB[id]).map(id => riga(LAB[id].tag, `${LAB[id].nome} · ${LAB[id].luogo || ""}`)).join("")}</table>
+    <h4>Persone che possono riprenderlo, oltre al genitore</h4>
+    <table>${riga("Delegati al ritiro", sk.delegati || "Nessuno: solo chi firma")}</table>
+    <h4>Autorizzazioni e dichiarazioni</h4>
+    <ul class="fa-dich">${dich}</ul>
+    <div class="fa-firme"><div>Luogo e data</div><div>Firma del genitore o di chi ne fa le veci</div></div>
+    <div class="fa-firme"><div>Documento d'identità (tipo e numero)</div><div>Firma raccolta da (operatore di Nola Land)</div></div>
+    <p class="fa-nota">Da firmare di persona al primo laboratorio, davanti a un operatore, mostrando un documento d'identità. Fino alla firma l'iscrizione resta in attesa.</p>
+  </article>`;
+}
+DISEGNA.foglio = () => {
+  const n = iscritti().length, inv = FAM.inviata || {};
+  $("fo-intro").innerHTML = (inv.prova ? `<b>Versione di prova:</b> la scheda non è stata spedita davvero. ` : `Abbiamo ricevuto la scheda: il codice della tua famiglia è <b>${esc(inv.codice || "")}</b>. `)
+    + `Qui sotto c'è il foglio di iscrizione già compilato${n > 1 ? ", uno per ogni figlio" : ""}. <b>Lo firmerai al primo laboratorio</b>: non serve stamparlo, lo prepariamo noi. Puoi salvarlo in PDF per tenerne una copia.`;
+  $("fogli").innerHTML = iscritti().map(foglioHTML).join("");
+};
+$("fo-stampa").addEventListener("click", () => {
+  document.documentElement.classList.add("stampa");
+  setTimeout(() => { window.print(); setTimeout(() => document.documentElement.classList.remove("stampa"), 400); }, 50);
 });
 
 /* 5. i passaporti */
