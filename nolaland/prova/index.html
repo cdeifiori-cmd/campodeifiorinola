@@ -802,6 +802,24 @@ html[data-passo="fiaba"] footer{padding-bottom:110px}
 /* schizzi di colore al clic */
 .schizzo{position:absolute;pointer-events:none;width:110px;height:110px;margin:-55px 0 0 -55px;z-index:0}
 
+/* ---------- sul cellulare: la scelta dei laboratori con le schede in fila, al posto della fiaba ---------- */
+.fb-aiuto-cell,.scelta-cell{display:none}
+@media (max-width:760px){
+  html[data-passo="fiaba"] #fiaba,html[data-passo="fiaba"] #gioco{display:none!important}
+  #p-fiaba .fb-aiuto{display:none}
+  #p-fiaba .fb-aiuto-cell{display:block;font-size:1.05rem;line-height:1.5;margin:10px 0 0}
+  .scelta-cell{display:flex;flex-direction:column;gap:26px;margin:24px 0 0;padding-bottom:110px}
+  .scelta-cell .carta-lab{padding:22px 18px 18px}
+  .scelta-cell .carta-lab:hover{transform:none;box-shadow:none}
+  .scelta-cell .carta-lab.scelto{box-shadow:0 0 0 4px var(--zafferano);background:#fffaf0}
+  .scelta-cell .piede-carta{padding-top:10px}
+  .scelta-cell .zaino-btn{padding:16px 18px;font-size:1.05rem}
+  .scelta-cell .zaino-btn[aria-pressed="true"]{--bg:var(--inchiostro);--fg:#fff}
+  .scelta-cell .timbro-carta{position:absolute;top:-16px;right:10px;display:none;pointer-events:none}
+  .scelta-cell .carta-lab.scelto .timbro-carta{display:block}
+  .scelta-cell .contatore-cell{position:sticky;top:76px;z-index:5;align-self:center;background:var(--inchiostro);color:#fff;font-weight:800;border-radius:999px;padding:8px 16px;font-size:.92rem;box-shadow:0 10px 20px -12px rgba(0,0,0,.7)}
+}
+
 /* ---------- le frecce lampeggianti sul prossimo passo da fare ---------- */
 /* di base la freccia sta a sinistra del bottone e punta verso di lui; .sopra = arriva dall'alto, .sotto = arriva dal basso */
 .da-fare{position:relative;animation:alone 1.2s ease-in-out infinite}
@@ -812,6 +830,7 @@ html[data-passo="fiaba"] footer{padding-bottom:110px}
 .da-fare.sotto::after{right:auto;left:50%;top:calc(100% + 6px);margin:0 0 0 -20px;rotate:180deg;animation-name:lampeggia-su}
 .da-fare.sotto[data-freccia]::before{right:auto;left:50%;top:calc(100% + 58px);transform:translateX(-50%)}
 .top .da-fare.sotto[data-freccia]::before{left:auto;right:0;transform:none}
+.barra-scelta .da-fare.sopra[data-freccia]::before{left:auto;right:0;transform:none}
 @keyframes lampeggia-dx{0%,100%{opacity:1;translate:0 0}50%{opacity:.3;translate:-10px 0}}
 @keyframes lampeggia-giu{0%,100%{opacity:1;translate:0 0}50%{opacity:.3;translate:0 -9px}}
 @keyframes lampeggia-su{0%,100%{opacity:1;translate:0 0}50%{opacity:.3;translate:0 9px}}
@@ -1042,6 +1061,8 @@ html[data-passo="fiaba"] .percorso-mini,html[data-passo="finito"] .percorso-mini
         <p class="sopra-titolo">La scelta dei laboratori</p>
         <h2>Tocca a te, <span id="fb-titolo-nome"></span>!</h2>
         <p class="fb-aiuto">Sfoglia il libro della città invisibile: tocca un giglio o la Barca, apri il quadro con la storia e metti il tuo timbro sulle botteghe che vuoi provare. Puoi sceglierne fino a <b id="fb-max"></b>. Non sai decidere? Sotto il libro c'è il gioco «Che artista sei?».</p>
+        <p class="fb-aiuto-cell">Scorri le schede dei laboratori, una dopo l'altra. Su quelli che vuoi provare tocca <b>«Ci metto il mio timbro!»</b>. Puoi sceglierne fino a <b id="fb-max-cell"></b>.</p>
+        <div class="scelta-cell" id="scelta-cell"></div>
       </div>
       <div class="barra-scelta" id="barra-scelta">
         <span id="fb-timbro"></span>
@@ -2648,9 +2669,29 @@ DISEGNA.fiaba = () => {
   const f = figlioCorrente();
   $("fb-titolo-nome").textContent = f.nome; $("fb-nome").textContent = f.nome; $("fb-max").textContent = MAX_LAB;
   $("fb-timbro").innerHTML = timbroHTML(f.timbro, 54);
+  disegnaSceltaCell();
   aggiornaScelte();
 };
 $("fb-finito").addEventListener("click", () => vai("finito"));
+
+/* sul cellulare il libro 3D è troppo piccolo: le schede dei laboratori in fila, una sotto l'altra, con il bottone per il timbro */
+function disegnaSceltaCell() {
+  const f = figlioCorrente(); if (!f) return;
+  $("fb-max-cell").textContent = MAX_LAB;
+  $("scelta-cell").innerHTML = `<p class="contatore-cell" id="contatore-cell"></p>` + Object.values(LAB).map(l =>
+    cartaLab(l).replace(/<\/article>$/, `
+    <div class="timbro-carta">${timbroHTML(f.timbro, 64)}</div>
+    <div class="piede-carta"><button type="button" class="btn giallo zaino-btn" data-scegli="${esc(l.id)}" aria-pressed="false"><i data-lucide="stamp"></i><span class="z-testo">Ci metto il mio timbro!</span></button></div>
+  </article>`).replace(`id="lab-${esc(l.id)}"`, `id="cell-${esc(l.id)}"`)).join("");
+  aggiornaSceltaCell(); icone();
+}
+function aggiornaSceltaCell() {
+  const f = figlioCorrente(); if (!f || !$("contatore-cell")) return;
+  $("scelta-cell").querySelectorAll(".carta-lab").forEach(c => c.classList.toggle("scelto", f.scelte.includes(c.dataset.lab)));
+  const n = f.scelte.length;
+  $("contatore-cell").textContent = n >= MAX_LAB ? `Hai messo ${n} timbri su ${MAX_LAB}: hai finito!` : `Timbri messi: ${n} su ${MAX_LAB}`;
+}
+document.addEventListener("nolaland-scelte", aggiornaSceltaCell);
 DISEGNA.finito = () => {
   const f = figlioCorrente(), sc = f.scelte.filter(id => LAB[id]).map(id => LAB[id].tag);
   $("fn-timbro").innerHTML = timbroHTML(f.timbro, 150, "batte");
