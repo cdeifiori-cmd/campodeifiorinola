@@ -1124,7 +1124,7 @@ html[data-passo="fiaba"] .percorso-mini,html[data-passo="finito"] .percorso-mini
           <h2 id="fg-titolo">Aggiungi un figlio</h2>
           <form id="f-figlio" novalidate>
             <div class="campi2">
-              <label>Nome del bambino o della bambina <small class="facoltativo">(facoltativo)</small><input id="fg-nome" autocomplete="off" placeholder="Se preferisci, lascialo vuoto"></label>
+              <label>Nome del bambino o della bambina<input id="fg-nome" autocomplete="off" required placeholder="Per esempio: Marco"></label>
               <label>Data di nascita<input id="fg-nascita" type="date"></label>
             </div>
             <div>
@@ -2797,9 +2797,9 @@ $("fg-inchiostri").addEventListener("click", e => { const b = e.target.closest("
 $("f-figlio").addEventListener("submit", e => {
   e.preventDefault();
   const nascita = $("fg-nascita").value, err = $("fg-errore");
-  // il nome non è obbligatorio: se resta vuoto il figlio si chiama "Figlio 1", "Figlio 2"...
   const posto = figlioInModifica ? FAM.figli.findIndex(x => x.id === figlioInModifica) : FAM.figli.length;
-  const nome = $("fg-nome").value.trim() || `Figlio ${posto + 1}`;
+  const nome = $("fg-nome").value.trim();
+  if (!nome) { err.textContent = "Scrivi il nome del bambino o della bambina."; $("fg-nome").focus(); return; }
   const a = etaBimbo(nascita);
   if (!nascita || isNaN(a)) { err.textContent = "Scrivi la data di nascita."; return; }
   if (a < CONFIG.etaMin || a > CONFIG.etaMax) { err.textContent = `Nola Land è per bambini e ragazzi dai ${CONFIG.etaMin} ai ${CONFIG.etaMax} anni: a dicembre ${nome} avrà ${a} anni.`; return; }
