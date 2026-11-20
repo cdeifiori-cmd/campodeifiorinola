@@ -627,6 +627,12 @@ html.con-ingresso{overflow:hidden}
 .tessere{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:20px;margin:0 0 28px}
 .tessera{background:#fff;border:3px solid var(--linea);border-radius:22px;padding:24px 20px 20px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;position:relative}
 .tessera h3{font:400 2rem/1 var(--pennello);margin:8px 0 0}
+.nome-tessera{display:grid;gap:8px;width:100%;margin:8px 0 0}
+.nome-tessera label{display:grid;gap:6px;font-weight:800;font-size:.95rem}
+.nome-tessera label small{font-weight:500;color:var(--inchiostro-2)}
+.nome-tessera input{font:400 1.6rem/1.1 var(--pennello);text-align:center;padding:8px 10px;border:3px dashed var(--zafferano);border-radius:14px;background:#fffaf0;color:var(--inchiostro);width:100%;box-sizing:border-box}
+.nome-tessera input:focus{outline:none;border-style:solid}
+.tessera .nome-tessera .btn{margin-top:0}
 .tessera .eta{margin:0;color:var(--inchiostro-2);font-weight:600}
 .tessera .scelti{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin:6px 0 8px;min-height:30px}
 .tessera .scelti span{font-size:.82rem;font-weight:700;background:var(--carta-2);border-radius:999px;padding:5px 11px}
@@ -2716,7 +2722,9 @@ DISEGNA.famiglia = () => {
   $("tessere").innerHTML = FAM.figli.map(f => `
     <article class="tessera">
       ${timbroHTML(f.timbro, 110)}
-      <h3>${esc(f.nome)}</h3>
+      ${nomeProvvisorio(f.nome)
+        ? `<form class="nome-tessera" data-nome="${esc(f.id)}"><label>Come si chiama? <small>(ora è «${esc(f.nome)}»)</small><input name="n" autocomplete="off" placeholder="Scrivi qui il nome" aria-label="Nome di ${esc(f.nome)}"></label><button type="submit" class="btn giallo">Salva il nome</button></form>`
+        : `<h3>${esc(f.nome)}</h3>`}
       <p class="eta">${etaBimbo(f.nascita)} anni</p>
       <div class="scelti">${f.scelte.length ? f.scelte.filter(id => LAB[id]).map(id => `<span>${esc(LAB[id].tag)}</span>`).join("") : "<em>Non ha ancora scelto i laboratori</em>"}</div>
       <button type="button" class="btn ${f.scelte.length ? "vuoto" : "giallo"}" data-gioca="${esc(f.id)}"><i data-lucide="book-open"></i>${f.scelte.length ? "Cambia le scelte" : "Scegli i laboratori"}</button>
@@ -2731,6 +2739,18 @@ DISEGNA.famiglia = () => {
     + (pronti || FAM.confermata ? "" : `<p class="nota-fam">Quando almeno un figlio avrà scelto i suoi laboratori potrai confermare l'iscrizione.</p>`);
   $("esci").addEventListener("click", () => { if (!confirm("Vuoi uscire? In questa versione di prova i dati della famiglia vengono cancellati da questo browser.")) return; try { localStorage.removeItem(CHIAVE_FAM); } catch (e) {} FAM = null; vai(null); });
 };
+// il nome scritto sulla tessera sostituisce "Figlio 1"
+$("tessere").addEventListener("submit", e => {
+  const fm = e.target.closest("[data-nome]"); if (!fm) return;
+  e.preventDefault();
+  const f = FAM.figli.find(x => x.id === fm.dataset.nome), v = fm.elements.n.value.trim();
+  if (!f) return;
+  if (!v) { fm.elements.n.focus(); return; }
+  f.nome = v;
+  if (/^F\d+$/.test(f.timbro.iniziali || "")) f.timbro.iniziali = iniziali(v);
+  if (FAM.scheda && FAM.scheda.figli && FAM.scheda.figli[f.id] && !FAM.scheda.figli[f.id].nome) FAM.scheda.figli[f.id].nome = v;
+  salvaFam(); DISEGNA.famiglia(); icone();
+});
 $("tessere").addEventListener("click", e => {
   const g = e.target.closest("[data-gioca]"), m = e.target.closest("[data-modifica]"), t = e.target.closest("[data-togli]"), a = e.target.closest("[data-aggiungi]");
   if (g) { figlioAttivo = g.dataset.gioca; vai("fiaba"); }
@@ -2850,7 +2870,7 @@ const VOCI = [
   { k: "whatsapp", t: "Avvisi su WhatsApp", d: "Acconsento a ricevere gli avvisi di Nola Land al numero indicato, anche con una lista o un gruppo WhatsApp." }
 ];
 const RE_CF = /^[A-Z]{6}[0-9LMNPQRSTUV]{2}[A-Z][0-9LMNPQRSTUV]{2}[A-Z][0-9LMNPQRSTUV]{3}[A-Z]$/;
-const nomeProvvisorio = n => /^Figlio \d+$/.test(n || "");
+function nomeProvvisorio(n) { return /^Figlio \d+$/.test(n || ""); }
 const iscritti = () => FAM.figli.filter(f => f.scelte.some(id => LAB[id]));
 function scheda() {
   if (!FAM.scheda) FAM.scheda = { genitore: { nome: FAM.genitore.nome === "Genitore" ? "" : FAM.genitore.nome, cognome: FAM.genitore.cognome === "di prova" ? "" : FAM.genitore.cognome, telefono: FAM.genitore.cell || "", comune: "Nola" }, figli: {}, delegati: "", aut: {} };
@@ -2911,6 +2931,8 @@ function leggiScheda() {
     const d = sk.figli[el.dataset.figlio] = sk.figli[el.dataset.figlio] || {};
     el.querySelectorAll("[data-c]").forEach(i => { d[i.dataset.c] = i.type === "checkbox" ? i.checked : i.value.trim(); });
     d.cf = (d.cf || "").toUpperCase();
+    const fi = FAM.figli.find(x => x.id === el.dataset.figlio);
+    if (fi && d.nome && nomeProvvisorio(fi.nome)) fi.nome = d.nome;
     el.querySelector("[data-res]").hidden = d.stessaRes;
   });
   VOCI.forEach(v => {
