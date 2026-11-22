@@ -698,6 +698,8 @@ html[data-passo="fiaba"] footer{padding-bottom:110px}
   html[data-passo="fiaba"] .area{position:absolute;inset:0 0 auto;z-index:30;min-height:0;padding:0;background:none;pointer-events:none}
   html[data-passo="fiaba"] .area .wrap,html[data-passo="fiaba"] #p-fiaba{position:static;max-width:none;padding:0}
   html[data-passo="fiaba"] .area :is(.passi-area,.fb-biglietto-titolo,.fb-aiuto){position:absolute;pointer-events:auto}
+  /* la barra "Sta scegliendo… Ho finito!" sta dentro l'area: deve restare cliccabile */
+  html[data-passo="fiaba"] .barra-scelta{pointer-events:auto}
   /* i passi: cartellini in fila in alto al centro */
   html[data-passo="fiaba"] .passi-area{top:74px;left:50%;transform:translateX(-50%);flex-wrap:nowrap;margin:0;gap:10px}
   html[data-passo="fiaba"] .passi-area li{background:#fffaf0;box-shadow:0 6px 12px -8px rgba(40,20,5,.6);white-space:nowrap}
@@ -1191,7 +1193,7 @@ html[data-passo="fiaba"] .percorso-mini,html[data-passo="finito"] .percorso-mini
           <p class="sopra-titolo">La scelta dei laboratori</p>
           <h2>Tocca a te, <span id="fb-titolo-nome"></span>!</h2>
         </div>
-        <p class="fb-aiuto">Sfoglia il libro della città invisibile: tocca un giglio o la Barca, apri il quadro con la storia e metti il tuo timbro sulle botteghe che vuoi provare. Puoi sceglierne fino a <b id="fb-max"></b>. Non sai decidere? Sotto il libro c'è il gioco «Che artista sei?».</p>
+        <p class="fb-aiuto">Sfoglia il libro della città invisibile: tocca un giglio o la Barca, apri il quadro con la storia e premi il bottone <b>«Scegli!»</b> sulle botteghe che vuoi provare. Puoi sceglierne fino a <b id="fb-max"></b>. Non sai decidere? Sotto il libro c'è il gioco «Che artista sei?».</p>
         <p class="fb-aiuto-cell">Scorri le schede dei laboratori, una dopo l'altra. Su quelli che vuoi provare tocca <b>«Ci metto il mio timbro!»</b>. Puoi sceglierne fino a <b id="fb-max-cell"></b>.</p>
         <div class="scelta-cell" id="scelta-cell"></div>
       </div>
