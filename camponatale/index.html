@@ -1,0 +1,634 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Campo Natale · Campo dei Fiori</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Special+Elite&family=Playfair+Display:ital,wght@1,900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    color-scheme:light;
+    --carta:#efe6d2; --inchiostro:#17140f; --rosso:#c8261d; --verde:#1f5a3a; --oro:#e2a92b; --blu:#1d3f78; --legno:#8a5a32;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{font-family:"Special Elite","Courier New",monospace;color:var(--inchiostro);overflow:hidden;background:var(--legno)}
+
+  .palco{position:fixed;inset:0;z-index:1;touch-action:none;user-select:none;-webkit-user-select:none}
+  .palco canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+
+  /* il titolo resta per i lettori di schermo; sul tavolo c'è già tutto */
+  .titolo{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+
+  .aiuto{position:fixed;z-index:2;left:50%;bottom:max(14px,env(safe-area-inset-bottom,0px));transform:translateX(-50%);
+    background:rgba(255,250,240,.93);padding:.45em 1.1em;border-radius:999px;font-size:clamp(.82rem,1.4vw,1rem);
+    box-shadow:0 4px 12px -4px rgba(40,20,5,.55);white-space:nowrap;pointer-events:none;transition:opacity .4s;max-width:calc(100% - 32px);overflow:hidden;text-overflow:ellipsis}
+
+  /* il bottone per chiudere il libricino aperto */
+  .chiudi{position:fixed;z-index:3;top:max(16px,env(safe-area-inset-top,0px));right:max(16px,env(safe-area-inset-right,0px));
+    border:0;cursor:pointer;font:1.15rem "Anton",sans-serif;text-transform:uppercase;letter-spacing:.03em;color:var(--carta);
+    padding:.55em 1.05em;background:none;isolation:isolate}
+  .chiudi::before{content:"";position:absolute;inset:0;z-index:-1;background:var(--rosso);filter:url(#strappo);box-shadow:3px 4px 0 rgba(0,0,0,.35)}
+  .chiudi:focus-visible{outline:3px solid var(--oro);outline-offset:4px}
+
+  /* i libricini e i due ingressi anche come bottoni e link veri, per la tastiera */
+  .accessibile{position:fixed;z-index:3;left:16px;top:16px;display:flex;flex-wrap:wrap;gap:8px;max-width:calc(100% - 32px)}
+  .accessibile button,.accessibile a{font:1rem "Special Elite",monospace;padding:.5em .8em;border:2px solid var(--inchiostro);background:var(--carta);color:var(--inchiostro);text-decoration:none;cursor:pointer}
+  .accessibile a{background:var(--rosso);color:var(--carta);border-color:var(--rosso)}
+  .accessibile a+a{background:var(--blu);border-color:var(--blu)}
+  .accessibile :focus-visible{outline:3px solid var(--oro);outline-offset:2px}
+  .con-3d .accessibile{clip-path:inset(50%);opacity:0}
+  .con-3d .accessibile:focus-within{clip-path:none;opacity:1}
+
+  /* se il 3D non parte */
+  .ripiego{display:none}
+  .senza-3d body{overflow:auto;background:#b98a5a}
+  .senza-3d .palco,.senza-3d .aiuto{display:none}
+  .senza-3d .titolo{position:static;width:auto;height:auto;clip-path:none;font:2.2rem "Anton",sans-serif;text-align:center;margin:24px 16px 8px;color:var(--carta)}
+  .senza-3d .ripiego{display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-end;gap:18px;padding:12px 16px 40px}
+  .ripiego figure{display:flex;flex-direction:column;align-items:center;gap:6px}
+  .ripiego img{height:clamp(110px,22vw,200px);width:auto;max-width:100%;filter:drop-shadow(0 6px 6px rgba(40,20,5,.35))}
+  .ripiego figcaption{background:var(--carta);padding:.2em .6em}
+  .senza-3d .accessibile{position:static;justify-content:center;margin:0 auto 40px}
+  .senza-3d .accessibile button{display:none}
+
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="strappo" x="-5%" y="-10%" width="110%" height="120%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.09" numOctaves="3" seed="3" result="r"/>
+    <feDisplacementMap in="SourceGraphic" in2="r" scale="5" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+</svg>
+
+<h1 class="titolo">Campo Natale</h1>
+
+<div class="palco" id="palco" aria-hidden="true"><canvas id="tela"></canvas></div>
+
+<div class="ripiego" id="ripiego" aria-hidden="true"></div>
+
+<nav class="accessibile" id="accessibile" aria-label="I libricini e gli ingressi">
+  <a id="link-nola" href="/nolaland/">Entra in Nola Land</a>
+  <a id="link-cose" href="/lecosechepensano/">Entra ne Le cose che pensano</a>
+</nav>
+
+<button type="button" class="chiudi" id="chiudi" hidden>Chiudi il libro</button>
+<p class="aiuto" id="aiuto">Tocca un libricino per aprirlo</p>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// i libricini sul tavolo: chi è, il file della figura, il titolo in copertina e il colore della tela
+const LIBRI = [
+  { id: "duomo", nome: "Il Duomo di Nola", righe: ["Il Duomo", "di Nola"], col: "#1d3f78", alta: 2.1 },
+  { id: "giglio", nome: "Il Giglio di Nola", righe: ["Il Giglio", "di Nola"], col: "#c8261d", alta: 2.9 },
+  { id: "arco", nome: "L'Arco di Nola", righe: ["L'Arco", "di Nola"], col: "#b35a2a", alta: 2.0 },
+  { id: "reggia-orsini", nome: "La Reggia Orsini", righe: ["La Reggia", "Orsini"], col: "#6b2f5a", alta: 1.5 },
+  { id: "augusto", nome: "Ottaviano Augusto", righe: ["Ottaviano", "Augusto"], col: "#1f5a3a", alta: 2.3 },
+  { id: "tommaso-vitale", nome: "Tommaso Vitale", righe: ["Tommaso", "Vitale"], col: "#2d6a6a", alta: 2.3 },
+  { id: "san-paolino", nome: "San Paolino", righe: ["San", "Paolino"], col: "#a8741a", alta: 2.3 },
+  { id: "morelli-silvati", nome: "Morelli e Silvati", righe: ["Morelli", "e Silvati"], col: "#24365e", alta: 1.6 },
+  { id: "giordano-bruno", nome: "Giordano Bruno", righe: ["Giordano", "Bruno"], col: "#7a1d17", alta: 2.3 }
+];
+
+(async () => {
+  const $ = id => document.getElementById(id);
+  const radice = document.documentElement;
+  const pocoMoto = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // per provarla: ?subito salta le animazioni, ?libro=duomo apre subito un libricino
+  const subito = /[?&]subito/.test(location.search);
+  const daAprire = (/[?&]libro=([\w-]+)/.exec(location.search) || [])[1];
+
+  // i bottoni per la tastiera e la versione piatta
+  const nav = $("accessibile");
+  LIBRI.forEach(l => {
+    const b = document.createElement("button"); b.type = "button"; b.textContent = l.nome; b.dataset.libro = l.id; nav.insertBefore(b, nav.firstChild ? nav.children[nav.children.length - 2] : null);
+    $("ripiego").insertAdjacentHTML("beforeend", `<figure><img src="img/${l.id}.webp" alt=""><figcaption>${l.nome}</figcaption></figure>`);
+  });
+  const ripiego = () => radice.classList.add("senza-3d");
+  if (!window.THREE) { ripiego(); return; }
+  const T = THREE;
+
+  let renderer;
+  try { renderer = new T.WebGLRenderer({ canvas: $("tela"), antialias: true }); }
+  catch (e) { ripiego(); return; }
+  radice.classList.add("con-3d");
+  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+  renderer.outputEncoding = T.sRGBEncoding;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = T.PCFSoftShadowMap;
+  renderer.setClearColor(0x6e4526);
+  const ANISO = renderer.capabilities.getMaxAnisotropy();
+
+  try { await Promise.race([Promise.all(['40px "Anton"', 'italic 900 40px "Playfair Display"', '40px "Special Elite"'].map(f => document.fonts.load(f))), new Promise(r => setTimeout(r, 2500))]); } catch (e) {}
+
+  const scena = new T.Scene();
+  scena.fog = new T.Fog(0x6e4526, 45, 110);
+  const camera = new T.PerspectiveCamera(32, 1, .1, 120);
+  scena.add(new T.HemisphereLight(0xfff4e0, 0x8a5a32, .75));
+  const luce = new T.DirectionalLight(0xfff3dd, .75);
+  luce.position.set(-6, 14, 8); luce.castShadow = true;
+  luce.shadow.mapSize.set(2048, 2048);
+  Object.assign(luce.shadow.camera, { left: -13, right: 13, top: 13, bottom: -13, near: 1, far: 40 });
+  luce.shadow.bias = -.0005; luce.shadow.normalBias = .02;
+  scena.add(luce);
+
+  /* ---------- attrezzi per disegnare la carta ---------- */
+  const PX = 128, INK = "#3b2a1c";
+  const tela = (w, h) => { const c = document.createElement("canvas"); c.width = w; c.height = h; return c; };
+  const rng = s => () => ((s = Math.imul(s ^ (s >>> 15), 1 | s) + 0x6d2b79f5 | 0, ((s ^ (s >>> 14)) >>> 0) / 4294967296));
+  function texture(c) { const t = new T.CanvasTexture(c); t.encoding = T.sRGBEncoding; t.anisotropy = ANISO; return t; }
+  function strappo(pts, seme = 1, amp = .025) {
+    const r = rng(seme), p = new Path2D();
+    pts.forEach(([x0, y0], i) => {
+      const [x1, y1] = pts[(i + 1) % pts.length], L = Math.hypot(x1 - x0, y1 - y0) || 1e-6, n = Math.max(2, Math.round(L / .035));
+      const nx = -(y1 - y0) / L, ny = (x1 - x0) / L;
+      for (let k = 0; k < n; k++) {
+        const t = k / n, j = k ? (r() - .5) * 2 * amp : 0;
+        const x = x0 + (x1 - x0) * t + nx * j, y = y0 + (y1 - y0) * t + ny * j;
+        i === 0 && k === 0 ? p.moveTo(x, y) : p.lineTo(x, y);
+      }
+    });
+    p.closePath(); return p;
+  }
+  function incolla(a, pts, col, seme, amp) {
+    const p = strappo(pts, seme, amp);
+    a.lineJoin = "round"; a.lineWidth = .045; a.strokeStyle = "rgba(255,250,236,.95)"; a.stroke(p);
+    a.fillStyle = col; a.fill(p); return p;
+  }
+  const rettP = (x, y, w, h) => [[x, y], [x + w, y], [x + w, y + h], [x, y + h]];
+  const ovaleP = (cx, cy, rx, ry, n = 22) => Array.from({ length: n }, (_, i) => { const t = i / n * Math.PI * 2; return [cx + Math.cos(t) * rx, cy + Math.sin(t) * ry]; });
+  const stellaP = (x, y, s) => Array.from({ length: 10 }, (_, i) => { const an = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? s * .45 : s; return [x + Math.cos(an) * rr, y + Math.sin(an) * rr]; });
+  function scrivi(a, t, x, y, h, font, col, maxW, rot = 0, k = PX) {
+    a.save(); a.translate(x, y); a.rotate(rot); a.scale(1 / k, 1 / k);
+    a.font = font.replace("{}", Math.round(h * k) + "px"); a.fillStyle = col; a.textAlign = "center"; a.textBaseline = "middle";
+    a.fillText(t, 0, 0, maxW ? maxW * k : undefined); a.restore();
+  }
+  function ritaglio(w, h, disegna, m = .06, px = PX) {
+    const pw = Math.ceil((w + 2 * m) * px), ph = Math.ceil((h + 2 * m) * px);
+    const art = tela(pw, ph), a = art.getContext("2d");
+    a.setTransform(px, 0, 0, px, m * px, m * px); disegna(a, w, h);
+    const sil = tela(pw, ph), s = sil.getContext("2d");
+    s.drawImage(art, 0, 0); s.globalCompositeOperation = "source-in";
+    const out = tela(pw, ph), o = out.getContext("2d");
+    const giro = (col, r) => { s.fillStyle = col; s.fillRect(0, 0, pw, ph); for (let k = 0; k < 16; k++) { const an = k / 16 * Math.PI * 2; o.drawImage(sil, Math.cos(an) * r, Math.sin(an) * r); } };
+    giro("#cdb995", m * px * .95);
+    giro("#fffaf0", m * px * .8);
+    o.drawImage(art, 0, 0);
+    return out;
+  }
+  // una sagoma di carta piatta, che si alza dalla pagina o sta in piedi sul tavolo
+  function cartoncino(w, h, disegna, opz = {}) {
+    const m = .06, cv = ritaglio(w, h, disegna, m), tex = texture(cv);
+    const mesh = new T.Mesh(new T.PlaneGeometry(w + 2 * m, h + 2 * m), new T.MeshStandardMaterial({ map: tex, alphaTest: .5, side: T.DoubleSide, roughness: .92 }));
+    mesh.position.y = mesh.userData.y0 = (h + 2 * m) / 2 - m - .02;
+    mesh.castShadow = mesh.receiveShadow = true;
+    mesh.customDepthMaterial = new T.MeshDepthMaterial({ depthPacking: T.RGBADepthPacking, map: tex, alphaTest: .5 });
+    if (opz.alfa) try { mesh.userData.alfa = { data: cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data, w: cv.width, h: cv.height }; } catch (e) {}
+    return mesh;
+  }
+  const easeBack = t => { const c = 1.5; return 1 + (c + 1) * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2); };
+  const easeIO = t => t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+  const clamp = v => Math.max(0, Math.min(1, v));
+  const mix = (a, b, k) => a + (b - a) * k;
+
+  /* ---------- il tavolo ---------- */
+  (() => {
+    const c = tela(1024, 1024), g = c.getContext("2d"), r = rng(9);
+    const tinte = ["#a86f3e", "#b47a45", "#9c6536", "#ae7642", "#a3693a", "#b07744", "#9a6334", "#a97240"];
+    for (let k = 0; k < 8; k++) {
+      const x0 = k * 128; g.fillStyle = tinte[k]; g.fillRect(x0, 0, 128, 1024);
+      for (let v = 0; v < 26; v++) {
+        const xv = x0 + 6 + r() * 116, amp = 2 + r() * 6, fr = .006 + r() * .012, ph = r() * 7;
+        g.strokeStyle = `rgba(${r() > .5 ? "70,35,12" : "255,220,170"},${.07 + r() * .13})`; g.lineWidth = .8 + r() * 1.8;
+        g.beginPath(); for (let y = 0; y <= 1024; y += 8) { const x = xv + amp * Math.sin(y * fr + ph); y ? g.lineTo(x, y) : g.moveTo(x, y); } g.stroke();
+      }
+      if (r() > .5) { g.fillStyle = "rgba(80,40,15,.3)"; g.beginPath(); g.ellipse(x0 + 30 + r() * 68, r() * 1000, 8, 14, 0, 0, 7); g.fill(); }
+      g.fillStyle = "rgba(60,28,8,.55)"; g.fillRect(x0, 0, 3, 1024);
+    }
+    const t = texture(c); t.wrapS = t.wrapT = T.RepeatWrapping; t.repeat.set(12.5, 12.5);
+    const piano = new T.Mesh(new T.PlaneGeometry(200, 200), new T.MeshStandardMaterial({ map: t, roughness: .8 }));
+    piano.rotation.x = -Math.PI / 2; piano.receiveShadow = true; scena.add(piano);
+  })();
+
+  /* ---------- le figure ---------- */
+  const carica = src => new Promise(res => { const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = src; });
+  const IMG = {};
+  (await Promise.all(LIBRI.map(l => carica(`img/${l.id}.webp`)))).forEach((im, i) => IMG[LIBRI[i].id] = im);
+
+  /* ---------- i libricini ---------- */
+  const LW = 1.75, LD = 2.3, SP = .07, BL = .22, H = SP + BL;   // una pagina, lo spessore della copertina e delle pagine
+  const COL = col => new T.MeshStandardMaterial({ color: col, roughness: .85 });
+  const matPagine = new T.MeshStandardMaterial({ color: 0xf1e3c6, roughness: 1 });
+  function disegnaCopertina(l, i) {
+    const px = 200, w = LW + .06, h = LD + .1, c = tela(Math.round(w * px), Math.round(h * px)), a = c.getContext("2d");
+    a.setTransform(px, 0, 0, px, 0, 0);
+    a.fillStyle = l.col; a.fillRect(0, 0, w, h);
+    // la tela del libro, a righine
+    a.globalAlpha = .12; a.fillStyle = "#000"; for (let y = 0; y < h; y += .03) a.fillRect(0, y, w, .012); a.globalAlpha = 1;
+    a.lineWidth = .025; a.strokeStyle = "#e2a92b"; a.strokeRect(.1, .1, w - .2, h - .2);
+    // la figurina incollata sulla copertina
+    incolla(a, [[.28, .22], [w - .26, .26], [w - .3, 1.36], [.3, 1.32]], "#efe6d2", 10 + i, .03);
+    const im = IMG[l.id];
+    if (im) { const bw = w - .8, bh = .98, k = Math.min(bw / im.naturalWidth, bh / im.naturalHeight), iw = im.naturalWidth * k, ih = im.naturalHeight * k; a.drawImage(im, w / 2 - iw / 2, .3 + (bh - ih) / 2 + .02, iw, ih); }
+    // l'etichetta con il nome
+    incolla(a, [[.18, 1.5], [w - .16, 1.46], [w - .18, 2.2], [.2, 2.24]], "#fffaf0", 20 + i, .03);
+    scrivi(a, l.righe[0], w / 2, 1.68, .26, '{} "Anton", sans-serif', "#17140f", w - .5, -.015, px);
+    scrivi(a, l.righe[1], w / 2, 1.98, .24, 'italic 900 {} "Playfair Display", serif', "#c8261d", w - .5, -.015, px);
+    return c;
+  }
+  function disegnaPagine() {
+    const px = 160, c = tela(Math.round(2 * LW * px), Math.round(LD * px)), a = c.getContext("2d");
+    a.setTransform(px, 0, 0, px, 0, 0);
+    a.fillStyle = "#f6ecd4"; a.fillRect(0, 0, 2 * LW, LD);
+    a.strokeStyle = "rgba(29,63,120,.18)"; a.lineWidth = .012;
+    for (let y = .3; y < LD - .1; y += .16) { a.beginPath(); a.moveTo(.15, y); a.lineTo(2 * LW - .15, y); a.stroke(); }
+    a.setTransform(1, 0, 0, 1, 0, 0);
+    const SW = c.width, g = a.createLinearGradient(SW / 2 - 60, 0, SW / 2 + 60, 0);
+    g.addColorStop(0, "rgba(90,60,30,0)"); g.addColorStop(.5, "rgba(90,60,30,.35)"); g.addColorStop(1, "rgba(90,60,30,0)");
+    a.fillStyle = g; a.fillRect(SW / 2 - 60, 0, 120, c.height);
+    const meta = x0 => { const m = tela(SW / 2, c.height); m.getContext("2d").drawImage(c, x0, 0, SW / 2, c.height, 0, 0, SW / 2, c.height); return texture(m); };
+    return { L: meta(0), R: meta(SW / 2) };
+  }
+  const PAGINE = disegnaPagine();
+  // il nome di chi si parla, su un nastro di carta strappata
+  function nastro(l, i) {
+    return (a, w, h) => {
+      incolla(a, [[0, .06], [w, 0], [w - .04, h], [.03, h - .03]], l.col, 70 + i, .03);
+      incolla(a, [[.12, .14], [w - .1, .1], [w - .14, h - .12], [.14, h - .1]], "#fffaf0", 80 + i, .025);
+      scrivi(a, l.nome, w / 2, h / 2 + .02, h * .5, 'italic 900 {} "Playfair Display", serif', "#17140f", w - .4, -.01);
+    };
+  }
+
+  const libri = [];
+  function creaLibro(l, i) {
+    const G = new T.Group(); scena.add(G);
+    const tela_ = COL(l.col);
+    const parti = (geo, mat, x, y, z) => { const m = new T.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = m.receiveShadow = true; G.add(m); return m; };
+    const geoCop = new T.BoxGeometry(LW + .06, SP, LD + .1), geoBl = new T.BoxGeometry(LW - .04, BL, LD);
+    const baseDx = parti(geoCop, tela_, LW / 2 + .03, SP / 2, 0), baseSx = parti(geoCop, tela_, -LW / 2 - .03, SP / 2, 0);
+    const bloccoDx = parti(geoBl, matPagine, LW / 2, SP + BL / 2, 0), bloccoSx = parti(geoBl, matPagine, -LW / 2, SP + BL / 2, 0);
+    const dorso = parti(new T.BoxGeometry(.1, H + .02, LD + .1), tela_, -.02, (H + .02) / 2, 0);
+    const pagina = (x, map) => { const g = new T.PlaneGeometry(LW - .04, LD); g.rotateX(-Math.PI / 2); const m = new T.Mesh(g, new T.MeshStandardMaterial({ map, roughness: .95 })); m.position.set(x, H + .002, 0); m.receiveShadow = true; G.add(m); return m; };
+    const pagSx = pagina(-LW / 2, PAGINE.L), pagDx = pagina(LW / 2, PAGINE.R);
+    // la copertina gira sul dorso (x = 0)
+    const perno = new T.Group(); perno.position.set(0, H, 0); G.add(perno);
+    const matCop = new T.MeshStandardMaterial({ roughness: .8, map: texture(disegnaCopertina(l, i)) });
+    const coperchio = new T.Mesh(geoCop, [tela_, tela_, matCop, matPagine, tela_, tela_]);
+    coperchio.position.set(LW / 2 + .03, SP / 2, 0); coperchio.castShadow = coperchio.receiveShadow = true; perno.add(coperchio);
+    const aperto = si => { baseSx.visible = bloccoSx.visible = pagSx.visible = si; };
+    aperto(false);
+    // il pop-up: la figura e il nome
+    const im = IMG[l.id], ah = l.alta * 1.15, aw = im ? Math.min(3.4, ah * im.naturalWidth / im.naturalHeight) : 1.5, ahh = im ? aw * im.naturalHeight / im.naturalWidth : ah;
+    const pop = [
+      { mesh: cartoncino(aw, ahh, (a, w, h) => { if (im) a.drawImage(im, 0, 0, w, h); }), z: -.45, o: 0 },
+      { mesh: cartoncino(2.9, .52, nastro(l, i)), z: .75, o: .4 }
+    ].map(p => { const c = new T.Group(); c.position.set(0, H + .003, p.z); c.add(p.mesh); c.visible = false; G.add(c); return { ...p, cerniera: c }; });
+    const libro = { l, G, perno, coperchio, dorso, aperto, pop, alzata: 0, apertura: 0, alza: 0, pezzi: [baseDx, bloccoDx, coperchio, dorso, pagDx] };
+    [baseDx, bloccoDx, coperchio, dorso, pagDx].forEach(m => m.userData.libro = libro);
+    libri.push(libro);
+    return libro;
+  }
+  LIBRI.forEach(creaLibro);
+  function aggiornaLibro(b) {
+    b.perno.rotation.z = easeIO(b.apertura) * Math.PI;
+    b.aperto(b.apertura > .5);
+    b.coperchio.visible = b.apertura < .985;
+    b.dorso.visible = b.apertura < .5;
+    for (const p of b.pop) {
+      const r = easeBack(clamp((b.alzata - p.o * .45) / .55));
+      p.cerniera.visible = r > .002;
+      p.cerniera.rotation.x = -(1 - r) * 1.5;
+      p.cerniera.scale.y = .1 + .9 * Math.min(1, r);
+    }
+  }
+
+  /* ---------- le cose sulla scrivania ---------- */
+  const COSE = [];
+  function cosa(o) { o.traverse(m => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } }); scena.add(o); COSE.push(o); return o; }
+  function matita(col, l = 1.6) {
+    const g = new T.Group();
+    const corpo = new T.Mesh(new T.CylinderGeometry(.055, .055, l, 6), COL(col)); g.add(corpo);
+    const legno = new T.Mesh(new T.ConeGeometry(.055, .16, 6), COL(0xe8c48c)); legno.position.y = l / 2 + .08; g.add(legno);
+    const mina = new T.Mesh(new T.ConeGeometry(.02, .06, 6), COL(0x333333)); mina.position.y = l / 2 + .15; g.add(mina);
+    const gomma = new T.Mesh(new T.CylinderGeometry(.056, .056, .12, 12), COL(0xe98a8a)); gomma.position.y = -l / 2 - .06; g.add(gomma);
+    return g;
+  }
+  function portapenne(col) {
+    const g = new T.Group();
+    const vaso = new T.Mesh(new T.CylinderGeometry(.5, .45, 1.1, 28, 1, true), new T.MeshStandardMaterial({ color: col, roughness: .7, side: T.DoubleSide }));
+    vaso.position.y = .55; g.add(vaso);
+    const fondo = new T.Mesh(new T.CircleGeometry(.45, 28), COL(col)); fondo.rotation.x = -Math.PI / 2; fondo.position.y = .02; g.add(fondo);
+    const r = rng(4);
+    ["#c8261d", "#1d3f78", "#e2a92b", "#1f5a3a", "#6b2f5a", "#2d6a6a"].forEach((c, k) => {
+      const m = matita(c, 1.5 + r() * .3), an = k / 6 * Math.PI * 2;
+      m.position.set(Math.cos(an) * .22, 1.05, Math.sin(an) * .22); m.rotation.set(Math.sin(an) * .22, 0, -Math.cos(an) * .22); g.add(m);
+    });
+    // un pennello
+    const p = new T.Group(), manico = new T.Mesh(new T.CylinderGeometry(.04, .03, 1.7, 10), COL(0x8a5a2b)); p.add(manico);
+    const ghiera = new T.Mesh(new T.CylinderGeometry(.05, .045, .2, 10), COL(0xbfbfbf)); ghiera.position.y = .95; p.add(ghiera);
+    const setole = new T.Mesh(new T.ConeGeometry(.06, .25, 10), COL(0x3b2416)); setole.position.y = 1.17; p.add(setole);
+    p.position.set(.05, 1.15, -.05); p.rotation.z = .12; g.add(p);
+    return g;
+  }
+  function fogli(n, seme) {
+    const g = new T.Group(), r = rng(seme);
+    for (let k = 0; k < n; k++) {
+      const c = tela(420, 594), a = c.getContext("2d");
+      a.fillStyle = k === n - 1 ? "#fbf6ea" : ["#f4ecd8", "#efe3c8", "#f8f1e2"][k % 3]; a.fillRect(0, 0, 420, 594);
+      if (k === n - 1) {
+        // un foglio di appunti con qualche schizzo
+        a.strokeStyle = "rgba(29,63,120,.25)"; a.lineWidth = 2;
+        for (let y = 70; y < 580; y += 30) { a.beginPath(); a.moveTo(20, y); a.lineTo(400, y); a.stroke(); }
+        a.strokeStyle = "#2a3a6a"; a.lineWidth = 3; a.lineCap = "round";
+        for (let y = 95; y < 330; y += 30) { a.beginPath(); a.moveTo(40, y); let x = 40; while (x < 330 + r() * 50) { x += 8 + r() * 14; a.lineTo(x, y + (r() - .5) * 8); } a.stroke(); }
+        a.strokeStyle = "#c8261d"; a.lineWidth = 4; a.beginPath(); a.moveTo(130, 520); a.lineTo(150, 380); a.lineTo(170, 520); a.moveTo(140, 440); a.lineTo(160, 440); a.stroke();
+        a.beginPath(); a.arc(280, 450, 60, 0, 7); a.stroke();
+      }
+      const m = new T.Mesh(new T.BoxGeometry(2.1, .012, 2.97), [COL(0xeee4cf), COL(0xeee4cf), new T.MeshStandardMaterial({ map: texture(c), roughness: .95 }), COL(0xeee4cf), COL(0xeee4cf), COL(0xeee4cf)]);
+      m.position.set((r() - .5) * .3, .006 + k * .013, (r() - .5) * .3); m.rotation.y = (r() - .5) * .5; g.add(m);
+    }
+    return g;
+  }
+  function righello() {
+    const c = tela(1024, 96), a = c.getContext("2d");
+    a.fillStyle = "#e9c35a"; a.fillRect(0, 0, 1024, 96); a.fillStyle = "#3b2a1c";
+    for (let k = 0; k <= 60; k++) { const x = 12 + k * 16.6, l = k % 10 === 0 ? 40 : k % 5 === 0 ? 28 : 16; a.fillRect(x, 0, 2, l); if (k % 10 === 0) { a.font = "20px sans-serif"; a.fillText(k / 10 * 5, x + 4, 66); } }
+    const m = new T.Mesh(new T.BoxGeometry(3.6, .03, .34), [COL(0xd9b04a), COL(0xd9b04a), new T.MeshStandardMaterial({ map: texture(c), roughness: .6 }), COL(0xd9b04a), COL(0xd9b04a), COL(0xd9b04a)]);
+    m.position.y = .015; const g = new T.Group(); g.add(m); return g;
+  }
+  function gomma() { const g = new T.Group(), a = new T.Mesh(new T.BoxGeometry(.55, .18, .3), COL(0xe98a8a)); a.position.y = .09; const b = new T.Mesh(new T.BoxGeometry(.3, .182, .302), COL(0x2d5fa8)); b.position.set(.13, .09, 0); g.add(a, b); return g; }
+  function pallina() {
+    const geo = new T.IcosahedronGeometry(.32, 1), p = geo.attributes.position, r = rng(12);
+    for (let k = 0; k < p.count; k++) { const f = .8 + r() * .35; p.setXYZ(k, p.getX(k) * f, p.getY(k) * f, p.getZ(k) * f); }
+    geo.computeVertexNormals();
+    const m = new T.Mesh(geo, new T.MeshStandardMaterial({ color: 0xf6efe0, roughness: 1, flatShading: true })); m.position.y = .28;
+    const g = new T.Group(); g.add(m); return g;
+  }
+  function ritaglioPiatto(col, seme, w = .9, h = .6) {
+    const m = cartoncino(w, h, (a, ww, hh) => incolla(a, [[0, .05], [ww, 0], [ww - .05, hh], [.04, hh - .04]], col, seme, .05));
+    m.rotation.x = -Math.PI / 2; m.position.y = .004; const g = new T.Group(); g.add(m); return g;
+  }
+  function colla() {
+    const g = new T.Group(), c = new T.Mesh(new T.CylinderGeometry(.16, .16, .8, 20), COL(0xf2f2f2)); c.position.y = .4; g.add(c);
+    const t = new T.Mesh(new T.CylinderGeometry(.17, .17, .25, 20), COL(0xc8261d)); t.position.y = .93; g.add(t);
+    const e = new T.Mesh(new T.CylinderGeometry(.162, .162, .3, 20), COL(0x2d6a3a)); e.position.y = .35; g.add(e); return g;
+  }
+  function forbici() {
+    const g = new T.Group(), mat = COL(0x1d3f78), lama = COL(0xc9ced6);
+    for (const s of [-1, 1]) {
+      const l = new T.Mesh(new T.BoxGeometry(1.0, .03, .09), lama); l.position.set(.45, .02 + (s > 0 ? .03 : 0), 0); l.rotation.y = s * .12; g.add(l);
+      const o = new T.Mesh(new T.TorusGeometry(.17, .05, 8, 20), mat); o.rotation.x = Math.PI / 2; o.position.set(-.25, .05, s * .2); g.add(o);
+    }
+    return g;
+  }
+
+  /* ---------- i due pupazzi con i cartelloni ---------- */
+  function pupazzo(tipo) {
+    return (a, w, h) => {
+      const sx = w / 2, A = tipo === "nola";
+      const pelle = A ? "#ecc49a" : "#d9a77c", s = A ? 1 : 50;
+      incolla(a, rettP(sx - .62, .9, .09, 1.55), "#8a5a2b", s + 1, .01);
+      incolla(a, rettP(sx + .53, .9, .09, 1.55), "#8a5a2b", s + 2, .01);
+      incolla(a, [[.05, .1], [w - .05, .02], [w - .02, 1.22], [.02, 1.3]], "#efe6d2", s + 3, .035);
+      if (A) {
+        incolla(a, [[.22, .22], [w * .62, .16], [w * .64, .7], [.2, .74]], "#c8261d", s + 4, .03);
+        scrivi(a, "NOLA", (.22 + w * .63) / 2, .46, .52, '{} "Anton", sans-serif', "#efe6d2", w * .4, -.04);
+        incolla(a, [[w * .4, .66], [w - .2, .62], [w - .18, 1.16], [w * .38, 1.18]], "#17140f", s + 5, .03);
+        scrivi(a, "LAND", (w * .4 + w - .19) / 2, .9, .48, '{} "Anton", sans-serif', "#e2a92b", w * .5, .03);
+        incolla(a, stellaP(.42, 1.0, .16), "#e2a92b", s + 6, .008);
+      } else {
+        incolla(a, [[.16, .16], [w * .7, .12], [w * .72, .5], [.14, .52]], "#17140f", s + 4, .03);
+        scrivi(a, "LE COSE", (.16 + w * .71) / 2, .33, .34, '{} "Anton", sans-serif', "#efe6d2", w * .52, -.03);
+        incolla(a, [[w * .28, .5], [w * .64, .47], [w * .66, .82], [w * .26, .84]], "#c8261d", s + 5, .03);
+        scrivi(a, "che", w * .46, .66, .34, 'italic 900 {} "Playfair Display", serif', "#efe6d2", w * .36, .04);
+        incolla(a, [[w * .2, .84], [w - .12, .8], [w - .1, 1.2], [w * .18, 1.22]], "#1d3f78", s + 6, .03);
+        scrivi(a, "PENSANO", (w * .2 + w - .11) / 2, 1.01, .34, '{} "Anton", sans-serif', "#efe6d2", w * .72, .02);
+        incolla(a, ovaleP(w - .3, .32, .14, .14, 12), "#e2a92b", s + 7, .02);
+        scrivi(a, "?", w - .3, .33, .22, 'italic 900 {} "Playfair Display", serif', "#17140f");
+      }
+      const vestito = A ? "#2f7a4c" : "#d4892b";
+      incolla(a, [[sx - .3, 2.1], [sx - .62, 1.38], [sx - .5, 1.32], [sx - .16, 2.0]], vestito, s + 8, .015);
+      incolla(a, [[sx + .3, 2.1], [sx + .62, 1.38], [sx + .5, 1.32], [sx + .16, 2.0]], vestito, s + 9, .015);
+      incolla(a, ovaleP(sx - .58, 1.36, .09, .09, 10), pelle, s + 10, .01);
+      incolla(a, ovaleP(sx + .58, 1.36, .09, .09, 10), pelle, s + 11, .01);
+      incolla(a, rettP(sx - .2, 2.6, .14, .42), A ? "#1d3f78" : "#5b3a6b", s + 12, .012);
+      incolla(a, rettP(sx + .06, 2.6, .14, .42), A ? "#1d3f78" : "#5b3a6b", s + 13, .012);
+      incolla(a, [[sx - .32, 3.0], [sx - .05, 2.98], [sx - .04, 3.1], [sx - .34, 3.12]], "#17140f", s + 14, .01);
+      incolla(a, [[sx + .05, 2.98], [sx + .32, 3.0], [sx + .34, 3.12], [sx + .04, 3.1]], "#17140f", s + 15, .01);
+      if (A) incolla(a, [[sx - .24, 1.95], [sx + .24, 1.95], [sx + .36, 2.68], [sx - .36, 2.68]], vestito, s + 16, .02);
+      else incolla(a, [[sx - .22, 1.95], [sx + .22, 1.95], [sx + .3, 2.66], [sx - .3, 2.66]], vestito, s + 16, .02);
+      incolla(a, [[sx - .25, 1.92], [sx + .25, 1.9], [sx + .26, 2.02], [sx - .24, 2.04]], "#c8261d", s + 17, .012);
+      incolla(a, [[sx + .08, 2.0], [sx + .2, 2.0], [sx + .24, 2.36], [sx + .12, 2.38]], "#c8261d", s + 18, .012);
+      if (A) [2.2, 2.38, 2.55].forEach((y, i) => incolla(a, ovaleP(sx - .06, y, .035, .035, 8), "#e2a92b", s + 19 + i, .004));
+      incolla(a, ovaleP(sx, 1.66, .27, .29), pelle, s + 22, .015);
+      if (A) {
+        incolla(a, [[sx - .3, 1.56], [sx - .26, 1.36], [sx, 1.3], [sx + .26, 1.36], [sx + .3, 1.56], [sx + .2, 1.48], [sx - .2, 1.48]], "#6b3d1f", s + 23, .02);
+        incolla(a, [[sx - .3, 1.45], [sx - .1, 1.12], [sx + .18, 1.02], [sx + .34, 1.2], [sx + .3, 1.45]], "#c8261d", s + 24, .02);
+        incolla(a, ovaleP(sx + .36, 1.17, .07, .07, 10), "#fffaf0", s + 25, .01);
+        incolla(a, rettP(sx - .33, 1.42, .66, .09), "#fffaf0", s + 26, .012);
+      } else {
+        for (let k = 0; k < 9; k++) { const an = Math.PI + k / 8 * Math.PI; incolla(a, ovaleP(sx + Math.cos(an) * .27, 1.62 + Math.sin(an) * .27, .1, .1, 10), "#3b2416", s + 23 + k, .012); }
+        incolla(a, [[sx - .3, 1.66], [sx - .2, 1.66], [sx - .24, 2.08], [sx - .34, 2.06]], "#3b2416", s + 33, .012);
+        incolla(a, [[sx + .2, 1.66], [sx + .3, 1.66], [sx + .34, 2.06], [sx + .24, 2.08]], "#3b2416", s + 34, .012);
+        incolla(a, ovaleP(sx + .26, 1.44, .07, .05, 10), "#e2a92b", s + 35, .01);
+      }
+      incolla(a, ovaleP(sx - .1, 1.64, .035, .045, 8), INK, s + 40, .004);
+      incolla(a, ovaleP(sx + .1, 1.64, .035, .045, 8), INK, s + 41, .004);
+      a.fillStyle = "rgba(220,90,90,.35)"; a.beginPath(); a.arc(sx - .17, 1.76, .05, 0, 7); a.arc(sx + .17, 1.76, .05, 0, 7); a.fill();
+      a.lineWidth = .025; a.strokeStyle = INK; a.lineCap = "round"; a.beginPath(); a.arc(sx, 1.73, .1, .35, Math.PI - .35); a.stroke();
+    };
+  }
+  const pupazzi = ["nola", "cose"].map(tipo => {
+    const mesh = cartoncino(2.15, 3.15, pupazzo(tipo), { alfa: true });
+    // una basetta di cartone per stare in piedi
+    const g = new T.Group(); g.add(mesh);
+    const base = new T.Mesh(new T.BoxGeometry(1.4, .06, .6), COL(0xb08a5a)); base.position.y = .03; base.castShadow = base.receiveShadow = true; g.add(base);
+    scena.add(g);
+    const p = { tipo, g, mesh, link: tipo === "nola" ? "link-nola" : "link-cose", alza: 0 };
+    mesh.userData.pupazzo = p;
+    return p;
+  });
+
+  /* ---------- la disposizione sul tavolo (una per lo schermo largo, una per il telefono) ---------- */
+  // per ogni libricino: x, z del dorso e rotazione; per le cose: x, z, rotazione
+  const DISPOSIZIONI = {
+    largo: {
+      libri: [[-6.9, -3.2, .18], [-4.0, -3.6, -.12], [3.5, -3.5, .1], [6.3, -2.9, -.2], [-6.6, .2, -.1], [-3.4, .5, .16], [.6, 1.0, -.08], [3.4, .3, .14], [6.2, .9, -.12]],
+      pupazzi: [[-1.3, -3.4, .08], [1.3, -3.4, -.08]],
+      cose: [[9.0, -4.4, 0], [-9.4, 3.6, .3], [8.7, 3.4, -.4], [-3.6, 4.2, .25], [3.4, 4.3, -.35], [0, 4.4, .1], [-9.6, -1.4, 1.2], [-1.6, -.8, .4], [9.4, -.6, 2], [-6.4, 4.3, 0], [6.2, 4.4, .5]],
+      cam: { x: 0, z: .3, el: .98, largo: 21, prof: 9.6 }
+    },
+    stretto: {
+      libri: [[-3.0, -4.2, .12], [.0, -4.4, -.1], [2.6, -4.0, .14], [-3.1, -.8, -.08], [-.2, -.6, .1], [2.6, -.7, -.14], [-3.0, 2.6, .1], [-.1, 2.8, -.12], [2.6, 2.6, .08]],
+      pupazzi: [[-1.15, -7.4, .08], [1.15, -7.4, -.08]],
+      cose: [[3.8, -7.3, 0], [-3.9, 5.9, .3], [3.6, 6.0, -.4], [-4.3, -6.6, .25], [.2, 6.2, -.35], [-1.0, 5.9, .1], [-4.6, 1.0, 1.2], [4.3, 1.0, .4], [4.5, -2.4, 2], [-4.4, -2.6, 0], [4.4, 4.3, .5]],
+      cam: { x: 0, z: -.6, el: 1.12, largo: 9.4, prof: 15.6 }
+    }
+  };
+  // le cose, nello stesso ordine delle posizioni
+  const fattorieCose = [() => portapenne(0x1d3f78), () => fogli(4, 3), () => portapenne(0xc8261d), () => righello(), () => gomma(), () => pallina(),
+    () => matita("#e2a92b", 1.7), () => ritaglioPiatto("#c8261d", 5), () => forbici(), () => colla(), () => ritaglioPiatto("#1f5a3a", 6, 1.1, .7)];
+  fattorieCose.forEach(f => cosa(f()));
+  // la matita sciolta sta sdraiata
+  COSE[6].position.y = .06;
+
+  let disp = null;
+  function disponi() {
+    const nuova = camera.aspect < .85 ? "stretto" : "largo";
+    if (nuova === disp) return; disp = nuova;
+    const D = DISPOSIZIONI[disp];
+    libri.forEach((b, i) => { const [x, z, r] = D.libri[i]; b.casa = { x, z, r }; if (b !== attivo) { b.G.position.set(x, 0, z); b.G.rotation.y = r; } });
+    pupazzi.forEach((p, i) => { const [x, z, r] = D.pupazzi[i]; p.g.position.set(x, 0, z); p.g.rotation.y = r; });
+    COSE.forEach((o, i) => { const [x, z, r] = D.cose[i]; o.position.x = x; o.position.z = z; if (i === 6) o.rotation.set(0, r, Math.PI / 2); else o.rotation.y = r; });
+  }
+
+  /* ---------- telecamera ---------- */
+  const palco = $("palco");
+  const cam = { x: 0, y: 0, z: 0, dist: 20, el: 1, yaw: 0 };   // dove guarda ora
+  let vista = null, attivo = null, occupato = false;
+  const v = () => camera.fov * Math.PI / 180;
+  // la vista dall'alto su tutto il tavolo
+  function vistaTavolo() {
+    const C = DISPOSIZIONI[disp].cam, hf = 2 * Math.atan(Math.tan(v() / 2) * camera.aspect);
+    const d = Math.max(C.largo / 2 / Math.tan(hf / 2), C.prof / 2 / Math.tan(v() / 2) / Math.max(.6, Math.sin(C.el)));
+    return { x: C.x, y: 0, z: C.z, dist: d, el: C.el, yaw: 0 };
+  }
+  // la vista vicina sul libricino aperto
+  function vistaLibro(b) {
+    const hf = 2 * Math.atan(Math.tan(v() / 2) * camera.aspect);
+    const d = Math.max(2.35 / Math.tan(hf / 2), 2.35 / Math.tan(v() / 2));
+    return { x: b.G.position.x, y: b.G.position.y + 1.35, z: b.G.position.z + .1, dist: d, el: .42, yaw: 0 };
+  }
+  function adatta() {
+    const w = palco.clientWidth, h = palco.clientHeight; if (!w || !h) return;
+    renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
+    disponi();
+    if (!tweenCam) Object.assign(cam, attivo ? vistaLibro(attivo) : vistaTavolo());
+  }
+  const giro = { yaw: 0, el: 0 };   // un piccolo movimento seguendo il mouse
+  function posizionaCamera() {
+    const el = cam.el + giro.el, yaw = cam.yaw + giro.yaw;
+    camera.position.set(cam.x + Math.sin(yaw) * Math.cos(el) * cam.dist, cam.y + Math.sin(el) * cam.dist, cam.z + Math.cos(yaw) * Math.cos(el) * cam.dist);
+    camera.lookAt(cam.x, cam.y, cam.z);
+  }
+
+  /* ---------- animazioni ---------- */
+  const tweens = [];
+  const tween = (dur, fn) => new Promise(res => { if (pocoMoto || subito || dur <= 0) { fn(1); res(); } else tweens.push({ dur, t: 0, fn, res }); });
+  let tweenCam = false;
+  function voloCamera(dest, dur) {
+    const da = { ...cam }; tweenCam = true;
+    return tween(dur, k => { const e = easeIO(k); for (const c in dest) cam[c] = mix(da[c], dest[c], e); }).then(() => tweenCam = false);
+  }
+  const aiuto = t => { $("aiuto").textContent = t; };
+
+  async function apri(b) {
+    if (occupato || attivo === b) return;
+    occupato = true;
+    if (attivo) await chiudi(true);
+    attivo = b; sopra = null; palco.style.cursor = "";
+    aiuto(b.l.nome);
+    const { x, z, r } = b.casa, L = leggio();
+    // il libricino si solleva, vola al centro davanti al tavolo, si raddrizza e la vista gli va vicino
+    const vola = voloCamera(vistaLibro({ G: { position: L } }), 1.2);
+    await tween(1.2, k => { const e = easeIO(k); b.G.position.set(mix(x, L.x, e), L.y * Math.sin(e * Math.PI / 2), mix(z, L.z, e)); b.G.rotation.y = mix(r, 0, e); });
+    await vola;
+    await tween(1.0, k => b.apertura = k);
+    await tween(1.3, k => b.alzata = k);
+    $("chiudi").hidden = false; $("chiudi").focus({ preventScroll: true });
+    occupato = false;
+  }
+  // il punto sopra il tavolo dove si legge il libricino aperto
+  const leggio = () => disp === "largo" ? { x: 0, y: 2.4, z: 2.6 } : { x: 0, y: 2.4, z: 2.0 };
+  async function chiudi(dentro) {
+    const b = attivo; if (!b) return;
+    if (!dentro) { if (occupato) return; occupato = true; }
+    $("chiudi").hidden = true;
+    await tween(.5, k => b.alzata = 1 - k);
+    await tween(.8, k => b.apertura = 1 - k);
+    const { x, z, r } = b.casa, L = leggio();
+    const vola = dentro ? Promise.resolve() : voloCamera(vistaTavolo(), 1.1);
+    await tween(1.0, k => { const e = easeIO(k); b.G.position.set(mix(L.x, x, e), L.y * Math.cos(e * Math.PI / 2), mix(L.z, z, e)); b.G.rotation.y = mix(0, r, e); });
+    await vola;
+    attivo = null;
+    if (!dentro) { aiuto("Tocca un libricino per aprirlo · i cartelloni portano ai progetti"); occupato = false; }
+  }
+  $("chiudi").addEventListener("click", () => chiudi(false));
+  document.addEventListener("keydown", e => { if (e.key === "Escape") chiudi(false); });
+  nav.addEventListener("click", e => { const b = e.target.closest("[data-libro]"); if (b) apri(libri.find(x => x.l.id === b.dataset.libro)); });
+
+  let tempo = 0, ultimo = 0, sopra = null, salto = null;
+  function ciclo(now) {
+    requestAnimationFrame(ciclo);
+    const dt = Math.min(.05, (now - (ultimo || now)) / 1000); ultimo = now; tempo += dt;
+    for (let i = tweens.length - 1; i >= 0; i--) {
+      const tw = tweens[i]; tw.t += dt; const k = Math.min(1, tw.t / tw.dur); tw.fn(k);
+      if (k === 1) { tweens.splice(i, 1); tw.res(); }
+    }
+    for (const b of libri) {
+      aggiornaLibro(b);
+      // il libricino sotto il mouse si alza un poco
+      if (b !== attivo) { b.alza += ((sopra === b ? 1 : 0) - b.alza) * .2; b.G.position.y = b.alza * .18; }
+    }
+    pupazzi.forEach((p, i) => {
+      p.alza += ((sopra === p ? 1 : 0) - p.alza) * .2;
+      p.mesh.position.y = p.mesh.userData.y0 + p.alza * .25 + (pocoMoto ? 0 : Math.max(0, Math.sin(tempo * 2.2 + i * 1.6)) * .05) + (salto === p ? saltoY : 0);
+      if (!pocoMoto) p.mesh.rotation.z = .02 * Math.sin(tempo * 1.6 + i * 2);
+      p.mesh.material.emissive.setRGB(p.alza * .2, p.alza * .14, p.alza * .05);
+    });
+    posizionaCamera();
+    renderer.render(scena, camera);
+  }
+
+  /* ---------- puntare e toccare ---------- */
+  const ray = new T.Raycaster(), pt = new T.Vector2();
+  function cosaSotto(e) {
+    const r = palco.getBoundingClientRect();
+    pt.set((e.clientX - r.left) / r.width * 2 - 1, -(e.clientY - r.top) / r.height * 2 + 1);
+    ray.setFromCamera(pt, camera);
+    const bersagli = [...pupazzi.map(p => p.mesh), ...libri.filter(b => b !== attivo).flatMap(b => b.pezzi)];
+    for (const h of ray.intersectObjects(bersagli)) {
+      const al = h.object.userData.alfa;
+      if (al && h.uv) { const x = Math.floor(h.uv.x * (al.w - 1)), y = Math.floor((1 - h.uv.y) * (al.h - 1)); if (al.data[(y * al.w + x) * 4 + 3] < 128) continue; }
+      return h.object.userData.pupazzo || h.object.userData.libro;
+    }
+    return null;
+  }
+  palco.addEventListener("pointermove", e => {
+    if (e.pointerType === "mouse") {
+      const r = palco.getBoundingClientRect();
+      giro.yaw = ((e.clientX - r.left) / r.width - .5) * (attivo ? .3 : .08);
+      giro.el = ((e.clientY - r.top) / r.height - .5) * .05;
+    }
+    sopra = occupato ? null : cosaSotto(e);
+    palco.style.cursor = sopra ? "pointer" : "";
+  });
+  palco.addEventListener("pointerleave", () => { sopra = null; giro.yaw = giro.el = 0; });
+  let saltoY = 0;
+  palco.addEventListener("click", e => {
+    if (occupato || salto) return;
+    const c = cosaSotto(e);
+    if (!c) { if (attivo) chiudi(false); return; }
+    if (c.link) {
+      // il pupazzo fa un salto e poi si entra
+      salto = c;
+      tween(.55, k => saltoY = Math.sin(k * Math.PI) * .5).then(() => { salto = null; saltoY = 0; location.href = $(c.link).href; });
+      return;
+    }
+    apri(c);
+  });
+
+  adatta();
+  addEventListener("resize", adatta);
+  requestAnimationFrame(ciclo);
+  aiuto("Tocca un libricino per aprirlo · i cartelloni portano ai progetti");
+  if (daAprire) { const b = libri.find(x => x.l.id === daAprire); if (b) apri(b); }
+})();
+</script>
+</body>
+</html>
