@@ -110,6 +110,13 @@ p{text-wrap:pretty}
 .top.scorsa nav a{text-shadow:none}
 .top nav a:hover{background-size:100% 2px}
 .top .btn{position:relative;padding:12px 20px;font-size:.95rem}
+/* il ritorno al portale Campo Natale, accanto a "Iscrivi tuo figlio" */
+.top-bottoni{position:relative;display:flex;gap:10px;align-items:center}
+.top .btn-natale{--fg:currentColor;gap:7px;padding:11px 16px}
+.top .btn-natale svg{width:18px;height:18px}
+html[data-vista="area"] .top-bottoni{display:none}
+@media (max-width:600px){.top .solo-largo{display:none}.top-bottoni{gap:5px}.top .btn-natale,.top .btn-iscrivi{padding:8px 10px;font-size:.76rem}.top .btn-natale{gap:4px}.top .btn-natale svg{width:15px;height:15px}}
+@media (max-width:400px){.top .wrap{gap:8px}.top .logo{font-size:1.35rem}}
 @media (max-width:860px){.top nav{display:none}}
 
 /* ---------- copertina: la foto a tutta pagina ---------- */
@@ -1102,7 +1109,10 @@ html[data-passo="fiaba"] .percorso-mini,html[data-passo="finito"] .percorso-mini
       <a href="#gioco">Che artista sei?</a>
       <a class="altro-sito" href="../">Per i genitori</a>
     </nav>
-    <a class="btn giallo btn-iscrivi" href="#iscriviti" data-iscrivi>Iscrivi tuo figlio</a>
+    <div class="top-bottoni">
+      <a class="btn vuoto btn-natale" href="/camponatale/"><i data-lucide="arrow-left"></i><span><span class="solo-largo">Torna a </span>Campo Natale</span></a>
+      <a class="btn giallo btn-iscrivi" href="#iscriviti" data-iscrivi>Iscrivi tuo figlio</a>
+    </div>
     <div class="solo-area">
       <button type="button" class="btn giallo" data-vai="famiglia" id="top-famiglia" hidden><i data-lucide="users"></i>La mia famiglia</button>
       <button type="button" class="btn vuoto" data-vai="" style="--fg:var(--inchiostro)"><i data-lucide="arrow-left"></i>Torna al sito</button>
