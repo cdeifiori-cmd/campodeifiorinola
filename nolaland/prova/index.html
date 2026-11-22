@@ -5,8 +5,8 @@
 <meta name="robots" content="noindex, nofollow">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" id="vista-meta">
 <script>
-// sui tablet si vede la versione del computer: la pagina si impagina larga 1100 px e il tablet la rimpicciolisce;
-// la classe "tablet" mostra anche i cerchi del percorso ai lati, come sul computer.
+// sui tablet si vede la versione del computer: la pagina si impagina larga 1024 px e il tablet la rimpicciolisce
+// (i cerchi del percorso ai lati restano solo sui computer con lo schermo largo).
 // Tablet = schermo touch con il lato corto di almeno 600 px (i telefoni restano con la loro versione). Per provarla: ?tablet
 (function () {
   var m = document.getElementById("vista-meta"), prova = /[?&]tablet/.test(location.search);
@@ -18,7 +18,7 @@
   function adatta() {
     var orizz = window.matchMedia ? matchMedia("(orientation: landscape)").matches : innerWidth > innerHeight;
     var largo = orizz ? lungo : corto;
-    m.setAttribute("content", largo < 1100 ? "width=1100, viewport-fit=cover" : "width=device-width, initial-scale=1, viewport-fit=cover");
+    m.setAttribute("content", largo < 1024 ? "width=1024, viewport-fit=cover" : "width=device-width, initial-scale=1, viewport-fit=cover");
   }
   adatta();
   addEventListener("orientationchange", function () { setTimeout(adatta, 250); });
@@ -1042,19 +1042,9 @@ html[data-vista="area"][data-passo="fiaba"] .binario.sx{display:none}
   .fiaba-scena{padding-inline:136px}
   .percorso-mini{display:none!important}
 }
-/* sui tablet i cerchi del percorso ci sono sempre, come sul computer: il contenuto si stringe per far loro posto */
-@media (max-width:1479px){
-  html.tablet .percorso{display:block}
-  html.tablet .percorso-mini{display:none!important}
-  html.tablet main .wrap,html.tablet footer .wrap{padding-inline:134px}
-  html.tablet .hero picture{width:min(100% - 268px,calc((100svh - 68px) * 1728 / 910))}
-  html.tablet .fiaba-scena{padding-inline:136px}
-}
 @media (min-width:1480px){html[data-passo="fiaba"] .fb-aiuto{right:134px;width:clamp(140px,10vw,165px)}}
 /* più stretto di 1480 px accanto ad "Avanti!" non c'è posto: il biglietto sta sullo stesso lato, sopra il bambino */
 @media (min-width:761px) and (max-width:1479px){html[data-passo="fiaba"] .fb-aiuto{top:72px}}
-/* sul tablet il bambino "Avanti!" arriva quasi ai cerchi: il biglietto resta in alto a destra */
-@media (min-width:761px) and (max-width:1479px){html.tablet[data-passo="fiaba"] .fb-aiuto{top:76px;right:136px;width:min(300px,28vw);font-size:.82rem}}
 @media (max-height:760px) and (min-width:1480px){.binario .titolo-b{font-size:1.2rem;margin-bottom:4px}.tappa .tondo{width:36px;height:36px;font-size:.9rem}.tappa.ora .tondo{width:48px;height:48px}.tappa .nome{font-size:.68rem}}
 
 /* sugli schermi più piccoli: una pastiglia in basso a sinistra che si apre con tutte le tappe */
