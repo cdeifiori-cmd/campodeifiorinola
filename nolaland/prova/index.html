@@ -689,6 +689,35 @@ html:not([data-passo="fiaba"]) .barra-scelta{display:none}
 .barra-scelta .scelti-barra em{color:#d8cdbb;font-size:.9rem}
 .barra-scelta .btn{padding:13px 20px}
 html[data-passo="fiaba"] footer{padding-bottom:110px}
+/* sul computer niente fascia sopra il libro: i testi diventano bigliettini appuntati sulla scena e il libro parte a tutto schermo */
+@media (min-width:761px){
+  html[data-passo="fiaba"] .top,html[data-passo="fiaba"] .top.scorsa{background:none;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;color:var(--inchiostro)}
+  html[data-passo="fiaba"] .top::before{opacity:0}
+  html[data-passo="fiaba"] .top .logo{text-shadow:0 1px 0 rgba(255,250,240,.8)}
+  html[data-passo="fiaba"] .top .logo b{color:var(--rosso)}
+  html[data-passo="fiaba"] .area{position:absolute;inset:0 0 auto;z-index:30;min-height:0;padding:0;background:none;pointer-events:none}
+  html[data-passo="fiaba"] .area .wrap,html[data-passo="fiaba"] #p-fiaba{position:static;max-width:none;padding:0}
+  html[data-passo="fiaba"] .area :is(.passi-area,.fb-biglietto-titolo,.fb-aiuto){position:absolute;pointer-events:auto}
+  /* i passi: cartellini in fila in alto al centro */
+  html[data-passo="fiaba"] .passi-area{top:74px;left:50%;transform:translateX(-50%);flex-wrap:nowrap;margin:0;gap:10px}
+  html[data-passo="fiaba"] .passi-area li{background:#fffaf0;box-shadow:0 6px 12px -8px rgba(40,20,5,.6);white-space:nowrap}
+  html[data-passo="fiaba"] .passi-area li:nth-child(odd){rotate:-2deg}
+  html[data-passo="fiaba"] .passi-area li:nth-child(even){rotate:1.5deg}
+  html[data-passo="fiaba"] .passi-area li.ora{background:var(--inchiostro)}
+  /* i due bigliettini, con lo scotch */
+  html[data-passo="fiaba"] .fb-biglietto-titolo,html[data-passo="fiaba"] .fb-aiuto{top:128px;padding:22px 24px 20px;border-radius:3px;box-shadow:0 14px 24px -14px rgba(40,20,5,.65),0 1px 0 rgba(0,0,0,.06)}
+  html[data-passo="fiaba"] .fb-biglietto-titolo::before,html[data-passo="fiaba"] .fb-aiuto::before{content:"";position:absolute;top:-11px;left:50%;width:92px;height:24px;translate:-50% 0;rotate:-3deg;background:rgba(255,236,190,.75);box-shadow:0 1px 2px rgba(40,20,5,.2)}
+  html[data-passo="fiaba"] .fb-biglietto-titolo{top:124px;left:50%;translate:-50% 0;width:max-content;max-width:min(520px,40vw);padding:14px 30px 14px;text-align:center;background:#fffaf0;rotate:-1.5deg}
+  html[data-passo="fiaba"] .fb-biglietto-titolo .sopra-titolo{margin-bottom:6px}
+  html[data-passo="fiaba"] .fb-biglietto-titolo h2{font-size:clamp(1.5rem,2.4vw,2.3rem);margin:0}
+  html[data-passo="fiaba"] .fb-aiuto{top:76px;right:132px;width:min(330px,21vw);background:#fff3cf;rotate:2deg;font-size:clamp(.88rem,1vw,1rem);line-height:1.5;color:var(--inchiostro)}
+  html[data-passo="fiaba"] .fiaba-scena{padding-top:72px}
+}
+/* sullo schermo medio i bigliettini si fanno più stretti e la spiegazione scende sotto il titolo */
+@media (min-width:761px) and (max-width:1180px){
+  html[data-passo="fiaba"] .fb-biglietto-titolo{max-width:44vw;padding:12px 20px}
+  html[data-passo="fiaba"] .fb-aiuto{right:136px;width:min(300px,28vw);padding:14px 18px;font-size:.82rem}
+}
 @media (max-width:600px){.barra-scelta{gap:10px;padding:8px 8px 8px 10px;flex-wrap:nowrap}.barra-scelta .scelti-barra{display:none}.barra-scelta .chi{flex:1}.barra-scelta .btn{padding:11px 14px;font-size:.92rem}}
 .timbro-volante{position:fixed;left:50%;top:50%;z-index:150;pointer-events:none;margin:-90px 0 0 -90px;animation:volo 1.5s ease forwards}
 .timbro-volante .timbro{background:rgba(255,255,255,.85)}
@@ -774,6 +803,12 @@ html[data-passo="fiaba"] footer{padding-bottom:110px}
 .con-tabella .pop-casa{display:none}
 .con-tabella .pop-chiudi{display:grid;place-items:center;position:absolute;top:12px;right:12px;width:44px;height:44px;border:0;border-radius:50%;background:var(--carta-2);color:var(--inchiostro);cursor:pointer}
 .pop-chiudi svg{width:22px;height:22px}
+/* la voce che legge il testo del quadro */
+.pop-voce{display:inline-flex;align-items:center;gap:8px;margin-top:14px;border:2px solid var(--inchiostro);border-radius:999px;background:var(--bianco,#fff);color:var(--inchiostro);padding:8px 16px 8px 12px;font:700 .95rem/1 var(--titolo);cursor:pointer;transition:background .2s}
+.pop-voce[hidden]{display:none}
+.pop-voce svg{width:20px;height:20px}
+.pop-voce[aria-pressed="true"]{background:var(--zafferano)}
+.pop-voce[aria-pressed="true"] svg{animation:dondola .8s ease-in-out infinite}
 @media (max-width:900px){.fiaba-scena{grid-template-columns:1fr;height:auto;min-height:0;padding-bottom:40px}.palco{width:100%;max-width:none}.pop-lato{order:2;max-height:none;overflow:visible}.palco{height:auto;aspect-ratio:4/5}.pop-lato .pop-tasti{flex-direction:row;flex-wrap:wrap}}
 .palco canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 .palco.afferra{cursor:grabbing}
@@ -1152,8 +1187,10 @@ html[data-passo="fiaba"] .percorso-mini,html[data-passo="finito"] .percorso-mini
 
       <!-- 3. la scelta con la fiaba (il libro è qui sotto) -->
       <div class="passo" id="p-fiaba" hidden>
-        <p class="sopra-titolo">La scelta dei laboratori</p>
-        <h2>Tocca a te, <span id="fb-titolo-nome"></span>!</h2>
+        <div class="fb-biglietto-titolo">
+          <p class="sopra-titolo">La scelta dei laboratori</p>
+          <h2>Tocca a te, <span id="fb-titolo-nome"></span>!</h2>
+        </div>
         <p class="fb-aiuto">Sfoglia il libro della città invisibile: tocca un giglio o la Barca, apri il quadro con la storia e metti il tuo timbro sulle botteghe che vuoi provare. Puoi sceglierne fino a <b id="fb-max"></b>. Non sai decidere? Sotto il libro c'è il gioco «Che artista sei?».</p>
         <p class="fb-aiuto-cell">Scorri le schede dei laboratori, una dopo l'altra. Su quelli che vuoi provare tocca <b>«Ci metto il mio timbro!»</b>. Puoi sceglierne fino a <b id="fb-max-cell"></b>.</p>
         <div class="scelta-cell" id="scelta-cell"></div>
@@ -1311,6 +1348,7 @@ html[data-passo="fiaba"] .percorso-mini,html[data-passo="finito"] .percorso-mini
           <p class="pop-num" id="pop-num"></p>
           <h3 class="pop-titolo" id="pop-titolo"></h3>
           <p class="pop-frase" id="pop-frase"></p>
+          <button type="button" class="pop-voce" id="pop-voce" aria-pressed="false" hidden><i data-lucide="volume-2"></i><span id="pop-voce-testo">Ascolta</span></button>
           <div class="pop-chips" id="pop-chips" hidden></div>
         </div>
         <div class="pop-tasti" hidden>
@@ -3285,8 +3323,10 @@ const FRASI_FIABA = {
   altro: "Ogni grande artista|è stato prima un bambino"
 };
 const PIAZZA_FIABA = {
-  titolo: "La piazza dei Gigli",
-  frase: "C'era una volta, in piazza a Nola, davanti al Municipio, una festa di torri altissime: i Gigli. Un tempo ogni giglio era l'insegna di un'arte, di un mestiere della città. Anche oggi ogni giglio è un laboratorio, e anche la Barca al centro: è il laboratorio dell'Ambiente. Tocca un giglio o la Barca e il libro si apre alla sua pagina."
+  titolo: "La piazza dei Gigli di Nola",
+  frase: "C’era una volta, in piazza a Nola, davanti al Municipio, una festa di torri altissime: i Gigli. Un tempo, e anche oggi, ogni Giglio rappresenta un mestiere della città. Qui, a Nola Land, ogni Giglio è un laboratorio. E la Barca, al centro della piazza, ospita il laboratorio dell’ambiente. Tocca un Giglio o la Barca e il libro si apre alla pagina del laboratorio che hai scelto. Buon divertimento, buona scelta!",
+  // la voce registrata (Tiziana) che legge questo testo quando si apre il quadro
+  audio: "audio/piazza-dei-gigli.mp3"
 };
 const BARCA_FIABA = {
   titolo: "La Barca",
@@ -3323,7 +3363,10 @@ const BARCA_FIABA = {
 
   let aggiornaTabella = () => {};
   function scriviTesto() {
+    fermaVoce();
     const p = PAGINE[idx];
+    // il bottone della voce: la piazza ha la registrazione, le altre pagine la voce del browser
+    $f("pop-voce").hidden = !(p.audio || (window.speechSynthesis && window.SpeechSynthesisUtterance));
     try { disegnaTornaPiazza(p.id); } catch (e) {}
     const etichetta = p.tipo === "lab" ? `Il giglio: ${LABS[p.id].tag} · ` : p.tipo === "barca" ? `La Barca: ${LABS[p.id].tag} · ` : "";
     $f("pop-num").textContent = `${etichetta}pagina ${idx + 1} di ${N}`;
@@ -3344,8 +3387,66 @@ const BARCA_FIABA = {
   scriviTesto();
   const lettura = $f("pop-lettura"), velo = $f("pop-velo");
   let mostraCartello = () => {}, posizionaLettura = () => {};
-  function apriLettura() { lettura.classList.add("aperta"); posizionaLettura(); velo.classList.add("aperta"); mostraCartello(false); $f("pop-chiudi").focus({ preventScroll: true }); }
-  function chiudiLettura() { if (!lettura.classList.contains("aperta")) return; lettura.classList.remove("aperta"); velo.classList.remove("aperta"); mostraCartello(true); palco.focus({ preventScroll: true }); }
+  function apriLettura() { lettura.classList.add("aperta"); posizionaLettura(); velo.classList.add("aperta"); mostraCartello(false); $f("pop-chiudi").focus({ preventScroll: true }); leggiQuadro(); }
+  function chiudiLettura() { fermaVoce(); if (!lettura.classList.contains("aperta")) return; lettura.classList.remove("aperta"); velo.classList.remove("aperta"); mostraCartello(true); palco.focus({ preventScroll: true }); }
+  /* ---------- una voce femminile legge il testo del quadro ---------- */
+  // usa le voci italiane del browser e preferisce quelle femminili (Elsa, Isabella, Google italiano...)
+  const VOCI_DONNA = /elsa|isabella|alice|federica|paola|giulia|bianca|carla|silvia|chiara|google italiano|female|donna/i;
+  const VOCI_UOMO = /cosimo|diego|luca|giuseppe|roberto|giorgio|uomo/i;
+  var vocePreferita = null, giroVoce = 0;   // var: fermaVoce() viene chiamata già da scriviTesto(), prima di questa riga
+  function scegliVoce() {
+    const ss = window.speechSynthesis; if (!ss) return;
+    const it = ss.getVoices().filter(v => /^it/i.test(v.lang));
+    vocePreferita = it.find(v => VOCI_DONNA.test(v.name) && !VOCI_UOMO.test(v.name)) || it.find(v => !VOCI_UOMO.test(v.name)) || it[0] || null;
+  }
+  if (window.speechSynthesis && window.SpeechSynthesisUtterance) {
+    scegliVoce();
+    speechSynthesis.addEventListener ? speechSynthesis.addEventListener("voiceschanged", scegliVoce) : (speechSynthesis.onvoiceschanged = scegliVoce);
+  }
+  function statoVoce(parla) {
+    const b = $f("pop-voce"); b.setAttribute("aria-pressed", parla);
+    $f("pop-voce-testo").textContent = parla ? "Ferma la voce" : "Ascolta";
+  }
+  var registrazione = null;   // l'audio registrato della pagina, se c'è
+  function fermaVoce() {
+    giroVoce++;
+    try { window.speechSynthesis && speechSynthesis.cancel(); } catch (e) {}
+    if (registrazione) { registrazione.pause(); try { registrazione.currentTime = 0; } catch (e) {} }
+    statoVoce(false);
+  }
+  // la pagina con la voce registrata la fa sentire; se non parte, legge la voce del browser
+  function suonaRegistrazione(src) {
+    fermaVoce();
+    const mio = giroVoce;
+    if (!registrazione || !registrazione.src.endsWith(src)) { registrazione = new Audio(src); registrazione.preload = "auto"; }
+    const r = registrazione;
+    r.onended = () => { if (mio === giroVoce) statoVoce(false); };
+    statoVoce(true);
+    const p = r.play();
+    if (p && p.catch) p.catch(() => { if (mio === giroVoce) { statoVoce(false); leggiConVoce(); } });
+  }
+  function leggiQuadro() {
+    const pag = PAGINE[idx];
+    if (pag && pag.audio) { suonaRegistrazione(pag.audio); return; }
+    leggiConVoce();
+  }
+  function leggiConVoce() {
+    if (!window.speechSynthesis || !window.SpeechSynthesisUtterance) return;
+    fermaVoce();
+    const mio = giroVoce, testo = `${$f("pop-titolo").textContent}. ${$f("pop-frase").textContent}`;
+    if (!vocePreferita) scegliVoce();
+    const u = new SpeechSynthesisUtterance(testo);
+    u.lang = "it-IT"; u.rate = .95;
+    if (vocePreferita) u.voice = vocePreferita;
+    // se il browser non ha una voce femminile italiana, alza un poco il tono
+    u.pitch = vocePreferita && VOCI_DONNA.test(vocePreferita.name) ? 1 : 1.25;
+    u.onend = u.onerror = () => { if (mio === giroVoce) statoVoce(false); };
+    statoVoce(true);
+    // Chrome a volte perde la frase se parte subito dopo cancel()
+    setTimeout(() => { if (mio === giroVoce) speechSynthesis.speak(u); }, 80);
+  }
+  $f("pop-voce").addEventListener("click", () => $f("pop-voce").getAttribute("aria-pressed") === "true" ? fermaVoce() : leggiQuadro());
+  addEventListener("pagehide", fermaVoce);
   $f("pop-chiudi").addEventListener("click", chiudiLettura);
   velo.addEventListener("click", chiudiLettura);
   document.addEventListener("keydown", e => { if (e.key === "Escape") chiudiLettura(); });
