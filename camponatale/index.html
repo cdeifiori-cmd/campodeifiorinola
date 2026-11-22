@@ -84,15 +84,15 @@
 <script>
 // i libricini sul tavolo: chi è, il file della figura, il titolo in copertina e il colore della tela
 const LIBRI = [
-  { id: "duomo", nome: "Il Duomo di Nola", righe: ["Il Duomo", "di Nola"], col: "#1d3f78", alta: 2.1 },
-  { id: "giglio", nome: "Il Giglio di Nola", righe: ["Il Giglio", "di Nola"], col: "#c8261d", alta: 2.9 },
-  { id: "arco", nome: "L'Arco di Nola", righe: ["L'Arco", "di Nola"], col: "#b35a2a", alta: 2.0 },
+  { id: "duomo", nome: "Il Duomo di Nola", righe: ["Il Duomo"], col: "#1d3f78", alta: 2.1 },
+  { id: "giglio", nome: "Il Giglio di Nola", righe: ["Il Giglio"], col: "#c8261d", alta: 2.9 },
+  { id: "arco", nome: "L'Arco di Nola", righe: ["L'Arco"], col: "#b35a2a", alta: 2.0 },
   { id: "reggia-orsini", nome: "La Reggia Orsini", righe: ["La Reggia", "Orsini"], col: "#6b2f5a", alta: 1.5 },
   { id: "augusto", nome: "Ottaviano Augusto", righe: ["Ottaviano", "Augusto"], col: "#1f5a3a", alta: 2.3 },
   { id: "tommaso-vitale", nome: "Tommaso Vitale", righe: ["Tommaso", "Vitale"], col: "#2d6a6a", alta: 2.3 },
   { id: "san-paolino", nome: "San Paolino", righe: ["San", "Paolino"], col: "#a8741a", alta: 2.3 },
-  { id: "morelli-silvati", nome: "Morelli e Silvati", righe: ["Morelli", "e Silvati"], col: "#24365e", alta: 1.6 },
-  { id: "giordano-bruno", nome: "Giordano Bruno", righe: ["Giordano", "Bruno"], col: "#7a1d17", alta: 2.3 }
+  { id: "morelli-silvati", nome: "I moti carbonari", righe: ["I moti", "carbonari"], nastro: "Nola tra il 1º e il 2 luglio 1820", col: "#24365e", alta: 1.6 },
+  { id: "giordano-bruno", nome: "Giordano Bruno", righe: ["Giordano", "Bruno"], nastro: "Il filosofo nolano", col: "#7a1d17", alta: 2.3 }
 ];
 
 (async () => {
@@ -237,8 +237,10 @@ const LIBRI = [
     if (im) { const bw = w - .8, bh = .98, k = Math.min(bw / im.naturalWidth, bh / im.naturalHeight), iw = im.naturalWidth * k, ih = im.naturalHeight * k; a.drawImage(im, w / 2 - iw / 2, .3 + (bh - ih) / 2 + .02, iw, ih); }
     // l'etichetta con il nome
     incolla(a, [[.18, 1.5], [w - .16, 1.46], [w - .18, 2.2], [.2, 2.24]], "#fffaf0", 20 + i, .03);
-    scrivi(a, l.righe[0], w / 2, 1.68, .26, '{} "Anton", sans-serif', "#17140f", w - .5, -.015, px);
-    scrivi(a, l.righe[1], w / 2, 1.98, .24, 'italic 900 {} "Playfair Display", serif', "#c8261d", w - .5, -.015, px);
+    if (l.righe.length > 1) {
+      scrivi(a, l.righe[0], w / 2, 1.68, .26, '{} "Anton", sans-serif', "#17140f", w - .5, -.015, px);
+      scrivi(a, l.righe[1], w / 2, 1.98, .24, 'italic 900 {} "Playfair Display", serif', "#c8261d", w - .5, -.015, px);
+    } else scrivi(a, l.righe[0], w / 2, 1.85, .34, '{} "Anton", sans-serif', "#17140f", w - .5, -.015, px);
     return c;
   }
   function disegnaPagine() {
@@ -260,7 +262,7 @@ const LIBRI = [
     return (a, w, h) => {
       incolla(a, [[0, .06], [w, 0], [w - .04, h], [.03, h - .03]], l.col, 70 + i, .03);
       incolla(a, [[.12, .14], [w - .1, .1], [w - .14, h - .12], [.14, h - .1]], "#fffaf0", 80 + i, .025);
-      scrivi(a, l.nome, w / 2, h / 2 + .02, h * .5, 'italic 900 {} "Playfair Display", serif', "#17140f", w - .4, -.01);
+      scrivi(a, l.nastro || l.nome, w / 2, h / 2 + .02, h * .5, 'italic 900 {} "Playfair Display", serif', "#17140f", w - .4, -.01);
     };
   }
 
@@ -286,7 +288,7 @@ const LIBRI = [
     const im = IMG[l.id], ah = l.alta * 1.15, aw = im ? Math.min(3.4, ah * im.naturalWidth / im.naturalHeight) : 1.5, ahh = im ? aw * im.naturalHeight / im.naturalWidth : ah;
     const pop = [
       { mesh: cartoncino(aw, ahh, (a, w, h) => { if (im) a.drawImage(im, 0, 0, w, h); }), z: -.45, o: 0 },
-      { mesh: cartoncino(2.9, .52, nastro(l, i)), z: .75, o: .4 }
+      { mesh: cartoncino(l.nastro && l.nastro.length > 24 ? 3.4 : 2.9, .52, nastro(l, i)), z: .75, o: .4 }
     ].map(p => { const c = new T.Group(); c.position.set(0, H + .003, p.z); c.add(p.mesh); c.visible = false; G.add(c); return { ...p, cerniera: c }; });
     const libro = { l, G, perno, coperchio, dorso, aperto, pop, alzata: 0, apertura: 0, alza: 0, pezzi: [baseDx, bloccoDx, coperchio, dorso, pagDx] };
     [baseDx, bloccoDx, coperchio, dorso, pagDx].forEach(m => m.userData.libro = libro);
