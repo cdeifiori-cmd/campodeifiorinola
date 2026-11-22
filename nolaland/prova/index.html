@@ -3,7 +3,25 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" id="vista-meta">
+<script>
+// sui tablet si vede la versione del computer: la pagina si impagina larga 1024 px e il tablet la rimpicciolisce.
+// Tablet = schermo touch con il lato corto di almeno 600 px (i telefoni restano con la loro versione). Per provarla: ?tablet
+(function () {
+  var m = document.getElementById("vista-meta"), prova = /[?&]tablet/.test(location.search);
+  var touch = prova || (window.matchMedia && matchMedia("(any-pointer: coarse)").matches) || navigator.maxTouchPoints > 1;
+  var corto = Math.min(screen.width, screen.height), lungo = Math.max(screen.width, screen.height);
+  if (!touch || (corto < 600 && !prova)) return;
+  function adatta() {
+    var orizz = window.matchMedia ? matchMedia("(orientation: landscape)").matches : innerWidth > innerHeight;
+    var largo = orizz ? lungo : corto;
+    m.setAttribute("content", largo < 1024 ? "width=1024, viewport-fit=cover" : "width=device-width, initial-scale=1, viewport-fit=cover");
+    document.documentElement.classList.toggle("tablet-pc", largo < 1024);
+  }
+  adatta();
+  addEventListener("orientationchange", function () { setTimeout(adatta, 250); });
+})();
+</script>
 <title>Nola Land 2026 · La chiamata alle arti</title>
 <meta name="description" content="Nola Land 2026, la chiamata alle arti: laboratori gratuiti per bambini e ragazzi dai 6 ai 14 anni nelle botteghe di Nola. Iscriviti online.">
 <meta name="theme-color" content="#cf2a1f">
